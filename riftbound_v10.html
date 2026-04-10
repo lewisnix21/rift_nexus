@@ -795,6 +795,16 @@ function RiftboundGame() {
     if (lobbyType === "join" && screen === "mode") { listLobbies(function(list) { setLobbyList(list); }); var iv = setInterval(function() { listLobbies(function(list) { setLobbyList(list); }); }, 5000); return function() { clearInterval(iv); }; }
   }, [lobbyType, screen]);
 
+  // Register a custom deck so it can be used like a precon
+  function registerCustomDeck(deck) {
+    var dn = "✦ " + (deck.name || "Custom Deck");
+    if (!DECKS[dn]) {
+      DECKS[dn] = { legend: deck.legend, champ: deck.champ, deck: deck.cards || [], bfs: deck.bfs || [], runes: deck.runes || [] };
+      if (DNAMES.indexOf(dn) < 0) DNAMES.push(dn);
+    }
+    return dn;
+  }
+
   // Cleanup lobby on leave
   function leaveLobby() {
     if (_lobbyUnsub.current) { _lobbyUnsub.current(); _lobbyUnsub.current = null; }
@@ -885,7 +895,7 @@ function RiftboundGame() {
         <h3 style={{ fontSize: 12, fontFamily: "Spectral,serif", color: "#888", letterSpacing: 2 }}>SELECT DECKS</h3>
         <div style={{ display: "flex", gap: 6, marginBottom: 4, justifyContent: "center" }}>
           <button onClick={function() { setDeckTab("precons"); }} style={{ padding: "4px 14px", borderRadius: 5, border: "2px solid " + (deckTab === "precons" ? "#FFD700" : "#FFD70055"), background: deckTab === "precons" ? "#FFD70020" : "#FFD70008", color: deckTab === "precons" ? "#FFD700" : "#FFD700aa", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Precons</button>
-          <button style={{ padding: "4px 14px", borderRadius: 5, border: "2px solid #ffffff25", background: "#ffffff06", color: "#ffffff50", cursor: "not-allowed", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Your Decks</button>
+          <button onClick={authUser && dbSavedDecks.length > 0 ? function() { setDeckTab(deckTab === "mydecks" ? null : "mydecks"); } : undefined} style={{ padding: "4px 14px", borderRadius: 5, border: "2px solid " + (deckTab === "mydecks" ? "#8B5CF6" : authUser && dbSavedDecks.length > 0 ? "#8B5CF655" : "#ffffff25"), background: deckTab === "mydecks" ? "#8B5CF620" : authUser && dbSavedDecks.length > 0 ? "#8B5CF608" : "#ffffff06", color: deckTab === "mydecks" ? "#8B5CF6" : authUser && dbSavedDecks.length > 0 ? "#8B5CF6aa" : "#ffffff50", cursor: authUser && dbSavedDecks.length > 0 ? "pointer" : "not-allowed", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Your Decks{authUser && dbSavedDecks.length > 0 ? " (" + dbSavedDecks.length + ")" : ""}</button>
         </div>
         {deckTab === "precons" && <div style={{ display: "flex", gap: 20, flexWrap: "wrap", justifyContent: "center" }}>
           {Array.from({ length: lobbyMode ? lobbyMode.pc : 2 }, function(_, pi) {
@@ -902,6 +912,29 @@ function RiftboundGame() {
                       <button key={n} onClick={function() { setDp(Object.assign({}, dp, { [pi]: n })); }} style={{ padding: "6px 8px", borderRadius: 5, border: s ? "2px solid #FFD700" : "1px solid #2a2a3a", background: s ? "#FFD70015" : "#0c0c1a", color: s ? "#FFD700" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 13 }}>
                         <div style={{ fontWeight: s ? 700 : 500 }}>{n}</div>
                         <div style={{ fontSize: 10, marginTop: 2, display: "flex", gap: 4 }}>{ds.map(function(dd) { var dc = DOM[dd] || DOM.Colorless; return <span key={dd} style={{ color: dc.c, fontWeight: 700 }}>{dc.i} {dd}</span>; })}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>}
+        {deckTab === "mydecks" && <div style={{ display: "flex", gap: 20, flexWrap: "wrap", justifyContent: "center" }}>
+          {Array.from({ length: lobbyMode ? lobbyMode.pc : 2 }, function(_, pi) {
+            return (
+              <div key={pi} style={{ minWidth: 220 }}>
+                <h4 style={{ color: "#8B5CF6", fontSize: 13, textAlign: "center", marginBottom: 6, fontFamily: "Spectral,serif" }}>PLAYER {pi + 1}</h4>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
+                  {dbSavedDecks.map(function(deck) {
+                    var dn = registerCustomDeck(deck);
+                    var s = dp[pi] === dn;
+                    var lc = deck.legend ? findCard(deck.legend) : null;
+                    var ds = lc && lc.ds ? lc.ds : [];
+                    return (
+                      <button key={deck._id} onClick={function() { setDp(Object.assign({}, dp, { [pi]: dn })); }} style={{ padding: "6px 8px", borderRadius: 5, border: s ? "2px solid #8B5CF6" : "1px solid #2a2a3a", background: s ? "#8B5CF615" : "#0c0c1a", color: s ? "#8B5CF6" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 13 }}>
+                        <div style={{ fontWeight: s ? 700 : 500 }}>{deck.name || "Untitled"}</div>
+                        <div style={{ fontSize: 9, marginTop: 2, display: "flex", gap: 4 }}>{ds.map(function(dd) { var dc = DOM[dd] || DOM.Colorless; return <span key={dd} style={{ color: dc.c, fontWeight: 700 }}>{dc.i} {dd}</span>; })}</div>
                       </button>
                     );
                   })}
@@ -976,10 +1009,13 @@ function RiftboundGame() {
         <div style={{ fontSize: 11, color: "#888", fontFamily: "Spectral,serif", marginBottom: 4 }}>CHOOSE A DECK</div>
         <div style={{ display: "flex", gap: 6, marginBottom: 6, justifyContent: "center" }}>
           <button onClick={function() { setDeckTab("precons"); }} style={{ padding: "4px 14px", borderRadius: 5, border: "2px solid " + (deckTab === "precons" ? "#FFD700" : "#FFD70055"), background: deckTab === "precons" ? "#FFD70020" : "#FFD70008", color: deckTab === "precons" ? "#FFD700" : "#FFD700aa", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Precons</button>
-          <button style={{ padding: "4px 14px", borderRadius: 5, border: "2px solid #ffffff25", background: "#ffffff06", color: "#ffffff50", cursor: "not-allowed", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Your Decks</button>
+          <button onClick={authUser && dbSavedDecks.length > 0 ? function() { setDeckTab(deckTab === "mydecks" ? null : "mydecks"); } : undefined} style={{ padding: "4px 14px", borderRadius: 5, border: "2px solid " + (deckTab === "mydecks" ? "#8B5CF6" : authUser && dbSavedDecks.length > 0 ? "#8B5CF655" : "#ffffff25"), background: deckTab === "mydecks" ? "#8B5CF620" : authUser && dbSavedDecks.length > 0 ? "#8B5CF608" : "#ffffff06", color: deckTab === "mydecks" ? "#8B5CF6" : authUser && dbSavedDecks.length > 0 ? "#8B5CF6aa" : "#ffffff50", cursor: authUser && dbSavedDecks.length > 0 ? "pointer" : "not-allowed", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Your Decks{authUser && dbSavedDecks.length > 0 ? " (" + dbSavedDecks.length + ")" : ""}</button>
         </div>
         {deckTab === "precons" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, width: "100%" }}>
           {DNAMES.map(function(n) { var myDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null; var s = myDeck === n; var t2 = DECKS[n]; var lg = findCard(t2.legend); var ds = (lg && lg.ds) ? lg.ds : []; return <button key={n} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/deck").set(n); }} style={{ padding: "6px 8px", borderRadius: 4, border: s ? "2px solid #FFD700" : "1px solid #2a2a3a", background: s ? "#FFD70015" : "#0c0c1a", color: s ? "#FFD700" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 13 }}><div style={{ fontWeight: s ? 700 : 500 }}>{n}</div><div style={{ fontSize: 9, marginTop: 2, display: "flex", gap: 3 }}>{ds.map(function(dd) { var dc = DOM[dd] || DOM.Colorless; return <span key={dd} style={{ color: dc.c, fontWeight: 700 }}>{dc.i} {dd}</span>; })}</div></button>; })}
+        </div>}
+        {deckTab === "mydecks" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, width: "100%" }}>
+          {dbSavedDecks.map(function(deck) { var dn = registerCustomDeck(deck); var myDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null; var s = myDeck === dn; var lc = deck.legend ? findCard(deck.legend) : null; var ds = lc && lc.ds ? lc.ds : []; return <button key={deck._id} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/deck").set(dn); }} style={{ padding: "6px 8px", borderRadius: 4, border: s ? "2px solid #8B5CF6" : "1px solid #2a2a3a", background: s ? "#8B5CF615" : "#0c0c1a", color: s ? "#8B5CF6" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 13 }}><div style={{ fontWeight: s ? 700 : 500 }}>{deck.name || "Untitled"}</div><div style={{ fontSize: 9, marginTop: 2, display: "flex", gap: 3 }}>{ds.map(function(dd) { var dc = DOM[dd] || DOM.Colorless; return <span key={dd} style={{ color: dc.c, fontWeight: 700 }}>{dc.i} {dd}</span>; })}</div></button>; })}
         </div>}
         <div style={{ display: "flex", gap: 8 }}>
           <button onClick={function() {
@@ -1044,10 +1080,13 @@ function RiftboundGame() {
         <div style={{ fontSize: 10, color: "#888", fontFamily: "Spectral,serif", marginBottom: 4 }}>CHOOSE A DECK</div>
         <div style={{ display: "flex", gap: 6, marginBottom: 6, justifyContent: "center" }}>
           <button onClick={function() { setDeckTab("precons"); }} style={{ padding: "4px 14px", borderRadius: 5, border: "2px solid " + (deckTab === "precons" ? "#4ADE80" : "#4ADE8055"), background: deckTab === "precons" ? "#4ADE8020" : "#4ADE8008", color: deckTab === "precons" ? "#4ADE80" : "#4ADE80aa", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Precons</button>
-          <button style={{ padding: "4px 14px", borderRadius: 5, border: "2px solid #ffffff25", background: "#ffffff06", color: "#ffffff50", cursor: "not-allowed", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Your Decks</button>
+          <button onClick={authUser && dbSavedDecks.length > 0 ? function() { setDeckTab(deckTab === "mydecks" ? null : "mydecks"); } : undefined} style={{ padding: "4px 14px", borderRadius: 5, border: "2px solid " + (deckTab === "mydecks" ? "#8B5CF6" : authUser && dbSavedDecks.length > 0 ? "#8B5CF655" : "#ffffff25"), background: deckTab === "mydecks" ? "#8B5CF620" : authUser && dbSavedDecks.length > 0 ? "#8B5CF608" : "#ffffff06", color: deckTab === "mydecks" ? "#8B5CF6" : authUser && dbSavedDecks.length > 0 ? "#8B5CF6aa" : "#ffffff50", cursor: authUser && dbSavedDecks.length > 0 ? "pointer" : "not-allowed", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Your Decks{authUser && dbSavedDecks.length > 0 ? " (" + dbSavedDecks.length + ")" : ""}</button>
         </div>
         {deckTab === "precons" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, width: "100%" }}>
           {DNAMES.map(function(n) { var myDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null; var s = myDeck === n; var t2 = DECKS[n]; var lg = findCard(t2.legend); var ds = (lg && lg.ds) ? lg.ds : []; return <button key={n} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/deck").set(n); }} style={{ padding: "6px 8px", borderRadius: 4, border: s ? "2px solid #4ADE80" : "1px solid #2a2a3a", background: s ? "#4ADE8015" : "#0c0c1a", color: s ? "#4ADE80" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 13 }}><div style={{ fontWeight: s ? 700 : 500 }}>{n}</div><div style={{ fontSize: 9, marginTop: 2, display: "flex", gap: 3 }}>{ds.map(function(dd) { var dc = DOM[dd] || DOM.Colorless; return <span key={dd} style={{ color: dc.c, fontWeight: 700 }}>{dc.i} {dd}</span>; })}</div></button>; })}
+        </div>}
+        {deckTab === "mydecks" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, width: "100%" }}>
+          {dbSavedDecks.map(function(deck) { var dn = registerCustomDeck(deck); var myDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null; var s = myDeck === dn; var lc = deck.legend ? findCard(deck.legend) : null; var ds = lc && lc.ds ? lc.ds : []; return <button key={deck._id} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/deck").set(dn); }} style={{ padding: "6px 8px", borderRadius: 4, border: s ? "2px solid #8B5CF6" : "1px solid #2a2a3a", background: s ? "#8B5CF615" : "#0c0c1a", color: s ? "#8B5CF6" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 13 }}><div style={{ fontWeight: s ? 700 : 500 }}>{deck.name || "Untitled"}</div><div style={{ fontSize: 9, marginTop: 2, display: "flex", gap: 3 }}>{ds.map(function(dd) { var dc = DOM[dd] || DOM.Colorless; return <span key={dd} style={{ color: dc.c, fontWeight: 700 }}>{dc.i} {dd}</span>; })}</div></button>; })}
         </div>}
         <button onClick={function() { leaveLobby(); }} style={{ padding: "6px 14px", borderRadius: 5, border: "1px solid #ff444466", background: "transparent", color: "#ff6666", cursor: "pointer", fontSize: 10, fontFamily: "Spectral,serif" }}>Leave</button>
       </div>}
