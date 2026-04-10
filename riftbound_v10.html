@@ -431,6 +431,8 @@ function RiftboundGame() {
   var _dbRunes = useState([]), dbRunes = _dbRunes[0], setDbRunes = _dbRunes[1];
   var _dbSection = useState("legend"), dbSection = _dbSection[0], setDbSection = _dbSection[1];
   var _dbSearch = useState(""), dbSearch = _dbSearch[0], setDbSearch = _dbSearch[1];
+  var _dbFilterE = useState(""), dbFilterE = _dbFilterE[0], setDbFilterE = _dbFilterE[1];
+  var _dbFilterRC = useState(""), dbFilterRC = _dbFilterRC[0], setDbFilterRC = _dbFilterRC[1];
   var _dos = useState(false), dragOverShowcase = _dos[0], setDragOverShowcase = _dos[1];
   var _sb = useState(false), showBin = _sb[0], setShowBin = _sb[1];
   var _bs = useState([]), binSelected = _bs[0], setBinSelected = _bs[1];
@@ -1047,24 +1049,28 @@ function RiftboundGame() {
       if (c.d === "Colorless") return true;
       return c.ds && c.ds.some(function(d) { return legendDomains.indexOf(d) >= 0; });
     }
-    var champNames = {};
-    Object.keys(DECKS).forEach(function(dk) { if (DECKS[dk].champ) champNames[DECKS[dk].champ] = true; });
-    // Also treat any Unit that shares a name pattern with a Legend as a champion candidate
-    var dbChamps = allCards.filter(function(c) { return (champNames[c.n] || (c.t === "Unit" && c.kw && legendCard && c.kw.some(function(k) { return legendCard.kw && legendCard.kw.indexOf(k) >= 0 && k !== "Ionia" && k !== "Noxus" && k !== "Demacia" && k !== "Piltover" && k !== "Freljord" && k !== "Shadow Isles" && k !== "Bilgewater" && k !== "Mount Targon" && k !== "Shurima" && k !== "Bandle City"; }))) && matchesLegendDomains(c); });
-    var dbUnits = allCards.filter(function(c) { return c.t === "Unit" && !champNames[c.n] && matchesLegendDomains(c); });
-    var dbSpells = allCards.filter(function(c) { return c.t === "Spell" && matchesLegendDomains(c); });
-    var dbGear = allCards.filter(function(c) { return c.t === "Gear" && matchesLegendDomains(c); });
+    // Champions: Units that share the legend's character keyword
+    var legendCharKw = legendCard && legendCard.kw ? legendCard.kw[0] : null;
+    var regionKws = ["Ionia","Noxus","Demacia","Piltover","Freljord","Shadow Isles","Bilgewater","Mount Targon","Shurima","Bandle City","Zaun","Targon"];
+    var dbChamps = legendCharKw ? allCards.filter(function(c) { return c.t === "Unit" && c.kw && c.kw.indexOf(legendCharKw) >= 0; }) : [];
+    var champNameSet = {};
+    dbChamps.forEach(function(c) { champNameSet[c.n] = true; });
+    var dbUnits = dbLegend ? allCards.filter(function(c) { return c.t === "Unit" && !champNameSet[c.n] && matchesLegendDomains(c); }) : [];
+    var dbSpells = dbLegend ? allCards.filter(function(c) { return c.t === "Spell" && matchesLegendDomains(c); }) : [];
+    var dbGear = dbLegend ? allCards.filter(function(c) { return c.t === "Gear" && matchesLegendDomains(c); }) : [];
     var dbBattlefields = allCards.filter(function(c) { return c.t === "Battlefield"; });
     var dbDomains = legendDomains.length > 0 ? legendDomains : ["Fury","Calm","Mind","Body","Chaos","Order"];
     var cardCounts = {};
     dbCards.forEach(function(n) { cardCounts[n] = (cardCounts[n] || 0) + 1; });
     var mainDeckCards = dbUnits.concat(dbSpells).concat(dbGear).sort(function(a, b) { return a.n.localeCompare(b.n); });
 
-    // Search filter
+    // Search + filters
     var searchLower = dbSearch.toLowerCase().trim();
-    function matchesSearch(c) {
-      if (!searchLower) return true;
-      return c.n.toLowerCase().indexOf(searchLower) >= 0 || (c.tx && c.tx.toLowerCase().indexOf(searchLower) >= 0);
+    function matchesFilters(c) {
+      if (searchLower && c.n.toLowerCase().indexOf(searchLower) < 0 && (!c.tx || c.tx.toLowerCase().indexOf(searchLower) < 0)) return false;
+      if (dbFilterE && c.e !== parseInt(dbFilterE)) return false;
+      if (dbFilterRC && (c.rc || []).length !== parseInt(dbFilterRC)) return false;
+      return true;
     }
 
     var sectionCards = [];
@@ -1074,7 +1080,7 @@ function RiftboundGame() {
     else if (dbSection === "battlefield") sectionCards = dbBattlefields;
     else if (dbSection === "runes") sectionCards = [];
 
-    var filteredCards = sectionCards.filter(matchesSearch);
+    var filteredCards = sectionCards.filter(matchesFilters);
     var sectionCounts = { legend: dbLegends.length, champion: dbChamps.length, main: mainDeckCards.length, battlefield: dbBattlefields.length, runes: dbDomains.length };
 
     function dbResetDeck() { setDbName(""); setDbLegend(null); setDbChamp(null); setDbCards([]); setDbBfs([]); setDbRunes([]); }
@@ -1107,12 +1113,20 @@ function RiftboundGame() {
               var sel = dbSection === s.id;
               var locked = s.id !== "legend" && s.id !== "battlefield" && !dbLegend;
               var cnt = sectionCounts[s.id] || 0;
-              return <button key={s.id} onClick={locked ? undefined : function() { setDbSection(s.id); setDbSearch(""); }} style={{ flex: 1, padding: "6px 4px", border: "none", borderBottom: sel ? "2px solid #8B5CF6" : "2px solid transparent", background: sel ? "#8B5CF610" : "transparent", color: locked ? "#333" : sel ? "#8B5CF6" : "#888", fontSize: 9, fontFamily: "Cinzel,serif", fontWeight: 700, cursor: locked ? "not-allowed" : "pointer", opacity: locked ? 0.4 : 1 }}>{s.label} <span style={{ fontSize: 8, opacity: 0.6 }}>({cnt})</span></button>;
+              return <button key={s.id} onClick={locked ? undefined : function() { setDbSection(s.id); setDbSearch(""); }} style={{ flex: 1, padding: "8px 4px", border: "none", borderBottom: sel ? "2px solid #8B5CF6" : "2px solid transparent", background: sel ? "#8B5CF610" : "transparent", color: locked ? "#333" : sel ? "#8B5CF6" : "#888", fontSize: 12, fontFamily: "Cinzel,serif", fontWeight: 700, cursor: locked ? "not-allowed" : "pointer", opacity: locked ? 0.4 : 1 }}>{s.label} <span style={{ fontSize: 10, opacity: 0.6 }}>({cnt})</span></button>;
             })}
           </div>
-          {/* Search bar */}
-          <div style={{ padding: "6px 8px 2px", flexShrink: 0 }}>
-            <input value={dbSearch} onChange={function(e) { setDbSearch(e.target.value); }} placeholder="Search cards..." style={{ width: "100%", padding: "5px 10px", borderRadius: 5, border: "1px solid #ffffff15", background: "#ffffff08", color: "#ddd", fontSize: 12, outline: "none", fontFamily: "Inter,sans-serif" }} />
+          {/* Search + filters */}
+          <div style={{ padding: "6px 8px 2px", flexShrink: 0, display: "flex", gap: 4, alignItems: "center" }}>
+            <input value={dbSearch} onChange={function(e) { setDbSearch(e.target.value); }} placeholder="Search name or text..." style={{ flex: 1, padding: "5px 10px", borderRadius: 5, border: "1px solid #ffffff15", background: "#ffffff08", color: "#ddd", fontSize: 11, outline: "none" }} />
+            <select value={dbFilterE} onChange={function(e) { setDbFilterE(e.target.value); }} style={{ padding: "4px 2px", borderRadius: 4, border: "1px solid #ffffff15", background: "#0c0c1a", color: "#aaa", fontSize: 10, outline: "none" }}>
+              <option value="">Energy</option>
+              {[0,1,2,3,4,5,6,7,8,9,10,11,12].map(function(v) { return <option key={v} value={v}>{v}</option>; })}
+            </select>
+            <select value={dbFilterRC} onChange={function(e) { setDbFilterRC(e.target.value); }} style={{ padding: "4px 2px", borderRadius: 4, border: "1px solid #ffffff15", background: "#0c0c1a", color: "#aaa", fontSize: 10, outline: "none" }}>
+              <option value="">Recycle</option>
+              {[0,1,2,3,4].map(function(v) { return <option key={v} value={v}>{v}</option>; })}
+            </select>
           </div>
           {/* Card list */}
           <div style={{ flex: 1, overflow: "auto", padding: "6px 8px" }}>
@@ -1122,9 +1136,10 @@ function RiftboundGame() {
                 {dbDomains.map(function(dom) {
                   var cnt = dbRunes.filter(function(r) { return r === dom; }).length;
                   var dc = DOM[dom] || DOM.Colorless;
-                  return <div key={dom} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px" }}>
-                    <span style={{ color: dc.c, fontSize: 14 }}>{dc.i}</span>
-                    <span style={{ color: dc.c, fontSize: 12, fontWeight: 700, fontFamily: "Cinzel,serif", flex: 1 }}>{dom}</span>
+                  var runeImg = CI[dom + " Rune"] ? imgSrc(CI[dom + " Rune"]) : "";
+                  return <div key={dom} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px" }}>
+                    {runeImg ? <img src={runeImg} style={{ width: 40, height: 56, objectFit: "fill", borderRadius: 4, border: "1.5px solid " + dc.c + "44" }} /> : <span style={{ color: dc.c, fontSize: 14 }}>{dc.i}</span>}
+                    <span style={{ color: dc.c, fontSize: 14, fontWeight: 700, fontFamily: "Cinzel,serif", flex: 1 }}>{dom}</span>
                     <button onClick={function() { if (dbRunes.length < 12) setDbRunes(dbRunes.concat([dom])); }} disabled={dbRunes.length >= 12} style={{ width: 24, height: 24, borderRadius: "50%", border: "1px solid " + dc.c + "44", background: dc.c + "15", color: dc.c, fontSize: 14, fontWeight: 900, cursor: dbRunes.length >= 12 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
                     <span style={{ fontSize: 14, fontWeight: 900, color: cnt > 0 ? dc.c : "#444", minWidth: 20, textAlign: "center" }}>{cnt}</span>
                     <button onClick={function() { var idx = dbRunes.indexOf(dom); if (idx >= 0) { var nr = dbRunes.slice(); nr.splice(idx, 1); setDbRunes(nr); } }} disabled={cnt === 0} style={{ width: 24, height: 24, borderRadius: "50%", border: "1px solid " + dc.c + "44", background: dc.c + "15", color: dc.c, fontSize: 14, fontWeight: 900, cursor: cnt === 0 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
@@ -1137,19 +1152,21 @@ function RiftboundGame() {
               var isLegendPicked = dbSection === "legend" && dbLegend;
               var isChampPicked = dbSection === "champion" && dbChamp;
               var count = cardCounts[c.n] || 0;
-              var maxed = dbSection === "main" && count >= 3;
+              var maxed = (dbSection === "main" && count >= 3) || (dbSection === "main" && dbCards.length >= 39);
               var disabled = (dbSection === "legend" && isLegendPicked) || (dbSection === "champion" && isChampPicked) || (dbSection === "battlefield" && dbBfs.length >= 3) || maxed;
               var selected = (dbSection === "legend" && dbLegend === c.n) || (dbSection === "champion" && dbChamp === c.n) || (dbSection === "battlefield" && dbBfs.indexOf(c.n) >= 0);
               var dc = DOM[c.d] || DOM.Colorless;
               var cImg = CI[c.n] ? imgSrc(CI[c.n]) : (PA[c.n] ? PA_CDN + PA[c.n] + ".webp" : "");
+              var isBfCard = c.t === "Battlefield";
+              var isLandscape = isBfCard && cImg && (cImg.indexOf("1039x744") > -1 || cImg.indexOf("1038x744") > -1);
               return <div key={c.n} onClick={disabled && !selected ? undefined : function() {
                 if (dbSection === "legend") { var newLeg = dbLegend === c.n ? null : c.n; setDbLegend(newLeg); if (newLeg && newLeg !== dbLegend) { setDbChamp(null); setDbCards([]); setDbRunes([]); setDbSection("champion"); } }
                 else if (dbSection === "champion") { setDbChamp(dbChamp === c.n ? null : c.n); }
                 else if (dbSection === "battlefield") { if (dbBfs.indexOf(c.n) >= 0) { setDbBfs(dbBfs.filter(function(b) { return b !== c.n; })); } else if (dbBfs.length < 3) { setDbBfs(dbBfs.concat([c.n])); } }
                 else if (dbSection === "main") { if (!maxed) setDbCards(dbCards.concat([c.n])); }
               }} style={{ borderRadius: 6, border: selected ? "2px solid " + dc.c : "2px solid transparent", boxShadow: selected ? "0 0 10px " + dc.c + "44" : "none", cursor: disabled && !selected ? "not-allowed" : "pointer", opacity: disabled && !selected ? 0.3 : 1, transition: "all 0.15s ease", position: "relative", overflow: "hidden" }}>
-                {cImg ? <img src={cImg} style={{ width: "100%", aspectRatio: "5/7", objectFit: "fill", display: "block", borderRadius: 4 }} /> : <div style={{ width: "100%", aspectRatio: "5/7", background: "linear-gradient(160deg," + dc.c + "15,#0a0a18)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRadius: 4, padding: 4 }}><span style={{ fontSize: 20, opacity: 0.2 }}>{dc.i}</span><span style={{ fontSize: 9, color: dc.c, textAlign: "center", fontWeight: 700 }}>{c.n}</span></div>}
-                {dbSection === "main" && count > 0 && <div style={{ position: "absolute", top: 3, right: 3, background: count >= 3 ? "#DC2626" : "#333", color: "#fff", borderRadius: 8, minWidth: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900, boxShadow: "0 1px 4px #000a" }}>×{count}</div>}
+                {cImg ? <img src={cImg} style={isBfCard ? { width: "100%", aspectRatio: isLandscape ? "7/5" : "5/7", objectFit: "fill", display: "block", borderRadius: 4, transform: isLandscape ? "none" : "rotate(90deg) scale(0.71)", transformOrigin: "center" } : { width: "100%", aspectRatio: "5/7", objectFit: "fill", display: "block", borderRadius: 4 }} /> : <div style={{ width: "100%", aspectRatio: isBfCard ? "7/5" : "5/7", background: "linear-gradient(160deg," + dc.c + "15,#0a0a18)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRadius: 4, padding: 4 }}><span style={{ fontSize: 20, opacity: 0.2 }}>{dc.i}</span><span style={{ fontSize: 9, color: dc.c, textAlign: "center", fontWeight: 700 }}>{c.n}</span></div>}
+                {dbSection === "main" && count > 0 && <div style={{ position: "absolute", top: 3, right: 3, display: "flex", gap: 2, zIndex: 2 }}><div style={{ background: count >= 3 ? "#DC2626" : "#333", color: "#fff", borderRadius: 8, minWidth: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900, boxShadow: "0 1px 4px #000a" }}>×{count}</div><button onClick={function(e) { e.stopPropagation(); var idx = dbCards.indexOf(c.n); if (idx >= 0) { var nc = dbCards.slice(); nc.splice(idx, 1); setDbCards(nc); } }} style={{ background: "#DC2626", color: "#fff", borderRadius: 8, width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, border: "none", cursor: "pointer", boxShadow: "0 1px 4px #000a" }}>−</button></div>}
                 <div style={{ padding: "3px 4px", fontSize: 9, color: "#aaa", textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", background: "#0a0a18" }}>{c.n}</div>
               </div>;
             })}
