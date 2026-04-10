@@ -138,8 +138,7 @@ var findCard=function(n){return DB.find(function(c){return c.n===n;});};
 var uid=function(){return Math.random().toString(36).slice(2,9);};
 var shuffle=function(a){var b=a.slice();for(var i=b.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=b[i];b[i]=b[j];b[j]=t;}return b;};
 var mkC=function(n){var c=findCard(n);if(!c)return null;var img=CI[c.n]||null;if(!img&&PA[c.n]){img=PA_CDN+PA[c.n]+".webp";}
-var rc=[];if(c.e&&c.e>0&&c.d&&c.d!=="Colorless"&&(c.t==="Unit"||c.t==="Champion")){rc=[c.d];}
-return{name:c.n,type:c.t,domain:c.d,domains:c.ds,energy:c.e,might:c.m,keywords:c.kw,text:c.tx,img:img,rc:rc,uid:uid(),exhausted:false,damage:0,tempMight:0,stunned:false,counter:0,gear:[]};};
+return{name:c.n,type:c.t,domain:c.d,domains:c.ds,energy:c.e,might:c.m,keywords:c.kw,text:c.tx,img:img,rc:[],uid:uid(),exhausted:false,damage:0,tempMight:0,stunned:false,counter:0,gear:[]};};
 </script>
 <script type="text/babel">
 var useState=React.useState;var useCallback=React.useCallback;var useEffect=React.useEffect;var useRef=React.useRef;
