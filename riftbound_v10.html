@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rift Nexus - League of Legends TCG</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:wght@400;600;700&family=Playfair+Display:wght@400;600;700&family=Marcellus&family=Spectral:wght@400;600;700&family=Crimson+Pro:wght@400;600;700&family=EB+Garamond:wght@400;600;700&family=Libre+Baskerville:wght@400;700&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
@@ -1094,6 +1094,32 @@ function RiftboundGame() {
             <button onClick={function(e) { e.stopPropagation(); deleteDeck(deck._id); }} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid #ff444444", background: "transparent", color: "#ff666688", cursor: "pointer", fontSize: 10, fontFamily: "Cinzel,serif" }}>Delete</button>
           </div>;
         })}
+      </div>
+      {/* Font sampler */}
+      <div style={{ marginTop: 30, width: "100%", maxWidth: 600 }}>
+        <div style={{ fontSize: 11, color: "#555", textAlign: "center", marginBottom: 10, fontFamily: "Inter,sans-serif" }}>Font Sampler — click to preview</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {[
+            { name: "Cinzel", family: "'Cinzel',serif", note: "Current" },
+            { name: "Cinzel (weight 700)", family: "'Cinzel',serif", weight: 700, note: "Current lighter" },
+            { name: "Cormorant Garamond", family: "'Cormorant Garamond',serif", note: "Elegant, sharp" },
+            { name: "Playfair Display", family: "'Playfair Display',serif", note: "Classic, high contrast" },
+            { name: "Marcellus", family: "'Marcellus',serif", note: "Clean Roman" },
+            { name: "Spectral", family: "'Spectral',serif", note: "Modern serif, crisp" },
+            { name: "Crimson Pro", family: "'Crimson Pro',serif", note: "Book-style, readable" },
+            { name: "EB Garamond", family: "'EB Garamond',serif", note: "Classic Garamond" },
+            { name: "Libre Baskerville", family: "'Libre Baskerville',serif", note: "Sturdy, traditional" }
+          ].map(function(f) {
+            return <div key={f.name} style={{ display: "flex", alignItems: "center", padding: "8px 14px", borderRadius: 6, border: "1px solid #ffffff15", background: "#0c0c1a", gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: f.family, fontWeight: f.weight || 900, fontSize: 16, color: "#FFD700", letterSpacing: 2 }}>RIFT NEXUS</div>
+                <div style={{ fontFamily: f.family, fontWeight: f.weight || 700, fontSize: 13, color: "#ddd", marginTop: 2 }}>My Decks — Pass Priority</div>
+                <div style={{ fontFamily: f.family, fontWeight: f.weight || 700, fontSize: 10, color: "#888", marginTop: 1 }}>Turn 3 · SHOWDOWN · End Turn</div>
+              </div>
+              <div style={{ fontSize: 9, color: "#666", fontFamily: "Inter,sans-serif", textAlign: "right", flexShrink: 0 }}>{f.name}<br/><span style={{ color: "#555" }}>{f.note}</span></div>
+            </div>;
+          })}
+        </div>
       </div>
     </div>
     );
