@@ -762,6 +762,20 @@ function RiftboundGame() {
     }
   }, [bfs, sd]);
 
+  // Load saved decks for deck builder
+  useEffect(function() {
+    if (!authUser || screen !== "deckbuilder") return;
+    var ref = fbDb.ref("users/" + authUser.uid + "/decks");
+    var handler = ref.on("value", function(snap) {
+      var val = snap.val();
+      if (!val) { setDbSavedDecks([]); return; }
+      var arr = Object.keys(val).map(function(k) { return Object.assign({}, val[k], { _id: k }); });
+      arr.sort(function(a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
+      setDbSavedDecks(arr);
+    });
+    return function() { ref.off("value", handler); };
+  }, [authUser, screen]);
+
   var isOnlineGame = lobbyType === "host" || lobbyType === "join";
   var viewSlot = isOnlineGame ? mySlot : act;
   var cur = ps[act] || null; // Active player's data (used by all game logic)
@@ -1042,20 +1056,6 @@ function RiftboundGame() {
   }
 
   if (screen === "pc") { setScreen("mode"); return null; }
-
-  // Load saved decks (must be outside conditional)
-  useEffect(function() {
-    if (!authUser || screen !== "deckbuilder") return;
-    var ref = fbDb.ref("users/" + authUser.uid + "/decks");
-    var handler = ref.on("value", function(snap) {
-      var val = snap.val();
-      if (!val) { setDbSavedDecks([]); return; }
-      var arr = Object.keys(val).map(function(k) { return Object.assign({}, val[k], { _id: k }); });
-      arr.sort(function(a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
-      setDbSavedDecks(arr);
-    });
-    return function() { ref.off("value", handler); };
-  }, [authUser, screen]);
 
   if (screen === "deckbuilder" && dbView === "list") {
     function loadDeck(deck) {
