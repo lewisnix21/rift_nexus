@@ -1066,12 +1066,6 @@ function RiftboundGame() {
     dbCards.forEach(function(n) { cardCounts[n] = (cardCounts[n] || 0) + 1; });
     var mainDeckCards = dbUnits.concat(dbSpells).concat(dbGear).sort(function(a, b) { return a.n.localeCompare(b.n); });
 
-    // Collect unique keywords and types for filter dropdowns
-    var allKws = {}; var allTypes = {};
-    sectionCards.forEach(function(c) { if (c.kw) c.kw.forEach(function(k) { allKws[k] = true; }); allTypes[c.t] = true; });
-    var kwList = Object.keys(allKws).sort();
-    var typeList = Object.keys(allTypes).sort();
-
     // Search + filters
     var searchLower = dbSearch.toLowerCase().trim();
     function matchesFilters(c) {
@@ -1089,6 +1083,12 @@ function RiftboundGame() {
     else if (dbSection === "main") sectionCards = mainDeckCards;
     else if (dbSection === "battlefield") sectionCards = dbBattlefields;
     else if (dbSection === "runes") sectionCards = [];
+
+    // Collect unique keywords and types for filter dropdowns
+    var allKws = {}; var allTypes = {};
+    sectionCards.forEach(function(c) { if (c.kw) c.kw.forEach(function(k) { allKws[k] = true; }); allTypes[c.t] = true; });
+    var kwList = Object.keys(allKws).sort();
+    var typeList = Object.keys(allTypes).sort();
 
     var filteredCards = sectionCards.filter(matchesFilters);
     var sectionCounts = { legend: dbLegends.length, champion: dbChamps.length, main: mainDeckCards.length, battlefield: dbBattlefields.length, runes: dbDomains.length };
