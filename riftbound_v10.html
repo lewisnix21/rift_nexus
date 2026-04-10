@@ -826,14 +826,14 @@ function RiftboundGame() {
       <div style={{ position: "absolute", top: 12, right: 16, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         {authUser ? <>
-          <span style={{ fontSize: 12, color: "#4ADE80", fontFamily: "Spectral,serif", fontWeight: 700 }}>{authUser.displayName || authUser.email}</span>
-          <button onClick={function() { signOutUser(function() { setAuthUser(null); }); }} style={{ padding: "3px 10px", borderRadius: 4, border: "1px solid #ff444444", background: "transparent", color: "#ff666688", cursor: "pointer", fontSize: 10, fontFamily: "Spectral,serif" }}>Log Out</button>
+          <span style={{ fontSize: 15, color: "#4ADE80", fontFamily: "Spectral,serif", fontWeight: 700 }}>{authUser.displayName || authUser.email}</span>
+          <button onClick={function() { signOutUser(function() { setAuthUser(null); }); }} style={{ padding: "5px 14px", borderRadius: 5, border: "1px solid #ff444455", background: "transparent", color: "#ff6666aa", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif" }}>Log Out</button>
         </> : <>
-          <button onClick={function() { setAuthScreen("login"); setAuthErr(""); }} style={{ padding: "3px 10px", borderRadius: 4, border: "1px solid #FFD70044", background: "transparent", color: "#FFD700aa", cursor: "pointer", fontSize: 10, fontFamily: "Spectral,serif", fontWeight: 700 }}>Sign In</button>
-          <button onClick={function() { setAuthScreen("register"); setAuthErr(""); }} style={{ padding: "3px 10px", borderRadius: 4, border: "1px solid #4ADE8044", background: "transparent", color: "#4ADE80aa", cursor: "pointer", fontSize: 10, fontFamily: "Spectral,serif", fontWeight: 700 }}>Create Account</button>
+          <button onClick={function() { setAuthScreen("login"); setAuthErr(""); }} style={{ padding: "5px 14px", borderRadius: 5, border: "1px solid #FFD70055", background: "transparent", color: "#FFD700aa", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif", fontWeight: 700 }}>Sign In</button>
+          <button onClick={function() { setAuthScreen("register"); setAuthErr(""); }} style={{ padding: "5px 14px", borderRadius: 5, border: "1px solid #4ADE8055", background: "transparent", color: "#4ADE80aa", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif", fontWeight: 700 }}>Create Account</button>
         </>}
         </div>
-        {authUser && <button onClick={function() { setDbView("list"); setScreen("deckbuilder"); }} style={{ padding: "3px 10px", borderRadius: 4, border: "1px solid #8B5CF644", background: "transparent", color: "#8B5CF6aa", cursor: "pointer", fontSize: 10, fontFamily: "Spectral,serif", fontWeight: 700 }}>My Decks</button>}
+        {authUser && <button onClick={function() { setDbView("list"); setScreen("deckbuilder"); }} style={{ padding: "5px 14px", borderRadius: 5, border: "1px solid #8B5CF655", background: "transparent", color: "#8B5CF6aa", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif", fontWeight: 700 }}>My Decks</button>}
       </div>
       <h1 style={{ fontSize: 48, letterSpacing: 6, fontFamily: "Spectral,serif", fontWeight: 700, background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textAlign: "center" }}>RIFT NEXUS</h1>
       <p style={{ color: "#666", fontSize: 14, marginTop: -12, textAlign: "center" }}>League of Legends TCG</p>
@@ -878,11 +878,11 @@ function RiftboundGame() {
         </div>
       </div>
 
-      {/* Step 2: Game mode (host and test only) */}
-      {(lobbyType === "host" || lobbyType === "test") && <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 8 }}>
+      {/* Step 2: Game mode (host only) */}
+      {lobbyType === "host" && <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 8 }}>
         <h3 style={{ fontSize: 12, fontFamily: "Spectral,serif", color: "#888", letterSpacing: 2 }}>GAME TYPE</h3>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
-          {modes.filter(function(m) { return lobbyType === "test" || !m.quick; }).map(function(mode) {
+          {modes.filter(function(m) { return !m.quick; }).map(function(mode) {
             var sel2 = lobbyMode && lobbyMode.name === mode.name;
             var isAvail = mode.name === "Normal" || mode.quick;
             return <button key={mode.name} onClick={isAvail ? function() { setLobbyMode(mode); setDp({}); } : undefined} style={{ padding: "12px 22px", borderRadius: 8, border: "2px solid " + (sel2 ? "#FFD700" : isAvail ? "#FFD70044" : "#ffffff12"), background: sel2 ? "#FFD70020" : isAvail ? "#FFD70008" : "transparent", color: sel2 ? "#FFD700" : isAvail ? "#FFD700aa" : "#ffffff25", cursor: isAvail ? "pointer" : "not-allowed", fontSize: 15, fontWeight: 800, minWidth: 110, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, transition: "all 0.15s ease", opacity: isAvail ? 1 : 0.4 }}><span>{mode.name}</span><span style={{ fontSize: 10, fontWeight: 400, color: sel2 ? "#FFD700aa" : isAvail ? "#FFD70066" : "#ffffff15" }}>{isAvail ? mode.sub : "Coming Soon"}</span></button>;
@@ -890,82 +890,6 @@ function RiftboundGame() {
         </div>
       </div>}
 
-      {/* Step 3: Deck selector (test only, skip for Quick Start) */}
-      {lobbyType === "test" && !(lobbyMode && lobbyMode.quick) && <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: "100%", maxWidth: 960 }}>
-        <h3 style={{ fontSize: 12, fontFamily: "Spectral,serif", color: "#888", letterSpacing: 2 }}>SELECT DECKS</h3>
-        <div style={{ display: "flex", gap: 6, marginBottom: 4, justifyContent: "center" }}>
-          <button onClick={function() { setDeckTab("precons"); }} style={{ padding: "4px 14px", borderRadius: 5, border: "2px solid " + (deckTab === "precons" ? "#FFD700" : "#FFD70055"), background: deckTab === "precons" ? "#FFD70020" : "#FFD70008", color: deckTab === "precons" ? "#FFD700" : "#FFD700aa", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Precons</button>
-          <button onClick={authUser && dbSavedDecks.length > 0 ? function() { setDeckTab(deckTab === "mydecks" ? null : "mydecks"); } : undefined} style={{ padding: "4px 14px", borderRadius: 5, border: "2px solid " + (deckTab === "mydecks" ? "#8B5CF6" : authUser && dbSavedDecks.length > 0 ? "#8B5CF655" : "#ffffff25"), background: deckTab === "mydecks" ? "#8B5CF620" : authUser && dbSavedDecks.length > 0 ? "#8B5CF608" : "#ffffff06", color: deckTab === "mydecks" ? "#8B5CF6" : authUser && dbSavedDecks.length > 0 ? "#8B5CF6aa" : "#ffffff50", cursor: authUser && dbSavedDecks.length > 0 ? "pointer" : "not-allowed", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Your Decks{authUser && dbSavedDecks.length > 0 ? " (" + dbSavedDecks.length + ")" : ""}</button>
-        </div>
-        {deckTab === "precons" && <div style={{ display: "flex", gap: 20, flexWrap: "wrap", justifyContent: "center" }}>
-          {Array.from({ length: lobbyMode ? lobbyMode.pc : 2 }, function(_, pi) {
-            return (
-              <div key={pi} style={{ minWidth: 220 }}>
-                <h4 style={{ color: "#FFD700", fontSize: 13, textAlign: "center", marginBottom: 6, fontFamily: "Spectral,serif" }}>PLAYER {pi + 1}</h4>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
-                  {DNAMES.map(function(n) {
-                    var s = dp[pi] === n;
-                    var t2 = DECKS[n];
-                    var lg = findCard(t2.legend);
-                    var ds = (lg && lg.ds) ? lg.ds : [];
-                    return (
-                      <button key={n} onClick={function() { setDp(Object.assign({}, dp, { [pi]: n })); }} style={{ padding: "6px 8px", borderRadius: 5, border: s ? "2px solid #FFD700" : "1px solid #2a2a3a", background: s ? "#FFD70015" : "#0c0c1a", color: s ? "#FFD700" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 13 }}>
-                        <div style={{ fontWeight: s ? 700 : 500 }}>{n}</div>
-                        <div style={{ fontSize: 10, marginTop: 2, display: "flex", gap: 4 }}>{ds.map(function(dd) { var dc = DOM[dd] || DOM.Colorless; return <span key={dd} style={{ color: dc.c, fontWeight: 700 }}>{dc.i} {dd}</span>; })}</div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>}
-        {deckTab === "mydecks" && <div style={{ display: "flex", gap: 20, flexWrap: "wrap", justifyContent: "center" }}>
-          {Array.from({ length: lobbyMode ? lobbyMode.pc : 2 }, function(_, pi) {
-            return (
-              <div key={pi} style={{ minWidth: 220 }}>
-                <h4 style={{ color: "#8B5CF6", fontSize: 13, textAlign: "center", marginBottom: 6, fontFamily: "Spectral,serif" }}>PLAYER {pi + 1}</h4>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
-                  {dbSavedDecks.map(function(deck) {
-                    var dn = registerCustomDeck(deck);
-                    var s = dp[pi] === dn;
-                    var lc = deck.legend ? findCard(deck.legend) : null;
-                    var ds = lc && lc.ds ? lc.ds : [];
-                    return (
-                      <button key={deck._id} onClick={function() { setDp(Object.assign({}, dp, { [pi]: dn })); }} style={{ padding: "6px 8px", borderRadius: 5, border: s ? "2px solid #8B5CF6" : "1px solid #2a2a3a", background: s ? "#8B5CF615" : "#0c0c1a", color: s ? "#8B5CF6" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 13 }}>
-                        <div style={{ fontWeight: s ? 700 : 500 }}>{deck.name || "Untitled"}</div>
-                        <div style={{ fontSize: 9, marginTop: 2, display: "flex", gap: 4 }}>{ds.map(function(dd) { var dc = DOM[dd] || DOM.Colorless; return <span key={dd} style={{ color: dc.c, fontWeight: 700 }}>{dc.i} {dd}</span>; })}</div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>}
-      </div>}
-
-      {/* Test: GO button */}
-      {lobbyType === "test" && <button onClick={function() {
-        if (!lobbyMode) return;
-        if (lobbyMode.quick) {
-          setPc(2);
-          var p1 = initPlayer("Lee Sin (Calm/Body)"); var p2 = initPlayer("Garen (Body/Order)");
-          var g1 = mkC("Long Sword"); var g2 = mkC("Mask of Foresight");
-          if (g1) p1.hand.push(g1); if (g2) p1.hand.push(g2);
-          var bf1 = p1.battlefields[0]; var bf2 = p2.battlefields[0];
-          p1.chosenBf = bf1; p2.chosenBf = bf2;
-          var nps = [p1, p2]; setPs(nps);
-          var gb = [bf1, bf2].map(function(b) { return Object.assign({}, b, { controller: null, units: [[], []], uid: uid() }); });
-          setBfs(gb); setAct(0); setScreen("wait"); setTurn(1); aL("Quick start: Lee Sin vs Garen"); aL("Game on!");
-        } else {
-          var reqPicked = Object.keys(dp).length >= lobbyMode.pc;
-          if (!reqPicked) return;
-          setPc(lobbyMode.pc);
-          var nps2 = []; for (var i = 0; i < lobbyMode.pc; i++) nps2.push(initPlayer(dp[i]));
-          setPs(nps2); setScreen("bf"); setAct(0); aL("Choose Battlefields!");
-        }
-      }} disabled={!lobbyMode || (!lobbyMode.quick && Object.keys(dp).length < (lobbyMode ? lobbyMode.pc : 2))} style={{ marginTop: 8, padding: "10px 30px", borderRadius: 8, border: "2px solid #FFD700", background: (lobbyMode && (lobbyMode.quick || Object.keys(dp).length >= (lobbyMode ? lobbyMode.pc : 2))) ? "linear-gradient(135deg,#FFD70040,#FF8C0020)" : "#222", color: (lobbyMode && (lobbyMode.quick || Object.keys(dp).length >= (lobbyMode ? lobbyMode.pc : 2))) ? "#FFD700" : "#555", cursor: (lobbyMode && (lobbyMode.quick || Object.keys(dp).length >= (lobbyMode ? lobbyMode.pc : 2))) ? "pointer" : "not-allowed", fontSize: 16, fontWeight: 800, fontFamily: "Spectral,serif", letterSpacing: 2 }}>GO</button>}
 
       {/* Host: Create lobby */}
       {lobbyType === "host" && !roomCode && <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 8 }}>
