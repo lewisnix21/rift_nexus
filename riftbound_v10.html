@@ -430,6 +430,9 @@ function RiftboundGame() {
   var _dbBfs = useState([]), dbBfs = _dbBfs[0], setDbBfs = _dbBfs[1];
   var _dbRunes = useState([]), dbRunes = _dbRunes[0], setDbRunes = _dbRunes[1];
   var _dbSection = useState("legend"), dbSection = _dbSection[0], setDbSection = _dbSection[1];
+  var _dbView = useState("list"), dbView = _dbView[0], setDbView = _dbView[1];
+  var _dbSavedDecks = useState([]), dbSavedDecks = _dbSavedDecks[0], setDbSavedDecks = _dbSavedDecks[1];
+  var _dbEditId = useState(null), dbEditId = _dbEditId[0], setDbEditId = _dbEditId[1];
   var _dbSearch = useState(""), dbSearch = _dbSearch[0], setDbSearch = _dbSearch[1];
   var _dbFilterE = useState(""), dbFilterE = _dbFilterE[0], setDbFilterE = _dbFilterE[1];
   var _dbFilterRC = useState(""), dbFilterRC = _dbFilterRC[0], setDbFilterRC = _dbFilterRC[1];
@@ -1040,7 +1043,63 @@ function RiftboundGame() {
 
   if (screen === "pc") { setScreen("mode"); return null; }
 
-  if (screen === "deckbuilder") {
+  // Load saved decks (must be outside conditional)
+  useEffect(function() {
+    if (!authUser || screen !== "deckbuilder") return;
+    var ref = fbDb.ref("users/" + authUser.uid + "/decks");
+    var handler = ref.on("value", function(snap) {
+      var val = snap.val();
+      if (!val) { setDbSavedDecks([]); return; }
+      var arr = Object.keys(val).map(function(k) { return Object.assign({}, val[k], { _id: k }); });
+      arr.sort(function(a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
+      setDbSavedDecks(arr);
+    });
+    return function() { ref.off("value", handler); };
+  }, [authUser, screen]);
+
+  if (screen === "deckbuilder" && dbView === "list") {
+    function loadDeck(deck) {
+      setDbName(deck.name || ""); setDbLegend(deck.legend || null); setDbChamp(deck.champ || null);
+      setDbCards(deck.cards || []); setDbBfs(deck.bfs || []); setDbRunes(deck.runes || []);
+      setDbEditId(deck._id); setDbSection("legend"); setDbView("edit");
+    }
+    function newDeck() {
+      setDbName(""); setDbLegend(null); setDbChamp(null); setDbCards([]); setDbBfs([]); setDbRunes([]);
+      setDbEditId(null); setDbSection("legend"); setDbView("edit");
+    }
+    function deleteDeck(deckId) {
+      if (!authUser) return;
+      fbDb.ref("users/" + authUser.uid + "/decks/" + deckId).remove();
+    }
+
+    return (
+    <div style={{ minHeight: "100vh", background: "#080818", color: "#ddd", fontFamily: "sans-serif", display: "flex", flexDirection: "column", alignItems: "center", overflow: "auto", padding: "20px 20px 40px" }}>
+      <button onClick={function() { setScreen("mode"); }} style={{ position: "absolute", top: 12, left: 16, padding: "4px 12px", borderRadius: 4, border: "1px solid #ffffff20", background: "transparent", color: "#888", cursor: "pointer", fontSize: 11, fontFamily: "Cinzel,serif" }}>← Back</button>
+      <h2 style={{ fontSize: 24, fontFamily: "Cinzel,serif", fontWeight: 900, background: "linear-gradient(135deg,#8B5CF6,#A78BFA)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 16 }}>MY DECKS</h2>
+      <button onClick={newDeck} style={{ padding: "10px 28px", borderRadius: 6, border: "2px solid #4ADE80", background: "rgba(74,222,128,0.1)", color: "#4ADE80", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Cinzel,serif", marginBottom: 20 }}>+ New Deck</button>
+      {dbSavedDecks.length === 0 && <p style={{ color: "#555", fontSize: 13, fontFamily: "Cinzel,serif" }}>No saved decks yet</p>}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%", maxWidth: 600 }}>
+        {dbSavedDecks.map(function(deck) {
+          var legendImg = deck.legend && CI[deck.legend] ? imgSrc(CI[deck.legend]) : (deck.legend && PA[deck.legend] ? PA_CDN + PA[deck.legend] + ".webp" : "");
+          var lc = deck.legend ? findCard(deck.legend) : null;
+          var dc = lc ? (DOM[lc.d] || DOM.Colorless) : DOM.Colorless;
+          return <div key={deck._id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 8, border: "1px solid #ffffff15", background: "#0c0c1a", cursor: "pointer" }} onClick={function() { loadDeck(deck); }}>
+            {legendImg ? <img src={legendImg} style={{ width: 50, height: 70, objectFit: "fill", borderRadius: 4, border: "1.5px solid " + dc.c + "44", flexShrink: 0 }} /> : <div style={{ width: 50, height: 70, borderRadius: 4, border: "1px dashed #ffffff20", display: "flex", alignItems: "center", justifyContent: "center", color: "#444", fontSize: 8, flexShrink: 0 }}>?</div>}
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#ddd", fontFamily: "Cinzel,serif" }}>{deck.name || "Untitled"}</div>
+              <div style={{ fontSize: 10, color: "#888", marginTop: 2 }}>
+                {deck.legend || "No legend"} {deck.champ ? " / " + deck.champ : ""} — {(deck.cards || []).length}/39 cards
+              </div>
+            </div>
+            <button onClick={function(e) { e.stopPropagation(); deleteDeck(deck._id); }} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid #ff444444", background: "transparent", color: "#ff666688", cursor: "pointer", fontSize: 10, fontFamily: "Cinzel,serif" }}>Delete</button>
+          </div>;
+        })}
+      </div>
+    </div>
+    );
+  }
+
+  if (screen === "deckbuilder" && dbView === "edit") {
     var allCards = DB.slice().sort(function(a, b) { return a.n.localeCompare(b.n); });
     var dbLegends = allCards.filter(function(c) { return c.t === "Legend"; });
     // Get legend's domains for filtering
@@ -1097,16 +1156,20 @@ function RiftboundGame() {
     function dbSaveDeck() {
       if (!authUser || !dbName.trim() || !dbLegend) return;
       var deckData = { name: dbName.trim(), legend: dbLegend, champ: dbChamp, cards: dbCards, bfs: dbBfs, runes: dbRunes, updatedAt: Date.now() };
-      fbDb.ref("users/" + authUser.uid + "/decks").push(deckData);
+      if (dbEditId) {
+        fbDb.ref("users/" + authUser.uid + "/decks/" + dbEditId).set(deckData);
+      } else {
+        fbDb.ref("users/" + authUser.uid + "/decks").push(deckData);
+      }
       aL("Deck saved: " + dbName.trim());
-      setScreen("mode");
+      setDbView("list");
     }
 
     return (
     <div style={{ minHeight: "100vh", background: "#080818", color: "#ddd", fontFamily: "sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderBottom: "1px solid #ffffff10", flexShrink: 0 }}>
-        <button onClick={function() { setScreen("mode"); }} style={{ padding: "4px 12px", borderRadius: 4, border: "1px solid #ffffff20", background: "transparent", color: "#888", cursor: "pointer", fontSize: 11, fontFamily: "Cinzel,serif" }}>← Back</button>
+        <button onClick={function() { setDbView("list"); }} style={{ padding: "4px 12px", borderRadius: 4, border: "1px solid #ffffff20", background: "transparent", color: "#888", cursor: "pointer", fontSize: 11, fontFamily: "Cinzel,serif" }}>← Back to Decks</button>
         <h2 style={{ fontSize: 18, fontFamily: "Cinzel,serif", fontWeight: 900, background: "linear-gradient(135deg,#8B5CF6,#A78BFA)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>DECK BUILDER</h2>
         <div style={{ display: "flex", gap: 6 }}>
           <button onClick={dbResetDeck} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid #ff444444", background: "transparent", color: "#ff666688", cursor: "pointer", fontSize: 10, fontFamily: "Cinzel,serif" }}>Clear</button>
