@@ -6,6 +6,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script>
 var firebaseConfig = {
   apiKey: "AIzaSyAf5IPeHKuG-mVjcwNElgqVyi7FJsRKMSs",
@@ -18,9 +19,64 @@ var firebaseConfig = {
 };
 var fbApp = firebase.initializeApp(firebaseConfig);
 var fbDb = firebase.database();
-var myUid = localStorage.getItem("riftNexusUid") || "p_" + Math.random().toString(36).substr(2, 9);
-localStorage.setItem("riftNexusUid", myUid);
+var fbAuth = firebase.auth();
+var _guestUid = localStorage.getItem("riftNexusUid") || "p_" + Math.random().toString(36).substr(2, 9);
+localStorage.setItem("riftNexusUid", _guestUid);
+var myUid = _guestUid;
 var myName = localStorage.getItem("riftNexusName") || "";
+var _authReady = false;
+var _onAuthChange = null;
+
+function signUpEmail(email, password, displayName, cb, errCb) {
+  fbAuth.createUserWithEmailAndPassword(email, password).then(function(cred) {
+    return cred.user.updateProfile({ displayName: displayName }).then(function() {
+      fbDb.ref("users/" + cred.user.uid).set({ name: displayName, email: email, createdAt: Date.now(), lastSeen: Date.now(), gamesPlayed: 0, gamesWon: 0 });
+      if (cb) cb(cred.user);
+    });
+  }).catch(function(err) { if (errCb) errCb(err.message); });
+}
+
+function signInEmail(email, password, cb, errCb) {
+  fbAuth.signInWithEmailAndPassword(email, password).then(function(cred) {
+    fbDb.ref("users/" + cred.user.uid + "/lastSeen").set(Date.now());
+    if (cb) cb(cred.user);
+  }).catch(function(err) { if (errCb) errCb(err.message); });
+}
+
+function signInGoogle(cb, errCb) {
+  var provider = new firebase.auth.GoogleAuthProvider();
+  fbAuth.signInWithPopup(provider).then(function(result) {
+    var user = result.user;
+    fbDb.ref("users/" + user.uid).once("value", function(snap) {
+      if (!snap.val()) {
+        fbDb.ref("users/" + user.uid).set({ name: user.displayName || "", email: user.email || "", createdAt: Date.now(), lastSeen: Date.now(), gamesPlayed: 0, gamesWon: 0 });
+      } else {
+        fbDb.ref("users/" + user.uid + "/lastSeen").set(Date.now());
+      }
+    });
+    if (cb) cb(user);
+  }).catch(function(err) { if (errCb) errCb(err.message); });
+}
+
+function signOutUser(cb) {
+  fbAuth.signOut().then(function() {
+    myUid = _guestUid;
+    myName = localStorage.getItem("riftNexusName") || "";
+    if (cb) cb();
+  });
+}
+
+fbAuth.onAuthStateChanged(function(user) {
+  if (user) {
+    myUid = user.uid;
+    myName = user.displayName || localStorage.getItem("riftNexusName") || "";
+  } else {
+    myUid = _guestUid;
+    myName = localStorage.getItem("riftNexusName") || "";
+  }
+  _authReady = true;
+  if (_onAuthChange) _onAuthChange(user);
+});
 
 function genRoomCode() { var chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; var code = ""; for (var i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)]; return code; }
 
@@ -302,6 +358,22 @@ function initPlayer(dk) {
 
 
 function RiftboundGame() {
+  var _authUser = useState(fbAuth.currentUser || null), authUser = _authUser[0], setAuthUser = _authUser[1];
+  var _authScreen = useState(null), authScreen = _authScreen[0], setAuthScreen = _authScreen[1];
+  var _authErr = useState(""), authErr = _authErr[0], setAuthErr = _authErr[1];
+  var _authLoading = useState(false), authLoading = _authLoading[0], setAuthLoading = _authLoading[1];
+  var _regName = useState(""), regName = _regName[0], setRegName = _regName[1];
+  var _regEmail = useState(""), regEmail = _regEmail[0], setRegEmail = _regEmail[1];
+  var _regPw = useState(""), regPw = _regPw[0], setRegPw = _regPw[1];
+  var _regPw2 = useState(""), regPw2 = _regPw2[0], setRegPw2 = _regPw2[1];
+  var _loginEmail = useState(""), loginEmail = _loginEmail[0], setLoginEmail = _loginEmail[1];
+  var _loginPw = useState(""), loginPw = _loginPw[0], setLoginPw = _loginPw[1];
+
+  useEffect(function() {
+    _onAuthChange = function(user) { setAuthUser(user || null); if (user && user.displayName) setNameInput(user.displayName); };
+    return function() { _onAuthChange = null; };
+  }, []);
+
   var _s = useState("mode"), screen = _s[0], setScreen = _s[1];
   var _pc = useState(2), pc = _pc[0], setPc = _pc[1];
   var _t = useState(1), turn = _t[0], setTurn = _t[1];
@@ -350,6 +422,7 @@ function RiftboundGame() {
   }
   var _scOwner = useState(null), showcaseOwner = _scOwner[0], setShowcaseOwner = _scOwner[1];
   var _scAccepted = useState(false), showcaseAccepted = _scAccepted[0], setShowcaseAccepted = _scAccepted[1];
+  var _deckTab = useState(null), deckTab = _deckTab[0], setDeckTab = _deckTab[1];
   var _dos = useState(false), dragOverShowcase = _dos[0], setDragOverShowcase = _dos[1];
   var _sb = useState(false), showBin = _sb[0], setShowBin = _sb[1];
   var _bs = useState([]), binSelected = _bs[0], setBinSelected = _bs[1];
@@ -713,6 +786,47 @@ function RiftboundGame() {
       <h1 style={{ fontSize: 48, letterSpacing: 6, fontFamily: "Cinzel,serif", fontWeight: 900, background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textAlign: "center" }}>RIFT NEXUS</h1>
       <p style={{ color: "#666", fontSize: 14, marginTop: -12, textAlign: "center" }}>League of Legends TCG</p>
 
+      {/* Account bar */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+        {authUser ? <>
+          <span style={{ fontSize: 12, color: "#4ADE80", fontFamily: "Cinzel,serif", fontWeight: 700 }}>{authUser.displayName || authUser.email}</span>
+          <button onClick={function() { signOutUser(function() { setAuthUser(null); }); }} style={{ padding: "3px 10px", borderRadius: 4, border: "1px solid #ff444444", background: "transparent", color: "#ff666688", cursor: "pointer", fontSize: 10, fontFamily: "Cinzel,serif" }}>Sign Out</button>
+        </> : <>
+          <span style={{ fontSize: 10, color: "#555", fontFamily: "Cinzel,serif" }}>Playing as guest</span>
+          <button onClick={function() { setAuthScreen("login"); setAuthErr(""); }} style={{ padding: "3px 10px", borderRadius: 4, border: "1px solid #FFD70044", background: "transparent", color: "#FFD700aa", cursor: "pointer", fontSize: 10, fontFamily: "Cinzel,serif", fontWeight: 700 }}>Sign In</button>
+          <button onClick={function() { setAuthScreen("register"); setAuthErr(""); }} style={{ padding: "3px 10px", borderRadius: 4, border: "1px solid #4ADE8044", background: "transparent", color: "#4ADE80aa", cursor: "pointer", fontSize: 10, fontFamily: "Cinzel,serif", fontWeight: 700 }}>Create Account</button>
+        </>}
+      </div>
+
+      {/* Auth modal */}
+      {authScreen && <div onClick={function(e) { if (e.target === e.currentTarget) setAuthScreen(null); }} style={{ position: "fixed", inset: 0, background: "#000a", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1300, cursor: "pointer" }}>
+        <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "linear-gradient(160deg, #1a1a3a, #12122a)", borderRadius: 10, padding: "24px 32px", border: "2px solid #FFD70044", boxShadow: "0 8px 40px #0008", maxWidth: 380, width: "100%", cursor: "default" }}>
+          <div style={{ display: "flex", gap: 0, marginBottom: 16 }}>
+            <button onClick={function() { setAuthScreen("login"); setAuthErr(""); }} style={{ flex: 1, padding: "8px 0", border: "none", borderBottom: authScreen === "login" ? "2px solid #FFD700" : "2px solid transparent", background: "transparent", color: authScreen === "login" ? "#FFD700" : "#666", fontSize: 14, fontFamily: "Cinzel,serif", fontWeight: 700, cursor: "pointer" }}>Sign In</button>
+            <button onClick={function() { setAuthScreen("register"); setAuthErr(""); }} style={{ flex: 1, padding: "8px 0", border: "none", borderBottom: authScreen === "register" ? "2px solid #4ADE80" : "2px solid transparent", background: "transparent", color: authScreen === "register" ? "#4ADE80" : "#666", fontSize: 14, fontFamily: "Cinzel,serif", fontWeight: 700, cursor: "pointer" }}>Create Account</button>
+          </div>
+          {authErr && <div style={{ padding: "6px 10px", borderRadius: 4, border: "1px solid #ff444466", background: "rgba(255,50,50,0.08)", color: "#ff6666", fontSize: 11, marginBottom: 10, textAlign: "center" }}>{authErr}</div>}
+          {authScreen === "login" && <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <input value={loginEmail} onChange={function(e) { setLoginEmail(e.target.value); }} placeholder="Email" type="email" style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #ffffff20", background: "#ffffff08", color: "#ddd", fontSize: 13, outline: "none" }} />
+            <input value={loginPw} onChange={function(e) { setLoginPw(e.target.value); }} placeholder="Password" type="password" onKeyDown={function(e) { if (e.key === "Enter") { setAuthLoading(true); setAuthErr(""); signInEmail(loginEmail, loginPw, function() { setAuthScreen(null); setAuthLoading(false); }, function(err) { setAuthErr(err); setAuthLoading(false); }); } }} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #ffffff20", background: "#ffffff08", color: "#ddd", fontSize: 13, outline: "none" }} />
+            <button disabled={authLoading} onClick={function() { setAuthLoading(true); setAuthErr(""); signInEmail(loginEmail, loginPw, function() { setAuthScreen(null); setAuthLoading(false); }, function(err) { setAuthErr(err); setAuthLoading(false); }); }} style={{ padding: "10px", borderRadius: 6, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0020)", color: "#FFD700", cursor: authLoading ? "wait" : "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Cinzel,serif" }}>{authLoading ? "Signing in..." : "Sign In"}</button>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "4px 0" }}><div style={{ flex: 1, height: 1, background: "#ffffff15" }} /><span style={{ fontSize: 10, color: "#555" }}>or</span><div style={{ flex: 1, height: 1, background: "#ffffff15" }} /></div>
+            <button disabled={authLoading} onClick={function() { setAuthLoading(true); setAuthErr(""); signInGoogle(function() { setAuthScreen(null); setAuthLoading(false); }, function(err) { setAuthErr(err); setAuthLoading(false); }); }} style={{ padding: "8px", borderRadius: 6, border: "1px solid #ffffff20", background: "#ffffff08", color: "#ddd", cursor: authLoading ? "wait" : "pointer", fontSize: 12, fontFamily: "Inter,sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#4285F4" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#34A853" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#EA4335" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+              Sign in with Google
+            </button>
+          </div>}
+          {authScreen === "register" && <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <input value={regName} onChange={function(e) { setRegName(e.target.value); }} placeholder="Display Name" style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #ffffff20", background: "#ffffff08", color: "#ddd", fontSize: 13, outline: "none" }} />
+            <input value={regEmail} onChange={function(e) { setRegEmail(e.target.value); }} placeholder="Email" type="email" style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #ffffff20", background: "#ffffff08", color: "#ddd", fontSize: 13, outline: "none" }} />
+            <input value={regPw} onChange={function(e) { setRegPw(e.target.value); }} placeholder="Password" type="password" style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #ffffff20", background: "#ffffff08", color: "#ddd", fontSize: 13, outline: "none" }} />
+            <input value={regPw2} onChange={function(e) { setRegPw2(e.target.value); }} placeholder="Confirm Password" type="password" onKeyDown={function(e) { if (e.key === "Enter") { if (regPw !== regPw2) { setAuthErr("Passwords don't match"); return; } if (!regName.trim()) { setAuthErr("Display name required"); return; } setAuthLoading(true); setAuthErr(""); signUpEmail(regEmail, regPw, regName.trim(), function() { setAuthScreen(null); setAuthLoading(false); }, function(err) { setAuthErr(err); setAuthLoading(false); }); } }} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #ffffff20", background: "#ffffff08", color: "#ddd", fontSize: 13, outline: "none" }} />
+            <button disabled={authLoading} onClick={function() { if (regPw !== regPw2) { setAuthErr("Passwords don't match"); return; } if (!regName.trim()) { setAuthErr("Display name required"); return; } setAuthLoading(true); setAuthErr(""); signUpEmail(regEmail, regPw, regName.trim(), function() { setAuthScreen(null); setAuthLoading(false); }, function(err) { setAuthErr(err); setAuthLoading(false); }); }} style={{ padding: "10px", borderRadius: 6, border: "2px solid #4ADE80", background: "linear-gradient(135deg,#4ADE8040,#22C55E20)", color: "#4ADE80", cursor: authLoading ? "wait" : "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Cinzel,serif" }}>{authLoading ? "Creating..." : "Create Account"}</button>
+          </div>}
+          <div style={{ textAlign: "center", marginTop: 10 }}><button onClick={function() { setAuthScreen(null); }} style={{ border: "none", background: "transparent", color: "#555", cursor: "pointer", fontSize: 10, fontFamily: "Cinzel,serif" }}>Continue as Guest</button></div>
+        </div>
+      </div>}
+
       {/* Step 1: Lobby type */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 20 }}>
         <h3 style={{ fontSize: 12, fontFamily: "Cinzel,serif", color: "#888", letterSpacing: 2 }}>SELECT MODE</h3>
@@ -739,7 +853,11 @@ function RiftboundGame() {
       {/* Step 3: Deck selector (test only, skip for Quick Start) */}
       {lobbyType === "test" && !(lobbyMode && lobbyMode.quick) && <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: "100%", maxWidth: 800 }}>
         <h3 style={{ fontSize: 12, fontFamily: "Cinzel,serif", color: "#888", letterSpacing: 2 }}>SELECT DECKS</h3>
-        <div style={{ display: "flex", gap: 20, flexWrap: "wrap", justifyContent: "center" }}>
+        <div style={{ display: "flex", gap: 6, marginBottom: 4, justifyContent: "center" }}>
+          <button onClick={function() { setDeckTab("precons"); }} style={{ padding: "4px 14px", borderRadius: 5, border: "1.5px solid " + (deckTab === "precons" ? "#FFD700" : "#ffffff20"), background: deckTab === "precons" ? "#FFD70015" : "transparent", color: deckTab === "precons" ? "#FFD700" : "#666", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "Cinzel,serif" }}>Precons</button>
+          <button style={{ padding: "4px 14px", borderRadius: 5, border: "1.5px solid #ffffff12", background: "transparent", color: "#ffffff25", cursor: "not-allowed", fontSize: 11, fontWeight: 700, fontFamily: "Cinzel,serif", opacity: 0.4 }}>Your Decks</button>
+        </div>
+        {deckTab === "precons" && <div style={{ display: "flex", gap: 20, flexWrap: "wrap", justifyContent: "center" }}>
           {Array.from({ length: lobbyMode ? lobbyMode.pc : 2 }, function(_, pi) {
             return (
               <div key={pi} style={{ minWidth: 220 }}>
@@ -751,9 +869,9 @@ function RiftboundGame() {
                     var lg = findCard(t2.legend);
                     var ds = (lg && lg.ds) ? lg.ds : [];
                     return (
-                      <button key={n} onClick={function() { setDp(Object.assign({}, dp, { [pi]: n })); }} style={{ padding: "6px 8px", borderRadius: 5, border: s ? "2px solid #FFD700" : "1px solid #2a2a3a", background: s ? "#FFD70015" : "#0c0c1a", color: s ? "#FFD700" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 11 }}>
+                      <button key={n} onClick={function() { setDp(Object.assign({}, dp, { [pi]: n })); }} style={{ padding: "6px 8px", borderRadius: 5, border: s ? "2px solid #FFD700" : "1px solid #2a2a3a", background: s ? "#FFD70015" : "#0c0c1a", color: s ? "#FFD700" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 13 }}>
                         <div style={{ fontWeight: s ? 700 : 500 }}>{n}</div>
-                        <div style={{ fontSize: 9, marginTop: 2, display: "flex", gap: 4 }}>{ds.map(function(dd) { var dc = DOM[dd] || DOM.Colorless; return <span key={dd} style={{ color: dc.c, fontWeight: 700 }}>{dc.i} {dd}</span>; })}</div>
+                        <div style={{ fontSize: 10, marginTop: 2, display: "flex", gap: 4 }}>{ds.map(function(dd) { var dc = DOM[dd] || DOM.Colorless; return <span key={dd} style={{ color: dc.c, fontWeight: 700 }}>{dc.i} {dd}</span>; })}</div>
                       </button>
                     );
                   })}
@@ -761,7 +879,7 @@ function RiftboundGame() {
               </div>
             );
           })}
-        </div>
+        </div>}
       </div>}
 
       {/* Test: GO button */}
@@ -825,10 +943,14 @@ function RiftboundGame() {
           {Array.from({ length: Math.max(0, (lobbySettings ? lobbySettings.pc : 2) - lpArr.length) }).map(function(_, i) { return <div key={"e" + i} style={{ padding: "6px 10px", borderRadius: 5, border: "1px dashed #ffffff10" }}><span style={{ fontSize: 11, color: "#444" }}>Waiting...</span></div>; })}
         </div>
         {/* Deck selector */}
-        <div style={{ fontSize: 11, color: "#888", fontFamily: "Cinzel,serif" }}>YOUR DECK</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, width: "100%" }}>
-          {DNAMES.map(function(n) { var myDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null; var s = myDeck === n; var t2 = DECKS[n]; var lg = findCard(t2.legend); var ds = (lg && lg.ds) ? lg.ds : []; return <button key={n} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/deck").set(n); }} style={{ padding: "5px 6px", borderRadius: 4, border: s ? "2px solid #FFD700" : "1px solid #2a2a3a", background: s ? "#FFD70015" : "#0c0c1a", color: s ? "#FFD700" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 10 }}><div style={{ fontWeight: s ? 700 : 500 }}>{n}</div><div style={{ fontSize: 8, marginTop: 1, display: "flex", gap: 3 }}>{ds.map(function(dd) { var dc = DOM[dd] || DOM.Colorless; return <span key={dd} style={{ color: dc.c, fontWeight: 700 }}>{dc.i} {dd}</span>; })}</div></button>; })}
+        <div style={{ fontSize: 11, color: "#888", fontFamily: "Cinzel,serif", marginBottom: 4 }}>YOUR DECK</div>
+        <div style={{ display: "flex", gap: 6, marginBottom: 6, justifyContent: "center" }}>
+          <button onClick={function() { setDeckTab("precons"); }} style={{ padding: "4px 14px", borderRadius: 5, border: "1.5px solid " + (deckTab === "precons" ? "#FFD700" : "#ffffff20"), background: deckTab === "precons" ? "#FFD70015" : "transparent", color: deckTab === "precons" ? "#FFD700" : "#666", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "Cinzel,serif" }}>Precons</button>
+          <button style={{ padding: "4px 14px", borderRadius: 5, border: "1.5px solid #ffffff12", background: "transparent", color: "#ffffff25", cursor: "not-allowed", fontSize: 11, fontWeight: 700, fontFamily: "Cinzel,serif", opacity: 0.4 }}>Your Decks</button>
         </div>
+        {deckTab === "precons" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, width: "100%" }}>
+          {DNAMES.map(function(n) { var myDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null; var s = myDeck === n; var t2 = DECKS[n]; var lg = findCard(t2.legend); var ds = (lg && lg.ds) ? lg.ds : []; return <button key={n} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/deck").set(n); }} style={{ padding: "6px 8px", borderRadius: 4, border: s ? "2px solid #FFD700" : "1px solid #2a2a3a", background: s ? "#FFD70015" : "#0c0c1a", color: s ? "#FFD700" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 13 }}><div style={{ fontWeight: s ? 700 : 500 }}>{n}</div><div style={{ fontSize: 9, marginTop: 2, display: "flex", gap: 3 }}>{ds.map(function(dd) { var dc = DOM[dd] || DOM.Colorless; return <span key={dd} style={{ color: dc.c, fontWeight: 700 }}>{dc.i} {dd}</span>; })}</div></button>; })}
+        </div>}
         <div style={{ display: "flex", gap: 8 }}>
           <button onClick={function() {
             if (!allLobbyReady) return;
@@ -862,7 +984,7 @@ function RiftboundGame() {
           <input value={joinPw} onChange={function(e) { setJoinPw(e.target.value); }} placeholder="Password" style={{ padding: "6px 8px", borderRadius: 5, border: "1px solid #ffffff20", background: "#ffffff08", color: "#ddd", fontSize: 11, outline: "none", width: 100 }} />
           <button onClick={function() { setLobbyErr(null); joinLobby(joinCode, joinPw || null, function(code, lobby) { setRoomCode(code); setIsHost(false); setLobbySettings(lobby.settings); setMySlot(Object.keys(lobby.players || {}).length); if (_lobbyUnsub.current) _lobbyUnsub.current(); var ref = fbDb.ref("lobbies/" + code); var unsub = ref.on("value", function(snap) { var data = snap.val(); if (data) handleLobbyUpdate(data); }); _lobbyUnsub.current = function() { ref.off("value", unsub); }; }, function(err) { setLobbyErr(err); }); }} disabled={joinCode.length < 4} style={{ padding: "6px 14px", borderRadius: 5, border: "2px solid #4ADE80", background: joinCode.length >= 4 ? "rgba(74,222,128,0.12)" : "#222", color: joinCode.length >= 4 ? "#4ADE80" : "#555", cursor: joinCode.length >= 4 ? "pointer" : "not-allowed", fontSize: 12, fontWeight: 700, fontFamily: "Cinzel,serif" }}>JOIN</button>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%" }}><div style={{ flex: 1, height: 1, background: "#ffffff10" }} /><span style={{ fontSize: 10, color: "#444" }}>or browse</span><button onClick={function() { listLobbies(function(list) { setLobbyList(list); }); }} style={{ padding: "3px 10px", borderRadius: 4, border: "1px solid #4ADE8033", background: "transparent", color: "#4ADE8088", cursor: "pointer", fontSize: 12, fontFamily: "Cinzel,serif" }}>↻ Refresh</button><button onClick={function() { var newId = "p_" + Math.random().toString(36).substr(2, 9); localStorage.setItem("riftNexusUid", newId); localStorage.removeItem("riftNexusName"); window.location.reload(); }} style={{ padding: "3px 10px", borderRadius: 4, border: "1px solid #aa66ff33", background: "transparent", color: "#aa66ff66", cursor: "pointer", fontSize: 12, fontFamily: "Cinzel,serif" }}>New Identity</button><div style={{ flex: 1, height: 1, background: "#ffffff10" }} /></div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%" }}><div style={{ flex: 1, height: 1, background: "#ffffff10" }} /><span style={{ fontSize: 10, color: "#444" }}>or browse</span><button onClick={function() { listLobbies(function(list) { setLobbyList(list); }); }} style={{ padding: "3px 10px", borderRadius: 4, border: "1px solid #4ADE8033", background: "transparent", color: "#4ADE8088", cursor: "pointer", fontSize: 12, fontFamily: "Cinzel,serif" }}>↻ Refresh</button>{!authUser && <button onClick={function() { var newId = "p_" + Math.random().toString(36).substr(2, 9); localStorage.setItem("riftNexusUid", newId); localStorage.removeItem("riftNexusName"); window.location.reload(); }} style={{ padding: "3px 10px", borderRadius: 4, border: "1px solid #aa66ff33", background: "transparent", color: "#aa66ff66", cursor: "pointer", fontSize: 12, fontFamily: "Cinzel,serif" }}>New Identity</button>}<div style={{ flex: 1, height: 1, background: "#ffffff10" }} /></div>
         <div style={{ display: "flex", alignItems: "center", gap: 6, width: "100%" }}>
           <span style={{ fontSize: 10, color: "#666" }}>Filter:</span>
           <select value={lobbyFilter} onChange={function(e) { setLobbyFilter(e.target.value); }} style={{ fontSize: 10, padding: "3px 6px", borderRadius: 4, border: "1px solid #ffffff15", background: "rgba(255,255,255,0.06)", color: "#aaa", cursor: "pointer", fontFamily: "Cinzel,serif", outline: "none" }}>
@@ -889,10 +1011,14 @@ function RiftboundGame() {
         <div style={{ display: "flex", flexDirection: "column", gap: 3, width: "100%" }}>
           {lpArr.map(function(p, i) { var isMe = p.uid === myUid; return <div key={p.uid} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 8px", borderRadius: 4, border: "1px solid " + (isMe ? "#4ADE8033" : "#ffffff10") }}><span style={{ fontSize: 11, fontWeight: 700, color: isMe ? "#4ADE80" : "#aaa", flex: 1 }}>{p.name} {i === 0 ? "👑" : ""}</span><span style={{ fontSize: 10, color: p.deck ? "#4ADE80" : "#666" }}>{p.deck || "..."}</span></div>; })}
         </div>
-        <div style={{ fontSize: 10, color: "#888", fontFamily: "Cinzel,serif" }}>YOUR DECK</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, width: "100%" }}>
-          {DNAMES.map(function(n) { var myDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null; var s = myDeck === n; var t2 = DECKS[n]; var lg = findCard(t2.legend); var ds = (lg && lg.ds) ? lg.ds : []; return <button key={n} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/deck").set(n); }} style={{ padding: "5px 6px", borderRadius: 4, border: s ? "2px solid #4ADE80" : "1px solid #2a2a3a", background: s ? "#4ADE8015" : "#0c0c1a", color: s ? "#4ADE80" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 10 }}><div style={{ fontWeight: s ? 700 : 500 }}>{n}</div><div style={{ fontSize: 8, marginTop: 1, display: "flex", gap: 3 }}>{ds.map(function(dd) { var dc = DOM[dd] || DOM.Colorless; return <span key={dd} style={{ color: dc.c, fontWeight: 700 }}>{dc.i} {dd}</span>; })}</div></button>; })}
+        <div style={{ fontSize: 10, color: "#888", fontFamily: "Cinzel,serif", marginBottom: 4 }}>YOUR DECK</div>
+        <div style={{ display: "flex", gap: 6, marginBottom: 6, justifyContent: "center" }}>
+          <button onClick={function() { setDeckTab("precons"); }} style={{ padding: "4px 14px", borderRadius: 5, border: "1.5px solid " + (deckTab === "precons" ? "#4ADE80" : "#ffffff20"), background: deckTab === "precons" ? "#4ADE8015" : "transparent", color: deckTab === "precons" ? "#4ADE80" : "#666", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "Cinzel,serif" }}>Precons</button>
+          <button style={{ padding: "4px 14px", borderRadius: 5, border: "1.5px solid #ffffff12", background: "transparent", color: "#ffffff25", cursor: "not-allowed", fontSize: 11, fontWeight: 700, fontFamily: "Cinzel,serif", opacity: 0.4 }}>Your Decks</button>
         </div>
+        {deckTab === "precons" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, width: "100%" }}>
+          {DNAMES.map(function(n) { var myDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null; var s = myDeck === n; var t2 = DECKS[n]; var lg = findCard(t2.legend); var ds = (lg && lg.ds) ? lg.ds : []; return <button key={n} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/deck").set(n); }} style={{ padding: "6px 8px", borderRadius: 4, border: s ? "2px solid #4ADE80" : "1px solid #2a2a3a", background: s ? "#4ADE8015" : "#0c0c1a", color: s ? "#4ADE80" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 13 }}><div style={{ fontWeight: s ? 700 : 500 }}>{n}</div><div style={{ fontSize: 9, marginTop: 2, display: "flex", gap: 3 }}>{ds.map(function(dd) { var dc = DOM[dd] || DOM.Colorless; return <span key={dd} style={{ color: dc.c, fontWeight: 700 }}>{dc.i} {dd}</span>; })}</div></button>; })}
+        </div>}
         <button onClick={function() { leaveLobby(); }} style={{ padding: "6px 14px", borderRadius: 5, border: "1px solid #ff444466", background: "transparent", color: "#ff6666", cursor: "pointer", fontSize: 10, fontFamily: "Cinzel,serif" }}>Leave</button>
       </div>}
     </div>
@@ -2007,9 +2133,9 @@ function RiftboundGame() {
                 <button onClick={function() { setSettingsOpen(!settingsOpen); setEditingName(false); }} style={{ padding: "2px 6px", borderRadius: 3, border: "1px solid #ffffff20", background: settingsOpen ? "rgba(255,255,255,0.08)" : "transparent", color: "#888", cursor: "pointer", fontSize: 28, lineHeight: 1 }}>&#9881;</button>
                 {settingsOpen && <div onClick={function(e) { e.stopPropagation(); }} style={{ position: "absolute", top: "100%", right: 0, marginTop: 4, background: "#1a1a3a", border: "1px solid #ffffff20", borderRadius: 6, padding: 4, zIndex: 100, minWidth: 160, boxShadow: "0 8px 24px #000a" }}>
                   {editingName ? <div style={{ padding: "4px 6px" }}>
-                    <input autoFocus value={nameInput} onChange={function(e) { setNameInput(e.target.value); }} onKeyDown={function(e) { if (e.key === "Enter" && nameInput.trim()) { myName = nameInput.trim(); localStorage.setItem("riftNexusName", myName); if (roomCode) fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/name").set(myName); setEditingName(false); } }} style={{ width: "100%", padding: "4px 6px", borderRadius: 4, border: "1px solid #FFD70044", background: "#ffffff08", color: "#FFD700", fontSize: 11, outline: "none", fontFamily: "Cinzel,serif", textAlign: "center" }} />
+                    <input autoFocus value={nameInput} onChange={function(e) { setNameInput(e.target.value); }} onKeyDown={function(e) { if (e.key === "Enter" && nameInput.trim()) { myName = nameInput.trim(); localStorage.setItem("riftNexusName", myName); if (roomCode) fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/name").set(myName); if (fbAuth.currentUser) { fbAuth.currentUser.updateProfile({ displayName: myName }); fbDb.ref("users/" + fbAuth.currentUser.uid + "/name").set(myName); } setEditingName(false); } }} style={{ width: "100%", padding: "4px 6px", borderRadius: 4, border: "1px solid #FFD70044", background: "#ffffff08", color: "#FFD700", fontSize: 11, outline: "none", fontFamily: "Cinzel,serif", textAlign: "center" }} />
                     <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
-                      <button onClick={function() { if (nameInput.trim()) { myName = nameInput.trim(); localStorage.setItem("riftNexusName", myName); if (roomCode) fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/name").set(myName); } setEditingName(false); }} style={{ flex: 1, padding: "3px 6px", borderRadius: 3, border: "1px solid #4ADE8044", background: "rgba(74,222,128,0.1)", color: "#4ADE80", cursor: "pointer", fontSize: 9, fontWeight: 700, fontFamily: "Cinzel,serif" }}>Save</button>
+                      <button onClick={function() { if (nameInput.trim()) { myName = nameInput.trim(); localStorage.setItem("riftNexusName", myName); if (roomCode) fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/name").set(myName); if (fbAuth.currentUser) { fbAuth.currentUser.updateProfile({ displayName: myName }); fbDb.ref("users/" + fbAuth.currentUser.uid + "/name").set(myName); } } setEditingName(false); }} style={{ flex: 1, padding: "3px 6px", borderRadius: 3, border: "1px solid #4ADE8044", background: "rgba(74,222,128,0.1)", color: "#4ADE80", cursor: "pointer", fontSize: 9, fontWeight: 700, fontFamily: "Cinzel,serif" }}>Save</button>
                       <button onClick={function() { setNameInput(myName); setEditingName(false); }} style={{ flex: 1, padding: "3px 6px", borderRadius: 3, border: "1px solid #ffffff15", background: "transparent", color: "#666", cursor: "pointer", fontSize: 9, fontFamily: "Cinzel,serif" }}>Cancel</button>
                     </div>
                   </div> : <>
