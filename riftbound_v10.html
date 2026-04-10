@@ -430,6 +430,7 @@ function RiftboundGame() {
   var _dbBfs = useState([]), dbBfs = _dbBfs[0], setDbBfs = _dbBfs[1];
   var _dbRunes = useState([]), dbRunes = _dbRunes[0], setDbRunes = _dbRunes[1];
   var _dbSection = useState("legend"), dbSection = _dbSection[0], setDbSection = _dbSection[1];
+  var _dbSearch = useState(""), dbSearch = _dbSearch[0], setDbSearch = _dbSearch[1];
   var _dos = useState(false), dragOverShowcase = _dos[0], setDragOverShowcase = _dos[1];
   var _sb = useState(false), showBin = _sb[0], setShowBin = _sb[1];
   var _bs = useState([]), binSelected = _bs[0], setBinSelected = _bs[1];
@@ -1038,17 +1039,33 @@ function RiftboundGame() {
   if (screen === "deckbuilder") {
     var allCards = DB.slice().sort(function(a, b) { return a.n.localeCompare(b.n); });
     var dbLegends = allCards.filter(function(c) { return c.t === "Legend"; });
+    // Get legend's domains for filtering
+    var legendCard = dbLegend ? findCard(dbLegend) : null;
+    var legendDomains = legendCard && legendCard.ds ? legendCard.ds : [];
+    function matchesLegendDomains(c) {
+      if (!legendDomains.length) return true;
+      if (c.d === "Colorless") return true;
+      return c.ds && c.ds.some(function(d) { return legendDomains.indexOf(d) >= 0; });
+    }
     var champNames = {};
     Object.keys(DECKS).forEach(function(dk) { if (DECKS[dk].champ) champNames[DECKS[dk].champ] = true; });
-    var dbChamps = allCards.filter(function(c) { return champNames[c.n]; });
-    var dbUnits = allCards.filter(function(c) { return c.t === "Unit" && !champNames[c.n]; });
-    var dbSpells = allCards.filter(function(c) { return c.t === "Spell"; });
-    var dbGear = allCards.filter(function(c) { return c.t === "Gear"; });
+    // Also treat any Unit that shares a name pattern with a Legend as a champion candidate
+    var dbChamps = allCards.filter(function(c) { return (champNames[c.n] || (c.t === "Unit" && c.kw && legendCard && c.kw.some(function(k) { return legendCard.kw && legendCard.kw.indexOf(k) >= 0 && k !== "Ionia" && k !== "Noxus" && k !== "Demacia" && k !== "Piltover" && k !== "Freljord" && k !== "Shadow Isles" && k !== "Bilgewater" && k !== "Mount Targon" && k !== "Shurima" && k !== "Bandle City"; }))) && matchesLegendDomains(c); });
+    var dbUnits = allCards.filter(function(c) { return c.t === "Unit" && !champNames[c.n] && matchesLegendDomains(c); });
+    var dbSpells = allCards.filter(function(c) { return c.t === "Spell" && matchesLegendDomains(c); });
+    var dbGear = allCards.filter(function(c) { return c.t === "Gear" && matchesLegendDomains(c); });
     var dbBattlefields = allCards.filter(function(c) { return c.t === "Battlefield"; });
-    var dbDomains = ["Fury","Calm","Mind","Body","Chaos","Order"];
+    var dbDomains = legendDomains.length > 0 ? legendDomains : ["Fury","Calm","Mind","Body","Chaos","Order"];
     var cardCounts = {};
     dbCards.forEach(function(n) { cardCounts[n] = (cardCounts[n] || 0) + 1; });
     var mainDeckCards = dbUnits.concat(dbSpells).concat(dbGear).sort(function(a, b) { return a.n.localeCompare(b.n); });
+
+    // Search filter
+    var searchLower = dbSearch.toLowerCase().trim();
+    function matchesSearch(c) {
+      if (!searchLower) return true;
+      return c.n.toLowerCase().indexOf(searchLower) >= 0 || (c.tx && c.tx.toLowerCase().indexOf(searchLower) >= 0);
+    }
 
     var sectionCards = [];
     if (dbSection === "legend") sectionCards = dbLegends;
@@ -1056,6 +1073,9 @@ function RiftboundGame() {
     else if (dbSection === "main") sectionCards = mainDeckCards;
     else if (dbSection === "battlefield") sectionCards = dbBattlefields;
     else if (dbSection === "runes") sectionCards = [];
+
+    var filteredCards = sectionCards.filter(matchesSearch);
+    var sectionCounts = { legend: dbLegends.length, champion: dbChamps.length, main: mainDeckCards.length, battlefield: dbBattlefields.length, runes: dbDomains.length };
 
     function dbResetDeck() { setDbName(""); setDbLegend(null); setDbChamp(null); setDbCards([]); setDbBfs([]); setDbRunes([]); }
     function dbSaveDeck() {
@@ -1085,8 +1105,14 @@ function RiftboundGame() {
           <div style={{ display: "flex", gap: 0, flexShrink: 0, borderBottom: "1px solid #ffffff10" }}>
             {[{id:"legend",label:"Legends"},{id:"champion",label:"Champions"},{id:"main",label:"Main Deck"},{id:"battlefield",label:"Battlefields"},{id:"runes",label:"Runes"}].map(function(s) {
               var sel = dbSection === s.id;
-              return <button key={s.id} onClick={function() { setDbSection(s.id); }} style={{ flex: 1, padding: "8px 4px", border: "none", borderBottom: sel ? "2px solid #8B5CF6" : "2px solid transparent", background: sel ? "#8B5CF610" : "transparent", color: sel ? "#8B5CF6" : "#666", fontSize: 10, fontFamily: "Cinzel,serif", fontWeight: 700, cursor: "pointer" }}>{s.label}</button>;
+              var locked = s.id !== "legend" && s.id !== "battlefield" && !dbLegend;
+              var cnt = sectionCounts[s.id] || 0;
+              return <button key={s.id} onClick={locked ? undefined : function() { setDbSection(s.id); setDbSearch(""); }} style={{ flex: 1, padding: "6px 4px", border: "none", borderBottom: sel ? "2px solid #8B5CF6" : "2px solid transparent", background: sel ? "#8B5CF610" : "transparent", color: locked ? "#333" : sel ? "#8B5CF6" : "#888", fontSize: 9, fontFamily: "Cinzel,serif", fontWeight: 700, cursor: locked ? "not-allowed" : "pointer", opacity: locked ? 0.4 : 1 }}>{s.label} <span style={{ fontSize: 8, opacity: 0.6 }}>({cnt})</span></button>;
             })}
+          </div>
+          {/* Search bar */}
+          <div style={{ padding: "6px 8px 2px", flexShrink: 0 }}>
+            <input value={dbSearch} onChange={function(e) { setDbSearch(e.target.value); }} placeholder="Search cards..." style={{ width: "100%", padding: "5px 10px", borderRadius: 5, border: "1px solid #ffffff15", background: "#ffffff08", color: "#ddd", fontSize: 12, outline: "none", fontFamily: "Inter,sans-serif" }} />
           </div>
           {/* Card list */}
           <div style={{ flex: 1, overflow: "auto", padding: "6px 8px" }}>
@@ -1107,7 +1133,7 @@ function RiftboundGame() {
                 <div style={{ textAlign: "center", fontSize: 11, color: dbRunes.length === 12 ? "#4ADE80" : "#888", marginTop: 4 }}>{dbRunes.length}/12 runes</div>
               </div>
             ) : <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
-            {sectionCards.map(function(c) {
+            {filteredCards.map(function(c) {
               var isLegendPicked = dbSection === "legend" && dbLegend;
               var isChampPicked = dbSection === "champion" && dbChamp;
               var count = cardCounts[c.n] || 0;
@@ -1117,7 +1143,7 @@ function RiftboundGame() {
               var dc = DOM[c.d] || DOM.Colorless;
               var cImg = CI[c.n] ? imgSrc(CI[c.n]) : (PA[c.n] ? PA_CDN + PA[c.n] + ".webp" : "");
               return <div key={c.n} onClick={disabled && !selected ? undefined : function() {
-                if (dbSection === "legend") { setDbLegend(dbLegend === c.n ? null : c.n); }
+                if (dbSection === "legend") { var newLeg = dbLegend === c.n ? null : c.n; setDbLegend(newLeg); if (newLeg && newLeg !== dbLegend) { setDbChamp(null); setDbCards([]); setDbRunes([]); setDbSection("champion"); } }
                 else if (dbSection === "champion") { setDbChamp(dbChamp === c.n ? null : c.n); }
                 else if (dbSection === "battlefield") { if (dbBfs.indexOf(c.n) >= 0) { setDbBfs(dbBfs.filter(function(b) { return b !== c.n; })); } else if (dbBfs.length < 3) { setDbBfs(dbBfs.concat([c.n])); } }
                 else if (dbSection === "main") { if (!maxed) setDbCards(dbCards.concat([c.n])); }
