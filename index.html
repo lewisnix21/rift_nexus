@@ -1224,7 +1224,9 @@ function RiftboundGame() {
               var isLegendPicked = dbSection === "legend" && dbLegend;
               var isChampPicked = dbSection === "champion" && dbChamp;
               var count = cardCounts[c.n] || 0;
-              var maxed = (dbSection === "main" && count >= 3) || (dbSection === "main" && dbCards.length >= 39);
+              var isUnique = c.tx && c.tx.indexOf("[Unique]") >= 0;
+              var maxCopies = isUnique ? 1 : 3;
+              var maxed = (dbSection === "main" && count >= maxCopies) || (dbSection === "main" && dbCards.length >= 39);
               var disabled = (dbSection === "legend" && isLegendPicked) || (dbSection === "champion" && isChampPicked) || (dbSection === "battlefield" && dbBfs.length >= 3) || maxed;
               var selected = (dbSection === "legend" && dbLegend === c.n) || (dbSection === "champion" && dbChamp === c.n) || (dbSection === "battlefield" && dbBfs.indexOf(c.n) >= 0);
               var dc = DOM[c.d] || DOM.Colorless;
@@ -1248,6 +1250,19 @@ function RiftboundGame() {
         {/* Right: Deck workspace */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", padding: "8px 10px" }}>
           <input value={dbName} onChange={function(e) { setDbName(e.target.value); }} placeholder="Deck Name..." style={{ padding: "10px 14px", borderRadius: 6, border: "2px solid #8B5CF644", background: "#ffffff08", color: "#8B5CF6", fontSize: 20, fontWeight: 700, fontFamily: "Spectral,serif", textAlign: "center", outline: "none", marginBottom: 8 }} />
+          {/* Deck warnings */}
+          {(function() {
+            var warns = [];
+            if (!dbLegend) warns.push("No legend selected");
+            if (!dbChamp) warns.push("No champion selected");
+            if (dbCards.length < 39) warns.push("Main deck: " + dbCards.length + "/39 cards");
+            if (dbBfs.length < 3) warns.push("Battlefields: " + dbBfs.length + "/3");
+            if (dbRunes.length < 12) warns.push("Runes: " + dbRunes.length + "/12");
+            if (warns.length === 0) return <div style={{ padding: "4px 8px", borderRadius: 4, background: "rgba(74,222,128,0.08)", border: "1px solid #4ADE8044", color: "#4ADE80", fontSize: 11, marginBottom: 6, textAlign: "center" }}>Deck complete ✓</div>;
+            return <div style={{ padding: "4px 8px", borderRadius: 4, background: "rgba(255,180,0,0.06)", border: "1px solid #FFB40033", fontSize: 11, marginBottom: 6 }}>
+              {warns.map(function(w, i) { return <div key={i} style={{ color: "#FFB400", padding: "1px 0" }}>⚠ {w}</div>; })}
+            </div>;
+          })()}
           <div style={{ flex: 1, overflow: "auto" }}>
             {/* Legend */}
             <div style={{ marginBottom: 10 }}>
