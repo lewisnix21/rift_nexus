@@ -438,6 +438,7 @@ function RiftboundGame() {
   var _dbFilterRC = useState(""), dbFilterRC = _dbFilterRC[0], setDbFilterRC = _dbFilterRC[1];
   var _dbFilterType = useState(""), dbFilterType = _dbFilterType[0], setDbFilterType = _dbFilterType[1];
   var _dbFilterKw = useState(""), dbFilterKw = _dbFilterKw[0], setDbFilterKw = _dbFilterKw[1];
+  var _dbSort = useState("name"), dbSort = _dbSort[0], setDbSort = _dbSort[1];
   var _dos = useState(false), dragOverShowcase = _dos[0], setDragOverShowcase = _dos[1];
   var _sb = useState(false), showBin = _sb[0], setShowBin = _sb[1];
   var _bs = useState([]), binSelected = _bs[0], setBinSelected = _bs[1];
@@ -1122,7 +1123,13 @@ function RiftboundGame() {
     var kwList = Object.keys(allKws).sort();
     var typeList = Object.keys(allTypes).sort();
 
-    var filteredCards = sectionCards.filter(matchesFilters);
+    var filteredCards = sectionCards.filter(matchesFilters).sort(function(a, b) {
+      if (dbSort === "energy") return (a.e || 0) - (b.e || 0);
+      if (dbSort === "energy-desc") return (b.e || 0) - (a.e || 0);
+      if (dbSort === "might") return (b.m || 0) - (a.m || 0);
+      if (dbSort === "recycle") return (b.rc || []).length - (a.rc || []).length;
+      return a.n.localeCompare(b.n);
+    });
     var sectionCounts = { legend: dbLegends.length, champion: dbChamps.length, main: mainDeckCards.length, battlefield: dbBattlefields.length, runes: dbDomains.length };
 
     function dbResetDeck() { setDbName(""); setDbLegend(null); setDbChamp(null); setDbCards([]); setDbBfs([]); setDbRunes([]); }
@@ -1165,6 +1172,13 @@ function RiftboundGame() {
           {/* Search + filters */}
           <div style={{ padding: "6px 8px 2px", flexShrink: 0, display: "flex", gap: 4, alignItems: "center" }}>
             <input value={dbSearch} onChange={function(e) { setDbSearch(e.target.value); }} placeholder="Search name or text..." style={{ flex: 1, padding: "8px 12px", borderRadius: 5, border: "1px solid #ffffff15", background: "#ffffff08", color: "#ddd", fontSize: 13, outline: "none" }} />
+            <select value={dbSort} onChange={function(e) { setDbSort(e.target.value); }} style={{ padding: "4px 2px", borderRadius: 4, border: "1px solid #ffffff15", background: "#0c0c1a", color: "#aaa", fontSize: 10, outline: "none" }}>
+              <option value="name">A-Z</option>
+              <option value="energy">Energy ↑</option>
+              <option value="energy-desc">Energy ↓</option>
+              <option value="might">Might ↓</option>
+              <option value="recycle">Recycle ↓</option>
+            </select>
             <select value={dbFilterE} onChange={function(e) { setDbFilterE(e.target.value); }} style={{ padding: "4px 2px", borderRadius: 4, border: "1px solid #ffffff15", background: "#0c0c1a", color: "#aaa", fontSize: 10, outline: "none" }}>
               <option value="">Energy</option>
               {[0,1,2,3,4,5,6,7,8,9,10,11,12].map(function(v) { return <option key={v} value={v}>{v}</option>; })}
