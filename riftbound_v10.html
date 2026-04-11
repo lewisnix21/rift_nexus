@@ -405,6 +405,7 @@ function RiftboundGame() {
   var _scryCards = useState([]), scryCards = _scryCards[0], setScryCards = _scryCards[1];
   var _scrySel = useState([]), scrySel = _scrySel[0], setScrySel = _scrySel[1];
   var _cp = useState(false), continuePlaying = _cp[0], setContinuePlaying = _cp[1];
+  var _cpVotes = useState({}), cpVotes = _cpVotes[0], setCpVotes = _cpVotes[1];
   var _settingsOpen = useState(false), settingsOpen = _settingsOpen[0], setSettingsOpen = _settingsOpen[1];
   var _scoreHov = useState(false), scoreHov = _scoreHov[0], setScoreHov = _scoreHov[1];
   var _editingName = useState(false), editingName = _editingName[0], setEditingName = _editingName[1];
@@ -594,6 +595,22 @@ function RiftboundGame() {
     });
     return function() { ref.off("value", handler); };
   }, [roomCode, lobbyType]);
+
+  // Listen for continue playing votes
+  useEffect(function() {
+    if (!roomCode || lobbyType === "test" || screen !== "go") return;
+    var ref = fbDb.ref("lobbies/" + roomCode + "/continueVotes");
+    var handler = ref.on("value", function(snap) {
+      var val = snap.val() || {};
+      setCpVotes(val);
+      var allVoted = Object.keys(val).length >= 2 && Object.keys(val).every(function(k) { return val[k]; });
+      if (allVoted) {
+        setWin(null); setScreen("play"); setContinuePlaying(true);
+        ref.remove();
+      }
+    });
+    return function() { ref.off("value", handler); };
+  }, [roomCode, screen]);
 
   // Listen for pings from other player
   useEffect(function() {
@@ -828,7 +845,7 @@ function RiftboundGame() {
     _gamePhaseRef.current = null;
     setScreen("mode"); setPs([]); setBfs([]); setTurn(1); setAct(0); setWin(null);
     setLog([]); setDp({}); setSel(null); setTm(null); setFc(null); setTr([]);
-    setZoom(null); setSd(null); setPc(2); setMc([]); setContinuePlaying(false); setArrows([]); setDrawingArrow(null); setShowcaseHistory([]); setShowcaseOwner(null); setShowcaseAccepted(false);
+    setZoom(null); setSd(null); setPc(2); setMc([]); setContinuePlaying(false); setCpVotes({}); setArrows([]); setDrawingArrow(null); setShowcaseHistory([]); setShowcaseOwner(null); setShowcaseAccepted(false);
   }
 
   // lobbyType/lobbyMode/lobbyFilter moved to top of component (before early returns)
@@ -2058,7 +2075,24 @@ function RiftboundGame() {
     <div onClick={function(e) { if (settingsOpen) { setSettingsOpen(false); return; } if (drawingArrow) { var tgt = e.target.closest("[data-uid]"); if (tgt && tgt.getAttribute("data-uid") !== drawingArrow.fromUid) { setArrows(function(prev) { return prev.concat([{ fromUid: drawingArrow.fromUid, toUid: tgt.getAttribute("data-uid"), id: uid() }]); }); } setDrawingArrow(null); return; } var pingTgt = e.target.closest("[data-uid]"); if (pingTgt && !e.target.closest("button")) { doPing(pingTgt.getAttribute("data-uid"), e.altKey); } }} onMouseMove={drawingArrow ? function(e) { setDrawingArrow(function(prev) { return prev ? { fromUid: prev.fromUid, x: e.clientX, y: e.clientY } : null; }); } : undefined} style={{ height: "100vh", background: "transparent", color: "#ddd", fontFamily: "'Inter',sans-serif", display: "flex", flexDirection: "column", overflow: "hidden", cursor: drawingArrow ? "crosshair" : undefined }}>
 
 
-      {screen === "go" && <div style={{ position: "fixed", inset: 0, background: "#000d", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}><div style={{ textAlign: "center" }}><h1 style={{ fontSize: 42, fontFamily: "Spectral,serif", background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>VICTORY</h1><p style={{ color: "#FFD700", fontFamily: "Spectral,serif", fontSize: 18, marginTop: 8 }}>Player {(win || 0) + 1}</p><button onClick={resetAll} style={{ marginTop: 14, padding: "10px 24px", borderRadius: 5, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0030)", color: "#FFD700", cursor: "pointer", fontWeight: 700, fontFamily: "Spectral,serif" }}>MAIN MENU</button><br /><button onClick={function() { setWin(null); setScreen("play"); setContinuePlaying(true); }} style={{ marginTop: 8, padding: "8px 20px", borderRadius: 5, border: "1px solid #ffffff30", background: "transparent", color: "#aaa", cursor: "pointer", fontWeight: 700, fontFamily: "Spectral,serif", fontSize: 12 }}>CONTINUE PLAYING</button></div></div>}
+      {screen === "go" && (function() {
+        var iVoted = cpVotes[myUid];
+        var otherVoted = Object.keys(cpVotes).some(function(k) { return k !== myUid && cpVotes[k]; });
+        return <div style={{ position: "fixed", inset: 0, background: "#000d", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}><div style={{ textAlign: "center" }}>
+          <h1 style={{ fontSize: 42, fontFamily: "Spectral,serif", background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>VICTORY</h1>
+          <p style={{ color: "#FFD700", fontFamily: "Spectral,serif", fontSize: 18, marginTop: 8 }}>{pName(win || 0)}</p>
+          <button onClick={resetAll} style={{ marginTop: 14, padding: "10px 24px", borderRadius: 5, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0030)", color: "#FFD700", cursor: "pointer", fontWeight: 700, fontFamily: "Spectral,serif" }}>MAIN MENU</button>
+          <br />
+          <button onClick={function() {
+            if (isOnlineGame && roomCode) {
+              fbDb.ref("lobbies/" + roomCode + "/continueVotes/" + myUid).set(true);
+            } else {
+              setWin(null); setScreen("play"); setContinuePlaying(true);
+            }
+          }} disabled={iVoted} style={{ marginTop: 8, padding: "8px 20px", borderRadius: 5, border: "1px solid " + (iVoted ? "#4ADE8066" : "#ffffff30"), background: iVoted ? "rgba(74,222,128,0.1)" : "transparent", color: iVoted ? "#4ADE80" : "#aaa", cursor: iVoted ? "default" : "pointer", fontWeight: 700, fontFamily: "Spectral,serif", fontSize: 12 }}>{iVoted ? "Waiting for opponent..." : "CONTINUE PLAYING"}</button>
+          {otherVoted && !iVoted && <div style={{ marginTop: 6, fontSize: 11, color: "#FFD700", fontFamily: "Spectral,serif" }}>Your opponent wants to continue!</div>}
+        </div></div>;
+      })()}
 
 
       {/* Bin viewer overlay */}
