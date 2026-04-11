@@ -1126,8 +1126,10 @@ function RiftboundGame() {
     var filteredCards = sectionCards.filter(matchesFilters).sort(function(a, b) {
       if (dbSort === "energy") return (a.e || 0) - (b.e || 0);
       if (dbSort === "energy-desc") return (b.e || 0) - (a.e || 0);
-      if (dbSort === "might") return (b.m || 0) - (a.m || 0);
-      if (dbSort === "recycle") return (b.rc || []).length - (a.rc || []).length;
+      if (dbSort === "might") return (a.m || 0) - (b.m || 0);
+      if (dbSort === "might-desc") return (b.m || 0) - (a.m || 0);
+      if (dbSort === "recycle") return (a.rc || []).length - (b.rc || []).length;
+      if (dbSort === "recycle-desc") return (b.rc || []).length - (a.rc || []).length;
       return a.n.localeCompare(b.n);
     });
     var sectionCounts = { legend: dbLegends.length, champion: dbChamps.length, main: mainDeckCards.length, battlefield: dbBattlefields.length, runes: dbDomains.length };
@@ -1176,8 +1178,10 @@ function RiftboundGame() {
               <option value="name">A-Z</option>
               <option value="energy">Energy ↑</option>
               <option value="energy-desc">Energy ↓</option>
-              <option value="might">Might ↓</option>
-              <option value="recycle">Recycle ↓</option>
+              <option value="might">Might ↑</option>
+              <option value="might-desc">Might ↓</option>
+              <option value="recycle">Recycle ↑</option>
+              <option value="recycle-desc">Recycle ↓</option>
             </select>
             <select value={dbFilterE} onChange={function(e) { setDbFilterE(e.target.value); }} style={{ padding: "4px 2px", borderRadius: 4, border: "1px solid #ffffff15", background: "#0c0c1a", color: "#aaa", fontSize: 10, outline: "none" }}>
               <option value="">Energy</option>
