@@ -651,6 +651,8 @@ function RiftboundGame() {
         setPc(pc2);
         var myIdx = slots.findIndex(function(s) { return s.uid === myUid; });
         setMySlot(myIdx >= 0 ? myIdx : 0);
+        // Register any custom decks from slot data
+        slots.forEach(function(s) { if (s.deckData && !DECKS[s.deck]) { DECKS[s.deck] = s.deckData; if (DNAMES.indexOf(s.deck) < 0) DNAMES.push(s.deck); } });
         var nps = slots.map(function(s) { return initPlayer(s.deck); });
         setPs(nps);
         if (_isHostNow && _roomNow) {
@@ -667,6 +669,8 @@ function RiftboundGame() {
           setPc(pc3);
           var myIdx2 = slots.findIndex(function(s) { return s.uid === myUid; });
           setMySlot(myIdx2 >= 0 ? myIdx2 : 0);
+          // Register any custom decks from slot data
+          slots.forEach(function(s) { if (s.deckData && !DECKS[s.deck]) { DECKS[s.deck] = s.deckData; if (DNAMES.indexOf(s.deck) < 0) DNAMES.push(s.deck); } });
           var nps2 = slots.map(function(s) { return initPlayer(s.deck); });
           setPs(nps2);
           if (_isHostNow && _roomNow) {
@@ -944,9 +948,15 @@ function RiftboundGame() {
         <div style={{ display: "flex", gap: 8 }}>
           <button onClick={function() {
             if (!allLobbyReady) return;
+            // Ensure all custom decks are registered before starting
+            dbSavedDecks.forEach(function(deck) { registerCustomDeck(deck); });
             var sorted = lpArr.sort(function(a, b) { return a.slot - b.slot; });
             // Init game locally for host
-            var slotsData = sorted.map(function(p) { return { uid: p.uid, deck: p.deck, name: p.name }; });
+            var slotsData = sorted.map(function(p) {
+              // For custom decks, embed the full deck data so the other player can use it
+              var deckData = DECKS[p.deck];
+              return { uid: p.uid, deck: p.deck, name: p.name, deckData: deckData ? { legend: deckData.legend, champ: deckData.champ, deck: deckData.deck, bfs: deckData.bfs, runes: deckData.runes } : null };
+            });
             setPc(sorted.length);
             var hostIdx = slotsData.findIndex(function(s) { return s.uid === myUid; });
             setMySlot(hostIdx >= 0 ? hostIdx : 0);
