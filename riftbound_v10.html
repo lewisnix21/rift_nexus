@@ -788,6 +788,14 @@ function RiftboundGame() {
   var numBfs = pc === 2 ? 2 : 3;
 
   function resetAll() {
+    // Clean up old lobby
+    if (_lobbyUnsub.current) { _lobbyUnsub.current(); _lobbyUnsub.current = null; }
+    if (roomCode) {
+      fbDb.ref("lobbies/" + roomCode).remove();
+      _currentLobbyCode = null;
+    }
+    setRoomCode(null); setIsHost(false); setLobbyPlayers({}); setLobbySettings(null); setLobbyErr(null);
+    _gamePhaseRef.current = null;
     setScreen("mode"); setPs([]); setBfs([]); setTurn(1); setAct(0); setWin(null);
     setLog([]); setDp({}); setSel(null); setTm(null); setFc(null); setTr([]);
     setZoom(null); setSd(null); setPc(2); setMc([]); setContinuePlaying(false); setArrows([]); setDrawingArrow(null); setShowcaseHistory([]); setShowcaseOwner(null); setShowcaseAccepted(false);
