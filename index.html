@@ -227,7 +227,7 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
         onDragOver={onGearDrop ? function(e) { e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = "move"; if (!gearDragOver) setGearDragOver(true); } : undefined}
         onDragLeave={onGearDrop ? function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setGearDragOver(false); } : undefined}
         onDrop={onGearDrop ? function(e) { e.preventDefault(); e.stopPropagation(); setGearDragOver(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var uid2 = parts.length > 1 ? parts[1] : parts[0]; onGearDrop(uid2, card.uid); } : undefined}
-        onMouseEnter={function(e) { if (_setHoverCard) _setHoverCard(card, e); }} onMouseLeave={function() { setGearDragOver(false); if (_clearHoverCard) _clearHoverCard(); }} style={{ width: hw, height: hh, borderRadius: small ? 4 : 6, overflow: "visible", border: gearDragOver ? "3px solid #4ADE80" : "2px solid #FFD70040", boxShadow: gearDragOver ? "0 0 20px rgba(74,222,128,0.5), 0 0 40px rgba(74,222,128,0.2)" : "none", cursor: "pointer", flexShrink: 0, transform: ex ? "rotate(90deg)" : "none", filter: ex ? "brightness(0.58)" : "none", position: "relative", marginRight: gearExtraH, transition: "border 0.15s ease, box-shadow 0.15s ease" }}>
+        onMouseEnter={function(e) {}} onMouseLeave={function() { setGearDragOver(false); }} style={{ width: hw, height: hh, borderRadius: small ? 4 : 6, overflow: "visible", border: gearDragOver ? "3px solid #4ADE80" : "2px solid #FFD70040", boxShadow: gearDragOver ? "0 0 20px rgba(74,222,128,0.5), 0 0 40px rgba(74,222,128,0.2)" : "none", cursor: "pointer", flexShrink: 0, transform: ex ? "rotate(90deg)" : "none", filter: ex ? "brightness(0.58)" : "none", position: "relative", marginRight: gearExtraH, transition: "border 0.15s ease, box-shadow 0.15s ease" }}>
         <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: "inherit" }}><img src={CARD_BACK} style={{ width: "100%", height: "100%", objectFit: "fill" }} /></div>
         {gearCountH > 0 && card.gear.map(function(g, gi) { var gUrl = g.img ? imgSrc(g.img) : ""; var stepOff = Math.round(hw * 0.3); var gOff = stepOff * (gi + 1); var gZ = 1; return <div key={g.uid} className="gear-peek" draggable={true} onDragStart={function(e) { e.stopPropagation(); e.dataTransfer.setData("text/plain", "gear:" + g.uid); }} onMouseEnter={function(e) { e.stopPropagation(); if (_setHoverCard) _setHoverCard(g, e); }} onMouseLeave={function(e) { e.stopPropagation(); if (_clearHoverCard) _clearHoverCard(); }} style={{ position: "absolute", top: 0, left: gOff, width: hw, height: hh, borderRadius: 4, overflow: "hidden", border: "1.5px solid #FFD70044", boxShadow: "0 2px 6px #000a", cursor: "grab", zIndex: gZ }}>{gUrl ? <img src={gUrl} style={{ width: "100%", height: "100%", objectFit: "fill" }} /> : <div style={{ width: "100%", height: "100%", background: "#1a1a30", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 7, color: "#FFD700" }}>{g.name}</div>}</div>; })}
       </div>
@@ -752,7 +752,7 @@ function RiftboundGame() {
       if (bf.controller !== sd.atkIdx) {
         var nb2 = bfs.map(function(b) { return Object.assign({}, b); }); nb2[bi].controller = sd.atkIdx;
         var np2 = ps.slice(); np2[sd.atkIdx] = Object.assign({}, np2[sd.atkIdx], { score: np2[sd.atkIdx].score + 1 });
-        aL("P" + (sd.atkIdx + 1) + " conquers " + bf.name + "! (" + np2[sd.atkIdx].score + "/8)");
+        aL(pName(sd.atkIdx) + " conquers " + bf.name + "! (" + np2[sd.atkIdx].score + "/8)");
         setBfs(nb2); setPs(np2);
         if (np2[sd.atkIdx].score >= 8 && !continuePlaying) { setWin(sd.atkIdx); setScreen("go"); setSd(null); return; }
       }
@@ -1345,7 +1345,7 @@ function RiftboundGame() {
           var np2 = ps.map(function(p) { return Object.assign({}, p); });
           np2[act].chosenBf = selectedBf; setPs(np2);
           setSelectedBf(null);
-          if (act < pc - 1) { setAct(act + 1); aL("P" + (act + 1) + " chose " + selectedBf.name); }
+          if (act < pc - 1) { setAct(act + 1); aL(pName(act) + " chose " + selectedBf.name); }
           else {
             var gb2 = np2.map(function(p) { return p.chosenBf; }).filter(Boolean).slice(0, numBfs).map(function(b) { return Object.assign({}, b, { controller: null, units: Array.from({ length: pc }, function() { return []; }), uid: uid() }); });
             setBfs(gb2); setAct(0); setScreen("mull"); aL("P1 mulligan.");
@@ -1376,8 +1376,8 @@ function RiftboundGame() {
           var disc = p.hand.filter(function(c) { return mc.indexOf(c.uid) >= 0; });
           p.mainDeck = shuffle(p.mainDeck.concat(disc));
           p.hand = kept.concat(p.mainDeck.splice(0, disc.length));
-          aL(isOnlineMull ? "You mulled " + mc.length : "P" + (act + 1) + " mulls " + mc.length);
-        } else { aL(isOnlineMull ? "You keep." : "P" + (act + 1) + " keeps."); }
+          aL(isOnlineMull ? "You mulled " + mc.length : pName(act) + " mulls " + mc.length);
+        } else { aL(isOnlineMull ? "You keep." : pName(act) + " keeps."); }
         var np = ps.slice(); np[pidx] = p; setPs(np); setMc([]);
         if (isOnlineMull) {
           // Write mulligan done to Firebase — handleLobbyUpdate will advance when all done
@@ -1385,7 +1385,7 @@ function RiftboundGame() {
           // Stay on mull screen — it will show waiting message since our mulligan is done
         } else {
           // Test: sequential mulligan
-          if (act < pc - 1) { setAct(act + 1); aL("P" + (act + 2) + " mulligan."); }
+          if (act < pc - 1) { setAct(act + 1); aL(pName(act + 1) + " mulligan."); }
           else { setAct(0); setScreen("wait"); setTurn(1); aL("Game on!"); }
         }
       }} style={{ padding: "12px 28px", borderRadius: 6, border: "2px solid #FFD700", background: "#FFD70040", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, position: "relative", zIndex: 10 }}>{mc.length > 0 ? "MULLIGAN " + mc.length : "KEEP"}</button>
@@ -1426,8 +1426,8 @@ function RiftboundGame() {
       // Begin: score
       var sc = 0;
       nb.forEach(function(bf) { if (bf.controller === turnIdx && bf.units[turnIdx].length > 0) { var contested = false; for (var i = 0; i < pc; i++) { if (i !== turnIdx && bf.units[i].length > 0) contested = true; } if (!contested) sc++; } });
-      if (sc > 0) { p.score += sc; aL("  +" + sc + " points! (" + p.score + "/8)"); }
-      if (p.score >= 8 && !continuePlaying) { setWin(turnIdx); setScreen("go"); aL("P" + (turnIdx + 1) + " wins!"); var npW = ps.slice(); npW[turnIdx] = p; setPs(npW); setBfs(nb); setAwakenPhase(null); return; }
+      if (sc > 0) { p.score += sc; aL("  +" + sc + " holding point" + (sc > 1 ? "s" : "") + "! (" + p.score + (continuePlaying ? "" : "/8") + ")"); }
+      if (p.score >= 8 && !continuePlaying) { setWin(turnIdx); setScreen("go"); aL(pName(turnIdx) + " wins!"); var npW = ps.slice(); npW[turnIdx] = p; setPs(npW); setBfs(nb); setAwakenPhase(null); return; }
       // Channel: gain runes (max 12)
       var nr = turn === 1 && turnIdx === 1 ? 3 : 2;
       var runeSpace = 12 - p.runes.length;
@@ -1745,7 +1745,7 @@ function RiftboundGame() {
     if (totalPaid > 0 || recycleUids.length > 0) { var msg = "  Auto-tapped " + totalPaid + " rune" + (totalPaid > 1 ? "s" : ""); if (recycleUids.length > 0) msg += ", then recycled " + recycleUids.length + " of them"; aL(msg); }
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(x) { return x.slice(); }) }); });
     nb[bi].units[myActIdx].push(Object.assign({}, card, { exhausted: true }));
-    aL("P" + (myActIdx + 1) + " deploys " + card.name + " to " + nb[bi].name);
+    aL(pName(myActIdx) + " deploys " + (card.hidden ? "a hidden card" : card.name) + " to " + nb[bi].name);
     var np = ps.slice(); np[myActIdx] = p; setPs(np); setBfs(nb);
     var hasEnemies = false;
     for (var j = 0; j < pc; j++) { if (j !== myActIdx && nb[bi].units[j].length > 0) hasEnemies = true; }
@@ -1818,14 +1818,14 @@ function RiftboundGame() {
     if (card.type === "Unit" || card.type === "Champion") {
       p.base = p.base.concat([Object.assign({}, card, { exhausted: true })]);
       if (isChamp) p.championPlayed = true;
-      aL("P" + (myActIdx + 1) + " plays " + card.name);
+      aL(pName(myActIdx) + " plays " + (card.hidden ? "a hidden card" : card.name));
       if (/draw 1/i.test(card.text) && p.mainDeck.length > 0) { p.hand = p.hand.concat([p.mainDeck.shift()]); aL("  Draw 1"); }
       if (/draw 2/i.test(card.text)) { var d = p.mainDeck.splice(0, Math.min(2, p.mainDeck.length)); p.hand = p.hand.concat(d); }
     } else if (card.type === "Gear") {
       p.base = p.base.concat([Object.assign({}, card, { exhausted: false })]);
-      aL("P" + (myActIdx + 1) + " plays " + card.name + " to base");
+      aL(pName(myActIdx) + " plays " + (card.hidden ? "a hidden card" : card.name) + " to base");
     } else if (card.type === "Spell") {
-      p.trash = (p.trash || []).concat([card]); aL("P" + (myActIdx + 1) + " casts " + card.name);
+      p.trash = (p.trash || []).concat([card]); aL(pName(myActIdx) + " casts " + (card.hidden ? "a hidden card" : card.name));
       if (/Draw 2 cards/i.test(card.text)) { var d2 = p.mainDeck.splice(0, 2); p.hand = p.hand.concat(d2); }
       if (/\+2 Might/i.test(card.text)) setTm({ ty: "buff", v: 2 });
       else if (/\+3 Might/i.test(card.text)) setTm({ ty: "buff", v: 3 });
@@ -1936,7 +1936,7 @@ function RiftboundGame() {
       for (var j = 0; j < pc; j++) { if (j !== sd.atkIdx && nb[bi].units[j].length > 0) hasEnemies = true; }
       if (nb[bi].units[sd.atkIdx].length > 0 && !hasEnemies && nb[bi].controller !== sd.atkIdx) {
         nb[bi].controller = sd.atkIdx; np[sd.atkIdx].score++;
-        aL("P" + (sd.atkIdx + 1) + " conquers " + nb[bi].name + "! (" + np[sd.atkIdx].score + "/8)");
+        aL(pName(sd.atkIdx) + " conquers " + nb[bi].name + "! (" + np[sd.atkIdx].score + "/8)");
         if (np[sd.atkIdx].score >= 8 && !continuePlaying) { setWin(sd.atkIdx); setScreen("go"); setBfs(nb); setPs(np); setSd(null); return; }
       }
       setBfs(nb); setPs(np);
@@ -1954,7 +1954,7 @@ function RiftboundGame() {
       for (var j2 = 0; j2 < pc; j2++) { if (j2 !== sd.atkIdx && bfs[bi2] && bfs[bi2].units[j2] && bfs[bi2].units[j2].length > 0) involved.push(j2); }
       var ci = involved.indexOf(sd.priority);
       var nextP = involved[(ci + 1) % involved.length];
-      aL("P" + (sd.priority + 1) + " passes -> P" + (nextP + 1));
+      aL(pName(sd.priority) + " passes -> " + pName(nextP));
       var newSd = Object.assign({}, sd, { priority: nextP, lastPass: sd.priority, acted: false });
       setSd(newSd);
       setAct(nextP);
@@ -2055,7 +2055,7 @@ function RiftboundGame() {
           <div style={{ fontSize: 14, color: gameMsg === "__forfeit__" ? "#ff6666" : "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700, marginBottom: 12 }}>{gameMsg === "__forfeit__" ? "Are you sure you want to forfeit?" : gameMsg}</div>
           {gameMsg === "__forfeit__" ? (
             <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-              <button onClick={function() { setGameMsg(null); var other = (act + 1) % pc; setWin(other); setScreen("go"); aL("P" + (act + 1) + " forfeits!"); }} style={{ padding: "6px 20px", borderRadius: 5, border: "2px solid #ff4444", background: "rgba(255,50,50,0.15)", color: "#ff6666", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif" }}>FORFEIT</button>
+              <button onClick={function() { setGameMsg(null); var other = (act + 1) % pc; setWin(other); setScreen("go"); aL(pName(act) + " forfeits!"); }} style={{ padding: "6px 20px", borderRadius: 5, border: "2px solid #ff4444", background: "rgba(255,50,50,0.15)", color: "#ff6666", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif" }}>FORFEIT</button>
               <button onClick={function() { setGameMsg(null); }} style={{ padding: "6px 20px", borderRadius: 5, border: "1px solid #555", background: "transparent", color: "#888", cursor: "pointer", fontSize: 12, fontFamily: "Spectral,serif" }}>Cancel</button>
             </div>
           ) : (
@@ -2439,7 +2439,7 @@ function RiftboundGame() {
           {sd && <div className="anim-sd-pulse" style={{ textAlign: "center", padding: "6px 8px", flexShrink: 0, borderTop: "2px solid #FF6B35", borderLeft: "2px solid #FF6B35", borderRight: "2px solid #FF6B35", borderRadius: "6px 6px 0 0", marginRight: -1 }}><div style={{ fontSize: 13, color: "#FF6B35", fontWeight: 700, fontFamily: "Spectral,serif" }}>SHOWDOWN</div>{hasPri ? <button onClick={passPriority} style={{ padding: 7, borderRadius: 4, border: "2px solid #FF6B35", background: "#FF6B3515", color: "#FF6B35", cursor: "pointer", fontSize: 11, fontWeight: 700, marginTop: 3, width: "100%", fontFamily: "Spectral,serif" }}>{sd.lastPass !== null && sd.lastPass !== sd.priority && !sd.acted ? "RESOLVE" : "PASS PRIORITY"}</button> : <button disabled style={{ padding: 7, borderRadius: 4, border: "1px solid #ffffff20", background: "transparent", color: "#666", cursor: "not-allowed", fontSize: 11, fontWeight: 700, marginTop: 3, width: "100%", fontFamily: "Spectral,serif", opacity: 0.7 }}>Waiting for {pName(sd.priority)}...</button>}</div>}
           {/* Chat log */}
           <div ref={lr} className={sd ? "anim-sd-pulse" : ""} style={{ flex: 1, overflow: "auto", padding: 6, fontSize: 10, lineHeight: 1.5, minHeight: 30, borderLeft: sd ? "2px solid #FF6B35" : "none", borderRight: sd ? "2px solid #FF6B35" : "none", borderBottom: sd ? "2px solid #FF6B35" : "none", borderRadius: sd ? "0 0 6px 6px" : 0, marginRight: sd ? -1 : 0 }}>
-            {log.map(function(e, i) { return <div key={i} style={{ color: e.m.indexOf("===") >= 0 ? "#FFD700" : e.m.indexOf("wins") >= 0 ? "#FFD700" : e.m.indexOf("SHOWDOWN") >= 0 ? "#FF6B35" : e.m.indexOf("onquer") >= 0 ? "#4ADE80" : "#667", marginBottom: 2, fontFamily: e.m.indexOf("===") >= 0 ? "Spectral,serif" : "inherit" }}>{e.m}</div>; })}
+            {log.map(function(e, i) { return <div key={i} style={{ color: e.m.indexOf("===") >= 0 ? "#FFD700" : e.m.indexOf("wins") >= 0 ? "#FFD700" : e.m.indexOf("SHOWDOWN") >= 0 ? "#FF6B35" : e.m.indexOf("onquer") >= 0 || e.m.indexOf("holding point") >= 0 ? "#4ADE80" : "#667", marginBottom: 2, fontFamily: e.m.indexOf("===") >= 0 ? "Spectral,serif" : "inherit" }}>{e.m}</div>; })}
             <button onClick={function() { var txt = log.map(function(e) { return e.m; }).join("\n"); navigator.clipboard.writeText(txt); }} style={{ padding: "2px 6px", borderRadius: 3, border: "1px solid #ffffff15", background: "transparent", color: "#555", cursor: "pointer", fontSize: 8, marginTop: 4 }}>Copy Log</button>
           </div>
           {/* Showcase zone - fixed */}
