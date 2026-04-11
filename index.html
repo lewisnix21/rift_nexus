@@ -443,6 +443,7 @@ function RiftboundGame() {
   var _dbSort = useState("name"), dbSort = _dbSort[0], setDbSort = _dbSort[1];
   var _dos = useState(false), dragOverShowcase = _dos[0], setDragOverShowcase = _dos[1];
   var _sb = useState(false), showBin = _sb[0], setShowBin = _sb[1];
+  var _seb = useState(null), showEnemyBin = _seb[0], setShowEnemyBin = _seb[1];
   var _bs = useState([]), binSelected = _bs[0], setBinSelected = _bs[1];
   var _gm = useState(null), gameMsg = _gm[0], setGameMsg = _gm[1];
   var _hctx = useState(null), handCtxUid = _hctx[0], setHandCtxUid = _hctx[1];
@@ -2113,6 +2114,18 @@ function RiftboundGame() {
           </div>
         </div>
       </div>}
+      {/* Enemy bin viewer overlay (view only) */}
+      {showEnemyBin && showEnemyBin.length > 0 && <div onClick={function(e) { if (e.target === e.currentTarget) setShowEnemyBin(null); }} style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1100, cursor: "pointer" }}>
+        <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "#12162a", borderRadius: 10, padding: 16, border: "2px solid #ff444433", maxWidth: "80vw", maxHeight: "80vh", overflow: "auto", cursor: "default" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <span style={{ fontFamily: "Spectral,serif", fontSize: 16, fontWeight: 700, color: "#ff6666" }}>Opponent's Bin ({showEnemyBin.length})</span>
+            <button onClick={function() { setShowEnemyBin(null); }} style={{ padding: "4px 12px", borderRadius: 4, border: "1px solid #333", background: "transparent", color: "#666", cursor: "pointer", fontSize: 11 }}>Close</button>
+          </div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center" }}>
+            {showEnemyBin.map(function(c, i) { return <Card key={c.uid || i} card={c} small />; })}
+          </div>
+        </div>
+      </div>}
       {/* Game message overlay */}
       {gameMsg && <div onClick={function() { setGameMsg(null); }} style={{ position: "fixed", inset: 0, background: "#000a", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1200, cursor: "pointer" }}>
         <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "linear-gradient(160deg, #1a1a3a, #12122a)", borderRadius: 10, padding: "20px 28px", border: "2px solid " + (gameMsg === "__forfeit__" ? "#ff444488" : "#FFD70055"), boxShadow: "0 8px 40px #0008, 0 0 20px " + (gameMsg === "__forfeit__" ? "#ff444415" : "#FFD70015"), maxWidth: 400, textAlign: "center", cursor: "default" }}>
@@ -2292,7 +2305,7 @@ function RiftboundGame() {
             {ps.filter(function(_, i) { return i !== viewSlot; }).map(function(enemy) {
               var enemySlot = ps.indexOf(enemy);
               return <div key={"ehand"} style={{ display: "flex", alignItems: "flex-start", flex: 1 }}>
-                <BinPile trash={enemy.trash} />
+                <div onClick={function() { if (enemy.trash && enemy.trash.length > 0) setShowEnemyBin(enemy.trash); }} style={{ cursor: enemy.trash && enemy.trash.length > 0 ? "pointer" : "default" }}><BinPile trash={enemy.trash} /></div>
                 <div data-uid={"slot-" + enemySlot + "-deck"}><CardBack w={HAND_W} h={HAND_H} count={enemy.mainDeck.length} label="DECK" /></div>
                 <div style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "flex-start", height: HAND_H, overflow: "visible" }}>
                   {enemy.hand.map(function(c, i) {
@@ -2460,9 +2473,11 @@ function RiftboundGame() {
                 </select>
               </div>
               {/* Main deck */}
-              <div style={{ position: "relative" }}>
-                <div data-uid={"slot-" + mySlot + "-deck"} onClick={canAct && myCur.mainDeck.length > 0 ? function() { var idx = myActIdx; var _me = ps[idx]; if (!_me) return; if (sd) setSd(Object.assign({}, sd, { acted: true })); var p = Object.assign({}, _me, { mainDeck: _me.mainDeck.slice(), hand: _me.hand.slice() }); var c = p.mainDeck.shift(); p.hand.push(c); addAnim(c.uid, "draw"); aL(pName(idx) + " draws 1 card"); var np = ps.slice(); np[idx] = p; setPs(np); } : undefined} style={{ cursor: canAct && myCur.mainDeck.length > 0 ? "pointer" : "default" }}><CardBack w={HAND_W} h={HAND_H} count={myCur.mainDeck.length} label="DECK" /></div>
-                {myCur.mainDeck.length > 0 && <button onClick={function(e) { e.stopPropagation(); setScryMode("prompt"); setScryCount(1); }} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", border: "1.5px solid #8B5CF688", background: "rgba(139,92,246,0.8)", color: "#fff", fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 6 }}>&#128065;</button>}
+              <div style={{ position: "relative" }}
+                onDragOver={canMoveOwn ? function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } : undefined}
+                onDrop={canMoveOwn ? function(e) { e.preventDefault(); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts.length > 1 ? parts[1] : parts[0]; var idx = myActIdx; var _me = ps[idx]; if (!_me) return; var p = Object.assign({}, _me, { hand: _me.hand.slice(), base: _me.base.slice(), mainDeck: _me.mainDeck.slice() }); var card = null; if (type === "hand") { var hi = p.hand.findIndex(function(c) { return c.uid === uid2; }); if (hi >= 0) card = p.hand.splice(hi, 1)[0]; } else if (type === "base") { var bi2 = p.base.findIndex(function(c) { return c.uid === uid2; }); if (bi2 >= 0) card = p.base.splice(bi2, 1)[0]; } else if (type === "bf") { var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); }); for (var bk = 0; bk < nb.length; bk++) { if (!nb[bk].units[idx]) continue; var ui = nb[bk].units[idx].findIndex(function(u) { return u.uid === uid2; }); if (ui >= 0) { card = nb[bk].units[idx].splice(ui, 1)[0]; setBfs(nb); break; } } } if (card) { p.mainDeck.push(Object.assign({}, card, { exhausted: false })); aL(pName(idx) + " recycles " + (card.hidden ? "a card" : card.name) + " to deck"); var np = ps.slice(); np[idx] = p; setPs(np); } } : undefined}>
+                <div data-uid={"slot-" + mySlot + "-deck"} onClick={canMoveOwn && myCur.mainDeck.length > 0 ? function() { var idx = myActIdx; var _me = ps[idx]; if (!_me) return; if (sd) setSd(Object.assign({}, sd, { acted: true })); var p = Object.assign({}, _me, { mainDeck: _me.mainDeck.slice(), hand: _me.hand.slice() }); var c = p.mainDeck.shift(); p.hand.push(c); addAnim(c.uid, "draw"); aL(pName(idx) + " draws 1 card"); var np = ps.slice(); np[idx] = p; setPs(np); } : undefined} style={{ cursor: canMoveOwn && myCur.mainDeck.length > 0 ? "pointer" : "default" }}><CardBack w={HAND_W} h={HAND_H} count={myCur.mainDeck.length} label="DECK" /></div>
+                {myCur.mainDeck.length > 0 && <button onClick={function(e) { e.stopPropagation(); setScryMode("prompt"); setScryCount(1); }} style={{ position: "absolute", top: -6, right: -6, padding: "2px 6px", borderRadius: 4, border: "1.5px solid #8B5CF688", background: "rgba(139,92,246,0.8)", color: "#fff", fontSize: 10, fontWeight: 700, fontFamily: "Spectral,serif", cursor: "pointer", zIndex: 6, letterSpacing: 0.5 }}>Scry</button>}
               </div>
               {/* Bin pile */}
               <div onClick={function() { if (myCur.trash && myCur.trash.length > 0) setShowBin(!showBin); }} onDragOver={function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }} onDragEnter={function(e) { e.preventDefault(); setDragOverBin(true); }} onDragLeave={function() { setDragOverBin(false); }} onDrop={function(e) { e.preventDefault(); setDragOverBin(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var uid2 = parts.length > 1 ? parts[1] : parts[0]; sendToBin(uid2); }} style={{ cursor: myCur.trash && myCur.trash.length > 0 ? "pointer" : "default", borderRadius: 6, border: dragOverBin ? "2px solid #ff6666" : "2px solid transparent", boxShadow: dragOverBin ? "0 0 16px rgba(255,100,100,0.3), inset 0 0 12px rgba(255,100,100,0.05)" : "none", transition: "border 0.15s ease, box-shadow 0.15s ease" }}><BinPile trash={myCur.trash} /></div>
