@@ -144,7 +144,7 @@ function writeGameAction(code, state) {
   fbDb.ref("lobbies/" + code + "/gameState").set(state);
 }
 </script>
-<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}body{background:#0f0f23;overflow:auto;font-family:'Inter',sans-serif;color:#ddd;text-rendering:optimizeLegibility}img{image-rendering:auto;-webkit-backface-visibility:hidden;backface-visibility:hidden}.card-hover,.bf-hover{-webkit-backface-visibility:hidden;backface-visibility:hidden;will-change:transform}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#FFD70033;border-radius:3px}button:hover{filter:brightness(1.15)}.card-hover{transition:transform 0.15s ease;position:relative;z-index:1}.card-hover:hover{transform:scale(1.1) !important;z-index:999 !important;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.8))}.hand-card-hover{transition:transform 0.15s ease;position:relative;z-index:1}.hand-card-hover:hover{transform:scale(2.53) translateY(-5%) !important;z-index:999 !important;filter:drop-shadow(0 8px 32px rgba(0,0,0,0.9))}.card-tapped{transition:transform 0.15s ease;position:relative;z-index:1}.card-tapped:hover{transform:rotate(90deg) scale(1.1) !important;z-index:999 !important;filter:brightness(0.58) drop-shadow(0 8px 24px rgba(0,0,0,0.8))}.gear-peek{transition:transform 0.15s ease;position:relative;z-index:1}.gear-peek:hover{transform:scale(1.1) !important;z-index:999 !important;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.8))}.bf-hover{transition:transform 0.15s ease;position:relative;z-index:1}.bf-hover:hover{transform:rotate(90deg) scale(1.1) !important;z-index:999 !important;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.8))}.bf-hover-land{transition:transform 0.15s ease;position:relative;z-index:1}.bf-hover-land:hover{transform:scale(1.1) !important;z-index:999 !important;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.8))}.no-hover,.no-hover *{transition:none !important}.no-hover:hover,.no-hover:hover *{transform:none !important;filter:none !important;z-index:auto !important}@keyframes drawIn{0%{transform:translateX(500px) scale(0.4) rotate(-180deg);opacity:0}40%{opacity:1}100%{transform:translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}@keyframes fadeSlideUp{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-20px);opacity:0}}@keyframes untapGlow{0%{box-shadow:0 0 0 #FFD70000}50%{box-shadow:0 0 12px #FFD70066}100%{box-shadow:0 0 0 #FFD70000}}@keyframes cardDrawIn{0%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(180deg);opacity:0}40%{opacity:1}100%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes cardDrawOut{0%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}50%{opacity:0.7}100%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(-180deg);opacity:0}}.anim-recycle{animation:cardDrawOut 0.25s ease-in forwards !important;pointer-events:none;transition:none !important}.anim-rune-draw{animation:cardDrawIn 0.25s ease-out;transition:none !important}.anim-draw{animation:drawIn 0.25s ease-out;transition:none !important}@keyframes nameGlow{0%,100%{text-shadow:0 0 6px #FFD70033;opacity:0.7}50%{text-shadow:0 0 25px #FFD700ff,0 0 50px #FFD70088,0 0 80px #FFD70044;opacity:1}}@keyframes showdownPulse{0%,100%{box-shadow:inset 0 0 6px rgba(255,107,53,0.15),0 0 4px rgba(255,107,53,0.1);border-color:#FF6B3566}50%{box-shadow:inset 0 0 24px rgba(255,107,53,0.5),0 0 16px rgba(255,107,53,0.4);border-color:#FF6B35}}.anim-sd-pulse{animation:showdownPulse 1.2s ease-in-out infinite}.anim-name-glow{animation:nameGlow 1.2s ease-in-out infinite}.anim-pulse{animation:pulse 0.8s ease-in-out infinite}.anim-bin{animation:fadeSlideUp 0.4s ease-out forwards}.anim-untap{animation:untapGlow 0.6s ease-out}@keyframes pingRipple{0%{transform:translate(-50%,-50%) scale(0.3);opacity:1}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0}}.ping-dot{position:fixed;width:30px;height:30px;pointer-events:none;z-index:9997}.ping-dot::before,.ping-dot::after{content:'';position:absolute;top:50%;left:50%;width:100%;height:100%;border-radius:50%;border:2.5px solid #FFD700;transform:translate(-50%,-50%) scale(0.3);animation:pingRipple 0.8s ease-out forwards}.ping-dot::after{animation-delay:0.15s}[draggable=true]{cursor:grab}[draggable=true]:active{cursor:grabbing;opacity:0.6}</style></head><body><div id="root"></div>
+<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}body{background:#0f0f23;overflow:auto;font-family:'Inter',sans-serif;color:#ddd;text-rendering:optimizeLegibility}img{image-rendering:auto;-webkit-backface-visibility:hidden;backface-visibility:hidden}.card-hover,.bf-hover{-webkit-backface-visibility:hidden;backface-visibility:hidden;will-change:transform}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#FFD70033;border-radius:3px}button:hover{filter:brightness(1.15)}.card-hover{transition:transform 0.15s ease;position:relative;z-index:1}.card-hover:hover{transform:scale(1.1) !important;z-index:999 !important;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.8))}.hand-card-hover{transition:transform 0.15s ease;position:relative;z-index:1}.hand-card-hover:hover{transform:scale(2.53) translateY(-5%) !important;z-index:999 !important;filter:drop-shadow(0 8px 32px rgba(0,0,0,0.9))}.card-tapped{transition:transform 0.15s ease;position:relative;z-index:1}.card-tapped:hover{transform:rotate(90deg) scale(1.1) !important;z-index:999 !important;filter:brightness(0.58) drop-shadow(0 8px 24px rgba(0,0,0,0.8))}.gear-peek{transition:transform 0.15s ease;position:relative;z-index:1}.gear-peek:hover{transform:scale(1.1) !important;z-index:999 !important;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.8))}.bf-hover{transition:transform 0.15s ease;position:relative;z-index:1}.bf-hover:hover{transform:rotate(90deg) scale(1.1) !important;z-index:999 !important;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.8))}.bf-hover-land{transition:transform 0.15s ease;position:relative;z-index:1}.bf-hover-land:hover{transform:scale(1.1) !important;z-index:999 !important;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.8))}.no-hover,.no-hover *{transition:none !important}.no-hover:hover,.no-hover:hover *{transform:none !important;filter:none !important;z-index:auto !important}@keyframes drawIn{0%{transform:translateX(500px) scale(0.4) rotate(-180deg);opacity:0}40%{opacity:1}100%{transform:translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}@keyframes fadeSlideUp{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-20px);opacity:0}}@keyframes untapGlow{0%{box-shadow:0 0 0 #FFD70000}50%{box-shadow:0 0 12px #FFD70066}100%{box-shadow:0 0 0 #FFD70000}}@keyframes cardDrawIn{0%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(180deg);opacity:0}40%{opacity:1}100%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes cardDrawOut{0%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}50%{opacity:0.7}100%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(-180deg);opacity:0}}.anim-recycle{animation:cardDrawOut 0.25s ease-in forwards !important;pointer-events:none;transition:none !important}.anim-rune-draw{animation:cardDrawIn 0.25s ease-out;transition:none !important}.anim-draw{animation:drawIn 0.25s ease-out;transition:none !important}@keyframes nameGlow{0%,100%{text-shadow:0 0 6px #FFD70033;opacity:0.7}50%{text-shadow:0 0 25px #FFD700ff,0 0 50px #FFD70088,0 0 80px #FFD70044;opacity:1}}@keyframes showdownPulse{0%,100%{box-shadow:inset 0 0 6px rgba(255,107,53,0.15),0 0 4px rgba(255,107,53,0.1);border-color:#FF6B3566}50%{box-shadow:inset 0 0 24px rgba(255,107,53,0.5),0 0 16px rgba(255,107,53,0.4);border-color:#FF6B35}}@keyframes turnPulse{0%,100%{box-shadow:inset 0 0 8px rgba(255,215,0,0.1),0 0 6px rgba(255,215,0,0.08);border-color:#FFD70044}50%{box-shadow:inset 0 0 20px rgba(255,215,0,0.3),0 0 14px rgba(255,215,0,0.25);border-color:#FFD700aa}}.anim-turn-pulse{animation:turnPulse 1.8s ease-in-out infinite;border:2px solid #FFD70044;border-radius:8px}.anim-sd-pulse{animation:showdownPulse 1.2s ease-in-out infinite}.anim-name-glow{animation:nameGlow 1.2s ease-in-out infinite}.anim-pulse{animation:pulse 0.8s ease-in-out infinite}.anim-bin{animation:fadeSlideUp 0.4s ease-out forwards}.anim-untap{animation:untapGlow 0.6s ease-out}@keyframes pingRipple{0%{transform:translate(-50%,-50%) scale(0.3);opacity:1}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0}}.ping-dot{position:fixed;width:30px;height:30px;pointer-events:none;z-index:9997}.ping-dot::before,.ping-dot::after{content:'';position:absolute;top:50%;left:50%;width:100%;height:100%;border-radius:50%;border:2.5px solid #FFD700;transform:translate(-50%,-50%) scale(0.3);animation:pingRipple 0.8s ease-out forwards}.ping-dot::after{animation-delay:0.15s}[draggable=true]{cursor:grab}[draggable=true]:active{cursor:grabbing;opacity:0.6}</style></head><body><div id="root"></div>
 <script>
 var IG="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/";
 var CARD_BACK="data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140"><rect width="100" height="140" rx="5" fill="#0f2640"/><rect x="4" y="4" width="92" height="132" rx="3" fill="none" stroke="#c8a84e" stroke-width="1"/><g stroke="#c8a84e" fill="none" stroke-width="0.8"><line x1="50" y1="18" x2="82" y2="50"/><line x1="50" y1="18" x2="18" y2="50"/><circle cx="50" cy="70" r="22"/><line x1="50" y1="122" x2="82" y2="90"/><line x1="50" y1="122" x2="18" y2="90"/><line x1="12" y1="70" x2="50" y2="38"/><line x1="88" y1="70" x2="50" y2="38"/><line x1="12" y1="70" x2="50" y2="102"/><line x1="88" y1="70" x2="50" y2="102"/><polygon points="50,38 82,70 50,102 18,70" stroke-width="1"/></g><text x="50" y="67" text-anchor="middle" font-size="7" font-weight="bold" fill="#c8a84e" font-family="serif">LEAGUE</text><text x="50" y="74" text-anchor="middle" font-size="5" fill="#c8a84e" font-family="serif">OF</text><text x="50" y="81" text-anchor="middle" font-size="6" font-weight="bold" fill="#c8a84e" font-family="serif">LEGENDS</text><polygon points="50,14 51.5,17 48.5,17" fill="#c8a84e"/><polygon points="50,126 51.5,123 48.5,123" fill="#c8a84e"/></svg>');
@@ -200,7 +200,8 @@ return{name:c.n,type:c.t,domain:c.d,domains:c.ds,energy:c.e,might:c.m,keywords:c
 var useState=React.useState;var useCallback=React.useCallback;var useEffect=React.useEffect;var useRef=React.useRef;
 var _setHoverCard = null;
 var _clearHoverCard = null;
-function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin, onPlus, onMinus, onPlus2, onMinus2, onGearDrop, onGearDetach, onHide, onArrow, hasArrow, onRemoveArrow }) {
+function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin, onPlus, onMinus, onPlus2, onMinus2, onGearDrop, onGearDetach, onHide, onArrow, hasArrow, onRemoveArrow, isMine, dragData, onDragStartCb, onDragEnd: _onDragEnd }) {
+  var _cardDragStart = dragData ? function(e) { e.dataTransfer.setData("text/plain", dragData); if (onDragStartCb) onDragStartCb(e); } : undefined;
   var _hov = useState(false), isHov = _hov[0], setIsHov = _hov[1];
   var _gdo = useState(false), gearDragOver = _gdo[0], setGearDragOver = _gdo[1];
   var _ctx = useState(false), showCtx = _ctx[0], setShowCtx = _ctx[1];
@@ -223,11 +224,12 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
     var gearExtraH = gearCountH > 0 ? Math.round(hw * 0.3) * gearCountH : 0;
     return (
       <div data-uid={card.uid} className={ex ? "card-tapped" : "card-hover"} onClick={onClick}
+        draggable={!!dragData} onDragStart={_cardDragStart} onDragEnd={_onDragEnd}
         onContextMenu={onHide ? function(e) { e.preventDefault(); onHide(card.uid); } : undefined}
         onDragOver={onGearDrop ? function(e) { e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = "move"; if (!gearDragOver) setGearDragOver(true); } : undefined}
         onDragLeave={onGearDrop ? function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setGearDragOver(false); } : undefined}
         onDrop={onGearDrop ? function(e) { e.preventDefault(); e.stopPropagation(); setGearDragOver(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var uid2 = parts.length > 1 ? parts[1] : parts[0]; onGearDrop(uid2, card.uid); } : undefined}
-        onMouseEnter={function(e) {}} onMouseLeave={function() { setGearDragOver(false); }} style={{ width: hw, height: hh, borderRadius: small ? 4 : 6, overflow: "visible", border: gearDragOver ? "3px solid #4ADE80" : "2px solid #FFD70040", boxShadow: gearDragOver ? "0 0 20px rgba(74,222,128,0.5), 0 0 40px rgba(74,222,128,0.2)" : "none", cursor: "pointer", flexShrink: 0, transform: ex ? "rotate(90deg)" : "none", filter: ex ? "brightness(0.58)" : "none", position: "relative", marginRight: gearExtraH, transition: "border 0.15s ease, box-shadow 0.15s ease" }}>
+        onMouseEnter={isMine ? function(e) { if (_setHoverCard) _setHoverCard(card, e); } : function(e) {}} onMouseLeave={function() { setGearDragOver(false); if (isMine && _clearHoverCard) _clearHoverCard(); }} style={{ width: hw, height: hh, borderRadius: small ? 4 : 6, overflow: "visible", border: gearDragOver ? "3px solid #4ADE80" : "2px solid #FFD70040", boxShadow: gearDragOver ? "0 0 20px rgba(74,222,128,0.5), 0 0 40px rgba(74,222,128,0.2)" : "none", cursor: "pointer", flexShrink: 0, transform: ex ? "rotate(90deg)" : "none", filter: ex ? "brightness(0.58)" : "none", position: "relative", marginRight: gearExtraH, transition: "border 0.15s ease, box-shadow 0.15s ease" }}>
         <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: "inherit" }}><img src={CARD_BACK} style={{ width: "100%", height: "100%", objectFit: "fill" }} /></div>
         {gearCountH > 0 && card.gear.map(function(g, gi) { var gUrl = g.img ? imgSrc(g.img) : ""; var stepOff = Math.round(hw * 0.3); var gOff = stepOff * (gi + 1); var gZ = 1; return <div key={g.uid} className="gear-peek" draggable={true} onDragStart={function(e) { e.stopPropagation(); e.dataTransfer.setData("text/plain", "gear:" + g.uid); }} onMouseEnter={function(e) { e.stopPropagation(); if (_setHoverCard) _setHoverCard(g, e); }} onMouseLeave={function(e) { e.stopPropagation(); if (_clearHoverCard) _clearHoverCard(); }} style={{ position: "absolute", top: 0, left: gOff, width: hw, height: hh, borderRadius: 4, overflow: "hidden", border: "1.5px solid #FFD70044", boxShadow: "0 2px 6px #000a", cursor: "grab", zIndex: gZ }}>{gUrl ? <img src={gUrl} style={{ width: "100%", height: "100%", objectFit: "fill" }} /> : <div style={{ width: "100%", height: "100%", background: "#1a1a30", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 7, color: "#FFD700" }}>{g.name}</div>}</div>; })}
       </div>
@@ -261,7 +263,7 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
   /* Cards with real CDN image */
   if (imgUrl) {
       var hasGear = gearCount > 0;
-      var cardEl = <div data-uid={card.uid} className={hCls} onClick={function(e) { if (showCtx) { setShowCtx(false); return; } if (onClick) onClick(e); }} onContextMenu={onHide ? function(e) { e.preventDefault(); setShowCtx(!showCtx); } : undefined} onMouseEnter={function(e) { setIsHov(true); if (hEnter) hEnter(e); }} onMouseLeave={function(e) { setIsHov(false); setShowCtx(false); if (hLeave) hLeave(e); }}
+      var cardEl = <div data-uid={card.uid} className={hCls} draggable={!!dragData} onDragStart={_cardDragStart} onDragEnd={_onDragEnd} onClick={function(e) { if (showCtx) { setShowCtx(false); return; } if (onClick) onClick(e); }} onContextMenu={onHide ? function(e) { e.preventDefault(); setShowCtx(!showCtx); } : undefined} onMouseEnter={function(e) { setIsHov(true); if (hEnter) hEnter(e); }} onMouseLeave={function(e) { setIsHov(false); setShowCtx(false); if (hLeave) hLeave(e); }}
         onDragOver={onGearDrop ? function(e) { e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = "move"; if (!gearDragOver) setGearDragOver(true); } : undefined}
         onDragLeave={onGearDrop ? function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setGearDragOver(false); } : undefined}
         onDrop={onGearDrop ? function(e) { e.preventDefault(); e.stopPropagation(); setGearDragOver(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var uid2 = parts.length > 1 ? parts[1] : parts[0]; onGearDrop(uid2, card.uid); } : undefined}
@@ -294,7 +296,7 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
   var ft = small ? 6 : zoomed ? 12 : inHand ? 8 : 7;
   var fo = small ? 15 : zoomed ? 32 : inHand ? 19 : 17;
   return (
-    <div data-uid={card.uid} className={hCls} onClick={onClick} onMouseEnter={function(e) { setIsHov(true); if (hEnter) hEnter(e); }} onMouseLeave={function(e) { setIsHov(false); if (hLeave) hLeave(e); }} style={Object.assign({}, wrapS, { display: "flex", flexDirection: "column", background: "linear-gradient(180deg," + d.c + "12,#0a0a16 20%,#08081a 80%," + d.c + "08)" })}>
+    <div data-uid={card.uid} className={hCls} draggable={!!dragData} onDragStart={_cardDragStart} onDragEnd={_onDragEnd} onClick={onClick} onMouseEnter={function(e) { setIsHov(true); if (hEnter) hEnter(e); }} onMouseLeave={function(e) { setIsHov(false); if (hLeave) hLeave(e); }} style={Object.assign({}, wrapS, { display: "flex", flexDirection: "column", background: "linear-gradient(180deg," + d.c + "12,#0a0a16 20%,#08081a 80%," + d.c + "08)" })}>
       {/* Art area */}
       <div style={{ height: "45%", position: "relative", background: "linear-gradient(160deg," + d.c + "25,#0c0c1a 50%," + d.c + "10)", display: "flex", alignItems: "center", justifyContent: "center", borderBottom: "1px solid " + d.c + "33", flexShrink: 0 }}>
         <span style={{ fontSize: h * 0.22, opacity: 0.15 }}>{d.i}</span>
@@ -742,6 +744,7 @@ function RiftboundGame() {
     return lpArr2[idx] ? lpArr2[idx].name : "P" + (idx + 1);
   }
 
+  function cName(card) { return card.hidden ? "a hidden card" : card.name; }
   var aL = useCallback(function(m) { setLog(function(p) { return p.slice(-60).concat([{ m: m }]); }); }, []);
   useEffect(function() { if (lr.current) lr.current.scrollTop = lr.current.scrollHeight; }, [log]);
   useEffect(function() {
@@ -761,8 +764,10 @@ function RiftboundGame() {
   }, [screen, act]);
 
   // Check for showdown resolution when battlefield units change
+  // Only auto-resolve if the showdown was contested (defender had units when it started)
   useEffect(function() {
     if (!sd || screen !== "sd") return;
+    if (!sd.contested) return; // Uncontested showdowns must be resolved manually via pass priority
     var bi = sd.bfIdx;
     var bf = bfs[bi];
     if (!bf) return;
@@ -973,10 +978,28 @@ function RiftboundGame() {
           <button onClick={authUser && dbSavedDecks.length > 0 ? function() { setDeckTab(deckTab === "mydecks" ? null : "mydecks"); } : undefined} style={{ padding: "4px 14px", borderRadius: 5, border: "2px solid " + (deckTab === "mydecks" ? "#8B5CF6" : authUser && dbSavedDecks.length > 0 ? "#8B5CF655" : "#ffffff25"), background: deckTab === "mydecks" ? "#8B5CF620" : authUser && dbSavedDecks.length > 0 ? "#8B5CF608" : "#ffffff06", color: deckTab === "mydecks" ? "#8B5CF6" : authUser && dbSavedDecks.length > 0 ? "#8B5CF6aa" : "#ffffff50", cursor: authUser && dbSavedDecks.length > 0 ? "pointer" : "not-allowed", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Your Decks{authUser && dbSavedDecks.length > 0 ? " (" + dbSavedDecks.length + ")" : ""}</button>
         </div>
         {deckTab === "precons" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, width: "100%" }}>
-          {DNAMES.map(function(n) { var myDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null; var s = myDeck === n; var t2 = DECKS[n]; var lg = findCard(t2.legend); var ds = (lg && lg.ds) ? lg.ds : []; return <button key={n} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/deck").set(n); }} style={{ padding: "6px 8px", borderRadius: 4, border: s ? "2px solid #FFD700" : "1px solid #2a2a3a", background: s ? "#FFD70015" : "#0c0c1a", color: s ? "#FFD700" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 13 }}><div style={{ fontWeight: s ? 700 : 500 }}>{n}</div><div style={{ fontSize: 9, marginTop: 2, display: "flex", gap: 3 }}>{ds.map(function(dd) { var dc = DOM[dd] || DOM.Colorless; return <span key={dd} style={{ color: dc.c, fontWeight: 700 }}>{dc.i} {dd}</span>; })}</div></button>; })}
+          {DNAMES.map(function(n) { var myDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null; var s = myDeck === n; var t2 = DECKS[n]; var lgImg = CI[t2.legend] ? imgSrc(CI[t2.legend]) : ""; var chImg = CI[t2.champ] ? imgSrc(CI[t2.champ]) : ""; var uniqueRunes = []; t2.runes.forEach(function(r) { if (uniqueRunes.indexOf(r) < 0) uniqueRunes.push(r); }); return <button key={n} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/deck").set(n); }} style={{ padding: "5px 6px", borderRadius: 4, border: s ? "2px solid #FFD700" : "1px solid #2a2a3a", background: s ? "#FFD70015" : "#0c0c1a", color: s ? "#FFD700" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 12, display: "flex", alignItems: "center", gap: 5 }}>
+            <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
+              {lgImg && <img src={lgImg} style={{ width: 32, height: 45, objectFit: "fill", borderRadius: 3, border: "1px solid #FFD70033" }} />}
+              {chImg && <img src={chImg} style={{ width: 32, height: 45, objectFit: "fill", borderRadius: 3, border: "1px solid #FFD70033" }} />}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: s ? 700 : 500, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n}</div>
+              <div style={{ display: "flex", gap: 2, marginTop: 2 }}>{uniqueRunes.map(function(r) { var rImg = CI[r + " Rune"] ? imgSrc(CI[r + " Rune"]) : ""; return rImg ? <img key={r} src={rImg} style={{ width: 18, height: 25, objectFit: "fill", borderRadius: 2, border: "1px solid " + (DOM[r] || DOM.Colorless).c + "55" }} /> : <span key={r} style={{ color: (DOM[r] || DOM.Colorless).c, fontSize: 14 }}>{(DOM[r] || DOM.Colorless).i}</span>; })}</div>
+            </div>
+          </button>; })}
         </div>}
         {deckTab === "mydecks" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, width: "100%" }}>
-          {dbSavedDecks.map(function(deck) { var dn = registerCustomDeck(deck); var myDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null; var s = myDeck === dn; var lc = deck.legend ? findCard(deck.legend) : null; var ds = lc && lc.ds ? lc.ds : []; return <button key={deck._id} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/deck").set(dn); }} style={{ padding: "6px 8px", borderRadius: 4, border: s ? "2px solid #8B5CF6" : "1px solid #2a2a3a", background: s ? "#8B5CF615" : "#0c0c1a", color: s ? "#8B5CF6" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 13 }}><div style={{ fontWeight: s ? 700 : 500 }}>{deck.name || "Untitled"}</div><div style={{ fontSize: 9, marginTop: 2, display: "flex", gap: 3 }}>{ds.map(function(dd) { var dc = DOM[dd] || DOM.Colorless; return <span key={dd} style={{ color: dc.c, fontWeight: 700 }}>{dc.i} {dd}</span>; })}</div></button>; })}
+          {dbSavedDecks.map(function(deck) { var dn = registerCustomDeck(deck); var myDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null; var s = myDeck === dn; var lgImg = CI[deck.legend] ? imgSrc(CI[deck.legend]) : ""; var chImg = CI[deck.champ] ? imgSrc(CI[deck.champ]) : ""; var uniqueRunes = []; (deck.runes || []).forEach(function(r) { if (uniqueRunes.indexOf(r) < 0) uniqueRunes.push(r); }); return <button key={deck._id} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/deck").set(dn); }} style={{ padding: "5px 6px", borderRadius: 4, border: s ? "2px solid #8B5CF6" : "1px solid #2a2a3a", background: s ? "#8B5CF615" : "#0c0c1a", color: s ? "#8B5CF6" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 12, display: "flex", alignItems: "center", gap: 5 }}>
+            <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
+              {lgImg && <img src={lgImg} style={{ width: 32, height: 45, objectFit: "fill", borderRadius: 3, border: "1px solid #8B5CF633" }} />}
+              {chImg && <img src={chImg} style={{ width: 32, height: 45, objectFit: "fill", borderRadius: 3, border: "1px solid #8B5CF633" }} />}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: s ? 700 : 500, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{deck.name || "Untitled"}</div>
+              <div style={{ display: "flex", gap: 2, marginTop: 2 }}>{uniqueRunes.map(function(r) { var rImg = CI[r + " Rune"] ? imgSrc(CI[r + " Rune"]) : ""; return rImg ? <img key={r} src={rImg} style={{ width: 18, height: 25, objectFit: "fill", borderRadius: 2, border: "1px solid " + (DOM[r] || DOM.Colorless).c + "55" }} /> : <span key={r} style={{ color: (DOM[r] || DOM.Colorless).c, fontSize: 14 }}>{(DOM[r] || DOM.Colorless).i}</span>; })}</div>
+            </div>
+          </button>; })}
         </div>}
         <div style={{ display: "flex", gap: 8 }}>
           <button onClick={function() {
@@ -1061,10 +1084,28 @@ function RiftboundGame() {
           <button onClick={authUser && dbSavedDecks.length > 0 ? function() { setDeckTab(deckTab === "mydecks" ? null : "mydecks"); } : undefined} style={{ padding: "4px 14px", borderRadius: 5, border: "2px solid " + (deckTab === "mydecks" ? "#8B5CF6" : authUser && dbSavedDecks.length > 0 ? "#8B5CF655" : "#ffffff25"), background: deckTab === "mydecks" ? "#8B5CF620" : authUser && dbSavedDecks.length > 0 ? "#8B5CF608" : "#ffffff06", color: deckTab === "mydecks" ? "#8B5CF6" : authUser && dbSavedDecks.length > 0 ? "#8B5CF6aa" : "#ffffff50", cursor: authUser && dbSavedDecks.length > 0 ? "pointer" : "not-allowed", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Your Decks{authUser && dbSavedDecks.length > 0 ? " (" + dbSavedDecks.length + ")" : ""}</button>
         </div>
         {deckTab === "precons" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, width: "100%" }}>
-          {DNAMES.map(function(n) { var myDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null; var s = myDeck === n; var t2 = DECKS[n]; var lg = findCard(t2.legend); var ds = (lg && lg.ds) ? lg.ds : []; return <button key={n} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/deck").set(n); }} style={{ padding: "6px 8px", borderRadius: 4, border: s ? "2px solid #4ADE80" : "1px solid #2a2a3a", background: s ? "#4ADE8015" : "#0c0c1a", color: s ? "#4ADE80" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 13 }}><div style={{ fontWeight: s ? 700 : 500 }}>{n}</div><div style={{ fontSize: 9, marginTop: 2, display: "flex", gap: 3 }}>{ds.map(function(dd) { var dc = DOM[dd] || DOM.Colorless; return <span key={dd} style={{ color: dc.c, fontWeight: 700 }}>{dc.i} {dd}</span>; })}</div></button>; })}
+          {DNAMES.map(function(n) { var myDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null; var s = myDeck === n; var t2 = DECKS[n]; var lgImg = CI[t2.legend] ? imgSrc(CI[t2.legend]) : ""; var chImg = CI[t2.champ] ? imgSrc(CI[t2.champ]) : ""; var uniqueRunes = []; t2.runes.forEach(function(r) { if (uniqueRunes.indexOf(r) < 0) uniqueRunes.push(r); }); return <button key={n} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/deck").set(n); }} style={{ padding: "5px 6px", borderRadius: 4, border: s ? "2px solid #4ADE80" : "1px solid #2a2a3a", background: s ? "#4ADE8015" : "#0c0c1a", color: s ? "#4ADE80" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 12, display: "flex", alignItems: "center", gap: 5 }}>
+            <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
+              {lgImg && <img src={lgImg} style={{ width: 32, height: 45, objectFit: "fill", borderRadius: 3, border: "1px solid #4ADE8033" }} />}
+              {chImg && <img src={chImg} style={{ width: 32, height: 45, objectFit: "fill", borderRadius: 3, border: "1px solid #4ADE8033" }} />}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: s ? 700 : 500, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n}</div>
+              <div style={{ display: "flex", gap: 2, marginTop: 2 }}>{uniqueRunes.map(function(r) { var rImg = CI[r + " Rune"] ? imgSrc(CI[r + " Rune"]) : ""; return rImg ? <img key={r} src={rImg} style={{ width: 18, height: 25, objectFit: "fill", borderRadius: 2, border: "1px solid " + (DOM[r] || DOM.Colorless).c + "55" }} /> : <span key={r} style={{ color: (DOM[r] || DOM.Colorless).c, fontSize: 14 }}>{(DOM[r] || DOM.Colorless).i}</span>; })}</div>
+            </div>
+          </button>; })}
         </div>}
         {deckTab === "mydecks" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, width: "100%" }}>
-          {dbSavedDecks.map(function(deck) { var dn = registerCustomDeck(deck); var myDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null; var s = myDeck === dn; var lc = deck.legend ? findCard(deck.legend) : null; var ds = lc && lc.ds ? lc.ds : []; return <button key={deck._id} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/deck").set(dn); }} style={{ padding: "6px 8px", borderRadius: 4, border: s ? "2px solid #8B5CF6" : "1px solid #2a2a3a", background: s ? "#8B5CF615" : "#0c0c1a", color: s ? "#8B5CF6" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 13 }}><div style={{ fontWeight: s ? 700 : 500 }}>{deck.name || "Untitled"}</div><div style={{ fontSize: 9, marginTop: 2, display: "flex", gap: 3 }}>{ds.map(function(dd) { var dc = DOM[dd] || DOM.Colorless; return <span key={dd} style={{ color: dc.c, fontWeight: 700 }}>{dc.i} {dd}</span>; })}</div></button>; })}
+          {dbSavedDecks.map(function(deck) { var dn = registerCustomDeck(deck); var myDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null; var s = myDeck === dn; var lgImg = CI[deck.legend] ? imgSrc(CI[deck.legend]) : ""; var chImg = CI[deck.champ] ? imgSrc(CI[deck.champ]) : ""; var uniqueRunes = []; (deck.runes || []).forEach(function(r) { if (uniqueRunes.indexOf(r) < 0) uniqueRunes.push(r); }); return <button key={deck._id} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/deck").set(dn); }} style={{ padding: "5px 6px", borderRadius: 4, border: s ? "2px solid #8B5CF6" : "1px solid #2a2a3a", background: s ? "#8B5CF615" : "#0c0c1a", color: s ? "#8B5CF6" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 12, display: "flex", alignItems: "center", gap: 5 }}>
+            <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
+              {lgImg && <img src={lgImg} style={{ width: 32, height: 45, objectFit: "fill", borderRadius: 3, border: "1px solid #8B5CF633" }} />}
+              {chImg && <img src={chImg} style={{ width: 32, height: 45, objectFit: "fill", borderRadius: 3, border: "1px solid #8B5CF633" }} />}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: s ? 700 : 500, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{deck.name || "Untitled"}</div>
+              <div style={{ display: "flex", gap: 2, marginTop: 2 }}>{uniqueRunes.map(function(r) { var rImg = CI[r + " Rune"] ? imgSrc(CI[r + " Rune"]) : ""; return rImg ? <img key={r} src={rImg} style={{ width: 18, height: 25, objectFit: "fill", borderRadius: 2, border: "1px solid " + (DOM[r] || DOM.Colorless).c + "55" }} /> : <span key={r} style={{ color: (DOM[r] || DOM.Colorless).c, fontSize: 14 }}>{(DOM[r] || DOM.Colorless).i}</span>; })}</div>
+            </div>
+          </button>; })}
         </div>}
         <button onClick={function() { leaveLobby(); }} style={{ padding: "6px 14px", borderRadius: 5, border: "1px solid #ff444466", background: "transparent", color: "#ff6666", cursor: "pointer", fontSize: 10, fontFamily: "Spectral,serif" }}>Leave</button>
       </div>}
@@ -1098,15 +1139,19 @@ function RiftboundGame() {
       <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%", maxWidth: 600 }}>
         {dbSavedDecks.map(function(deck) {
           var legendImg = deck.legend && CI[deck.legend] ? imgSrc(CI[deck.legend]) : (deck.legend && PA[deck.legend] ? PA_CDN + PA[deck.legend] + ".webp" : "");
+          var champImg = deck.champ && CI[deck.champ] ? imgSrc(CI[deck.champ]) : (deck.champ && PA[deck.champ] ? PA_CDN + PA[deck.champ] + ".webp" : "");
           var lc = deck.legend ? findCard(deck.legend) : null;
           var dc = lc ? (DOM[lc.d] || DOM.Colorless) : DOM.Colorless;
+          var uniqueRunes = []; (deck.runes || []).forEach(function(r) { if (uniqueRunes.indexOf(r) < 0) uniqueRunes.push(r); });
           return <div key={deck._id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 8, border: "1px solid #ffffff15", background: "#0c0c1a", cursor: "pointer" }} onClick={function() { loadDeck(deck); }}>
-            {legendImg ? <img src={legendImg} style={{ width: 50, height: 70, objectFit: "fill", borderRadius: 4, border: "1.5px solid " + dc.c + "44", flexShrink: 0 }} /> : <div style={{ width: 50, height: 70, borderRadius: 4, border: "1px dashed #ffffff20", display: "flex", alignItems: "center", justifyContent: "center", color: "#444", fontSize: 8, flexShrink: 0 }}>?</div>}
+            <div style={{ display: "flex", gap: 3, flexShrink: 0 }}>
+              {legendImg ? <img src={legendImg} style={{ width: 50, height: 70, objectFit: "fill", borderRadius: 4, border: "1.5px solid " + dc.c + "44" }} /> : <div style={{ width: 50, height: 70, borderRadius: 4, border: "1px dashed #ffffff20", display: "flex", alignItems: "center", justifyContent: "center", color: "#444", fontSize: 8 }}>?</div>}
+              {champImg ? <img src={champImg} style={{ width: 50, height: 70, objectFit: "fill", borderRadius: 4, border: "1.5px solid " + dc.c + "44" }} /> : deck.champ ? <div style={{ width: 50, height: 70, borderRadius: 4, border: "1px dashed #ffffff20", display: "flex", alignItems: "center", justifyContent: "center", color: "#444", fontSize: 7, textAlign: "center", padding: 2 }}>{deck.champ}</div> : null}
+            </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 15, fontWeight: 700, color: "#ddd", fontFamily: "Spectral,serif" }}>{deck.name || "Untitled"}</div>
-              <div style={{ fontSize: 10, color: "#888", marginTop: 2 }}>
-                {deck.legend || "No legend"} {deck.champ ? " / " + deck.champ : ""} — {(deck.cards || []).length}/39 cards
-              </div>
+              <div style={{ fontSize: 10, color: "#888", marginTop: 2 }}>{(deck.cards || []).length}/39 cards</div>
+              <div style={{ display: "flex", gap: 3, marginTop: 4 }}>{uniqueRunes.map(function(r) { var rImg = CI[r + " Rune"] ? imgSrc(CI[r + " Rune"]) : ""; return rImg ? <img key={r} src={rImg} style={{ width: 22, height: 31, objectFit: "fill", borderRadius: 2, border: "1px solid " + (DOM[r] || DOM.Colorless).c + "55" }} /> : <span key={r} style={{ color: (DOM[r] || DOM.Colorless).c, fontSize: 16 }}>{(DOM[r] || DOM.Colorless).i}</span>; })}</div>
             </div>
             <button onClick={function(e) { e.stopPropagation(); deleteDeck(deck._id); }} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid #ff444444", background: "transparent", color: "#ff666688", cursor: "pointer", fontSize: 10, fontFamily: "Spectral,serif" }}>Delete</button>
           </div>;
@@ -1550,11 +1595,11 @@ function RiftboundGame() {
     for (var bk = 0; bk < nb.length; bk++) {
       if (!nb[bk].units[idx]) continue;
       var ui = nb[bk].units[idx].findIndex(function(u) { return u.uid === cardUid; });
-      if (ui >= 0) { var unit = nb[bk].units[idx].splice(ui, 1)[0]; p.base.push(Object.assign({}, unit)); aL(pName(idx) + " returns " + unit.name + " to base"); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); return; }
+      if (ui >= 0) { var unit = nb[bk].units[idx].splice(ui, 1)[0]; p.base.push(Object.assign({}, unit)); aL(pName(idx) + " returns " + cName(unit) + " to base"); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); return; }
     }
     // Check bin
     var ti = p.trash.findIndex(function(c) { return c.uid === cardUid; });
-    if (ti >= 0) { var card = Object.assign({}, p.trash[ti]); p.trash.splice(ti, 1); p.base.push(card); aL(pName(idx) + " returns " + card.name + " to base from bin"); var np = ps.slice(); np[idx] = p; setPs(np); return; }
+    if (ti >= 0) { var card = Object.assign({}, p.trash[ti]); p.trash.splice(ti, 1); p.base.push(card); aL(pName(idx) + " returns " + cName(card) + " to base from bin"); var np = ps.slice(); np[idx] = p; setPs(np); return; }
   }
 
   function returnBfToHand(cardUid) {
@@ -1567,13 +1612,13 @@ function RiftboundGame() {
     for (var bk = 0; bk < nb.length; bk++) {
       if (!nb[bk].units[idx]) continue;
       var ui = nb[bk].units[idx].findIndex(function(u) { return u.uid === cardUid; });
-      if (ui >= 0) { var unit = nb[bk].units[idx].splice(ui, 1)[0]; p.hand.push(Object.assign({}, unit, { exhausted: false })); aL(pName(idx) + " returns " + unit.name + " to hand"); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); return; }
+      if (ui >= 0) { var unit = nb[bk].units[idx].splice(ui, 1)[0]; p.hand.push(Object.assign({}, unit, { exhausted: false })); aL(pName(idx) + " returns " + cName(unit) + " to hand"); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); return; }
     }
   }
 
   function stripGearToBin(card, p) {
     if (card.gear && card.gear.length > 0) {
-      card.gear.forEach(function(g) { if (!g.isToken) { p.trash.push(Object.assign({}, g, { exhausted: false })); aL("  " + g.name + " sent to bin"); } else { aL("  " + g.name + " token removed"); } });
+      card.gear.forEach(function(g) { if (!g.isToken) { p.trash.push(Object.assign({}, g, { exhausted: false })); aL("  " + cName(g) + " sent to bin"); } else { aL("  " + cName(g) + " token removed"); } });
       card.gear = [];
     }
   }
@@ -1587,12 +1632,12 @@ function RiftboundGame() {
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
     // Check base
     var bidx = p.base.findIndex(function(c) { return c.uid === cardUid; });
-    if (bidx >= 0) { var card = Object.assign({}, p.base[bidx], { exhausted: false, gear: (p.base[bidx].gear || []).slice() }); p.base.splice(bidx, 1); stripGearToBin(card, p); p.hand.push(Object.assign({}, card, { gear: [] })); aL(pName(idx2) + " returns " + card.name + " to hand"); var np = ps.slice(); np[idx2] = p; setPs(np); return; }
+    if (bidx >= 0) { var card = Object.assign({}, p.base[bidx], { exhausted: false, gear: (p.base[bidx].gear || []).slice() }); p.base.splice(bidx, 1); stripGearToBin(card, p); p.hand.push(Object.assign({}, card, { gear: [] })); aL(pName(idx2) + " returns " + cName(card) + " to hand"); var np = ps.slice(); np[idx2] = p; setPs(np); return; }
     // Check battlefields
-    for (var bk = 0; bk < nb.length; bk++) { if (!nb[bk].units[idx2]) continue; var ui = nb[bk].units[idx2].findIndex(function(u) { return u.uid === cardUid; }); if (ui >= 0) { var card = Object.assign({}, nb[bk].units[idx2][ui], { exhausted: false, gear: (nb[bk].units[idx2][ui].gear || []).slice() }); nb[bk].units[idx2].splice(ui, 1); stripGearToBin(card, p); p.hand.push(Object.assign({}, card, { gear: [] })); aL(pName(idx2) + " returns " + card.name + " to hand"); var np = ps.slice(); np[idx2] = p; setPs(np); setBfs(nb); return; } }
+    for (var bk = 0; bk < nb.length; bk++) { if (!nb[bk].units[idx2]) continue; var ui = nb[bk].units[idx2].findIndex(function(u) { return u.uid === cardUid; }); if (ui >= 0) { var card = Object.assign({}, nb[bk].units[idx2][ui], { exhausted: false, gear: (nb[bk].units[idx2][ui].gear || []).slice() }); nb[bk].units[idx2].splice(ui, 1); stripGearToBin(card, p); p.hand.push(Object.assign({}, card, { gear: [] })); aL(pName(idx2) + " returns " + cName(card) + " to hand"); var np = ps.slice(); np[idx2] = p; setPs(np); setBfs(nb); return; } }
     // Check bin
     var ti = p.trash.findIndex(function(c) { return c.uid === cardUid; });
-    if (ti >= 0) { var card = Object.assign({}, p.trash[ti], { exhausted: false }); p.trash.splice(ti, 1); p.hand.push(card); aL(pName(idx2) + " returns " + card.name + " to hand from bin"); var np = ps.slice(); np[idx2] = p; setPs(np); return; }
+    if (ti >= 0) { var card = Object.assign({}, p.trash[ti], { exhausted: false }); p.trash.splice(ti, 1); p.hand.push(card); aL(pName(idx2) + " returns " + cName(card) + " to hand from bin"); var np = ps.slice(); np[idx2] = p; setPs(np); return; }
   }
 
   function binCard(card, p) {
@@ -1602,11 +1647,11 @@ function RiftboundGame() {
     cleanArrowsForUid(card.uid);
     // Detach gear first — non-token gear goes to bin, token gear disappears
     if (card.gear && card.gear.length > 0) {
-      card.gear.forEach(function(g) { if (!g.isToken) { p.trash.push(Object.assign({}, g, { exhausted: false })); aL("  " + g.name + " sent to bin"); } else { aL("  " + g.name + " token removed"); } });
+      card.gear.forEach(function(g) { if (!g.isToken) { p.trash.push(Object.assign({}, g, { exhausted: false })); aL("  " + cName(g) + " sent to bin"); } else { aL("  " + cName(g) + " token removed"); } });
     }
     var cleanCard = Object.assign({}, card, { exhausted: false, gear: [] });
-    if (cleanCard.isToken) { aL(pName(myActIdx) + " removes " + cleanCard.name + " token"); }
-    else { p.trash.push(cleanCard); aL(pName(myActIdx) + " bins " + cleanCard.name); }
+    if (cleanCard.isToken) { aL(pName(myActIdx) + " removes " + cName(cleanCard) + " token"); }
+    else { p.trash.push(cleanCard); aL(pName(myActIdx) + " bins " + cName(cleanCard)); }
   }
 
   function sendToBin(cardUid) {
@@ -1651,8 +1696,8 @@ function RiftboundGame() {
     if (!gear || gear.type !== "Gear") return;
     // Find the target unit in base or battlefields
     var bi3 = p.base.findIndex(function(c) { return c.uid === unitUid; });
-    if (bi3 >= 0) { p.base[bi3] = Object.assign({}, p.base[bi3], { gear: (p.base[bi3].gear || []).concat([gear]) }); aL(pName(idx) + " attaches " + gear.name + " to " + p.base[bi3].name); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); return; }
-    for (var bk2 = 0; bk2 < nb.length; bk2++) { if (!nb[bk2].units[idx]) continue; var ui3 = nb[bk2].units[idx].findIndex(function(u) { return u.uid === unitUid; }); if (ui3 >= 0) { nb[bk2].units[idx][ui3] = Object.assign({}, nb[bk2].units[idx][ui3], { gear: (nb[bk2].units[idx][ui3].gear || []).concat([gear]) }); aL(pName(idx) + " attaches " + gear.name + " to " + nb[bk2].units[idx][ui3].name); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); return; } }
+    if (bi3 >= 0) { p.base[bi3] = Object.assign({}, p.base[bi3], { gear: (p.base[bi3].gear || []).concat([gear]) }); aL(pName(idx) + " attaches " + cName(gear) + " to " + cName(p.base[bi3])); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); return; }
+    for (var bk2 = 0; bk2 < nb.length; bk2++) { if (!nb[bk2].units[idx]) continue; var ui3 = nb[bk2].units[idx].findIndex(function(u) { return u.uid === unitUid; }); if (ui3 >= 0) { nb[bk2].units[idx][ui3] = Object.assign({}, nb[bk2].units[idx][ui3], { gear: (nb[bk2].units[idx][ui3].gear || []).concat([gear]) }); aL(pName(idx) + " attaches " + cName(gear) + " to " + cName(nb[bk2].units[idx][ui3])); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); return; } }
   }
 
   function detachGear(gearUid) {
@@ -1669,7 +1714,7 @@ function RiftboundGame() {
     if (!gear) { for (var bk = 0; bk < nb.length; bk++) { if (!nb[bk].units[idx]) continue; for (var ui = 0; ui < nb[bk].units[idx].length; ui++) { var u = nb[bk].units[idx][ui]; if (u.gear) { var gi = u.gear.findIndex(function(g) { return g.uid === gearUid; }); if (gi >= 0) { gear = u.gear.splice(gi, 1)[0]; nb[bk].units[idx][ui] = Object.assign({}, u, { gear: u.gear.slice() }); break; } } } if (gear) break; } }
     if (!gear) return;
     p.base = p.base.concat([gear]);
-    aL(pName(idx) + " detaches " + gear.name);
+    aL(pName(idx) + " detaches " + cName(gear));
     var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb);
   }
 
@@ -1770,7 +1815,7 @@ function RiftboundGame() {
         return np;
       });
     }, 250);
-    aL(pName(idx) + " recycles " + rune.name);
+    aL(pName(idx) + " recycles " + cName(rune));
   }
 
   function playToBattlefield(card, bi) {
@@ -1800,8 +1845,8 @@ function RiftboundGame() {
       var totalEnergy = card.energy || 0;
       var canAfford = (tappedUids.length + recycleUids.length) >= totalEnergy && recycleUids.length >= (card.rc || []).length;
       if (totalEnergy > 0 && !canAfford) {
-        aL("Not enough runes to play " + card.name + "!");
-        setGameMsg("Not enough runes to play " + card.name + ". (Turn off auto runes & recycling to stop this message.)");
+        aL("Not enough runes to play " + cName(card) + "!");
+        setGameMsg("Not enough runes to play " + cName(card) + ". (Turn off auto runes & recycling to stop this message.)");
         return;
       }
     }
@@ -1816,12 +1861,20 @@ function RiftboundGame() {
     if (totalPaid > 0 || recycleUids.length > 0) { var msg = "  Auto-tapped " + totalPaid + " rune" + (totalPaid > 1 ? "s" : ""); if (recycleUids.length > 0) msg += ", then recycled " + recycleUids.length + " of them"; aL(msg); }
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(x) { return x.slice(); }) }); });
     nb[bi].units[myActIdx].push(Object.assign({}, card, { exhausted: true }));
-    aL(pName(myActIdx) + " deploys " + (card.hidden ? "a hidden card" : card.name) + " to " + nb[bi].name);
+    aL(pName(myActIdx) + " deploys " + cName(card) + " to " + nb[bi].name);
     var np = ps.slice(); np[myActIdx] = p; setPs(np); setBfs(nb);
     if (!sd) {
       aL("SHOWDOWN at " + nb[bi].name + "!");
-      setSd({ bfIdx: bi, atkIdx: myActIdx, priority: myActIdx, lastPass: null, acted: false });
+      var _defPresent = false; for (var _j = 0; _j < pc; _j++) { if (_j !== myActIdx && nb[bi].units[_j] && nb[bi].units[_j].length > 0) _defPresent = true; }
+      var newSd2 = { bfIdx: bi, atkIdx: myActIdx, priority: myActIdx, lastPass: null, acted: false, contested: _defPresent };
+      setSd(newSd2);
       setScreen("sd");
+      if (roomCode && lobbyType !== "test") {
+        _lastSyncVersion.current++;
+        var cleanPs4 = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
+        var cleanBfs4 = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
+        fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPs4, bfs: cleanBfs4, turn: turn, act: myActIdx, screen: "sd", log: log.slice(-30), sd: newSd2, ver: _lastSyncVersion.current, by: myUid })));
+      }
     }
   }
 
@@ -1862,8 +1915,8 @@ function RiftboundGame() {
       var totalAvail = _me.runes.length;
       var canAfford = (tappedUids.length + recycleUids.length) >= totalEnergy && recycleUids.length >= (card.rc || []).length;
       if (totalEnergy > 0 && !canAfford) {
-        aL("Not enough runes to play " + card.name + "!");
-        setGameMsg("Not enough runes to play " + card.name + ". (Turn off auto runes & recycling to stop this message.)");
+        aL("Not enough runes to play " + cName(card) + "!");
+        setGameMsg("Not enough runes to play " + cName(card) + ". (Turn off auto runes & recycling to stop this message.)");
         return;
       }
     }
@@ -1882,14 +1935,14 @@ function RiftboundGame() {
     if (card.type === "Unit" || card.type === "Champion") {
       p.base = p.base.concat([Object.assign({}, card, { exhausted: true })]);
       if (isChamp) { p.championPlayed = true; p.champion = null; }
-      aL(pName(myActIdx) + " plays " + (card.hidden ? "a hidden card" : card.name));
+      aL(pName(myActIdx) + " plays " + cName(card));
       if (/draw 1/i.test(card.text) && p.mainDeck.length > 0) { p.hand = p.hand.concat([p.mainDeck.shift()]); aL("  Draw 1"); }
       if (/draw 2/i.test(card.text)) { var d = p.mainDeck.splice(0, Math.min(2, p.mainDeck.length)); p.hand = p.hand.concat(d); }
     } else if (card.type === "Gear") {
       p.base = p.base.concat([Object.assign({}, card, { exhausted: false })]);
-      aL(pName(myActIdx) + " plays " + (card.hidden ? "a hidden card" : card.name) + " to base");
+      aL(pName(myActIdx) + " plays " + cName(card) + " to base");
     } else if (card.type === "Spell") {
-      p.trash = (p.trash || []).concat([card]); aL(pName(myActIdx) + " casts " + (card.hidden ? "a hidden card" : card.name));
+      p.trash = (p.trash || []).concat([card]); aL(pName(myActIdx) + " casts " + cName(card));
       if (/Draw 2 cards/i.test(card.text)) { var d2 = p.mainDeck.splice(0, 2); p.hand = p.hand.concat(d2); }
       if (/\+2 Might/i.test(card.text)) setTm({ ty: "buff", v: 2 });
       else if (/\+3 Might/i.test(card.text)) setTm({ ty: "buff", v: 3 });
@@ -1911,11 +1964,11 @@ function RiftboundGame() {
     if (card.type === "Unit" || card.type === "Champion") {
       p.base = p.base.concat([Object.assign({}, card, { exhausted: true })]);
       if (isChamp) { p.championPlayed = true; p.champion = null; }
-      aL(pName(idx) + " plays " + card.name);
+      aL(pName(idx) + " plays " + cName(card));
       if (/draw 1/i.test(card.text) && p.mainDeck.length > 0) { p.hand = p.hand.concat([p.mainDeck.shift()]); aL("  Draw 1"); }
       if (/draw 2/i.test(card.text)) { var d = p.mainDeck.splice(0, Math.min(2, p.mainDeck.length)); p.hand = p.hand.concat(d); }
     } else if (card.type === "Spell") {
-      p.trash = (p.trash || []).concat([card]); aL(pName(idx) + " casts " + card.name);
+      p.trash = (p.trash || []).concat([card]); aL(pName(idx) + " casts " + cName(card));
       if (/Draw 2 cards/i.test(card.text)) { var d2 = p.mainDeck.splice(0, 2); p.hand = p.hand.concat(d2); }
       if (/\+2 Might/i.test(card.text)) setTm({ ty: "buff", v: 2 });
       else if (/\+3 Might/i.test(card.text)) setTm({ ty: "buff", v: 3 });
@@ -1936,9 +1989,9 @@ function RiftboundGame() {
     var idx = arr.findIndex(function(x) { return x.uid === u.uid; });
     if (idx < 0) { setTm(null); return; }
     var target = arr[idx];
-    if (tm.ty === "buff" && pi === myActIdx) { target.tempMight = (target.tempMight || 0) + tm.v; aL("  " + target.name + " +" + tm.v + "M!"); }
-    else if (tm.ty === "dmg") { target.damage = (target.damage || 0) + tm.v; if (target.damage >= (target.might || 0) + (target.tempMight || 0)) { aL("  " + target.name + " killed!"); np[pi].trash.push(target); arr.splice(idx, 1); } else { aL("  " + target.name + " takes " + tm.v); } }
-    else if (tm.ty === "stun" && pi !== myActIdx) { target.stunned = true; aL("  " + target.name + " stunned!"); }
+    if (tm.ty === "buff" && pi === myActIdx) { target.tempMight = (target.tempMight || 0) + tm.v; aL("  " + cName(target) + " +" + tm.v + "M!"); }
+    else if (tm.ty === "dmg") { target.damage = (target.damage || 0) + tm.v; if (target.damage >= (target.might || 0) + (target.tempMight || 0)) { aL("  " + cName(target) + " killed!"); np[pi].trash.push(target); arr.splice(idx, 1); } else { aL("  " + cName(target) + " takes " + tm.v); } }
+    else if (tm.ty === "stun" && pi !== myActIdx) { target.stunned = true; aL("  " + cName(target) + " stunned!"); }
     setBfs(nb); setPs(np); setTm(null);
   }
 
@@ -1952,7 +2005,7 @@ function RiftboundGame() {
     var np = ps.slice();
     var p = Object.assign({}, _me, { championPlayed: true, champion: null, base: _me.base.concat([Object.assign({}, _me.champion, { exhausted: true })]) });
     np[idx] = p; setPs(np);
-    aL(pName(idx) + " plays " + _me.champion.name + " to base.");
+    aL(pName(idx) + " plays " + cName(_me.champion) + " to base.");
   }
 
   function moveUnit(uUid, bi) {
@@ -1972,12 +2025,20 @@ function RiftboundGame() {
     if (!unit) return;
     if (unit.type === "Gear" || unit.type === "Spell") return;
     nb[bi].units[idx].push(Object.assign({}, unit, { exhausted: true }));
-    aL(pName(idx) + " moves " + unit.name + " to " + nb[bi].name);
+    aL(pName(idx) + " moves " + cName(unit) + " to " + nb[bi].name);
     var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); setSel(null);
     if (!sd) {
       aL("SHOWDOWN at " + nb[bi].name + "!");
-      setSd({ bfIdx: bi, atkIdx: idx, priority: idx, lastPass: null, acted: false });
+      var _defPresent2 = false; for (var _j2 = 0; _j2 < pc; _j2++) { if (_j2 !== idx && nb[bi].units[_j2] && nb[bi].units[_j2].length > 0) _defPresent2 = true; }
+      var newSd3 = { bfIdx: bi, atkIdx: idx, priority: idx, lastPass: null, acted: false, contested: _defPresent2 };
+      setSd(newSd3);
       setScreen("sd");
+      if (roomCode && lobbyType !== "test") {
+        _lastSyncVersion.current++;
+        var cleanPs5 = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
+        var cleanBfs5 = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
+        fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPs5, bfs: cleanBfs5, turn: turn, act: idx, screen: "sd", log: log.slice(-30), sd: newSd3, ver: _lastSyncVersion.current, by: myUid })));
+      }
     }
   }
 
@@ -2083,7 +2144,7 @@ function RiftboundGame() {
           );
         }
         var isDraggable2 = !isEnemy && canMoveOwn && !tm && !fc && playable;
-        return React.createElement("div", { key: c.uid, className: "hand-card-hover" + animCls, draggable: isDraggable2, onDragStart: isDraggable2 ? function(e) { e.dataTransfer.setData("text/plain", "hand:" + c.uid); setDragUnit(c); } : undefined, onDragEnd: function() { setDragUnit(null); }, onDoubleClick: canMoveOwn && !tm && !fc ? function() { if (c.type === "Unit" || c.type === "Champion" || c.type === "Gear") { onPlay(c); } else if (c.type === "Spell") { if (showcaseCard && showcaseCard.uid === c.uid) { setShowcaseCard(null); } else { var idx = myActIdx; var _me = ps[idx]; if (_me) { var sp = Object.assign({}, _me, { hand: _me.hand.filter(function(h) { return h.uid !== c.uid; }) }); if (autoRunes) { var rcN = (c.rc || []).slice(); var eN = c.energy || 0; var aR = _me.runes.slice(); var recUids = []; rcN.forEach(function(dom) { var f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0; }); if (f) { recUids.push(f.uid); if (eN > 0) eN--; } }); var tapUids = []; if (eN > 0) { var av = aR.filter(function(r) { return !r.exhausted && recUids.indexOf(r.uid) < 0; }); av.slice(0, eN).forEach(function(r) { tapUids.push(r.uid); }); } sp.runes = _me.runes.filter(function(r) { return recUids.indexOf(r.uid) < 0; }).map(function(r) { return tapUids.indexOf(r.uid) >= 0 ? Object.assign({}, r, { exhausted: true }) : r; }); sp.runeDeck = shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); }))); } var np = ps.slice(); np[idx] = sp; setPs(np); pushShowcase(c); aL(pName(idx) + " casts " + (c.hidden ? "a hidden card" : c.name)); } } if (sd) setSd(Object.assign({}, sd, { acted: true })); } } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function() {}, onMouseLeave: function() { setHandCtxUid(null); }, style: { width: HAND_W, height: HAND_H, borderRadius: 6, overflow: "hidden", border: "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + (playable ? "55" : "20")), flexShrink: 0, cursor: isDraggable2 ? "grab" : "pointer", transform: "rotate(" + rot + "deg) translateY(" + ty + "px)", transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -30 : total > 5 ? -16 : 0), transition: "transform 0.15s ease", position: "relative", zIndex: i, boxShadow: "0 4px 16px #000a", opacity: 1 } },
+        return React.createElement("div", { key: c.uid, className: "hand-card-hover" + animCls, draggable: isDraggable2, onDragStart: isDraggable2 ? function(e) { e.dataTransfer.setData("text/plain", "hand:" + c.uid); setDragUnit(c); } : undefined, onDragEnd: function() { setDragUnit(null); }, onDoubleClick: canMoveOwn && !tm && !fc ? function() { if (c.type === "Unit" || c.type === "Champion" || c.type === "Gear") { onPlay(c); } else if (c.type === "Spell") { if (showcaseCard && showcaseCard.uid === c.uid) { setShowcaseCard(null); } else { var idx = myActIdx; var _me = ps[idx]; if (_me) { var sp = Object.assign({}, _me, { hand: _me.hand.filter(function(h) { return h.uid !== c.uid; }) }); if (autoRunes) { var rcN = (c.rc || []).slice(); var eN = c.energy || 0; var aR = _me.runes.slice(); var recUids = []; rcN.forEach(function(dom) { var f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0; }); if (f) { recUids.push(f.uid); if (eN > 0) eN--; } }); var tapUids = []; if (eN > 0) { var av = aR.filter(function(r) { return !r.exhausted && recUids.indexOf(r.uid) < 0; }); av.slice(0, eN).forEach(function(r) { tapUids.push(r.uid); }); } sp.runes = _me.runes.filter(function(r) { return recUids.indexOf(r.uid) < 0; }).map(function(r) { return tapUids.indexOf(r.uid) >= 0 ? Object.assign({}, r, { exhausted: true }) : r; }); sp.runeDeck = shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); }))); } var np = ps.slice(); np[idx] = sp; setPs(np); pushShowcase(c); aL(pName(idx) + " casts " + cName(c)); } } if (sd) setSd(Object.assign({}, sd, { acted: true })); } } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function() {}, onMouseLeave: function() { setHandCtxUid(null); }, style: { width: HAND_W, height: HAND_H, borderRadius: 6, overflow: "hidden", border: "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + (playable ? "55" : "20")), flexShrink: 0, cursor: isDraggable2 ? "grab" : "pointer", transform: "rotate(" + rot + "deg) translateY(" + ty + "px)", transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -30 : total > 5 ? -16 : 0), transition: "transform 0.15s ease", position: "relative", zIndex: i, boxShadow: "0 4px 16px #000a", opacity: 1 } },
           c.hidden ? React.createElement("img", { src: CARD_BACK, style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : (c.img ? React.createElement("img", { src: imgSrc(c.img), style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : React.createElement("div", { style: { width: "100%", height: "100%", background: "linear-gradient(180deg," + (DOM[c.domain] || DOM.Colorless).c + "15,#0a0a18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#666", padding: 4, textAlign: "center" } }, c.name)),
           handCtxUid === c.uid ? React.createElement("button", { onClick: function(e) { e.stopPropagation(); toggleHide(c.uid); setHandCtxUid(null); }, style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 10, padding: "4px 12px", borderRadius: 4, border: "1.5px solid #ffffff40", background: "rgba(20,20,50,0.92)", color: "#ddd", fontSize: 10, cursor: "pointer", fontFamily: "Spectral,serif", fontWeight: 700, boxShadow: "0 4px 12px #000a", whiteSpace: "nowrap" } }, c.hidden ? "Reveal" : "Hide") : null
         );
@@ -2128,7 +2189,7 @@ function RiftboundGame() {
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center" }}>
             {myCur.trash.map(function(c) {
               var isSel = binSelected.indexOf(c.uid) >= 0;
-              return <div key={c.uid} draggable={canMoveOwn} onDragStart={canMoveOwn ? function(e) { e.dataTransfer.setData("text/plain", "bin:" + c.uid); } : undefined} onClick={function() { setBinSelected(function(prev) { return prev.indexOf(c.uid) >= 0 ? prev.filter(function(x) { return x !== c.uid; }) : prev.concat([c.uid]); }); }} style={{ cursor: "pointer", border: isSel ? "2px solid #FFD700" : "2px solid transparent", borderRadius: 6, boxShadow: isSel ? "0 0 12px #FFD70066" : "none" }}><Card card={c} small /></div>;
+              return <div key={c.uid} onClick={function() { setBinSelected(function(prev) { return prev.indexOf(c.uid) >= 0 ? prev.filter(function(x) { return x !== c.uid; }) : prev.concat([c.uid]); }); }} style={{ cursor: "pointer", border: isSel ? "2px solid #FFD700" : "2px solid transparent", borderRadius: 6, boxShadow: isSel ? "0 0 12px #FFD70066" : "none" }}><Card card={c} small isMine dragData={canMoveOwn ? "bin:" + c.uid : undefined} /></div>;
             })}
           </div>
         </div>
@@ -2310,7 +2371,7 @@ function RiftboundGame() {
         <span className="anim-pulse" style={{ fontFamily: "Spectral,serif", fontSize: 16, fontWeight: 700, color: "#FFD700", letterSpacing: 3, textTransform: "uppercase" }}>{pName(act)} — New Turn</span>
       </div>}
 
-      <div style={{ flex: 1, display: "flex", overflow: "hidden", background: "linear-gradient(180deg, #2a2a50 0%, #333368 30%, #3d3d7a 50%, #333368 70%, #2a2a50 100%)" }}>
+      <div style={{ flex: 1, display: "flex", overflow: "visible", background: "linear-gradient(180deg, #2a2a50 0%, #333368 30%, #3d3d7a 50%, #333368 70%, #2a2a50 100%)" }}>
         {/* Active player score - left edge */}
         {function() { var isOnlineGame = lobbyType === "host" || lobbyType === "join"; var isMyTurn = isOnlineGame ? act === mySlot : true; return (
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end", alignItems: "center", flexShrink: 0, width: Math.round(70 * vScale), background: "rgba(255,215,0,0.03)", borderRight: "1px solid #FFD70025", padding: "8px 4px" }}>
@@ -2328,6 +2389,8 @@ function RiftboundGame() {
         {/* Main column */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
 
+          {/* ENEMY ZONE wrapper — pulses on enemy turn */}
+          <div className={isOnlineGame && !isMyTurnOnline && screen === "play" && !awakenPhase ? "anim-turn-pulse" : ""} style={{ margin: "4px 4px 4px", padding: 2, flexShrink: 0, overflow: "visible" }}>
           {/* ROW 1: ENEMY HAND */}
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center", flexShrink: 0, overflow: "visible", padding: "4px 6px 2px", zIndex: 5, position: "relative", gap: 0 }}>
             {ps.filter(function(_, i) { return i !== viewSlot; }).map(function(enemy) {
@@ -2389,6 +2452,7 @@ function RiftboundGame() {
               </div>;
             })}
           </div>
+          </div>{/* end ENEMY ZONE wrapper */}
 
           {/* ROW 3: BATTLEFIELDS */}
           <div onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverBf(-1); }} style={{ display: "flex", gap: 3, padding: "2px 6px", flex: 1, minHeight: 40, position: "relative", zIndex: 3 }}>
@@ -2408,22 +2472,24 @@ function RiftboundGame() {
                 {/* BF card - fixed centre */}
                 <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 1 }}>
                   {/* Top units - anchored above BF card */}
-                  <div style={{ position: "absolute", bottom: "100%", left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 3, marginBottom: -4, zIndex: 2 }}>
-                    {ps.map(function(p, pi) { if (pi === bottomPlayer || !bf.units[pi] || bf.units[pi].length === 0) return null; var isMyUnits = pi === myActIdx; return bf.units[pi].map(function(u) { return isMyUnits ? <div key={u.uid} draggable={canMoveOwn && !fc && !tm && !drawingArrow} onDragStart={canMoveOwn && !fc && !tm && !drawingArrow ? function(e) { e.dataTransfer.setData("text/plain", "bf:" + u.uid); setDragUnit(u); } : undefined} onDragEnd={function() { setDragUnit(null); }}><Card card={u} small onClick={function() { toggleTap(u.uid); }} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} /></div> : <Card key={u.uid} card={u} small onClick={tm ? function() { resTarget(u, pi, bi); } : undefined} />; }); })}
+                  <div style={{ position: "absolute", bottom: "100%", left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "row", flexWrap: "nowrap", justifyContent: "center", gap: 3, marginBottom: -4, zIndex: 2 }}>
+                    {ps.map(function(p, pi) { if (pi === bottomPlayer || !bf.units[pi] || bf.units[pi].length === 0) return null; var isMyUnits = pi === myActIdx; return bf.units[pi].map(function(u) { return isMyUnits ? <Card key={u.uid} card={u} small isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow ? "bf:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} onClick={function() { toggleTap(u.uid); }} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} /> : <Card key={u.uid} card={u} small onClick={tm ? function() { resTarget(u, pi, bi); } : undefined} />; }); })}
                   </div>
                   {/* BF card itself */}
                   <div data-uid={bf.uid} style={{ width: BF_H, height: BF_W, display: "flex", justifyContent: "center", alignItems: "center" }}>
                     {bfImg ? <img className={isLandscape ? "bf-hover-land" : "bf-hover"} src={bfImg} alt={bf.name} onClick={undefined} onMouseEnter={function(e) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: { name: bf.name, _isBf: true, _bfUrl: bfImg, _isLandscape: isLandscape }, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }); }} onMouseLeave={function() { setHoverCard(null); }} style={isLandscape ? { width: BF_H, height: BF_W, objectFit: "fill", borderRadius: 6, border: "1px solid #FFD70015", cursor: "pointer" } : { width: BF_W, height: BF_H, objectFit: "fill", borderRadius: 6, border: "1px solid #FFD70015", cursor: "pointer", transform: "rotate(90deg)" }} /> : <div style={{ width: BF_W, height: BF_H, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#ffffff30", transform: "rotate(90deg)" }}>{bf.name}</div>}
                   </div>
                   {/* Bottom player units - anchored below BF card */}
-                  <div style={{ position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 3, marginTop: -4, zIndex: 2 }}>
-                    {bf.units[bottomPlayer] && bf.units[bottomPlayer].map(function(u) { return <div key={u.uid} draggable={canMoveOwn && !fc && !tm && !drawingArrow} onDragStart={canMoveOwn && !fc && !tm && !drawingArrow ? function(e) { e.dataTransfer.setData("text/plain", "bf:" + u.uid); setDragUnit(u); } : undefined} onDragEnd={function() { setDragUnit(null); }}><Card card={u} small onClick={function() { toggleTap(u.uid); }} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} /></div>; })}
+                  <div style={{ position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "row", flexWrap: "nowrap", justifyContent: "center", gap: 3, marginTop: -4, zIndex: 2 }}>
+                    {bf.units[bottomPlayer] && bf.units[bottomPlayer].map(function(u) { return <Card key={u.uid} card={u} small isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow ? "bf:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} onClick={function() { toggleTap(u.uid); }} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} />; })}
                   </div>
                 </div>
               </div>;
             })}
           </div>
 
+          {/* PLAYER ZONE wrapper — pulses on your turn */}
+          <div className={isMyTurnOnline && screen === "play" && !awakenPhase ? "anim-turn-pulse" : ""} style={{ margin: "4px 4px 4px", padding: 2, flexShrink: 0, overflow: "visible" }}>
           {/* ROW 4: PLAYER RUNES + BASE (legend/champion on right to mirror enemy) */}
           <div style={{ display: "flex", alignItems: "stretch", flexShrink: 0, padding: "2px 6px", gap: 6, overflow: "visible", zIndex: 1 }}>
             {/* Player runes - horizontal (white), overlapping via absolute positioning */}
@@ -2454,8 +2520,7 @@ function RiftboundGame() {
               style={{ display: "flex", flexDirection: "row", gap: 3, padding: "3px 4px", borderRadius: 6, border: dragOverBase ? "2px solid #FFD700" : "1.5px solid #FFD70055", background: dragOverBase ? "rgba(255,215,0,0.08)" : "transparent", boxShadow: dragOverBase ? "0 0 16px rgba(255,215,0,0.3), inset 0 0 16px rgba(255,215,0,0.05)" : "none", alignItems: "center", flexWrap: "wrap", flex: 9, transition: "border 0.15s ease, background 0.15s ease, box-shadow 0.15s ease", position: "relative" }}>
               <div style={{ fontSize: 11, color: "#FFD70077", fontFamily: "Spectral,serif", letterSpacing: 1 }}>BASE</div>
               {myCur.base.map(function(u) {
-                var isDraggable = !u.exhausted && canMoveOwn && !fc && !tm;
-                return <div key={u.uid} draggable={canMoveOwn && !fc && !tm && !drawingArrow} onDragStart={canMoveOwn && !fc && !tm && !drawingArrow ? function(e) { e.dataTransfer.setData("text/plain", "base:" + u.uid); setDragUnit(u); } : undefined} onDragEnd={function() { setDragUnit(null); }}><Card card={u} small selected={sel && sel.uid === u.uid} onClick={function() { if (tm) { resTarget(u, myActIdx, null); } else { toggleTap(u.uid); } }} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} /></div>;
+                return <Card key={u.uid} card={u} small isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow ? "base:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} selected={sel && sel.uid === u.uid} onClick={function() { if (tm) { resTarget(u, myActIdx, null); } else { toggleTap(u.uid); } }} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} />;
               })}
             </div>
             {/* Player legend + champion (right side, mirroring enemy) */}
@@ -2503,7 +2568,7 @@ function RiftboundGame() {
               {/* Main deck */}
               <div style={{ position: "relative" }}
                 onDragOver={canMoveOwn ? function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } : undefined}
-                onDrop={canMoveOwn ? function(e) { e.preventDefault(); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts.length > 1 ? parts[1] : parts[0]; var idx = myActIdx; var _me = ps[idx]; if (!_me) return; var p = Object.assign({}, _me, { hand: _me.hand.slice(), base: _me.base.slice(), mainDeck: _me.mainDeck.slice() }); var card = null; if (type === "hand") { var hi = p.hand.findIndex(function(c) { return c.uid === uid2; }); if (hi >= 0) card = p.hand.splice(hi, 1)[0]; } else if (type === "base") { var bi2 = p.base.findIndex(function(c) { return c.uid === uid2; }); if (bi2 >= 0) card = p.base.splice(bi2, 1)[0]; } else if (type === "bf") { var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); }); for (var bk = 0; bk < nb.length; bk++) { if (!nb[bk].units[idx]) continue; var ui = nb[bk].units[idx].findIndex(function(u) { return u.uid === uid2; }); if (ui >= 0) { card = nb[bk].units[idx].splice(ui, 1)[0]; setBfs(nb); break; } } } if (card) { p.mainDeck.push(Object.assign({}, card, { exhausted: false })); aL(pName(idx) + " recycles " + (card.hidden ? "a card" : card.name) + " to deck"); var np = ps.slice(); np[idx] = p; setPs(np); } } : undefined}>
+                onDrop={canMoveOwn ? function(e) { e.preventDefault(); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts.length > 1 ? parts[1] : parts[0]; var idx = myActIdx; var _me = ps[idx]; if (!_me) return; var p = Object.assign({}, _me, { hand: _me.hand.slice(), base: _me.base.slice(), mainDeck: _me.mainDeck.slice() }); var card = null; if (type === "hand") { var hi = p.hand.findIndex(function(c) { return c.uid === uid2; }); if (hi >= 0) card = p.hand.splice(hi, 1)[0]; } else if (type === "base") { var bi2 = p.base.findIndex(function(c) { return c.uid === uid2; }); if (bi2 >= 0) card = p.base.splice(bi2, 1)[0]; } else if (type === "bf") { var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); }); for (var bk = 0; bk < nb.length; bk++) { if (!nb[bk].units[idx]) continue; var ui = nb[bk].units[idx].findIndex(function(u) { return u.uid === uid2; }); if (ui >= 0) { card = nb[bk].units[idx].splice(ui, 1)[0]; setBfs(nb); break; } } } if (card) { p.mainDeck.push(Object.assign({}, card, { exhausted: false })); aL(pName(idx) + " recycles " + cName(card) + " to deck"); var np = ps.slice(); np[idx] = p; setPs(np); } } : undefined}>
                 <div data-uid={"slot-" + mySlot + "-deck"} onClick={canMoveOwn && myCur.mainDeck.length > 0 ? function() { var idx = myActIdx; var _me = ps[idx]; if (!_me) return; if (sd) setSd(Object.assign({}, sd, { acted: true })); var p = Object.assign({}, _me, { mainDeck: _me.mainDeck.slice(), hand: _me.hand.slice() }); var c = p.mainDeck.shift(); p.hand.push(c); addAnim(c.uid, "draw"); aL(pName(idx) + " draws 1 card"); var np = ps.slice(); np[idx] = p; setPs(np); } : undefined} style={{ cursor: canMoveOwn && myCur.mainDeck.length > 0 ? "pointer" : "default" }}><CardBack w={HAND_W} h={HAND_H} count={myCur.mainDeck.length} label="DECK" /></div>
                 {myCur.mainDeck.length > 0 && <button onClick={function(e) { e.stopPropagation(); setScryMode("prompt"); setScryCount(1); }} style={{ position: "absolute", top: -6, right: -6, padding: "2px 6px", borderRadius: 4, border: "1.5px solid #8B5CF688", background: "rgba(139,92,246,0.8)", color: "#fff", fontSize: 10, fontWeight: 700, fontFamily: "Spectral,serif", cursor: "pointer", zIndex: 6, letterSpacing: 0.5 }}>Scry</button>}
               </div>
@@ -2511,6 +2576,7 @@ function RiftboundGame() {
               <div onClick={function() { if (myCur.trash && myCur.trash.length > 0) setShowBin(!showBin); }} onDragOver={function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }} onDragEnter={function(e) { e.preventDefault(); setDragOverBin(true); }} onDragLeave={function() { setDragOverBin(false); }} onDrop={function(e) { e.preventDefault(); setDragOverBin(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var uid2 = parts.length > 1 ? parts[1] : parts[0]; sendToBin(uid2); }} style={{ cursor: myCur.trash && myCur.trash.length > 0 ? "pointer" : "default", borderRadius: 6, border: dragOverBin ? "2px solid #ff6666" : "2px solid transparent", boxShadow: dragOverBin ? "0 0 16px rgba(255,100,100,0.3), inset 0 0 12px rgba(255,100,100,0.05)" : "none", transition: "border 0.15s ease, box-shadow 0.15s ease" }}><BinPile trash={myCur.trash} /></div>
             </div>
           </div>
+          </div>{/* end PLAYER ZONE wrapper */}
         </div>
         {/* Enemy score - right edge */}
         {function() { var isOnlineGame = lobbyType === "host" || lobbyType === "join"; return (
@@ -2527,7 +2593,7 @@ function RiftboundGame() {
         </div>); }()}
 
         {/* Right panel */}
-        <div style={{ width: Math.round(250 * vScale), background: "transparent", borderLeft: "1px solid #FFD70015", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+        <div style={{ width: Math.round(250 * vScale), background: "transparent", borderLeft: "1px solid #FFD70015", display: "flex", flexDirection: "column", flexShrink: 0, overflow: "visible" }}>
           <div style={{ padding: 8, borderBottom: "1px solid #FFD70015", display: "flex", flexDirection: "column", gap: 5 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontWeight: 700, fontSize: 16, fontFamily: "Spectral,serif", background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Turn {turn}</span>
@@ -2557,10 +2623,15 @@ function RiftboundGame() {
             {screen === "play" && !awakenPhase && (function() { var isOnlineGame = lobbyType === "host" || lobbyType === "join"; var isMyTurn = isOnlineGame ? act === mySlot : true; return isMyTurn ? <button onClick={endTurn} style={{ padding: 10, borderRadius: 5, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0015)", color: "#FFD700", cursor: "pointer", fontSize: 14, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>END TURN</button> : <div style={{ padding: 10, borderRadius: 5, border: "1px solid #ffffff20", background: "transparent", color: "#888", fontSize: 12, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif", textAlign: "center" }}>{pName(act) + "'s turn"}</div>; })()}
             {sel && canAct && !tm && !fc && <div style={{ padding: 5, fontSize: 11, color: "#aaa", textAlign: "center", background: "#FFD70008", borderRadius: 4, border: "1px solid #FFD70040" }}>Selected: <b style={{ color: "#FFD700" }}>{sel.name}</b><br /><span style={{ fontSize: 10, color: "#888" }}>click a battlefield</span></div>}
           </div>
+          {/* Chat log — upper half */}
+          <div ref={lr} style={{ flex: 1, overflow: "auto", padding: 6, fontSize: 10, lineHeight: 1.5, minHeight: 20 }}>
+            {log.map(function(e, i) { return <div key={i} style={{ color: e.m.indexOf("===") >= 0 ? "#FFD700" : e.m.indexOf("wins") >= 0 ? "#FFD700" : e.m.indexOf("SHOWDOWN") >= 0 ? "#FF6B35" : e.m.indexOf("onquer") >= 0 || e.m.indexOf("holding point") >= 0 ? "#4ADE80" : "#667", marginBottom: 2, fontFamily: e.m.indexOf("===") >= 0 ? "Spectral,serif" : "inherit" }}>{e.m}</div>; })}
+            <button onClick={function() { var txt = log.map(function(e) { return e.m; }).join("\n"); navigator.clipboard.writeText(txt); }} style={{ padding: "2px 6px", borderRadius: 3, border: "1px solid #ffffff15", background: "transparent", color: "#555", cursor: "pointer", fontSize: 8, marginTop: 4 }}>Copy Log</button>
+          </div>
+          {/* Showdown controls — directly above showcase */}
           {sd && (function() {
-            var canResolve = sd.lastPass !== null && sd.lastPass !== sd.priority && !sd.acted;
             var defIdx = 0; for (var j3 = 0; j3 < pc; j3++) { if (j3 !== sd.atkIdx) { defIdx = j3; break; } }
-            return <div className="anim-sd-pulse" style={{ textAlign: "center", padding: "6px 8px", flexShrink: 0, borderTop: "2px solid #FF6B35", borderLeft: "2px solid #FF6B35", borderRight: "2px solid #FF6B35", borderRadius: "6px 6px 0 0", marginRight: -1 }}>
+            return <div className="anim-sd-pulse" style={{ textAlign: "center", padding: "6px 8px", flexShrink: 0, margin: "0 4px", border: "2px solid #FF6B35", borderBottom: "none", borderRadius: "6px 6px 0 0" }}>
               <div style={{ fontSize: 13, color: "#FF6B35", fontWeight: 700, fontFamily: "Spectral,serif" }}>SHOWDOWN</div>
               {hasPri ? <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 3 }}>
                 <button onClick={passPriority} style={{ padding: 7, borderRadius: 4, border: "2px solid #FF6B35", background: "#FF6B3515", color: "#FF6B35", cursor: "pointer", fontSize: 11, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>PASS PRIORITY</button>
@@ -2571,17 +2642,13 @@ function RiftboundGame() {
               </div> : <button disabled style={{ padding: 7, borderRadius: 4, border: "1px solid #ffffff20", background: "transparent", color: "#666", cursor: "not-allowed", fontSize: 11, fontWeight: 700, marginTop: 3, width: "100%", fontFamily: "Spectral,serif", opacity: 0.7 }}>Waiting for {pName(sd.priority)}...</button>}
             </div>;
           })()}
-          {/* Chat log */}
-          <div ref={lr} className={sd ? "anim-sd-pulse" : ""} style={{ flex: 1, overflow: "auto", padding: 6, fontSize: 10, lineHeight: 1.5, minHeight: 30, borderLeft: sd ? "2px solid #FF6B35" : "none", borderRight: sd ? "2px solid #FF6B35" : "none", borderBottom: sd ? "2px solid #FF6B35" : "none", borderRadius: sd ? "0 0 6px 6px" : 0, marginRight: sd ? -1 : 0 }}>
-            {log.map(function(e, i) { return <div key={i} style={{ color: e.m.indexOf("===") >= 0 ? "#FFD700" : e.m.indexOf("wins") >= 0 ? "#FFD700" : e.m.indexOf("SHOWDOWN") >= 0 ? "#FF6B35" : e.m.indexOf("onquer") >= 0 || e.m.indexOf("holding point") >= 0 ? "#4ADE80" : "#667", marginBottom: 2, fontFamily: e.m.indexOf("===") >= 0 ? "Spectral,serif" : "inherit" }}>{e.m}</div>; })}
-            <button onClick={function() { var txt = log.map(function(e) { return e.m; }).join("\n"); navigator.clipboard.writeText(txt); }} style={{ padding: "2px 6px", borderRadius: 3, border: "1px solid #ffffff15", background: "transparent", color: "#555", cursor: "pointer", fontSize: 8, marginTop: 4 }}>Copy Log</button>
-          </div>
           {/* Showcase zone - fixed */}
           <div
+            className={sd ? "anim-sd-pulse" : ""}
             onDragOver={function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; if (!dragOverShowcase) setDragOverShowcase(true); }}
             onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverShowcase(false); }}
             onDrop={function(e) { e.preventDefault(); e.stopPropagation(); setDragOverShowcase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; var card = null; if (myCur) { if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } else if (type === "base") { card = myCur.base.find(function(c) { return c.uid === uid2; }); } else if (type === "bf") { for (var bk = 0; bk < bfs.length; bk++) { var uArr = bfs[bk].units[myActIdx]; if (!uArr) continue; var found = uArr.find(function(u) { return u.uid === uid2; }); if (found) { card = found; break; } } } else if (type === "bin") { card = (myCur.trash || []).find(function(c) { return c.uid === uid2; }); } } if (card) pushShowcase(card); }}
-            style={{ flexShrink: 0, height: Math.round(345 * vScale), padding: "4px 4px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", margin: "0 4px", borderTop: "1px solid #ffffff20", border: dragOverShowcase ? "1.5px solid #ffffff55" : "1.5px solid #ffffff20", borderRadius: 4, transition: "border 0.15s ease" }}>
+            style={{ flexShrink: 0, height: Math.round(345 * vScale), padding: "4px 4px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", margin: "0 4px", border: sd ? "2px solid #FF6B35" : (dragOverShowcase ? "1.5px solid #ffffff55" : "1.5px solid #ffffff20"), borderTop: sd ? "none" : undefined, borderRadius: sd ? "0 0 6px 6px" : 4, transition: "border 0.15s ease", overflow: "visible" }}>
             <div style={{ fontSize: 9, color: "#ffffff44", fontFamily: "Spectral,serif", letterSpacing: 1, marginBottom: 3 }}>SHOWCASE</div>
             {showcaseCard ? (<>
               {showcaseOwner && isOnlineGame && (function() {
@@ -2590,35 +2657,41 @@ function RiftboundGame() {
                 if (isMine) {
                   return <div style={{ width: "100%", maxWidth: Math.round(235 * vScale), padding: "4px 0", flexShrink: 0, textAlign: "center", marginBottom: 3 }}><div style={{ padding: "4px 8px", borderRadius: 5, border: "1.5px solid " + (showcaseAccepted ? "#4ADE80" : "#ff4444"), background: showcaseAccepted ? "rgba(74,222,128,0.12)" : "rgba(255,68,68,0.12)", color: showcaseAccepted ? "#4ADE80" : "#ff6666", fontSize: 11, fontFamily: "Spectral,serif", fontWeight: 700, boxShadow: showcaseAccepted ? "0 0 10px rgba(74,222,128,0.3)" : "0 0 10px rgba(255,68,68,0.3)" }}>{showcaseAccepted ? otherName + " accepted" : otherName + " has not accepted"}</div></div>;
                 } else {
-                  return <div style={{ width: "100%", maxWidth: Math.round(235 * vScale), padding: "4px 0", flexShrink: 0, textAlign: "center", marginBottom: 3 }}><button onClick={function() { setShowcaseAccepted(!showcaseAccepted); }} style={{ width: "100%", padding: "4px 8px", borderRadius: 5, border: "1.5px solid " + (showcaseAccepted ? "#4ADE80" : "#FFD700"), background: showcaseAccepted ? "rgba(74,222,128,0.12)" : "rgba(255,215,0,0.12)", color: showcaseAccepted ? "#4ADE80" : "#FFD700", fontSize: 11, fontFamily: "Spectral,serif", fontWeight: 700, cursor: "pointer", boxShadow: showcaseAccepted ? "0 0 10px rgba(74,222,128,0.3)" : "0 0 10px rgba(255,215,0,0.3)" }}>{showcaseAccepted ? "Accepted ✓" : "Accept - no more responses"}</button></div>;
+                  return <div style={{ width: "100%", maxWidth: Math.round(235 * vScale), padding: "4px 0", flexShrink: 0, textAlign: "center", marginBottom: 3 }}><button onClick={function() { setShowcaseAccepted(!showcaseAccepted); }} style={{ width: "100%", padding: "4px 8px", borderRadius: 5, border: "1.5px solid " + (showcaseAccepted ? "#4ADE80" : "#FFD700"), background: showcaseAccepted ? "rgba(74,222,128,0.12)" : "rgba(255,215,0,0.12)", color: showcaseAccepted ? "#4ADE80" : "#FFD700", fontSize: 11, fontFamily: "Spectral,serif", fontWeight: 700, cursor: "pointer", boxShadow: showcaseAccepted ? "0 0 10px rgba(74,222,128,0.3)" : "0 0 10px rgba(255,215,0,0.3)" }}>{showcaseAccepted ? "Accepted ✓ - resolve your cards" : "Accept - no more responses"}</button></div>;
                 }
               })()}
-              <div style={{ position: "relative", flex: 1, display: "flex", alignItems: "center", justifyContent: "flex-end", overflow: "visible" }}>
-                {/* Stacked history cards behind (left-ward) */}
-                {showcaseHistory.map(function(hc, hi) {
-                  var hImg = hc.img ? imgSrc(hc.img) : "";
-                  var cardW = Math.round(235 * vScale); var cardH = Math.round(329 * vScale);
-                  var peekOffset = Math.round(40 * vScale);
-                  return <div key={hc.uid + "-" + hi} data-uid={hc.uid} style={{ position: "absolute", right: (hi + 1) * peekOffset, top: "50%", transform: "translateY(-50%)", width: cardW, height: cardH, borderRadius: 6, overflow: "hidden", border: "1px solid #FFD70030", zIndex: -(hi + 1), boxShadow: "0 2px 8px #000a" }}>
-                    {hImg ? <img src={hImg} style={{ width: "100%", height: "100%", objectFit: "fill" }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#FFD700" }}>{hc.name}</div>}
-                  </div>;
-                })}
-                {/* Main showcase card */}
-                <div data-uid={showcaseCard.uid} onClick={function() { if (!drawingArrow) { if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false); } } }} style={{ position: "relative", cursor: drawingArrow ? "crosshair" : "pointer" }}>
-                  {showcaseCard.img ? <img src={imgSrc(showcaseCard.img)} onError={function(e) { if (PA[showcaseCard.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[showcaseCard.name] + ".webp"; } }} style={{ width: Math.round(235 * vScale), height: Math.round(329 * vScale), objectFit: "fill", display: "block", borderRadius: 6 }} /> : <div style={{ width: Math.round(235 * vScale), height: Math.round(329 * vScale), display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 14, fontFamily: "Spectral,serif", borderRadius: 6, border: "1px solid #ffffff20", textAlign: "center", padding: 8 }}>{showcaseCard.name}</div>}
-                  {showcaseCard.counter2 !== 0 && showcaseCard.counter2 !== undefined && <div style={{ position: "absolute", top: -8, right: -8, background: "#854d0e", color: "#FACC15", borderRadius: 12, minWidth: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, boxShadow: "0 2px 6px #000a", padding: "0 4px" }}>{showcaseCard.counter2 > 0 ? "+" : ""}{showcaseCard.counter2}</div>}
-                  {showcaseCard.counter !== 0 && showcaseCard.counter !== undefined && <div style={{ position: "absolute", top: -8, right: showcaseCard.counter2 ? 30 : -8, background: "#166534", color: "#4ADE80", borderRadius: 12, minWidth: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, boxShadow: "0 2px 6px #000a", padding: "0 4px" }}>{showcaseCard.counter > 0 ? "+" : ""}{showcaseCard.counter}</div>}
-                  {showcaseOwner === myUid && <button onClick={function(e) { e.stopPropagation(); sendToBin(showcaseCard.uid); if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false); } }} style={{ position: "absolute", bottom: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.75)", color: "#ffaaaa", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>🗑</button>}
-                  <button onClick={function(e) { e.stopPropagation(); startArrow(showcaseCard.uid); }} style={{ position: "absolute", top: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #3B82F688", background: "rgba(59,130,246,0.75)", color: "#fff", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>↗</button>
-                  {cardHasArrow(showcaseCard.uid) && <button onClick={function(e) { e.stopPropagation(); removeArrow(showcaseCard.uid); }} style={{ position: "absolute", top: -8, left: 22, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(200,40,40,0.85)", color: "#fff", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, fontWeight: 700 }}>✕</button>}
+              {(function() {
+                var scCardW = Math.round(235 * vScale); var scCardH = Math.round(329 * vScale);
+                var scPeek = Math.round(scCardW * 0.3);
+                var scHistLen = showcaseHistory.length;
+                var scExtra = scHistLen > 0 ? scPeek * scHistLen : 0;
+                return <div style={{ position: "relative", flex: 1, display: "flex", alignItems: "center", justifyContent: "center", overflow: "visible" }}>
+                {/* Main showcase card (most recent, on top) — history peeks leftward behind it */}
+                <div data-uid={showcaseCard.uid} onClick={function() { if (!drawingArrow && (!isOnlineGame || showcaseOwner === myUid)) { if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false); } } }} style={{ position: "relative", cursor: drawingArrow ? "crosshair" : (!isOnlineGame || showcaseOwner === myUid) ? "pointer" : "default", width: scCardW, height: scCardH, flexShrink: 0, overflow: "visible", marginLeft: scExtra, zIndex: scHistLen + 2 }}>
+                  <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: 6 }}>
+                    {showcaseCard.img ? <img src={imgSrc(showcaseCard.img)} onError={function(e) { if (PA[showcaseCard.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[showcaseCard.name] + ".webp"; } }} style={{ width: "100%", height: "100%", objectFit: "fill", display: "block" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 14, fontFamily: "Spectral,serif", border: "1px solid #ffffff20", textAlign: "center", padding: 8 }}>{showcaseCard.name}</div>}
+                  </div>
+                  {showcaseCard.counter2 !== 0 && showcaseCard.counter2 !== undefined && <div style={{ position: "absolute", top: -8, right: -8, background: "#854d0e", color: "#FACC15", borderRadius: 12, minWidth: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, boxShadow: "0 2px 6px #000a", padding: "0 4px", zIndex: 3 }}>{showcaseCard.counter2 > 0 ? "+" : ""}{showcaseCard.counter2}</div>}
+                  {showcaseCard.counter !== 0 && showcaseCard.counter !== undefined && <div style={{ position: "absolute", top: -8, right: showcaseCard.counter2 ? 30 : -8, background: "#166534", color: "#4ADE80", borderRadius: 12, minWidth: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, boxShadow: "0 2px 6px #000a", padding: "0 4px", zIndex: 3 }}>{showcaseCard.counter > 0 ? "+" : ""}{showcaseCard.counter}</div>}
+                  {showcaseOwner === myUid && <button onClick={function(e) { e.stopPropagation(); sendToBin(showcaseCard.uid); if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false); } }} style={{ position: "absolute", bottom: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.75)", color: "#ffaaaa", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>🗑</button>}
+                  <button onClick={function(e) { e.stopPropagation(); startArrow(showcaseCard.uid); }} style={{ position: "absolute", top: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #3B82F688", background: "rgba(59,130,246,0.75)", color: "#fff", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>↗</button>
+                  {cardHasArrow(showcaseCard.uid) && <button onClick={function(e) { e.stopPropagation(); removeArrow(showcaseCard.uid); }} style={{ position: "absolute", top: -8, left: 22, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(200,40,40,0.85)", color: "#fff", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, fontWeight: 700, zIndex: 3 }}>✕</button>}
+                  {/* History cards peeking leftward behind the main card */}
+                  {showcaseHistory.map(function(hc, hi) {
+                    var hImg = hc.img ? imgSrc(hc.img) : "";
+                    var hOff = scPeek * (hi + 1);
+                    return <div key={hc.uid + "-" + hi} data-uid={hc.uid} style={{ position: "absolute", top: 0, left: -hOff, width: scCardW, height: scCardH, borderRadius: 6, overflow: "hidden", border: "1.5px solid #FFD70044", boxShadow: "0 2px 6px #000a", zIndex: scHistLen - hi }}>
+                      {hImg ? <img src={hImg} style={{ width: "100%", height: "100%", objectFit: "fill" }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#FFD700" }}>{hc.name}</div>}
+                    </div>;
+                  })}
                 </div>
-              </div>
+              </div>; })()}
             </>) : (
               <div style={{ width: Math.round(235 * vScale), height: Math.round(329 * vScale), border: "1px dashed #ffffff20", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff30", fontSize: 10, fontFamily: "Spectral,serif" }}>Drag a card</div>
             )}
           </div>
-          {/* Chat zone */}
-          <div style={{ flexShrink: 0, height: Math.round(200 * vScale), display: "flex", flexDirection: "column", borderTop: "1px solid #ffffff15", padding: "4px 4px 4px" }}>
+          {/* Chat zone — lower half */}
+          <div style={{ flex: 1, minHeight: 20, display: "flex", flexDirection: "column", borderTop: "1px solid #ffffff15", padding: "4px 4px 4px" }}>
             <div style={{ fontSize: 9, color: "#ffffff44", fontFamily: "Spectral,serif", letterSpacing: 1, marginBottom: 2, textAlign: "center" }}>CHAT</div>
             <div ref={chatRef} style={{ flex: 1, overflow: "auto", fontSize: 10, lineHeight: 1.4, padding: "2px 4px" }}>
               {chatMsgs.length === 0 && <div style={{ color: "#ffffff15", fontSize: 9, fontFamily: "Spectral,serif", textAlign: "center", marginTop: 8 }}>{roomCode ? "No messages yet" : "Chat available in online games"}</div>}
