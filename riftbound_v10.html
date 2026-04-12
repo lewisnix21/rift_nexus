@@ -681,14 +681,6 @@ function RiftboundGame() {
         if (_isHostNow && _roomNow) {
           _lastSyncVersion.current++;
           fbDb.ref("lobbies/" + _roomNow + "/liveState").set(JSON.parse(JSON.stringify({ ps: nps, ver: _lastSyncVersion.current, by: myUid })));
-          // Host rolls dice
-          var rolls = {};
-          slots.forEach(function(s) { rolls[s.uid] = Math.floor(Math.random() * 6) + 1; });
-          var uids = slots.map(function(s) { return s.uid; });
-          while (uids.length === 2 && rolls[uids[0]] === rolls[uids[1]]) {
-            uids.forEach(function(u) { rolls[u] = Math.floor(Math.random() * 6) + 1; });
-          }
-          fbDb.ref("lobbies/" + _roomNow + "/gameState/diceRolls").set(rolls);
         }
         setScreen("wait"); setTurn(1); setAct(0);
         _gamePhaseRef.current = "diceroll";
@@ -1002,11 +994,22 @@ function RiftboundGame() {
             var nps = slotsData.map(function(s) { return initPlayer(s.deck); });
             setPs(nps);
             setTurn(1); setAct(0);
+            // Roll dice locally for host
+            var hostRolls = {};
+            slotsData.forEach(function(s) { hostRolls[s.uid] = Math.floor(Math.random() * 6) + 1; });
+            var hostUids = slotsData.map(function(s) { return s.uid; });
+            while (hostUids.length === 2 && hostRolls[hostUids[0]] === hostRolls[hostUids[1]]) {
+              hostUids.forEach(function(u) { hostRolls[u] = Math.floor(Math.random() * 6) + 1; });
+            }
+            var hostRolls2 = slotsData.map(function(s) { return { uid: s.uid, name: s.name, roll: hostRolls[s.uid] || 0 }; });
+            var hostSorted = hostRolls2.slice().sort(function(a, b) { return b.roll - a.roll; });
+            setDiceRoll(hostRolls2);
+            setDiceWinner(hostSorted[0].uid);
             _gamePhaseRef.current = "diceroll";
             setScreen("wait");
             // Write to Firebase for other players
             fbDb.ref("lobbies/" + roomCode + "/settings/status").set("playing");
-            fbDb.ref("lobbies/" + roomCode + "/gameState").set({ phase: "diceroll", slots: slotsData });
+            fbDb.ref("lobbies/" + roomCode + "/gameState").set({ phase: "diceroll", slots: slotsData, diceRolls: hostRolls });
             // Write canonical ps
             _lastSyncVersion.current++;
             fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: nps, ver: _lastSyncVersion.current, by: myUid })));
