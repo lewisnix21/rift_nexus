@@ -2022,9 +2022,19 @@ function RiftboundGame() {
       }
     }
   }
-  var RUNE_W = 100, RUNE_H = 140;
-  var HAND_W = 100, HAND_H = 140;
-  var LEGEND_W = 100, LEGEND_H = 140;
+  // Scale all card sizes proportionally to viewport height
+  // Base: designed for ~1080px viewport height
+  var _vhState = useState(typeof window !== "undefined" ? window.innerHeight : 1080);
+  var _vh = _vhState[0];
+  useEffect(function() {
+    function onResize() { _vhState[1](window.innerHeight); }
+    window.addEventListener("resize", onResize);
+    return function() { window.removeEventListener("resize", onResize); };
+  }, []);
+  var _sc = _vh / 1080;
+  var RUNE_W = Math.round(100 * _sc), RUNE_H = Math.round(140 * _sc);
+  var HAND_W = Math.round(100 * _sc), HAND_H = Math.round(140 * _sc);
+  var LEGEND_W = Math.round(100 * _sc), LEGEND_H = Math.round(140 * _sc);
   var BF_W = HAND_W, BF_H = HAND_H;
   var canPlayCard = function(c) { return true; };
   var hasAnim = function(id) { return anims.some(function(a) { return a.id === id; }); };
@@ -2301,11 +2311,11 @@ function RiftboundGame() {
       <div style={{ flex: 1, display: "flex", overflow: "hidden", background: "linear-gradient(180deg, #2a2a50 0%, #333368 30%, #3d3d7a 50%, #333368 70%, #2a2a50 100%)" }}>
         {/* Active player score - left edge */}
         {function() { var isOnlineGame = lobbyType === "host" || lobbyType === "join"; var isMyTurn = isOnlineGame ? act === mySlot : true; return (
-        <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end", alignItems: "center", flexShrink: 0, width: 70, background: "rgba(255,215,0,0.03)", borderRight: "1px solid #FFD70025", padding: "8px 4px" }}>
+        <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end", alignItems: "center", flexShrink: 0, width: Math.round(70 * _sc), background: "rgba(255,215,0,0.03)", borderRight: "1px solid #FFD70025", padding: "8px 4px" }}>
           <div style={{ flex: 1 }} />
           <div className={isMyTurn ? "anim-name-glow" : ""} style={{ writingMode: "vertical-rl", textOrientation: "mixed", transform: "rotate(180deg)", fontSize: 18, fontFamily: "Spectral,serif", fontWeight: 700, color: isMyTurn ? "#FFD700" : "#FFD70055", letterSpacing: 2, marginBottom: 8, transition: "color 0.3s ease" }}>{pName(isOnlineGame ? mySlot : act)}</div>
           <div style={{ position: "relative", width: 50, height: 50 }} onMouseEnter={function() { setScoreHov(true); }} onMouseLeave={function() { setScoreHov(false); }}>
-            <div style={{ width: 50, height: 50, borderRadius: "50%", border: "3px solid #FFD700", background: "linear-gradient(135deg,#FFD70030,#FF8C0015)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, color: "#FFD700", fontFamily: "Spectral,serif" }}>{scoreHov ? "" : (myCur.score + (continuePlaying ? "" : "/8"))}</div>
+            <div style={{ width: Math.round(50 * _sc), height: Math.round(50 * _sc), borderRadius: "50%", border: "3px solid #FFD700", background: "linear-gradient(135deg,#FFD70030,#FF8C0015)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, color: "#FFD700", fontFamily: "Spectral,serif" }}>{scoreHov ? "" : (myCur.score + (continuePlaying ? "" : "/8"))}</div>
             {scoreHov && <>
               <button onClick={function() { var idx = myActIdx; var np = ps.slice(); np[idx] = Object.assign({}, np[idx], { score: np[idx].score + 1 }); setPs(np); }} style={{ position: "absolute", top: 2, left: "50%", transform: "translateX(-50%)", width: 20, height: 20, borderRadius: "50%", border: "none", background: "transparent", color: "#FFD700", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>+</button>
               <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: 14, fontWeight: 700, color: "#FFD700", fontFamily: "Spectral,serif", pointerEvents: "none" }}>{myCur.score}</div>
@@ -2502,12 +2512,12 @@ function RiftboundGame() {
         </div>
         {/* Enemy score - right edge */}
         {function() { var isOnlineGame = lobbyType === "host" || lobbyType === "join"; return (
-        <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-start", alignItems: "center", flexShrink: 0, width: 70, background: "rgba(255,215,0,0.03)", borderLeft: "1px solid #FFD70025", padding: "8px 4px" }}>
+        <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-start", alignItems: "center", flexShrink: 0, width: Math.round(70 * _sc), background: "rgba(255,215,0,0.03)", borderLeft: "1px solid #FFD70025", padding: "8px 4px" }}>
           {ps.filter(function(_, i) { return isOnlineGame ? i !== mySlot : i !== act; }).map(function(enemy, ei) {
             var eIdx = ps.indexOf(enemy);
             var isEnemyTurn = act === eIdx;
             return <div key={"escore" + ei} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-              <div style={{ width: 50, height: 50, borderRadius: "50%", border: "3px solid #FFD70055", background: "rgba(255,215,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, color: "#FFD70088", fontFamily: "Spectral,serif" }}>{(enemy.score || 0) + (continuePlaying ? "" : "/8")}</div>
+              <div style={{ width: Math.round(50 * _sc), height: Math.round(50 * _sc), borderRadius: "50%", border: "3px solid #FFD70055", background: "rgba(255,215,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, color: "#FFD70088", fontFamily: "Spectral,serif" }}>{(enemy.score || 0) + (continuePlaying ? "" : "/8")}</div>
               <div className={isEnemyTurn ? "anim-name-glow" : ""} style={{ writingMode: "vertical-rl", textOrientation: "mixed", fontSize: 18, fontFamily: "Spectral,serif", fontWeight: 700, color: isEnemyTurn ? "#FFD700" : "#FFD70055", letterSpacing: 2, marginTop: 4, transition: "color 0.3s ease" }}>{pName(eIdx)}</div>
             </div>;
           })}
@@ -2515,7 +2525,7 @@ function RiftboundGame() {
         </div>); }()}
 
         {/* Right panel */}
-        <div style={{ width: 250, background: "transparent", borderLeft: "1px solid #FFD70015", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+        <div style={{ width: Math.round(250 * _sc), background: "transparent", borderLeft: "1px solid #FFD70015", display: "flex", flexDirection: "column", flexShrink: 0 }}>
           <div style={{ padding: 8, borderBottom: "1px solid #FFD70015", display: "flex", flexDirection: "column", gap: 5 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontWeight: 700, fontSize: 16, fontFamily: "Spectral,serif", background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Turn {turn}</span>
@@ -2568,7 +2578,7 @@ function RiftboundGame() {
             onDragOver={function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; if (!dragOverShowcase) setDragOverShowcase(true); }}
             onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverShowcase(false); }}
             onDrop={function(e) { e.preventDefault(); e.stopPropagation(); setDragOverShowcase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; var card = null; if (myCur) { if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } else if (type === "base") { card = myCur.base.find(function(c) { return c.uid === uid2; }); } else if (type === "bf") { for (var bk = 0; bk < bfs.length; bk++) { var uArr = bfs[bk].units[myActIdx]; if (!uArr) continue; var found = uArr.find(function(u) { return u.uid === uid2; }); if (found) { card = found; break; } } } else if (type === "bin") { card = (myCur.trash || []).find(function(c) { return c.uid === uid2; }); } } if (card) pushShowcase(card); }}
-            style={{ flexShrink: 0, height: 345, padding: "4px 4px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", margin: "0 4px", borderTop: "1px solid #ffffff20", border: dragOverShowcase ? "1.5px solid #ffffff55" : "1.5px solid #ffffff20", borderRadius: 4, transition: "border 0.15s ease" }}>
+            style={{ flexShrink: 0, height: Math.round(345 * _sc), padding: "4px 4px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", margin: "0 4px", borderTop: "1px solid #ffffff20", border: dragOverShowcase ? "1.5px solid #ffffff55" : "1.5px solid #ffffff20", borderRadius: 4, transition: "border 0.15s ease" }}>
             <div style={{ fontSize: 9, color: "#ffffff44", fontFamily: "Spectral,serif", letterSpacing: 1, marginBottom: 3 }}>SHOWCASE</div>
             {showcaseCard ? (<>
               {showcaseOwner && isOnlineGame && (function() {
@@ -2580,17 +2590,17 @@ function RiftboundGame() {
                   return <div style={{ width: 235, padding: "4px 0", flexShrink: 0, textAlign: "center", marginBottom: 3 }}><button onClick={function() { setShowcaseAccepted(!showcaseAccepted); }} style={{ width: "100%", padding: "4px 8px", borderRadius: 5, border: "1.5px solid " + (showcaseAccepted ? "#4ADE80" : "#FFD700"), background: showcaseAccepted ? "rgba(74,222,128,0.12)" : "rgba(255,215,0,0.12)", color: showcaseAccepted ? "#4ADE80" : "#FFD700", fontSize: 11, fontFamily: "Spectral,serif", fontWeight: 700, cursor: "pointer", boxShadow: showcaseAccepted ? "0 0 10px rgba(74,222,128,0.3)" : "0 0 10px rgba(255,215,0,0.3)" }}>{showcaseAccepted ? "Accepted ✓" : "Accept - no more responses"}</button></div>;
                 }
               })()}
-              <div style={{ position: "relative", flex: 1, display: "flex", alignItems: "center", justifyContent: "center", marginLeft: showcaseHistory.length * 30 }}>
+              <div style={{ position: "relative", flex: 1, display: "flex", alignItems: "center", justifyContent: "center", marginLeft: showcaseHistory.length * Math.round(30 * _sc) }}>
                 {/* Stacked history cards behind (left-ward) */}
                 {showcaseHistory.map(function(hc, hi) {
                   var hImg = hc.img ? imgSrc(hc.img) : "";
-                  return <div key={hc.uid + "-" + hi} data-uid={hc.uid} style={{ position: "absolute", left: -((hi + 1) * 30), top: 0, width: 235, height: 329, borderRadius: 6, overflow: "hidden", border: "1px solid #FFD70030", zIndex: -hi - 1, boxShadow: "0 2px 8px #000a" }}>
+                  return <div key={hc.uid + "-" + hi} data-uid={hc.uid} style={{ position: "absolute", left: -((hi + 1) * Math.round(30 * _sc)), top: 0, width: Math.round(235 * _sc), height: Math.round(329 * _sc), borderRadius: 6, overflow: "hidden", border: "1px solid #FFD70030", zIndex: -hi - 1, boxShadow: "0 2px 8px #000a" }}>
                     {hImg ? <img src={hImg} style={{ width: "100%", height: "100%", objectFit: "fill" }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#FFD700" }}>{hc.name}</div>}
                   </div>;
                 })}
                 {/* Main showcase card */}
                 <div data-uid={showcaseCard.uid} onClick={function() { if (!drawingArrow) { if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false); } } }} style={{ position: "relative", cursor: drawingArrow ? "crosshair" : "pointer" }}>
-                  {showcaseCard.img ? <img src={imgSrc(showcaseCard.img)} onError={function(e) { if (PA[showcaseCard.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[showcaseCard.name] + ".webp"; } }} style={{ width: 235, height: 329, objectFit: "fill", display: "block", borderRadius: 6 }} /> : <div style={{ width: 235, height: 329, display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 14, fontFamily: "Spectral,serif", borderRadius: 6, border: "1px solid #ffffff20", textAlign: "center", padding: 8 }}>{showcaseCard.name}</div>}
+                  {showcaseCard.img ? <img src={imgSrc(showcaseCard.img)} onError={function(e) { if (PA[showcaseCard.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[showcaseCard.name] + ".webp"; } }} style={{ width: Math.round(235 * _sc), height: Math.round(329 * _sc), objectFit: "fill", display: "block", borderRadius: 6 }} /> : <div style={{ width: Math.round(235 * _sc), height: Math.round(329 * _sc), display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 14, fontFamily: "Spectral,serif", borderRadius: 6, border: "1px solid #ffffff20", textAlign: "center", padding: 8 }}>{showcaseCard.name}</div>}
                   {showcaseCard.counter2 !== 0 && showcaseCard.counter2 !== undefined && <div style={{ position: "absolute", top: -8, right: -8, background: "#854d0e", color: "#FACC15", borderRadius: 12, minWidth: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, boxShadow: "0 2px 6px #000a", padding: "0 4px" }}>{showcaseCard.counter2 > 0 ? "+" : ""}{showcaseCard.counter2}</div>}
                   {showcaseCard.counter !== 0 && showcaseCard.counter !== undefined && <div style={{ position: "absolute", top: -8, right: showcaseCard.counter2 ? 30 : -8, background: "#166534", color: "#4ADE80", borderRadius: 12, minWidth: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, boxShadow: "0 2px 6px #000a", padding: "0 4px" }}>{showcaseCard.counter > 0 ? "+" : ""}{showcaseCard.counter}</div>}
                   {showcaseOwner === myUid && <button onClick={function(e) { e.stopPropagation(); sendToBin(showcaseCard.uid); if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false); } }} style={{ position: "absolute", bottom: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.75)", color: "#ffaaaa", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>🗑</button>}
@@ -2599,11 +2609,11 @@ function RiftboundGame() {
                 </div>
               </div>
             </>) : (
-              <div style={{ width: 235, height: 329, border: "1px dashed #ffffff20", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff30", fontSize: 10, fontFamily: "Spectral,serif" }}>Drag a card</div>
+              <div style={{ width: Math.round(235 * _sc), height: Math.round(329 * _sc), border: "1px dashed #ffffff20", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff30", fontSize: 10, fontFamily: "Spectral,serif" }}>Drag a card</div>
             )}
           </div>
           {/* Chat zone */}
-          <div style={{ flexShrink: 0, height: 200, display: "flex", flexDirection: "column", borderTop: "1px solid #ffffff15", padding: "4px 4px 4px" }}>
+          <div style={{ flexShrink: 0, height: Math.round(200 * _sc), display: "flex", flexDirection: "column", borderTop: "1px solid #ffffff15", padding: "4px 4px 4px" }}>
             <div style={{ fontSize: 9, color: "#ffffff44", fontFamily: "Spectral,serif", letterSpacing: 1, marginBottom: 2, textAlign: "center" }}>CHAT</div>
             <div ref={chatRef} style={{ flex: 1, overflow: "auto", fontSize: 10, lineHeight: 1.4, padding: "2px 4px" }}>
               {chatMsgs.length === 0 && <div style={{ color: "#ffffff15", fontSize: 9, fontFamily: "Spectral,serif", textAlign: "center", marginTop: 8 }}>{roomCode ? "No messages yet" : "Chat available in online games"}</div>}
