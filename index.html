@@ -790,9 +790,9 @@ function RiftboundGame() {
     }
   }, [bfs, sd]);
 
-  // Load saved decks for deck builder
+  // Load saved decks (for deck builder + lobby deck selection)
   useEffect(function() {
-    if (!authUser || screen !== "deckbuilder") return;
+    if (!authUser) return;
     var ref = fbDb.ref("users/" + authUser.uid + "/decks");
     var handler = ref.on("value", function(snap) {
       var val = snap.val();
@@ -802,7 +802,7 @@ function RiftboundGame() {
       setDbSavedDecks(arr);
     });
     return function() { ref.off("value", handler); };
-  }, [authUser, screen]);
+  }, [authUser]);
 
   var isOnlineGame = lobbyType === "host" || lobbyType === "join";
   var viewSlot = isOnlineGame ? mySlot : act;
