@@ -1483,8 +1483,8 @@ function RiftboundGame() {
       var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu, i) { return i === turnIdx ? pu.map(function(u) { return Object.assign({}, u, { exhausted: false, stunned: false, tempMight: 0 }); }) : pu.slice(); }) }); });
       // Begin: score
       var sc = 0;
-      nb.forEach(function(bf) { if (bf.controller === turnIdx && bf.units[turnIdx].length > 0) { var contested = false; for (var i = 0; i < pc; i++) { if (i !== turnIdx && bf.units[i].length > 0) contested = true; } if (!contested) sc++; } });
-      if (sc > 0) { p.score += sc; aL("  +" + sc + " holding point" + (sc > 1 ? "s" : "") + "! (" + p.score + (continuePlaying ? "" : "/8") + ")"); }
+      nb.forEach(function(bf) { if (bf.controller === turnIdx && bf.units[turnIdx].length > 0) { var contested = false; for (var i = 0; i < pc; i++) { if (i !== turnIdx && bf.units[i].length > 0) contested = true; } if (!contested) { sc++; aL(pName(turnIdx) + " gets a holding point from " + bf.name + "!"); } } });
+      if (sc > 0) { p.score += sc; }
       if (p.score >= 8 && !continuePlaying) { setWin(turnIdx); setScreen("go"); aL(pName(turnIdx) + " wins!"); var npW = ps.slice(); npW[turnIdx] = p; setPs(npW); setBfs(nb); setAwakenPhase(null); return; }
       // Channel: gain runes (max 12)
       var nr = turn === 1 && turnIdx === 1 ? 3 : 2;
