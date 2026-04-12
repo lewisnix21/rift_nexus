@@ -2001,13 +2001,13 @@ function RiftboundGame() {
 
   function passPriority() {
     if (!sd) return;
+    // Build involved list — always include all players in the game
+    var involved = [];
+    for (var j2 = 0; j2 < pc; j2++) involved.push(j2);
     if (sd.lastPass !== null && sd.lastPass !== sd.priority && !sd.acted) {
       // Both passed — show resolve options (handled by UI now)
       return;
     } else {
-      var bi2 = sd.bfIdx;
-      var involved = [sd.atkIdx];
-      for (var j2 = 0; j2 < pc; j2++) { if (j2 !== sd.atkIdx && bfs[bi2] && bfs[bi2].units[j2] && bfs[bi2].units[j2].length > 0) involved.push(j2); }
       var ci = involved.indexOf(sd.priority);
       var nextP = involved[(ci + 1) % involved.length];
       aL(pName(sd.priority) + " passes -> " + pName(nextP));
@@ -2551,12 +2551,13 @@ function RiftboundGame() {
             var defIdx = 0; for (var j3 = 0; j3 < pc; j3++) { if (j3 !== sd.atkIdx) { defIdx = j3; break; } }
             return <div className="anim-sd-pulse" style={{ textAlign: "center", padding: "6px 8px", flexShrink: 0, borderTop: "2px solid #FF6B35", borderLeft: "2px solid #FF6B35", borderRight: "2px solid #FF6B35", borderRadius: "6px 6px 0 0", marginRight: -1 }}>
               <div style={{ fontSize: 13, color: "#FF6B35", fontWeight: 700, fontFamily: "Spectral,serif" }}>SHOWDOWN</div>
-              {hasPri ? (canResolve ? <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 3 }}>
-                <button onClick={function() { resolveShowdown("attacker"); }} style={{ padding: 6, borderRadius: 4, border: "2px solid #4ADE80", background: "rgba(74,222,128,0.1)", color: "#4ADE80", cursor: "pointer", fontSize: 10, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>Point for {pName(sd.atkIdx)}</button>
-                <button onClick={function() { resolveShowdown("none"); }} style={{ padding: 6, borderRadius: 4, border: "2px solid #FFB400", background: "rgba(255,180,0,0.1)", color: "#FFB400", cursor: "pointer", fontSize: 10, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>No points</button>
-                <button onClick={function() { resolveShowdown("defender"); }} style={{ padding: 6, borderRadius: 4, border: "2px solid #ff6666", background: "rgba(255,100,100,0.1)", color: "#ff6666", cursor: "pointer", fontSize: 10, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>Point for {pName(defIdx)}</button>
-              </div> : <button onClick={passPriority} style={{ padding: 7, borderRadius: 4, border: "2px solid #FF6B35", background: "#FF6B3515", color: "#FF6B35", cursor: "pointer", fontSize: 11, fontWeight: 700, marginTop: 3, width: "100%", fontFamily: "Spectral,serif" }}>PASS PRIORITY</button>
-              ) : <button disabled style={{ padding: 7, borderRadius: 4, border: "1px solid #ffffff20", background: "transparent", color: "#666", cursor: "not-allowed", fontSize: 11, fontWeight: 700, marginTop: 3, width: "100%", fontFamily: "Spectral,serif", opacity: 0.7 }}>Waiting for {pName(sd.priority)}...</button>}
+              {hasPri ? <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 3 }}>
+                <button onClick={passPriority} style={{ padding: 7, borderRadius: 4, border: "2px solid #FF6B35", background: "#FF6B3515", color: "#FF6B35", cursor: "pointer", fontSize: 11, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>PASS PRIORITY</button>
+                <div style={{ fontSize: 8, color: "#ffffff30", textAlign: "center", margin: "2px 0" }}>— or resolve —</div>
+                <button onClick={function() { resolveShowdown("attacker"); }} style={{ padding: 5, borderRadius: 4, border: "1.5px solid #4ADE80", background: "rgba(74,222,128,0.08)", color: "#4ADE80", cursor: "pointer", fontSize: 9, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>Point for {pName(sd.atkIdx)}</button>
+                <button onClick={function() { resolveShowdown("none"); }} style={{ padding: 5, borderRadius: 4, border: "1.5px solid #FFB400", background: "rgba(255,180,0,0.08)", color: "#FFB400", cursor: "pointer", fontSize: 9, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>No points</button>
+                <button onClick={function() { resolveShowdown("defender"); }} style={{ padding: 5, borderRadius: 4, border: "1.5px solid #ff6666", background: "rgba(255,100,100,0.08)", color: "#ff6666", cursor: "pointer", fontSize: 9, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>Point for {pName(defIdx)}</button>
+              </div> : <button disabled style={{ padding: 7, borderRadius: 4, border: "1px solid #ffffff20", background: "transparent", color: "#666", cursor: "not-allowed", fontSize: 11, fontWeight: 700, marginTop: 3, width: "100%", fontFamily: "Spectral,serif", opacity: 0.7 }}>Waiting for {pName(sd.priority)}...</button>}
             </div>;
           })()}
           {/* Chat log */}
