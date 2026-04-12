@@ -1598,6 +1598,8 @@ function RiftboundGame() {
   }
 
   function binCard(card, p) {
+    // Clear hover if this card was being hovered
+    if (hoverCard && hoverCard.card && hoverCard.card.uid === card.uid) setHoverCard(null);
     // Remove any arrows attached to this card
     cleanArrowsForUid(card.uid);
     // Detach gear first — non-token gear goes to bin, token gear disappears
@@ -1811,7 +1813,7 @@ function RiftboundGame() {
       runeDeck: shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recycleUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); }))),
       hand: _me.hand.filter(function(c) { return c.uid !== card.uid; })
     });
-    if (isChamp) p.championPlayed = true;
+    if (isChamp) { p.championPlayed = true; p.champion = null; }
     var totalPaid = tappedUids.length + recycleUids.length;
     if (totalPaid > 0 || recycleUids.length > 0) { var msg = "  Auto-tapped " + totalPaid + " rune" + (totalPaid > 1 ? "s" : ""); if (recycleUids.length > 0) msg += ", then recycled " + recycleUids.length + " of them"; aL(msg); }
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(x) { return x.slice(); }) }); });
@@ -1888,7 +1890,7 @@ function RiftboundGame() {
     }
     if (card.type === "Unit" || card.type === "Champion") {
       p.base = p.base.concat([Object.assign({}, card, { exhausted: true })]);
-      if (isChamp) p.championPlayed = true;
+      if (isChamp) { p.championPlayed = true; p.champion = null; }
       aL(pName(myActIdx) + " plays " + (card.hidden ? "a hidden card" : card.name));
       if (/draw 1/i.test(card.text) && p.mainDeck.length > 0) { p.hand = p.hand.concat([p.mainDeck.shift()]); aL("  Draw 1"); }
       if (/draw 2/i.test(card.text)) { var d = p.mainDeck.splice(0, Math.min(2, p.mainDeck.length)); p.hand = p.hand.concat(d); }
@@ -1917,7 +1919,7 @@ function RiftboundGame() {
     var card = fc;
     if (card.type === "Unit" || card.type === "Champion") {
       p.base = p.base.concat([Object.assign({}, card, { exhausted: true })]);
-      if (isChamp) p.championPlayed = true;
+      if (isChamp) { p.championPlayed = true; p.champion = null; }
       aL(pName(idx) + " plays " + card.name);
       if (/draw 1/i.test(card.text) && p.mainDeck.length > 0) { p.hand = p.hand.concat([p.mainDeck.shift()]); aL("  Draw 1"); }
       if (/draw 2/i.test(card.text)) { var d = p.mainDeck.splice(0, Math.min(2, p.mainDeck.length)); p.hand = p.hand.concat(d); }
@@ -1957,7 +1959,7 @@ function RiftboundGame() {
     if (!canMoveOwn || !_me.champion || _me.championPlayed) return;
     if (sd) setSd(Object.assign({}, sd, { acted: true }));
     var np = ps.slice();
-    var p = Object.assign({}, _me, { championPlayed: true, base: _me.base.concat([Object.assign({}, _me.champion, { exhausted: true })]) });
+    var p = Object.assign({}, _me, { championPlayed: true, champion: null, base: _me.base.concat([Object.assign({}, _me.champion, { exhausted: true })]) });
     np[idx] = p; setPs(np);
     aL(pName(idx) + " plays " + _me.champion.name + " to base.");
   }
@@ -2403,7 +2405,7 @@ function RiftboundGame() {
                 {/* BF card - fixed centre */}
                 <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 1 }}>
                   {/* Top units - anchored above BF card */}
-                  <div style={{ position: "absolute", bottom: "100%", left: "50%", transform: "translateX(-50%)", display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 3, marginBottom: -4 }}>
+                  <div style={{ position: "absolute", bottom: "100%", left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 3, marginBottom: -4, zIndex: 2 }}>
                     {ps.map(function(p, pi) { if (pi === bottomPlayer || !bf.units[pi] || bf.units[pi].length === 0) return null; var isMyUnits = pi === myActIdx; return bf.units[pi].map(function(u) { return isMyUnits ? <div key={u.uid} draggable={canMoveOwn && !fc && !tm && !drawingArrow} onDragStart={canMoveOwn && !fc && !tm && !drawingArrow ? function(e) { e.dataTransfer.setData("text/plain", "bf:" + u.uid); setDragUnit(u); } : undefined} onDragEnd={function() { setDragUnit(null); }}><Card card={u} small onClick={function() { toggleTap(u.uid); }} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} /></div> : <Card key={u.uid} card={u} small onClick={tm ? function() { resTarget(u, pi, bi); } : undefined} />; }); })}
                   </div>
                   {/* BF card itself */}
@@ -2411,7 +2413,7 @@ function RiftboundGame() {
                     {bfImg ? <img className={isLandscape ? "bf-hover-land" : "bf-hover"} src={bfImg} alt={bf.name} onClick={undefined} onMouseEnter={function(e) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: { name: bf.name, _isBf: true, _bfUrl: bfImg, _isLandscape: isLandscape }, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }); }} onMouseLeave={function() { setHoverCard(null); }} style={isLandscape ? { width: BF_H, height: BF_W, objectFit: "fill", borderRadius: 6, border: "1px solid #FFD70015", cursor: "pointer" } : { width: BF_W, height: BF_H, objectFit: "fill", borderRadius: 6, border: "1px solid #FFD70015", cursor: "pointer", transform: "rotate(90deg)" }} /> : <div style={{ width: BF_W, height: BF_H, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#ffffff30", transform: "rotate(90deg)" }}>{bf.name}</div>}
                   </div>
                   {/* Bottom player units - anchored below BF card */}
-                  <div style={{ position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)", display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 3, marginTop: -4 }}>
+                  <div style={{ position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 3, marginTop: -4, zIndex: 2 }}>
                     {bf.units[bottomPlayer] && bf.units[bottomPlayer].map(function(u) { return <div key={u.uid} draggable={canMoveOwn && !fc && !tm && !drawingArrow} onDragStart={canMoveOwn && !fc && !tm && !drawingArrow ? function(e) { e.dataTransfer.setData("text/plain", "bf:" + u.uid); setDragUnit(u); } : undefined} onDragEnd={function() { setDragUnit(null); }}><Card card={u} small onClick={function() { toggleTap(u.uid); }} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} /></div>; })}
                   </div>
                 </div>
@@ -2472,8 +2474,8 @@ function RiftboundGame() {
             </div>
             <div style={{ display: "flex", flexDirection: "row", alignItems: "stretch", justifyContent: "center", padding: "4px 4px", flexShrink: 0, gap: 4 }}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, padding: "4px 8px", borderRadius: 6, border: "1.5px solid #ffffff20" }}>
-                <div style={{ fontSize: 8, color: "#777", fontFamily: "Spectral,serif", letterSpacing: 0.3 }}>SORT BY</div>
-                <select value={handSort} onChange={function(e) { setHandSort(e.target.value); }} style={{ fontSize: 9, padding: "2px 4px", borderRadius: 4, border: "1px solid #ffffff15", background: "rgba(255,255,255,0.06)", color: "#aaa", cursor: "pointer", fontFamily: "Spectral,serif", outline: "none" }}>
+                <div style={{ fontSize: 11, color: "#777", fontFamily: "Spectral,serif", letterSpacing: 0.3 }}>SORT BY</div>
+                <select value={handSort} onChange={function(e) { setHandSort(e.target.value); }} style={{ fontSize: 11, padding: "3px 5px", borderRadius: 4, border: "1px solid #ffffff15", background: "rgba(255,255,255,0.06)", color: "#aaa", cursor: "pointer", fontFamily: "Spectral,serif", outline: "none" }}>
                   <option value="drawn" style={{ background: "#2a2a50" }}>Drawn Order</option>
                   <option value="type" style={{ background: "#2a2a50" }}>Card Type</option>
                   <option value="energy" style={{ background: "#2a2a50" }}>Energy Cost</option>
