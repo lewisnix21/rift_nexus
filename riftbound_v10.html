@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=3.0, user-scalable=yes">
 <title>Rift Nexus - League of Legends TCG</title>
 <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;600;700&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
@@ -2233,7 +2233,7 @@ function RiftboundGame() {
       {/* Online battlefield selection overlay */}
       {screen === "bf" && (lobbyType === "host" || lobbyType === "join") && myCur && (function() {
         var myBfPicked = ps[mySlot] && ps[mySlot].chosenBf;
-        return <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, zIndex: 1100, overflow: "auto", padding: "20px 0" }}>
+        return <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, zIndex: 1100, overflow: "auto", padding: "40px 20px" }}>
           {!myBfPicked ? <>
             <h2 style={{ fontSize: 22, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700" }}>Choose Your Battlefield</h2>
             <p style={{ color: "#4ADE80", fontSize: 12, fontFamily: "Spectral,serif", fontWeight: 700 }}>{pName(firstPlayerIdx)} to draw first</p>
@@ -2266,7 +2266,7 @@ function RiftboundGame() {
         var myMullDone = roomCode && lobbyPlayers[myUid] && false; // check via ref
         // Simple check: if we already wrote mulled, show waiting
         var mullDoneLocal = _gamePhaseRef.current === "mullDone";
-        return <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, zIndex: 1100, overflow: "auto", padding: "20px 0" }}>
+        return <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, zIndex: 1100, overflow: "auto", padding: "40px 20px" }}>
           {!mullDoneLocal ? <>
             <h2 style={{ fontSize: 22, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700" }}>Your Mulligan</h2>
             <p style={{ color: "#4ADE80", fontSize: 12, fontFamily: "Spectral,serif", fontWeight: 700 }}>{pName(firstPlayerIdx)} to draw first</p>
