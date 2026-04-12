@@ -1423,7 +1423,7 @@ function RiftboundGame() {
     <div style={{ minHeight: "100vh", background: "#080818", color: "#ddd", fontFamily: "sans-serif", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, overflow: "auto", padding: "40px 20px" }}>
       <h2 style={{ fontSize: 28, fontFamily: "Spectral,serif", fontWeight: 700, background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{isOnlineMull ? "Your Mulligan" : "P" + (act + 1) + " Mulligan"}</h2>
       <p style={{ color: "#888", fontSize: 14 }}>Select up to 2 to replace</p>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", alignItems: "center", transform: "scale(" + (0.72 * vScale) + ")", transformOrigin: "top center", marginBottom: Math.round(-160 * vScale) }}>
+      <div style={{ display: "flex", gap: 8, flexWrap: "nowrap", justifyContent: "center", alignItems: "center", flexShrink: 0, transform: "scale(" + (0.72 * vScale) + ")", transformOrigin: "top center", marginBottom: Math.round(-160 * vScale) }}>
         {mullPs.hand.map(function(c) { return <Card key={c.uid} card={c} selected={mc.indexOf(c.uid) >= 0} onClick={function() { setMc(function(p) { return p.indexOf(c.uid) >= 0 ? p.filter(function(x) { return x !== c.uid; }) : p.length < 2 ? p.concat([c.uid]) : p; }); }} zoomed />; })}
       </div>
       <button onClick={function() {
@@ -2233,7 +2233,7 @@ function RiftboundGame() {
       {/* Online battlefield selection overlay */}
       {screen === "bf" && (lobbyType === "host" || lobbyType === "join") && myCur && (function() {
         var myBfPicked = ps[mySlot] && ps[mySlot].chosenBf;
-        return <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, zIndex: 1100 }}>
+        return <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, zIndex: 1100, overflow: "auto", padding: "20px 0" }}>
           {!myBfPicked ? <>
             <h2 style={{ fontSize: 22, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700" }}>Choose Your Battlefield</h2>
             <p style={{ color: "#4ADE80", fontSize: 12, fontFamily: "Spectral,serif", fontWeight: 700 }}>{pName(firstPlayerIdx)} to draw first</p>
@@ -2266,12 +2266,12 @@ function RiftboundGame() {
         var myMullDone = roomCode && lobbyPlayers[myUid] && false; // check via ref
         // Simple check: if we already wrote mulled, show waiting
         var mullDoneLocal = _gamePhaseRef.current === "mullDone";
-        return <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, zIndex: 1100 }}>
+        return <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, zIndex: 1100, overflow: "auto", padding: "20px 0" }}>
           {!mullDoneLocal ? <>
             <h2 style={{ fontSize: 22, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700" }}>Your Mulligan</h2>
             <p style={{ color: "#4ADE80", fontSize: 12, fontFamily: "Spectral,serif", fontWeight: 700 }}>{pName(firstPlayerIdx)} to draw first</p>
             <p style={{ color: "#888", fontSize: 13 }}>Select up to 2 to replace</p>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", alignItems: "center", transform: "scale(" + (0.72 * vScale) + ")", transformOrigin: "top center", marginBottom: Math.round(-160 * vScale) }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "nowrap", justifyContent: "center", alignItems: "center", flexShrink: 0, transform: "scale(" + (0.72 * vScale) + ")", transformOrigin: "top center", marginBottom: Math.round(-160 * vScale) }}>
               {ps[mySlot].hand.map(function(c) { return <Card key={c.uid} card={c} selected={mc.indexOf(c.uid) >= 0} onClick={function() { setMc(function(p) { return p.indexOf(c.uid) >= 0 ? p.filter(function(x) { return x !== c.uid; }) : p.length < 2 ? p.concat([c.uid]) : p; }); }} zoomed />; })}
             </div>
             <button onClick={function() {
