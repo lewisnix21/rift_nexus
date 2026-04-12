@@ -2022,16 +2022,7 @@ function RiftboundGame() {
       }
     }
   }
-  // Scale all card sizes proportionally to viewport height
-  // Base: designed for ~1080px viewport height
-  var _vhState = useState(typeof window !== "undefined" ? window.innerHeight : 1080);
-  var _vh = _vhState[0];
-  useEffect(function() {
-    function onResize() { _vhState[1](window.innerHeight); }
-    window.addEventListener("resize", onResize);
-    return function() { window.removeEventListener("resize", onResize); };
-  }, []);
-  var _sc = _vh / 1080;
+  var _sc = (typeof window !== "undefined" ? window.innerHeight : 1080) / 1080;
   var RUNE_W = Math.round(100 * _sc), RUNE_H = Math.round(140 * _sc);
   var HAND_W = Math.round(100 * _sc), HAND_H = Math.round(140 * _sc);
   var LEGEND_W = Math.round(100 * _sc), LEGEND_H = Math.round(140 * _sc);
