@@ -702,8 +702,9 @@ function RiftboundGame() {
         _gamePhaseRef.current = "bf";
         setScreen("bf");
         setDiceRoll(null);
-        aL(slots[fpIdx] ? slots[fpIdx].name : "Player " + (fpIdx+1));
-        aL(" draws first.");
+        aL(slots[fpIdx] ? slots[fpIdx].name + " draws first." : "");
+        // Update phase in Firebase so BF completion check works
+        if (_roomNow) fbDb.ref("lobbies/" + _roomNow + "/gameState/phase").set("bf");
       }
       // Step 3: BF selection
       if (gs.phase === "bf" && gs.bfChoices) {
