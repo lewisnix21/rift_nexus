@@ -1820,17 +1820,10 @@ function RiftboundGame() {
     nb[bi].units[myActIdx].push(Object.assign({}, card, { exhausted: true }));
     aL(pName(myActIdx) + " deploys " + (card.hidden ? "a hidden card" : card.name) + " to " + nb[bi].name);
     var np = ps.slice(); np[myActIdx] = p; setPs(np); setBfs(nb);
-    var hasEnemies = false;
-    for (var j = 0; j < pc; j++) { if (j !== myActIdx && nb[bi].units[j].length > 0) hasEnemies = true; }
-    if (hasEnemies && !sd) {
+    if (!sd) {
       aL("SHOWDOWN at " + nb[bi].name + "!");
       setSd({ bfIdx: bi, atkIdx: myActIdx, priority: myActIdx, lastPass: null, acted: false });
       setScreen("sd");
-    } else if (!hasEnemies && nb[bi].controller !== myActIdx) {
-      nb[bi].controller = myActIdx; p.score++;
-      aL("Conquered! (" + p.score + "/8)");
-      if (p.score >= 8 && !continuePlaying) { setWin(myActIdx); setScreen("go"); }
-      np[myActIdx] = p; setPs(np); setBfs(nb);
     }
   }
 
@@ -1983,44 +1976,47 @@ function RiftboundGame() {
     nb[bi].units[idx].push(Object.assign({}, unit, { exhausted: true }));
     aL(pName(idx) + " moves " + unit.name + " to " + nb[bi].name);
     var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); setSel(null);
-    var hasEnemies = false;
-    for (var j = 0; j < pc; j++) { if (j !== idx && nb[bi].units[j].length > 0) hasEnemies = true; }
-    if (hasEnemies && !sd) {
+    if (!sd) {
       aL("SHOWDOWN at " + nb[bi].name + "!");
       setSd({ bfIdx: bi, atkIdx: idx, priority: idx, lastPass: null, acted: false });
       setScreen("sd");
-    } else if (!hasEnemies && nb[bi].controller !== idx) {
-      nb[bi].controller = idx; p.score++;
-      aL("Conquered! (" + p.score + "/8)");
-      if (p.score >= 8 && !continuePlaying) { setWin(idx); setScreen("go"); }
-      np[idx] = p; setPs(np); setBfs(nb);
+    }
+  }
+
+  function resolveShowdown(mode) {
+    // mode: "attacker" = point for attacker, "none" = no points, "defender" = point for non-attacker
+    if (!sd) return;
+    aL("Showdown resolved.");
+    var bi = sd.bfIdx;
+    var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(x) { return x.slice(); }) }); });
+    var np = ps.map(function(p) { return Object.assign({}, p, { trash: (p.trash||[]).slice(), hand: p.hand.slice(), mainDeck: p.mainDeck.slice() }); });
+    if (mode === "attacker") {
+      nb[bi].controller = sd.atkIdx; np[sd.atkIdx].score++;
+      aL(pName(sd.atkIdx) + " conquers " + nb[bi].name + "! (" + np[sd.atkIdx].score + (continuePlaying ? "" : "/8") + ")");
+      if (np[sd.atkIdx].score >= 8 && !continuePlaying) { setWin(sd.atkIdx); setScreen("go"); setBfs(nb); setPs(np); setSd(null); return; }
+    } else if (mode === "defender") {
+      var defIdx = 0; for (var j = 0; j < pc; j++) { if (j !== sd.atkIdx) { defIdx = j; break; } }
+      nb[bi].controller = defIdx; np[defIdx].score++;
+      aL(pName(defIdx) + " holds " + nb[bi].name + "! (" + np[defIdx].score + (continuePlaying ? "" : "/8") + ")");
+      if (np[defIdx].score >= 8 && !continuePlaying) { setWin(defIdx); setScreen("go"); setBfs(nb); setPs(np); setSd(null); return; }
+    } else {
+      aL("No points awarded.");
+    }
+    setBfs(nb); setPs(np);
+    setSd(null); setScreen("play"); setAct(sd.atkIdx);
+    if (roomCode && lobbyType !== "test") {
+      _lastSyncVersion.current++;
+      var cleanPs3 = np.map(function(p) { if (!p) return p; return Object.assign({}, p, { hand: p.hand || [], base: (p.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: p.trash || [], runes: p.runes || [], runeDeck: p.runeDeck || [], mainDeck: p.mainDeck || [], battlefields: p.battlefields || [] }); });
+      var cleanBfs3 = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
+      fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPs3, bfs: cleanBfs3, turn: turn, act: sd.atkIdx, screen: "play", log: log.slice(-30), sd: null, ver: _lastSyncVersion.current, by: myUid })));
     }
   }
 
   function passPriority() {
     if (!sd) return;
     if (sd.lastPass !== null && sd.lastPass !== sd.priority && !sd.acted) {
-      aL("Both pass. Showdown ends.");
-      // Check if attacker controls the battlefield
-      var bi = sd.bfIdx;
-      var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(x) { return x.slice(); }) }); });
-      var np = ps.map(function(p) { return Object.assign({}, p, { trash: (p.trash||[]).slice(), hand: p.hand.slice(), mainDeck: p.mainDeck.slice() }); });
-      var hasEnemies = false;
-      for (var j = 0; j < pc; j++) { if (j !== sd.atkIdx && nb[bi].units[j].length > 0) hasEnemies = true; }
-      if (nb[bi].units[sd.atkIdx].length > 0 && !hasEnemies && nb[bi].controller !== sd.atkIdx) {
-        nb[bi].controller = sd.atkIdx; np[sd.atkIdx].score++;
-        aL(pName(sd.atkIdx) + " conquers " + nb[bi].name + "! (" + np[sd.atkIdx].score + "/8)");
-        if (np[sd.atkIdx].score >= 8 && !continuePlaying) { setWin(sd.atkIdx); setScreen("go"); setBfs(nb); setPs(np); setSd(null); return; }
-      }
-      setBfs(nb); setPs(np);
-      setSd(null); setScreen("play"); setAct(sd.atkIdx);
-      // Explicit sync for resolve
-      if (roomCode && lobbyType !== "test") {
-        _lastSyncVersion.current++;
-        var cleanPs3 = np.map(function(p) { if (!p) return p; return Object.assign({}, p, { hand: p.hand || [], base: (p.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: p.trash || [], runes: p.runes || [], runeDeck: p.runeDeck || [], mainDeck: p.mainDeck || [], battlefields: p.battlefields || [] }); });
-        var cleanBfs3 = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
-        fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPs3, bfs: cleanBfs3, turn: turn, act: sd.atkIdx, screen: "play", log: log.slice(-30), sd: null, ver: _lastSyncVersion.current, by: myUid })));
-      }
+      // Both passed — show resolve options (handled by UI now)
+      return;
     } else {
       var bi2 = sd.bfIdx;
       var involved = [sd.atkIdx];
@@ -2554,7 +2550,19 @@ function RiftboundGame() {
             {screen === "play" && !awakenPhase && (function() { var isOnlineGame = lobbyType === "host" || lobbyType === "join"; var isMyTurn = isOnlineGame ? act === mySlot : true; return isMyTurn ? <button onClick={endTurn} style={{ padding: 10, borderRadius: 5, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0015)", color: "#FFD700", cursor: "pointer", fontSize: 14, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>END TURN</button> : <div style={{ padding: 10, borderRadius: 5, border: "1px solid #ffffff20", background: "transparent", color: "#888", fontSize: 12, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif", textAlign: "center" }}>{pName(act) + "'s turn"}</div>; })()}
             {sel && canAct && !tm && !fc && <div style={{ padding: 5, fontSize: 11, color: "#aaa", textAlign: "center", background: "#FFD70008", borderRadius: 4, border: "1px solid #FFD70040" }}>Selected: <b style={{ color: "#FFD700" }}>{sel.name}</b><br /><span style={{ fontSize: 10, color: "#888" }}>click a battlefield</span></div>}
           </div>
-          {sd && <div className="anim-sd-pulse" style={{ textAlign: "center", padding: "6px 8px", flexShrink: 0, borderTop: "2px solid #FF6B35", borderLeft: "2px solid #FF6B35", borderRight: "2px solid #FF6B35", borderRadius: "6px 6px 0 0", marginRight: -1 }}><div style={{ fontSize: 13, color: "#FF6B35", fontWeight: 700, fontFamily: "Spectral,serif" }}>SHOWDOWN</div>{hasPri ? <button onClick={passPriority} style={{ padding: 7, borderRadius: 4, border: "2px solid #FF6B35", background: "#FF6B3515", color: "#FF6B35", cursor: "pointer", fontSize: 11, fontWeight: 700, marginTop: 3, width: "100%", fontFamily: "Spectral,serif" }}>{sd.lastPass !== null && sd.lastPass !== sd.priority && !sd.acted ? "RESOLVE" : "PASS PRIORITY"}</button> : <button disabled style={{ padding: 7, borderRadius: 4, border: "1px solid #ffffff20", background: "transparent", color: "#666", cursor: "not-allowed", fontSize: 11, fontWeight: 700, marginTop: 3, width: "100%", fontFamily: "Spectral,serif", opacity: 0.7 }}>Waiting for {pName(sd.priority)}...</button>}</div>}
+          {sd && (function() {
+            var canResolve = sd.lastPass !== null && sd.lastPass !== sd.priority && !sd.acted;
+            var defIdx = 0; for (var j3 = 0; j3 < pc; j3++) { if (j3 !== sd.atkIdx) { defIdx = j3; break; } }
+            return <div className="anim-sd-pulse" style={{ textAlign: "center", padding: "6px 8px", flexShrink: 0, borderTop: "2px solid #FF6B35", borderLeft: "2px solid #FF6B35", borderRight: "2px solid #FF6B35", borderRadius: "6px 6px 0 0", marginRight: -1 }}>
+              <div style={{ fontSize: 13, color: "#FF6B35", fontWeight: 700, fontFamily: "Spectral,serif" }}>SHOWDOWN</div>
+              {hasPri ? (canResolve ? <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 3 }}>
+                <button onClick={function() { resolveShowdown("attacker"); }} style={{ padding: 6, borderRadius: 4, border: "2px solid #4ADE80", background: "rgba(74,222,128,0.1)", color: "#4ADE80", cursor: "pointer", fontSize: 10, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>Point for {pName(sd.atkIdx)}</button>
+                <button onClick={function() { resolveShowdown("none"); }} style={{ padding: 6, borderRadius: 4, border: "2px solid #FFB400", background: "rgba(255,180,0,0.1)", color: "#FFB400", cursor: "pointer", fontSize: 10, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>No points</button>
+                <button onClick={function() { resolveShowdown("defender"); }} style={{ padding: 6, borderRadius: 4, border: "2px solid #ff6666", background: "rgba(255,100,100,0.1)", color: "#ff6666", cursor: "pointer", fontSize: 10, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>Point for {pName(defIdx)}</button>
+              </div> : <button onClick={passPriority} style={{ padding: 7, borderRadius: 4, border: "2px solid #FF6B35", background: "#FF6B3515", color: "#FF6B35", cursor: "pointer", fontSize: 11, fontWeight: 700, marginTop: 3, width: "100%", fontFamily: "Spectral,serif" }}>PASS PRIORITY</button>
+              ) : <button disabled style={{ padding: 7, borderRadius: 4, border: "1px solid #ffffff20", background: "transparent", color: "#666", cursor: "not-allowed", fontSize: 11, fontWeight: 700, marginTop: 3, width: "100%", fontFamily: "Spectral,serif", opacity: 0.7 }}>Waiting for {pName(sd.priority)}...</button>}
+            </div>;
+          })()}
           {/* Chat log */}
           <div ref={lr} className={sd ? "anim-sd-pulse" : ""} style={{ flex: 1, overflow: "auto", padding: 6, fontSize: 10, lineHeight: 1.5, minHeight: 30, borderLeft: sd ? "2px solid #FF6B35" : "none", borderRight: sd ? "2px solid #FF6B35" : "none", borderBottom: sd ? "2px solid #FF6B35" : "none", borderRadius: sd ? "0 0 6px 6px" : 0, marginRight: sd ? -1 : 0 }}>
             {log.map(function(e, i) { return <div key={i} style={{ color: e.m.indexOf("===") >= 0 ? "#FFD700" : e.m.indexOf("wins") >= 0 ? "#FFD700" : e.m.indexOf("SHOWDOWN") >= 0 ? "#FF6B35" : e.m.indexOf("onquer") >= 0 || e.m.indexOf("holding point") >= 0 ? "#4ADE80" : "#667", marginBottom: 2, fontFamily: e.m.indexOf("===") >= 0 ? "Spectral,serif" : "inherit" }}>{e.m}</div>; })}
