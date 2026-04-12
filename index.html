@@ -1209,7 +1209,30 @@ function RiftboundGame() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderBottom: "1px solid #ffffff10", flexShrink: 0 }}>
         <button onClick={function() { setDbView("list"); }} style={{ padding: "4px 12px", borderRadius: 4, border: "1px solid #ffffff20", background: "transparent", color: "#888", cursor: "pointer", fontSize: 11, fontFamily: "Spectral,serif" }}>← Back to Decks</button>
         <h2 style={{ fontSize: 18, fontFamily: "Spectral,serif", fontWeight: 700, background: "linear-gradient(135deg,#8B5CF6,#A78BFA)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>DECK BUILDER</h2>
-        <div style={{ display: "flex", gap: 6 }}>
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <div style={{ position: "relative" }}>
+            <button onClick={function() { setDbSearch(dbSearch === "__import__" ? "" : "__import__"); }} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid #FFD70044", background: "transparent", color: "#FFD700aa", cursor: "pointer", fontSize: 10, fontFamily: "Spectral,serif" }}>Import Precon</button>
+            {dbSearch === "__import__" && <div style={{ position: "absolute", top: "100%", right: 0, marginTop: 4, background: "#1a1a3a", border: "1px solid #FFD70044", borderRadius: 6, padding: 4, zIndex: 200, minWidth: 220, maxHeight: 300, overflow: "auto", boxShadow: "0 8px 24px #000a" }}>
+              {DNAMES.map(function(dn) {
+                var dk = DECKS[dn];
+                var lc = dk.legend ? findCard(dk.legend) : null;
+                var ds = lc && lc.ds ? lc.ds : [];
+                return <button key={dn} onClick={function() {
+                  setDbName(dn);
+                  setDbLegend(dk.legend);
+                  setDbChamp(dk.champ);
+                  setDbCards(dk.deck.slice());
+                  setDbBfs(dk.bfs.slice());
+                  setDbRunes(dk.runes.slice());
+                  setDbSection("main");
+                  setDbSearch("");
+                }} style={{ display: "block", width: "100%", padding: "6px 10px", borderRadius: 4, border: "none", background: "transparent", color: "#ddd", cursor: "pointer", fontSize: 12, fontFamily: "Spectral,serif", textAlign: "left" }}>
+                  <div style={{ fontWeight: 700 }}>{dn}</div>
+                  <div style={{ fontSize: 9, color: "#888", display: "flex", gap: 3, marginTop: 1 }}>{ds.map(function(dd) { var dc = DOM[dd] || DOM.Colorless; return <span key={dd} style={{ color: dc.c, fontWeight: 700 }}>{dc.i} {dd}</span>; })}</div>
+                </button>;
+              })}
+            </div>}
+          </div>
           <button onClick={dbResetDeck} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid #ff444444", background: "transparent", color: "#ff666688", cursor: "pointer", fontSize: 10, fontFamily: "Spectral,serif" }}>Clear</button>
           <button onClick={dbSaveDeck} disabled={!dbName.trim() || !dbLegend} style={{ padding: "4px 12px", borderRadius: 4, border: "1.5px solid " + (dbName.trim() && dbLegend ? "#4ADE80" : "#333"), background: dbName.trim() && dbLegend ? "rgba(74,222,128,0.1)" : "transparent", color: dbName.trim() && dbLegend ? "#4ADE80" : "#555", cursor: dbName.trim() && dbLegend ? "pointer" : "not-allowed", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Save Deck</button>
         </div>
