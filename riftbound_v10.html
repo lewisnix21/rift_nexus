@@ -2055,6 +2055,24 @@ function RiftboundGame() {
     var bi = savedSd.bfIdx;
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(x) { return x.slice(); }) }); });
     var np = ps.map(function(p) { return Object.assign({}, p, { trash: (p.trash||[]).slice(), hand: p.hand.slice(), mainDeck: p.mainDeck.slice() }); });
+    // Send any showcase cards to the owner's bin (a spell showcase in progress also ends)
+    if (showcaseCard || showcaseHistory.length > 0) {
+      var scAll = [];
+      if (showcaseCard) scAll.push(showcaseCard);
+      scAll = scAll.concat(showcaseHistory);
+      var ownerIdx = savedSd.atkIdx;
+      if (showcaseOwner) {
+        var isOnline = lobbyType === "host" || lobbyType === "join";
+        if (isOnline && lobbyPlayers[showcaseOwner] && typeof lobbyPlayers[showcaseOwner].slot === "number") {
+          ownerIdx = lobbyPlayers[showcaseOwner].slot;
+        }
+      }
+      if (np[ownerIdx]) {
+        scAll.forEach(function(sc2) { np[ownerIdx].trash.push(Object.assign({}, sc2, { exhausted: false, gear: [] })); });
+        aL(scAll.length + " showcase card" + (scAll.length > 1 ? "s" : "") + " sent to bin");
+      }
+      setShowcaseCard(null); setShowcaseHistory([]); setShowcaseOwner(null); setShowcaseAccepted(false);
+    }
     if (mode === "attacker") {
       nb[bi].controller = savedSd.atkIdx; np[savedSd.atkIdx].score++;
       aL(pName(savedSd.atkIdx) + " conquers " + nb[bi].name + "! (" + np[savedSd.atkIdx].score + (continuePlaying ? "" : "/8") + ")");
@@ -2464,7 +2482,7 @@ function RiftboundGame() {
           </div>{/* end ENEMY ZONE wrapper */}
 
           {/* ROW 3: BATTLEFIELDS */}
-          <div onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverBf(-1); }} style={{ display: "flex", gap: 3, padding: "2px 6px", flex: 1, minHeight: 40, position: "relative", zIndex: 3 }}>
+          <div onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverBf(-1); }} style={{ display: "flex", gap: 3, padding: "2px 6px", flex: 1, minHeight: 40, position: "relative", zIndex: 3, overflow: "hidden" }}>
             {bfs.map(function(bf, bi) {
               var bottomPlayer = isOnlineGame ? mySlot : (isSD && sd ? sd.atkIdx : act);
               var bfImg = CI[bf.name] ? imgSrc(CI[bf.name]) : (PA[bf.name] ? PA_CDN + PA[bf.name] + ".webp" : "");
@@ -2477,7 +2495,7 @@ function RiftboundGame() {
                 onClick={undefined}
                 onDragOver={canMoveOwn ? function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; if (dragOverBf !== bi) setDragOverBf(bi); } : undefined}
                 onDrop={canMoveOwn ? function(e) { e.preventDefault(); setDragOverBf(-1); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts.length > 1 ? parts[1] : parts[0]; if (type === "hand") { var card = myCur.hand.find(function(c) { return c.uid === uid2; }); if (card && (card.type === "Unit" || card.type === "Champion")) playToBattlefield(card, bi); } else if (type === "champ") { if (myCur.champion && myCur.champion.uid === uid2 && !myCur.championPlayed) playToBattlefield(myCur.champion, bi); } else if (type === "gear") { /* ignore gear on battlefield */ } else { moveUnit(uid2, bi); } setDragUnit(null); } : undefined}
-                style={{ flex: 1, background: isBfOver ? "rgba(255,215,0,0.1)" : "rgba(255,215,0,0.015)", borderRadius: 8, border: isSdBf ? "2px solid #FF6B35" : ("2px solid " + (isBfOver ? "#FFD700" : "#FFD70020")), boxShadow: isBfOver ? "0 0 16px rgba(255,215,0,0.3)" : undefined, display: "flex", alignItems: "center", justifyContent: "center", overflow: "visible", position: "relative", cursor: "default", outline: "none", transition: "background 0.15s ease" }}>
+                style={{ flex: 1, background: isBfOver ? "rgba(255,215,0,0.1)" : "rgba(255,215,0,0.015)", borderRadius: 8, border: isSdBf ? "2px solid #FF6B35" : ("2px solid " + (isBfOver ? "#FFD700" : "#FFD70020")), boxShadow: isBfOver ? "0 0 16px rgba(255,215,0,0.3)" : undefined, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", position: "relative", cursor: "default", outline: "none", transition: "background 0.15s ease" }}>
                 {/* BF card - fixed centre */}
                 <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 1 }}>
                   {/* Top units - anchored above BF card */}
@@ -2695,7 +2713,7 @@ function RiftboundGame() {
                     </div>
                     {showcaseCard.counter2 !== 0 && showcaseCard.counter2 !== undefined && <div style={{ position: "absolute", top: -8, right: -8, background: "#854d0e", color: "#FACC15", borderRadius: 12, minWidth: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, boxShadow: "0 2px 6px #000a", padding: "0 4px", zIndex: 3 }}>{showcaseCard.counter2 > 0 ? "+" : ""}{showcaseCard.counter2}</div>}
                     {showcaseCard.counter !== 0 && showcaseCard.counter !== undefined && <div style={{ position: "absolute", top: -8, right: showcaseCard.counter2 ? 30 : -8, background: "#166534", color: "#4ADE80", borderRadius: 12, minWidth: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, boxShadow: "0 2px 6px #000a", padding: "0 4px", zIndex: 3 }}>{showcaseCard.counter > 0 ? "+" : ""}{showcaseCard.counter}</div>}
-                    {showcaseOwner === myUid && <button onClick={function(e) { e.stopPropagation(); sendToBin(showcaseCard.uid); if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false); } }} style={{ position: "absolute", bottom: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.75)", color: "#ffaaaa", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>🗑</button>}
+                    {showcaseOwner === myUid && <button onClick={function(e) { e.stopPropagation(); var idx = myActIdx; var _me = ps[idx]; if (_me) { var p = Object.assign({}, _me, { trash: (_me.trash || []).slice() }); p.trash.push(Object.assign({}, showcaseCard, { exhausted: false, gear: [] })); var np = ps.slice(); np[idx] = p; setPs(np); aL(pName(idx) + " bins " + cName(showcaseCard)); if (sd) setSd(Object.assign({}, sd, { acted: true })); } if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false); } }} style={{ position: "absolute", bottom: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.75)", color: "#ffaaaa", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>🗑</button>}
                     <button onClick={function(e) { e.stopPropagation(); startArrow(showcaseCard.uid); }} style={{ position: "absolute", top: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #3B82F688", background: "rgba(59,130,246,0.75)", color: "#fff", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>↗</button>
                     {cardHasArrow(showcaseCard.uid) && <button onClick={function(e) { e.stopPropagation(); removeArrow(showcaseCard.uid); }} style={{ position: "absolute", top: -8, left: 22, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(200,40,40,0.85)", color: "#fff", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, fontWeight: 700, zIndex: 3 }}>✕</button>}
                   </div>
