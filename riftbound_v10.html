@@ -148,7 +148,7 @@ function writeGameAction(code, state) {
   fbDb.ref("lobbies/" + code + "/gameState").set(state);
 }
 </script>
-<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}html,body{background:#0f0f23;overflow:hidden;font-family:'Inter',sans-serif;color:#ddd;text-rendering:optimizeLegibility;height:100%;width:100%}img{image-rendering:auto;-webkit-backface-visibility:hidden;backface-visibility:hidden}.card-hover,.bf-hover{-webkit-backface-visibility:hidden;backface-visibility:hidden;will-change:transform}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#FFD70033;border-radius:3px}button:hover{filter:brightness(1.15)}.card-hover{position:relative;z-index:1}.card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.hand-card-hover{position:relative;z-index:1}.hand-card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.75))}.card-tapped{position:relative;z-index:1}.card-tapped:hover{z-index:999 !important;filter:brightness(0.72) drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.gear-peek{position:relative;z-index:1}.gear-peek:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover{position:relative;z-index:1}.bf-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover-land{position:relative;z-index:1}.bf-hover-land:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.no-hover,.no-hover *{transition:none !important}.no-hover:hover,.no-hover:hover *{transform:none !important;filter:none !important;z-index:auto !important}@keyframes drawIn{0%{transform:translateX(500px) scale(0.4) rotate(-180deg);opacity:0}40%{opacity:1}100%{transform:translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}@keyframes fadeSlideUp{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-20px);opacity:0}}@keyframes untapGlow{0%{box-shadow:0 0 0 #FFD70000}50%{box-shadow:0 0 12px #FFD70066}100%{box-shadow:0 0 0 #FFD70000}}@keyframes cardDrawIn{0%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(180deg);opacity:0}40%{opacity:1}100%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes cardDrawOut{0%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}50%{opacity:0.7}100%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(-180deg);opacity:0}}.anim-recycle{animation:cardDrawOut 0.25s ease-in forwards !important;pointer-events:none;transition:none !important}.anim-rune-draw{animation:cardDrawIn 0.25s ease-out;transition:none !important}.anim-draw{animation:drawIn 0.25s ease-out;transition:none !important}@keyframes nameGlow{0%,100%{text-shadow:0 0 6px #FFD70033;opacity:0.7}50%{text-shadow:0 0 25px #FFD700ff,0 0 50px #FFD70088,0 0 80px #FFD70044;opacity:1}}@keyframes showdownPulse{0%,100%{box-shadow:inset 0 0 6px rgba(255,107,53,0.15),0 0 4px rgba(255,107,53,0.1);border-color:#FF6B3566}50%{box-shadow:inset 0 0 24px rgba(255,107,53,0.5),0 0 16px rgba(255,107,53,0.4);border-color:#FF6B35}}@keyframes turnPulse{0%,100%{box-shadow:inset 0 0 8px rgba(255,215,0,0.1),0 0 6px rgba(255,215,0,0.08);border-color:#FFD70044}50%{box-shadow:inset 0 0 20px rgba(255,215,0,0.3),0 0 14px rgba(255,215,0,0.25);border-color:#FFD700aa}}.anim-turn-pulse{animation:turnPulse 1.8s ease-in-out infinite}.anim-sd-pulse{animation:showdownPulse 1.2s ease-in-out infinite}.anim-name-glow{animation:nameGlow 1.2s ease-in-out infinite}.anim-pulse{animation:pulse 0.8s ease-in-out infinite}.anim-bin{animation:fadeSlideUp 0.4s ease-out forwards}.anim-untap{animation:untapGlow 0.6s ease-out}@keyframes pingRipple{0%{transform:translate(-50%,-50%) scale(0.3);opacity:1}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0}}.ping-dot{position:fixed;width:30px;height:30px;pointer-events:none;z-index:9997}.ping-dot::before,.ping-dot::after{content:'';position:absolute;top:50%;left:50%;width:100%;height:100%;border-radius:50%;border:2.5px solid #FFD700;transform:translate(-50%,-50%) scale(0.3);animation:pingRipple 0.8s ease-out forwards}.ping-dot::after{animation-delay:0.15s}[draggable=true]{cursor:grab;-webkit-user-select:none;user-select:none}[draggable=true]:active{cursor:grabbing;opacity:0.6}[draggable=true].card-hover{transition:none}[draggable=true].card-tapped{transition:none}[draggable=true] img{pointer-events:none;-webkit-user-drag:none}</style></head><body><div id="root"></div>
+<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}html,body{background:#0f0f23;overflow:hidden;font-family:'Inter',sans-serif;color:#ddd;text-rendering:optimizeLegibility;height:100%;width:100%}img{image-rendering:auto;-webkit-backface-visibility:hidden;backface-visibility:hidden}.card-hover,.bf-hover{-webkit-backface-visibility:hidden;backface-visibility:hidden;will-change:transform}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#FFD70033;border-radius:3px}button:hover{filter:brightness(1.15)}.card-hover{position:relative;z-index:1}.card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.hand-card-hover{position:relative;z-index:1}.hand-card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.75))}.card-tapped{position:relative;z-index:1}.card-tapped:hover{z-index:999 !important;filter:brightness(0.72) drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.gear-peek{position:relative;z-index:1}.gear-peek:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover{position:relative;z-index:1}.bf-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover-land{position:relative;z-index:1}.bf-hover-land:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.no-hover,.no-hover *{transition:none !important}.no-hover:hover,.no-hover:hover *{transform:none !important;filter:none !important;z-index:auto !important}@keyframes drawIn{0%{transform:translateX(500px) scale(0.4) rotate(-180deg);opacity:0}40%{opacity:1}100%{transform:translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}@keyframes fadeSlideUp{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-20px);opacity:0}}@keyframes untapGlow{0%{box-shadow:0 0 0 #FFD70000}50%{box-shadow:0 0 12px #FFD70066}100%{box-shadow:0 0 0 #FFD70000}}@keyframes cardDrawIn{0%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(180deg);opacity:0}40%{opacity:1}100%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes cardDrawOut{0%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}50%{opacity:0.7}100%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(-180deg);opacity:0}}.anim-recycle{animation:cardDrawOut 0.25s ease-in forwards !important;pointer-events:none;transition:none !important}.anim-rune-draw{animation:cardDrawIn 0.25s ease-out;transition:none !important}.anim-draw{animation:drawIn 0.25s ease-out;transition:none !important}@keyframes nameGlow{0%,100%{text-shadow:0 0 6px #FFD70033;opacity:0.7}50%{text-shadow:0 0 25px #FFD700ff,0 0 50px #FFD70088,0 0 80px #FFD70044;opacity:1}}@keyframes showdownPulse{0%,100%{box-shadow:inset 0 0 6px rgba(255,107,53,0.15),0 0 4px rgba(255,107,53,0.1);border-color:#FF6B3566}50%{box-shadow:inset 0 0 24px rgba(255,107,53,0.5),0 0 16px rgba(255,107,53,0.4);border-color:#FF6B35}}@keyframes turnPulse{0%,100%{box-shadow:inset 0 0 8px rgba(255,215,0,0.1),0 0 6px rgba(255,215,0,0.08);border-color:#FFD70044}50%{box-shadow:inset 0 0 20px rgba(255,215,0,0.3),0 0 14px rgba(255,215,0,0.25);border-color:#FFD700aa}}.anim-turn-pulse{animation:turnPulse 1.8s ease-in-out infinite}.anim-sd-pulse{animation:showdownPulse 1.2s ease-in-out infinite}.anim-name-glow{animation:nameGlow 1.2s ease-in-out infinite}.anim-pulse{animation:pulse 0.8s ease-in-out infinite}.anim-bin{animation:fadeSlideUp 0.4s ease-out forwards}.anim-untap{animation:untapGlow 0.6s ease-out}@keyframes pingRipple{0%{transform:translate(-50%,-50%) scale(0.3);opacity:1}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0}}.ping-dot{position:fixed;width:30px;height:30px;pointer-events:none;z-index:9997}.ping-dot::before,.ping-dot::after{content:'';position:absolute;top:50%;left:50%;width:100%;height:100%;border-radius:50%;border:2.5px solid #FFD700;transform:translate(-50%,-50%) scale(0.3);animation:pingRipple 0.8s ease-out forwards}.ping-dot::after{animation-delay:0.15s}[draggable=true]{cursor:grab;-webkit-user-select:none;user-select:none;touch-action:none;transition:none !important;animation-duration:0s !important}[draggable=true]:active{cursor:grabbing;opacity:0.6}[draggable=true] *{transition:none !important}[draggable=true] img{pointer-events:none;-webkit-user-drag:none}</style></head><body><div id="root"></div>
 <script>
 var IG="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/";
 var CARD_BACK="data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140"><rect width="100" height="140" rx="5" fill="#0f2640"/><rect x="4" y="4" width="92" height="132" rx="3" fill="none" stroke="#c8a84e" stroke-width="1"/><g stroke="#c8a84e" fill="none" stroke-width="0.8"><line x1="50" y1="18" x2="82" y2="50"/><line x1="50" y1="18" x2="18" y2="50"/><circle cx="50" cy="70" r="22"/><line x1="50" y1="122" x2="82" y2="90"/><line x1="50" y1="122" x2="18" y2="90"/><line x1="12" y1="70" x2="50" y2="38"/><line x1="88" y1="70" x2="50" y2="38"/><line x1="12" y1="70" x2="50" y2="102"/><line x1="88" y1="70" x2="50" y2="102"/><polygon points="50,38 82,70 50,102 18,70" stroke-width="1"/></g><text x="50" y="67" text-anchor="middle" font-size="7" font-weight="bold" fill="#c8a84e" font-family="serif">LEAGUE</text><text x="50" y="74" text-anchor="middle" font-size="5" fill="#c8a84e" font-family="serif">OF</text><text x="50" y="81" text-anchor="middle" font-size="6" font-weight="bold" fill="#c8a84e" font-family="serif">LEGENDS</text><polygon points="50,14 51.5,17 48.5,17" fill="#c8a84e"/><polygon points="50,126 51.5,123 48.5,123" fill="#c8a84e"/></svg>');
@@ -204,6 +204,7 @@ return{name:c.n,type:c.t,domain:c.d,domains:c.ds,energy:c.e,might:c.m,keywords:c
 var useState=React.useState;var useCallback=React.useCallback;var useEffect=React.useEffect;var useRef=React.useRef;
 var _setHoverCard = null;
 var _clearHoverCard = null;
+var _binGearRef = null;
 var _gvScale = (typeof window !== "undefined" ? Math.min(window.innerHeight / 1080, window.innerWidth / 1920) : 1);
 if (typeof window !== "undefined") { window.addEventListener("resize", function() { _gvScale = Math.min(window.innerHeight / 1080, window.innerWidth / 1920); }); }
 function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin, onPlus, onMinus, onPlus2, onMinus2, onGearDrop, onGearDetach, onHide, onArrow, hasArrow, onRemoveArrow, isMine, dragData, onDragStartCb, onDragEnd: _onDragEnd }) {
@@ -236,7 +237,7 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
         onDragOver={onGearDrop ? function(e) { e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = "move"; if (!gearDragOver) setGearDragOver(true); } : undefined}
         onDragLeave={onGearDrop ? function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setGearDragOver(false); } : undefined}
         onDrop={onGearDrop ? function(e) { e.preventDefault(); e.stopPropagation(); setGearDragOver(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var uid2 = parts.length > 1 ? parts[1] : parts[0]; onGearDrop(uid2, card.uid); } : undefined}
-        onMouseEnter={isMine ? function(e) { if (_setHoverCard) _setHoverCard(card, e); } : function(e) {}} onMouseLeave={function() { setGearDragOver(false); if (isMine && _clearHoverCard) _clearHoverCard(); }} style={{ width: hw, height: hh, borderRadius: small ? 4 : 6, overflow: "visible", border: gearDragOver ? "3px solid #4ADE80" : "2px solid #FFD70040", boxShadow: gearDragOver ? "0 0 20px rgba(74,222,128,0.5), 0 0 40px rgba(74,222,128,0.2)" : "none", cursor: "pointer", flexShrink: 0, transform: ex ? "rotate(90deg)" : "none", filter: ex ? "brightness(0.58)" : "none", position: "relative", marginRight: gearExtraH, transition: "border 0.15s ease, box-shadow 0.15s ease" }}>
+        onMouseEnter={isMine ? function(e) { if (_setHoverCard) _setHoverCard(card, e); } : function(e) {}} onMouseLeave={function() { setGearDragOver(false); if (isMine && _clearHoverCard) _clearHoverCard(); }} style={{ width: hw, height: hh, borderRadius: small ? 4 : 6, overflow: "visible", border: gearDragOver ? "3px solid #4ADE80" : "2px solid #FFD70040", boxShadow: gearDragOver ? "0 0 20px rgba(74,222,128,0.5), 0 0 40px rgba(74,222,128,0.2)" : "none", cursor: "pointer", flexShrink: 0, transform: ex ? "rotate(30deg)" : "none", filter: ex ? "brightness(0.58)" : "none", position: "relative", marginRight: gearExtraH, transition: "border 0.15s ease, box-shadow 0.15s ease" }}>
         <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: "inherit" }}><img src={CARD_BACK} style={{ width: "100%", height: "100%", objectFit: "fill" }} /></div>
         {gearCountH > 0 && card.gear.slice().reverse().map(function(g, ri) { var gi = gearCountH - 1 - ri; var gUrl = g.img ? imgSrc(g.img) : ""; var stepOff = Math.round(hw * 0.3); var gIsHov = gearHovIdx === gi; var gShift = gearHovIdx >= 0 && gi > gearHovIdx ? hw * 0.6 : 0; var gOff = stepOff * (gi + 1) + gShift; return <div key={g.uid} className="gear-peek" draggable={true} onDragStart={function(e) { e.stopPropagation(); e.dataTransfer.setData("text/plain", "gear:" + g.uid); }} onMouseEnter={function(e) { e.stopPropagation(); setGearHovIdx(gi); if (_setHoverCard) _setHoverCard(g, e); }} onMouseLeave={function(e) { e.stopPropagation(); setGearHovIdx(-1); if (_clearHoverCard) _clearHoverCard(); }} style={{ position: "absolute", top: 0, left: gOff, width: hw, height: hh, borderRadius: 4, overflow: "hidden", border: gIsHov ? "2px solid #FFD700" : "1.5px solid #FFD70044", boxShadow: gIsHov ? "0 4px 16px #000c" : "0 2px 6px #000a", cursor: "grab", zIndex: gIsHov ? 10 : 1, transition: "left 0.15s ease, border 0.15s ease, box-shadow 0.15s ease" }}>{gUrl ? <img src={gUrl} style={{ width: "100%", height: "100%", objectFit: "fill" }} /> : <div style={{ width: "100%", height: "100%", background: "#1a1a30", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#FFD700" }}>{g.name}</div>}</div>; })}
       </div>
@@ -249,7 +250,7 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
     var rh = small ? Math.round(56 * _gvScale) : zoomed ? 126 : h;
     var ex2 = card.exhausted && !zoomed;
     return (
-      <div data-uid={card.uid} className={zoomed ? "" : "card-hover"} onClick={onClick} onMouseEnter={!zoomed ? function(e) { if (_setHoverCard) _setHoverCard(card, e); } : undefined} onMouseLeave={!zoomed ? function() { if (_clearHoverCard) _clearHoverCard(); } : undefined} style={{ width: rw, height: rh, borderRadius: small ? 3 : 6, overflow: "hidden", flexShrink: 0, border: "2px solid " + (selected ? "#FFD700" : ex2 ? "#111118" : d.c + "55"), cursor: onClick ? "pointer" : "default", boxShadow: selected ? "0 0 12px #FFD700" : "none", background: "#0c0c18", transition: "transform 0.15s ease", transform: ex2 ? "rotate(90deg)" : "none", filter: ex2 ? "brightness(0.58)" : "none" }}>
+      <div data-uid={card.uid} className={zoomed ? "" : "card-hover"} onClick={onClick} onMouseEnter={!zoomed ? function(e) { if (_setHoverCard) _setHoverCard(card, e); } : undefined} onMouseLeave={!zoomed ? function() { if (_clearHoverCard) _clearHoverCard(); } : undefined} style={{ width: rw, height: rh, borderRadius: small ? 3 : 6, overflow: "hidden", flexShrink: 0, border: "2px solid " + (selected ? "#FFD700" : ex2 ? "#111118" : d.c + "55"), cursor: onClick ? "pointer" : "default", boxShadow: selected ? "0 0 12px #FFD700" : "none", background: "#0c0c18", transition: "transform 0.15s ease", transform: ex2 ? "rotate(30deg)" : "none", filter: ex2 ? "brightness(0.58)" : "none" }}>
         {runeUrl ? <img src={runeUrl} alt={card.name} style={{ width: "100%", height: "100%", objectFit: "fill", display: "block" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "radial-gradient(circle at 35% 35%," + d.c + "cc," + d.c + "44)" }}><span style={{ fontSize: rw * 0.4 }}>{d.i}</span></div>}
       </div>
     );
@@ -262,7 +263,7 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
   var isUnit = card.type === "Unit" || card.type === "Champion";
   var gearCount = (card.gear && small) ? card.gear.length : 0;
   var gearExtra = gearCount > 0 ? Math.round(w * 0.3) * gearCount : 0;
-  var wrapS = { width: w, height: h, borderRadius: zoomed ? 10 : small ? 4 : 6, overflow: "visible", flexShrink: 0, position: "relative", border: gearDragOver ? "3px solid #4ADE80" : (zoomed ? 3 : 2) + "px solid " + borderColor, boxShadow: gearDragOver ? "0 0 20px rgba(74,222,128,0.5), 0 0 40px rgba(74,222,128,0.2), inset 0 0 12px rgba(74,222,128,0.1)" : shadow, cursor: onClick ? "pointer" : "default", background: "#0c0c18", transition: "transform 0.15s ease, border 0.15s ease, box-shadow 0.15s ease", transform: ex && !zoomed ? "rotate(90deg)" : "none", filter: ex && !zoomed ? "brightness(0.58)" : "none", marginRight: gearExtra };
+  var wrapS = { width: w, height: h, borderRadius: zoomed ? 10 : small ? 4 : 6, overflow: "visible", flexShrink: 0, position: "relative", border: gearDragOver ? "3px solid #4ADE80" : (zoomed ? 3 : 2) + "px solid " + borderColor, boxShadow: gearDragOver ? "0 0 20px rgba(74,222,128,0.5), 0 0 40px rgba(74,222,128,0.2), inset 0 0 12px rgba(74,222,128,0.1)" : shadow, cursor: onClick ? "pointer" : "default", background: "#0c0c18", transition: "transform 0.15s ease, border 0.15s ease, box-shadow 0.15s ease", transform: ex && !zoomed ? "rotate(30deg)" : "none", filter: ex && !zoomed ? "brightness(0.58)" : "none", marginRight: gearExtra };
   var hCls = zoomed ? "" : (ex ? "card-tapped" : "card-hover");
   var hEnter = !zoomed ? function(e) { if (_setHoverCard) _setHoverCard(card, e); } : undefined;
   var hLeave = !zoomed ? function() { if (_clearHoverCard) _clearHoverCard(); } : undefined;
@@ -293,7 +294,7 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
           {hasArrow && onRemoveArrow && <button onClick={function(e) { e.stopPropagation(); onRemoveArrow(card.uid); }} style={{ position: "absolute", top: -8, left: 18, width: 22, height: 22, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(200,40,40,0.85)", color: "#fff", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 6, fontWeight: 700 }}>✕</button>}
         </>}
         {showCtx && onHide && <button onClick={function(e) { e.stopPropagation(); onHide(card.uid); setShowCtx(false); }} style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 10, padding: "4px 12px", borderRadius: 4, border: "1.5px solid #ffffff40", background: "rgba(20,20,50,0.92)", color: "#ddd", fontSize: 12, cursor: "pointer", fontFamily: "Spectral,serif", fontWeight: 700, boxShadow: "0 4px 12px #000a", whiteSpace: "nowrap" }}>{card.hidden ? "Reveal" : "Hide"}</button>}
-        {hasGear && card.gear.slice().reverse().map(function(g, ri) { var gi = gearCount - 1 - ri; var gUrl = g.img ? imgSrc(g.img) : ""; var stepOff = Math.round(w * 0.3); var gIsHov = gearHovIdx === gi; var gShift = gearHovIdx >= 0 && gi > gearHovIdx ? w * 0.6 : 0; var gOff = stepOff * (gi + 1) + gShift; return <div key={g.uid} className="gear-peek" draggable={true} onDragStart={function(e) { e.stopPropagation(); e.dataTransfer.setData("text/plain", "gear:" + g.uid); }} onMouseEnter={function(e) { e.stopPropagation(); setGearHovIdx(gi); if (_setHoverCard) _setHoverCard(g, e); }} onMouseLeave={function(e) { e.stopPropagation(); setGearHovIdx(-1); if (_clearHoverCard) _clearHoverCard(); }} style={{ position: "absolute", top: 0, left: gOff, width: w, height: h, borderRadius: 4, overflow: "hidden", border: gIsHov ? "2px solid #FFD700" : "1.5px solid #FFD70044", boxShadow: gIsHov ? "0 4px 16px #000c" : "0 2px 6px #000a", cursor: "grab", zIndex: gIsHov ? 10 : 1, transition: "left 0.15s ease, border 0.15s ease, box-shadow 0.15s ease" }}>{gUrl ? <img src={gUrl} style={{ width: "100%", height: "100%", objectFit: "fill" }} /> : <div style={{ width: "100%", height: "100%", background: "#1a1a30", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#FFD700" }}>{g.name}</div>}</div>; })}
+        {hasGear && card.gear.slice().reverse().map(function(g, ri) { var gi = gearCount - 1 - ri; var gUrl = g.img ? imgSrc(g.img) : ""; var stepOff = Math.round(w * 0.3); var gIsHov = gearHovIdx === gi; var gShift = gearHovIdx >= 0 && gi > gearHovIdx ? w * 0.6 : 0; var gOff = stepOff * (gi + 1) + gShift; return <div key={g.uid} className="gear-peek" draggable={true} onDragStart={function(e) { e.stopPropagation(); e.dataTransfer.setData("text/plain", "gear:" + g.uid); }} onMouseEnter={function(e) { e.stopPropagation(); setGearHovIdx(gi); if (_setHoverCard) _setHoverCard(g, e); }} onMouseLeave={function(e) { e.stopPropagation(); setGearHovIdx(-1); if (_clearHoverCard) _clearHoverCard(); }} style={{ position: "absolute", top: 0, left: gOff, width: w, height: h, borderRadius: 4, overflow: "visible", border: gIsHov ? "2px solid #FFD700" : "1.5px solid #FFD70044", boxShadow: gIsHov ? "0 4px 16px #000c" : "0 2px 6px #000a", cursor: "grab", zIndex: gIsHov ? 10 : 1, transition: "left 0.15s ease, border 0.15s ease, box-shadow 0.15s ease" }}><div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: 4 }}>{gUrl ? <img src={gUrl} style={{ width: "100%", height: "100%", objectFit: "fill" }} /> : <div style={{ width: "100%", height: "100%", background: "#1a1a30", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#FFD700" }}>{g.name}</div>}</div>{gIsHov && isMine && _binGearRef && <button onClick={function(e) { e.stopPropagation(); e.preventDefault(); if (_binGearRef) _binGearRef(g.uid); setGearHovIdx(-1); if (_clearHoverCard) _clearHoverCard(); }} onMouseDown={function(e) { e.stopPropagation(); }} style={{ position: "absolute", bottom: -6, left: -6, width: 20, height: 20, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.85)", color: "#ffaaaa", fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 11 }}>🗑</button>}</div>; })}
       </div>;
       return cardEl;
   }
@@ -858,7 +859,7 @@ function RiftboundGame() {
       if (gs.phase === "bf" && gs.bfChoices) {
         var bfSlots = gs.slots || [];
         var allChosen = bfSlots.every(function(s) { return gs.bfChoices[s.uid]; });
-        if (allChosen && _gamePhaseRef.current !== "mull" && _gamePhaseRef.current !== "playing") {
+        if (allChosen && _gamePhaseRef.current !== "mull" && _gamePhaseRef.current !== "mullDone" && _gamePhaseRef.current !== "playing") {
           var chosenBfs = bfSlots.map(function(s) { return gs.bfChoices[s.uid]; }).filter(Boolean);
           var numB = bfSlots.length === 2 ? 2 : 3;
           var gb = chosenBfs.slice(0, numB).map(function(bfName) { var bfCard = mkC(bfName); return bfCard ? Object.assign({}, bfCard, { controller: null, units: Array.from({ length: bfSlots.length }, function() { return []; }), uid: uid() }) : null; }).filter(Boolean);
@@ -873,6 +874,21 @@ function RiftboundGame() {
         var allMulled = mullSlots.every(function(s) { return gs.mulled[s.uid]; });
         if (allMulled && _gamePhaseRef.current !== "playing") {
           _gamePhaseRef.current = "playing";
+          // Merge each player's mulliganed hand + deck into our local ps so everyone starts
+          // with the correct post-mulligan state.
+          var mulData = gs.mulledData || {};
+          setPs(function(prev) {
+            return (prev || []).map(function(p, i) {
+              var s = mullSlots[i];
+              if (!p || !s) return p;
+              var md = mulData[s.uid];
+              if (!md) return p;
+              return Object.assign({}, p, {
+                hand: (md.hand || p.hand || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [], keywords: c.keywords || [], domains: c.domains || [], rc: c.rc || [] }); }),
+                mainDeck: (md.mainDeck || p.mainDeck || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [], keywords: c.keywords || [], domains: c.domains || [], rc: c.rc || [] }); })
+              });
+            });
+          });
           setTurn(1); setAct(firstPlayerIdx);
           aL("Game on!");
           setScreen("wait");
@@ -1884,8 +1900,8 @@ function RiftboundGame() {
       nb.forEach(function(bf) { if (bf.controller === turnIdx && bf.units[turnIdx].length > 0) { var contested = false; for (var i = 0; i < pc; i++) { if (i !== turnIdx && bf.units[i].length > 0) contested = true; } if (!contested) { sc++; aL(pName(turnIdx) + " gets a holding point from " + bf.name + "!"); } } });
       if (sc > 0) { p.score += sc; }
       if (p.score >= 8 && !continuePlaying) { setWin(turnIdx); setScreen("go"); aL(pName(turnIdx) + " wins!"); var npW = ps.slice(); npW[turnIdx] = p; setPs(npW); setBfs(nb); setAwakenPhase(null); return; }
-      // Channel: gain runes (max 12)
-      var nr = turn === 1 && turnIdx === 1 ? 3 : 2;
+      // Channel: gain runes (max 12) — on turn 1 the non-first player gets +1 to compensate for going second
+      var nr = turn === 1 && turnIdx !== firstPlayerIdx ? 3 : 2;
       var runeSpace = 12 - p.runes.length;
       var actualDraw = Math.min(nr, p.runeDeck.length, runeSpace);
       var ch = actualDraw > 0 ? p.runeDeck.splice(0, actualDraw) : [];
@@ -1937,6 +1953,28 @@ function RiftboundGame() {
     }
   }
 
+  // Spacebar ends the current player's turn (only during play, only when it's their turn,
+  // and only when they aren't typing in an input/textarea).
+  var endTurnKeyRef = useRef();
+  endTurnKeyRef.current = function() {
+    if (screen !== "play") return;
+    if (awakenPhase || sd || tm || fc || scryMode || showcaseCard) return;
+    var isOnlineGameKey = lobbyType === "host" || lobbyType === "join";
+    var isMyTurnKey = isOnlineGameKey ? act === mySlot : true;
+    if (!isMyTurnKey) return;
+    endTurn();
+  };
+  useEffect(function() {
+    function onKey(e) {
+      if (e.code !== "Space" && e.key !== " ") return;
+      var t = e.target;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || (t.isContentEditable))) return;
+      if (endTurnKeyRef.current) { e.preventDefault(); endTurnKeyRef.current(); }
+    }
+    window.addEventListener("keydown", onKey);
+    return function() { window.removeEventListener("keydown", onKey); };
+  }, []);
+
   function returnToBase(cardUid) {
     if (!canMoveOwn) return;
     var idx = myActIdx;
@@ -1949,11 +1987,47 @@ function RiftboundGame() {
     for (var bk = 0; bk < nb.length; bk++) {
       if (!nb[bk].units[idx]) continue;
       var ui = nb[bk].units[idx].findIndex(function(u) { return u.uid === cardUid; });
-      if (ui >= 0) { var unit = nb[bk].units[idx].splice(ui, 1)[0]; p.base.push(Object.assign({}, unit)); aL(pName(idx) + " returns " + cName(unit) + " to base"); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); return; }
+      if (ui >= 0) { var unit = nb[bk].units[idx].splice(ui, 1)[0]; p.base.push(Object.assign({}, unit, { exhausted: true })); aL(pName(idx) + " returns " + cName(unit) + " to base"); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); return; }
     }
     // Check bin
     var ti = p.trash.findIndex(function(c) { return c.uid === cardUid; });
-    if (ti >= 0) { var card = Object.assign({}, p.trash[ti]); p.trash.splice(ti, 1); p.base.push(card); aL(pName(idx) + " returns " + cName(card) + " to base from bin"); var np = ps.slice(); np[idx] = p; setPs(np); return; }
+    if (ti >= 0) { var card = Object.assign({}, p.trash[ti], { exhausted: p.trash[ti].type !== "Gear" }); p.trash.splice(ti, 1); p.base.push(card); aL(pName(idx) + " returns " + cName(card) + " to base from bin"); var np = ps.slice(); np[idx] = p; setPs(np); return; }
+  }
+  function returnChampionToSlot(cardUid) {
+    if (!canMoveOwn) return;
+    var idx = myActIdx;
+    var _me = ps[idx]; if (!_me) return;
+    if (sd) setSd(Object.assign({}, sd, { acted: true }));
+    markShowcaseActed();
+    var p = Object.assign({}, _me, { base: _me.base.slice(), hand: _me.hand.slice(), trash: (_me.trash || []).slice() });
+    var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
+    var found = null;
+    // Check base
+    var bi = p.base.findIndex(function(c) { return c.uid === cardUid; });
+    if (bi >= 0) { var src = p.base[bi]; stripGearToBin(src, p); found = src; p.base.splice(bi, 1); }
+    // Check battlefields
+    if (!found) {
+      for (var bk = 0; bk < nb.length; bk++) {
+        if (!nb[bk].units[idx]) continue;
+        var ui = nb[bk].units[idx].findIndex(function(u) { return u.uid === cardUid; });
+        if (ui >= 0) { var src2 = nb[bk].units[idx][ui]; stripGearToBin(src2, p); found = src2; nb[bk].units[idx].splice(ui, 1); break; }
+      }
+    }
+    // Check hand
+    if (!found) {
+      var hi = p.hand.findIndex(function(c) { return c.uid === cardUid; });
+      if (hi >= 0) { found = p.hand[hi]; p.hand.splice(hi, 1); }
+    }
+    // Check bin
+    if (!found) {
+      var ti = p.trash.findIndex(function(c) { return c.uid === cardUid; });
+      if (ti >= 0) { found = p.trash[ti]; p.trash.splice(ti, 1); }
+    }
+    if (!found || found.type !== "Champion") return;
+    p.champion = Object.assign({}, found, { exhausted: false, damage: 0, tempMight: 0, stunned: false, gear: [] });
+    p.championPlayed = false;
+    aL(pName(idx) + " returns " + cName(found) + " to champion slot");
+    var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb);
   }
 
   function returnBfToHand(cardUid) {
@@ -2059,6 +2133,40 @@ function RiftboundGame() {
     for (var bk2 = 0; bk2 < nb.length; bk2++) { if (!nb[bk2].units[idx]) continue; var ui3 = nb[bk2].units[idx].findIndex(function(u) { return u.uid === unitUid; }); if (ui3 >= 0) { nb[bk2].units[idx][ui3] = Object.assign({}, nb[bk2].units[idx][ui3], { gear: (nb[bk2].units[idx][ui3].gear || []).concat([gear]) }); aL(pName(idx) + " attaches " + cName(gear) + " to " + cName(nb[bk2].units[idx][ui3])); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); return; } }
   }
 
+  function binGear(gearUid) {
+    if (!canMoveOwn) return;
+    var idx = myActIdx;
+    var _me = ps[idx]; if (!_me) return;
+    if (sd) setSd(Object.assign({}, sd, { acted: true }));
+    markShowcaseActed();
+    var p = Object.assign({}, _me, { base: _me.base.slice(), trash: (_me.trash || []).slice() });
+    var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
+    var gear = null;
+    // Base units
+    p.base.forEach(function(u, bidx) {
+      if (gear || !u.gear) return;
+      var gi = u.gear.findIndex(function(g) { return g.uid === gearUid; });
+      if (gi >= 0) { var newGearArr = u.gear.slice(); gear = newGearArr.splice(gi, 1)[0]; p.base[bidx] = Object.assign({}, u, { gear: newGearArr }); }
+    });
+    // Battlefield units
+    if (!gear) {
+      for (var bk = 0; bk < nb.length; bk++) {
+        if (!nb[bk].units[idx]) continue;
+        for (var ui = 0; ui < nb[bk].units[idx].length; ui++) {
+          var u2 = nb[bk].units[idx][ui];
+          if (!u2.gear) continue;
+          var gi2 = u2.gear.findIndex(function(g) { return g.uid === gearUid; });
+          if (gi2 >= 0) { var newGearArr2 = u2.gear.slice(); gear = newGearArr2.splice(gi2, 1)[0]; nb[bk].units[idx][ui] = Object.assign({}, u2, { gear: newGearArr2 }); break; }
+        }
+        if (gear) break;
+      }
+    }
+    if (!gear) return;
+    if (gear.isToken) { aL(pName(idx) + " removes " + cName(gear) + " token"); }
+    else { p.trash.push(Object.assign({}, gear, { exhausted: false, gear: [] })); aL(pName(idx) + " bins " + cName(gear)); }
+    var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb);
+  }
+  _binGearRef = binGear;
   function detachGear(gearUid) {
     if (!canMoveOwn) return;
     var idx = myActIdx;
@@ -2073,7 +2181,7 @@ function RiftboundGame() {
     // Check battlefield units
     if (!gear) { for (var bk = 0; bk < nb.length; bk++) { if (!nb[bk].units[idx]) continue; for (var ui = 0; ui < nb[bk].units[idx].length; ui++) { var u = nb[bk].units[idx][ui]; if (u.gear) { var gi = u.gear.findIndex(function(g) { return g.uid === gearUid; }); if (gi >= 0) { gear = u.gear.splice(gi, 1)[0]; nb[bk].units[idx][ui] = Object.assign({}, u, { gear: u.gear.slice() }); break; } } } if (gear) break; } }
     if (!gear) return;
-    p.base = p.base.concat([gear]);
+    p.base = p.base.concat([Object.assign({}, gear, { exhausted: false })]);
     aL(pName(idx) + " detaches " + cName(gear));
     var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb);
   }
@@ -2138,6 +2246,13 @@ function RiftboundGame() {
     }
   }
 
+  function _syncLive(npPs, npBfs) {
+    if (!roomCode || lobbyType === "test" || _gamePhaseRef.current !== "playing") return;
+    _lastSyncVersion.current++;
+    var cleanPs = (npPs || ps).map(function(p) { if (!p) return p; return Object.assign({}, p, { hand: p.hand || [], base: (p.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: p.trash || [], runes: p.runes || [], runeDeck: p.runeDeck || [], mainDeck: p.mainDeck || [], battlefields: p.battlefields || [] }); });
+    var cleanBfs = (npBfs || bfs).map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
+    fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPs, bfs: cleanBfs, turn: turn, act: act, screen: screen, log: log.slice(-30), sd: sd, ver: _lastSyncVersion.current, by: myUid })));
+  }
   function toggleTap(cardUid) {
     if (drawingArrow) return;
     if (!canMoveOwn) return;
@@ -2146,21 +2261,21 @@ function RiftboundGame() {
     markShowcaseActed();
     var p = Object.assign({}, ps[idx]);
     // Check champion
-    if (p.champion && p.champion.uid === cardUid) { p.champion = Object.assign({}, p.champion, { exhausted: !p.champion.exhausted }); var np = ps.slice(); np[idx] = p; setPs(np); return; }
+    if (p.champion && p.champion.uid === cardUid) { p.champion = Object.assign({}, p.champion, { exhausted: !p.champion.exhausted }); var np = ps.slice(); np[idx] = p; setPs(np); _syncLive(np, null); return; }
     // Check legend
-    if (p.legend && p.legend.uid === cardUid) { p.legend = Object.assign({}, p.legend, { exhausted: !p.legend.exhausted }); var np = ps.slice(); np[idx] = p; setPs(np); return; }
+    if (p.legend && p.legend.uid === cardUid) { p.legend = Object.assign({}, p.legend, { exhausted: !p.legend.exhausted }); var np = ps.slice(); np[idx] = p; setPs(np); _syncLive(np, null); return; }
     // Check runes
     var ri = p.runes.findIndex(function(r) { return r.uid === cardUid; });
-    if (ri >= 0) { p.runes = p.runes.slice(); p.runes[ri] = Object.assign({}, p.runes[ri], { exhausted: !p.runes[ri].exhausted }); var np = ps.slice(); np[idx] = p; setPs(np); return; }
+    if (ri >= 0) { p.runes = p.runes.slice(); p.runes[ri] = Object.assign({}, p.runes[ri], { exhausted: !p.runes[ri].exhausted }); var np = ps.slice(); np[idx] = p; setPs(np); _syncLive(np, null); return; }
     // Check base
     var bi2 = p.base.findIndex(function(c) { return c.uid === cardUid; });
-    if (bi2 >= 0) { p.base = p.base.slice(); p.base[bi2] = Object.assign({}, p.base[bi2], { exhausted: !p.base[bi2].exhausted }); var np = ps.slice(); np[idx] = p; setPs(np); return; }
+    if (bi2 >= 0) { p.base = p.base.slice(); p.base[bi2] = Object.assign({}, p.base[bi2], { exhausted: !p.base[bi2].exhausted }); var np = ps.slice(); np[idx] = p; setPs(np); _syncLive(np, null); return; }
     // Check battlefield units
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
     for (var bk = 0; bk < nb.length; bk++) {
       if (!nb[bk].units[idx]) continue;
       var ui = nb[bk].units[idx].findIndex(function(u) { return u.uid === cardUid; });
-      if (ui >= 0) { nb[bk].units[idx][ui] = Object.assign({}, nb[bk].units[idx][ui], { exhausted: !nb[bk].units[idx][ui].exhausted }); setBfs(nb); return; }
+      if (ui >= 0) { nb[bk].units[idx][ui] = Object.assign({}, nb[bk].units[idx][ui], { exhausted: !nb[bk].units[idx][ui].exhausted }); setBfs(nb); _syncLive(null, nb); return; }
     }
   }
 
@@ -2223,13 +2338,20 @@ function RiftboundGame() {
       hand: _me.hand.filter(function(c) { return c.uid !== card.uid; })
     });
     if (isChamp) { p.championPlayed = true; p.champion = null; }
-    var totalPaid = tappedUids.length + recycleUids.length;
-    if (totalPaid > 0 || recycleUids.length > 0) { var msg = "  Auto-tapped " + totalPaid + " rune" + (totalPaid > 1 ? "s" : ""); if (recycleUids.length > 0) msg += ", then recycled " + recycleUids.length + " of them"; aL(msg); }
+    var tappedDomainsBF = tappedUids.map(function(uu) { var r = _me.runes.find(function(rr) { return rr.uid === uu; }); return r ? r.domain : "?"; });
+    var recycledDomainsBF = recycleUids.map(function(uu) { var r = _me.runes.find(function(rr) { return rr.uid === uu; }); return r ? r.domain : "?"; });
+    function _fmtDomainsBF(list) { if (!list || !list.length) return ""; var counts = {}; list.forEach(function(d) { counts[d] = (counts[d] || 0) + 1; }); return Object.keys(counts).map(function(d) { return counts[d] + " " + d; }).join(", "); }
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(x) { return x.slice(); }) }); });
     nb[bi].units[myActIdx].push(Object.assign({}, card, { exhausted: true }));
     aL(pName(myActIdx) + " deploys " + cName(card) + " to " + nb[bi].name);
+    if (autoRunes && (tappedDomainsBF.length > 0 || recycledDomainsBF.length > 0)) { var partsBF = []; if (tappedDomainsBF.length) partsBF.push("tapped " + _fmtDomainsBF(tappedDomainsBF)); if (recycledDomainsBF.length) partsBF.push("recycled " + _fmtDomainsBF(recycledDomainsBF)); aL("  Paid: " + partsBF.join("; ")); }
     var np = ps.slice(); np[myActIdx] = p; setPs(np); setBfs(nb);
-    if (!sd) {
+    // Firming up an already-conquered battlefield (our units present, no enemy units) — no new showdown
+    var _alreadyHeld = bfs[bi].units[myActIdx] && bfs[bi].units[myActIdx].length > 0;
+    var _noEnemy = true;
+    for (var _k = 0; _k < pc; _k++) { if (_k !== myActIdx && bfs[bi].units[_k] && bfs[bi].units[_k].length > 0) { _noEnemy = false; break; } }
+    var _firmingUp = _alreadyHeld && _noEnemy;
+    if (!sd && !_firmingUp) {
       aL("SHOWDOWN at " + nb[bi].name + "!");
       var _defPresent = false; for (var _j = 0; _j < pc; _j++) { if (_j !== myActIdx && nb[bi].units[_j] && nb[bi].units[_j].length > 0) _defPresent = true; }
       var newSd2 = { bfIdx: bi, atkIdx: myActIdx, priority: myActIdx, lastPass: null, acted: false, contested: _defPresent };
@@ -2240,6 +2362,14 @@ function RiftboundGame() {
         var cleanPs4 = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
         var cleanBfs4 = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
         fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPs4, bfs: cleanBfs4, turn: turn, act: myActIdx, screen: "sd", log: log.slice(-30), sd: newSd2, ver: _lastSyncVersion.current, by: myUid })));
+      }
+    } else if (_firmingUp && !sd) {
+      // Push the state to other players without invoking showdown
+      if (roomCode && lobbyType !== "test") {
+        _lastSyncVersion.current++;
+        var cleanPsFU = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
+        var cleanBfsFU = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
+        fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPsFU, bfs: cleanBfsFU, turn: turn, act: act, screen: screen, log: log.slice(-30), sd: sd, ver: _lastSyncVersion.current, by: myUid })));
       }
     }
   }
@@ -2292,23 +2422,24 @@ function RiftboundGame() {
       runeDeck: shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recycleUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); }))),
       hand: _me.hand.filter(function(c) { return c.uid !== card.uid; })
     });
-    var totalPaid = tappedUids.length + recycleUids.length;
-    if (totalPaid > 0 || recycleUids.length > 0) {
-      var msg = "  Auto-tapped " + totalPaid + " rune" + (totalPaid > 1 ? "s" : "");
-      if (recycleUids.length > 0) msg += ", then recycled " + recycleUids.length + " of them";
-      aL(msg);
-    }
+    // Build a cost breakdown: what rune domains we tapped and what we recycled
+    var tappedDomains = tappedUids.map(function(uu) { var r = _me.runes.find(function(rr) { return rr.uid === uu; }); return r ? r.domain : "?"; });
+    var recycledDomains = recycleUids.map(function(uu) { var r = _me.runes.find(function(rr) { return rr.uid === uu; }); return r ? r.domain : "?"; });
+    function _fmtDomains(list) { if (!list || !list.length) return ""; var counts = {}; list.forEach(function(d) { counts[d] = (counts[d] || 0) + 1; }); return Object.keys(counts).map(function(d) { return counts[d] + " " + d; }).join(", "); }
     if (card.type === "Unit" || card.type === "Champion") {
       p.base = p.base.concat([Object.assign({}, card, { exhausted: true })]);
       if (isChamp) { p.championPlayed = true; p.champion = null; }
       aL(pName(myActIdx) + " plays " + cName(card));
+      if (autoRunes && (tappedDomains.length > 0 || recycledDomains.length > 0)) { var parts = []; if (tappedDomains.length) parts.push("tapped " + _fmtDomains(tappedDomains)); if (recycledDomains.length) parts.push("recycled " + _fmtDomains(recycledDomains)); aL("  Paid: " + parts.join("; ")); }
       if (/draw 1/i.test(card.text) && p.mainDeck.length > 0) { p.hand = p.hand.concat([p.mainDeck.shift()]); aL("  Draw 1"); }
       if (/draw 2/i.test(card.text)) { var d = p.mainDeck.splice(0, Math.min(2, p.mainDeck.length)); p.hand = p.hand.concat(d); }
     } else if (card.type === "Gear") {
       p.base = p.base.concat([Object.assign({}, card, { exhausted: false })]);
       aL(pName(myActIdx) + " plays " + cName(card) + " to base");
+      if (autoRunes && (tappedDomains.length > 0 || recycledDomains.length > 0)) { var partsG = []; if (tappedDomains.length) partsG.push("tapped " + _fmtDomains(tappedDomains)); if (recycledDomains.length) partsG.push("recycled " + _fmtDomains(recycledDomains)); aL("  Paid: " + partsG.join("; ")); }
     } else if (card.type === "Spell") {
       p.trash = (p.trash || []).concat([card]); aL(pName(myActIdx) + " casts " + cName(card));
+      if (autoRunes && (tappedDomains.length > 0 || recycledDomains.length > 0)) { var partsS = []; if (tappedDomains.length) partsS.push("tapped " + _fmtDomains(tappedDomains)); if (recycledDomains.length) partsS.push("recycled " + _fmtDomains(recycledDomains)); aL("  Paid: " + partsS.join("; ")); }
       if (/Draw 2 cards/i.test(card.text)) { var d2 = p.mainDeck.splice(0, 2); p.hand = p.hand.concat(d2); }
       if (/\+2 Might/i.test(card.text)) setTm({ ty: "buff", v: 2 });
       else if (/\+3 Might/i.test(card.text)) setTm({ ty: "buff", v: 3 });
@@ -2526,7 +2657,7 @@ function RiftboundGame() {
         var isDraggable2 = !isEnemy && canMoveOwn && !tm && !fc && playable;
         var handShift = 0;
         if (handHovIdx >= 0 && i !== handHovIdx && total > 3) { handShift = i < handHovIdx ? -15 : 15; }
-        return React.createElement("div", { key: c.uid, className: "hand-card-hover" + animCls, draggable: isDraggable2, onDragStart: isDraggable2 ? function(e) { e.dataTransfer.setData("text/plain", "hand:" + c.uid); setDragUnit(c); } : undefined, onDragEnd: function() { setDragUnit(null); }, onDoubleClick: canMoveOwn && !tm && !fc ? function() { if (c.type === "Unit" || c.type === "Champion" || c.type === "Gear") { onPlay(c); } else if (c.type === "Spell") { if (showcaseCard && showcaseCard.uid === c.uid) { setShowcaseCard(null); } else { var idx = myActIdx; var _me = ps[idx]; if (_me) { var sp = Object.assign({}, _me, { hand: _me.hand.filter(function(h) { return h.uid !== c.uid; }) }); if (autoRunes) { var rcN = (c.rc || []).slice(); var eN = c.energy || 0; var aR = _me.runes.slice(); var recUids = []; rcN.forEach(function(dom) { var f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0; }); if (f) { recUids.push(f.uid); if (eN > 0) eN--; } }); var tapUids = []; if (eN > 0) { var av = aR.filter(function(r) { return !r.exhausted && recUids.indexOf(r.uid) < 0; }); av.slice(0, eN).forEach(function(r) { tapUids.push(r.uid); }); } sp.runes = _me.runes.filter(function(r) { return recUids.indexOf(r.uid) < 0; }).map(function(r) { return tapUids.indexOf(r.uid) >= 0 ? Object.assign({}, r, { exhausted: true }) : r; }); sp.runeDeck = shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); }))); } var np = ps.slice(); np[idx] = sp; setPs(np); pushShowcase(c); aL(pName(idx) + " casts " + cName(c)); } } if (sd) setSd(Object.assign({}, sd, { acted: true })); } } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { setHandHovIdx(i); if (_setHoverCard && !c.hidden) _setHoverCard(c, e, true); }, onMouseLeave: function() { setHandCtxUid(null); if (_clearHoverCard) _clearHoverCard(); }, style: { width: HAND_W, height: HAND_H, borderRadius: 6, overflow: "hidden", border: "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + (playable ? "55" : "20")), flexShrink: 0, cursor: isDraggable2 ? "grab" : "pointer", transform: "rotate(" + rot + "deg) translateY(" + ty + "px) translateX(" + handShift + "px)", transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -30 : total > 5 ? -16 : 0), transition: "transform 0.075s ease", position: "relative", zIndex: i === handHovIdx ? 998 : i, boxShadow: "0 4px 16px #000a", opacity: 1 } },
+        return React.createElement("div", { key: c.uid, className: "hand-card-hover" + animCls, draggable: isDraggable2, onDragStart: isDraggable2 ? function(e) { e.dataTransfer.setData("text/plain", "hand:" + c.uid); setDragUnit(c); } : undefined, onDragEnd: function() { setDragUnit(null); }, onDoubleClick: canMoveOwn ? function() { if (tm || fc) return; if (c.type === "Unit" || c.type === "Champion" || c.type === "Gear") { onPlay(c); } else if (c.type === "Spell") { if (showcaseCard && showcaseCard.uid === c.uid) { setShowcaseCard(null); } else { var idx = myActIdx; var _me = ps[idx]; if (_me) { var sp = Object.assign({}, _me, { hand: _me.hand.filter(function(h) { return h.uid !== c.uid; }) }); if (autoRunes) { var rcN = (c.rc || []).slice(); var eN = c.energy || 0; var aR = _me.runes.slice(); var recUids = []; rcN.forEach(function(dom) { var f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0; }); if (f) { recUids.push(f.uid); if (eN > 0) eN--; } }); var tapUids = []; if (eN > 0) { var av = aR.filter(function(r) { return !r.exhausted && recUids.indexOf(r.uid) < 0; }); av.slice(0, eN).forEach(function(r) { tapUids.push(r.uid); }); } sp.runes = _me.runes.filter(function(r) { return recUids.indexOf(r.uid) < 0; }).map(function(r) { return tapUids.indexOf(r.uid) >= 0 ? Object.assign({}, r, { exhausted: true }) : r; }); sp.runeDeck = shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); }))); } var np = ps.slice(); np[idx] = sp; setPs(np); pushShowcase(c); aL(pName(idx) + " casts " + cName(c)); } } if (sd) setSd(Object.assign({}, sd, { acted: true })); } } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { setHandHovIdx(i); if (_setHoverCard && !c.hidden) _setHoverCard(c, e, true); }, onMouseLeave: function() { setHandCtxUid(null); if (_clearHoverCard) _clearHoverCard(); }, style: { width: HAND_W, height: HAND_H, borderRadius: 6, overflow: "hidden", border: "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + (playable ? "55" : "20")), flexShrink: 0, cursor: isDraggable2 ? "grab" : "pointer", transform: "rotate(" + rot + "deg) translateY(" + ty + "px) translateX(" + handShift + "px)", transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -30 : total > 5 ? -16 : 0), transition: "transform 0.075s ease", position: "relative", zIndex: i === handHovIdx ? 998 : i, boxShadow: "0 4px 16px #000a", opacity: 1 } },
           c.hidden ? React.createElement("img", { src: CARD_BACK, style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : (c.img ? React.createElement("img", { src: imgSrc(c.img), style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : React.createElement("div", { style: { width: "100%", height: "100%", background: "linear-gradient(180deg," + (DOM[c.domain] || DOM.Colorless).c + "15,#0a0a18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#666", padding: 4, textAlign: "center" } }, c.name)),
           handCtxUid === c.uid ? React.createElement("button", { onClick: function(e) { e.stopPropagation(); toggleHide(c.uid); setHandCtxUid(null); }, style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 10, padding: "4px 12px", borderRadius: 4, border: "1.5px solid #ffffff40", background: "rgba(20,20,50,0.92)", color: "#ddd", fontSize: 12, cursor: "pointer", fontFamily: "Spectral,serif", fontWeight: 700, boxShadow: "0 4px 12px #000a", whiteSpace: "nowrap" } }, c.hidden ? "Reveal" : "Hide") : null
         );
@@ -2738,7 +2869,11 @@ function RiftboundGame() {
                 aL("You mulled " + mc.length);
               } else { aL("You keep."); }
               var np = ps.slice(); np[mySlot] = p; setPs(np); setMc([]);
-              if (roomCode) fbDb.ref("lobbies/" + roomCode + "/gameState/mulled/" + myUid).set(true);
+              if (roomCode) {
+                // Publish our mulliganed hand + mainDeck so the game-start transition can merge it into every client.
+                fbDb.ref("lobbies/" + roomCode + "/gameState/mulledData/" + myUid).set(JSON.parse(JSON.stringify({ hand: p.hand, mainDeck: p.mainDeck })));
+                fbDb.ref("lobbies/" + roomCode + "/gameState/mulled/" + myUid).set(true);
+              }
               _gamePhaseRef.current = "mullDone";
             }} style={{ padding: "12px 28px", borderRadius: 6, border: "2px solid #FFD700", background: "#FFD70040", color: "#FFD700", cursor: "pointer", fontSize: 18, fontWeight: 700, position: "relative", zIndex: 10 }}>{mc.length > 0 ? "MULLIGAN " + mc.length : "KEEP"}</button>
           </> : <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
@@ -2821,7 +2956,7 @@ function RiftboundGame() {
                   {enemy.runes.sort(function(a, b) { return DOM[a.domain].o - DOM[b.domain].o; }).map(function(r, ri) {
                     var rUrl = r.img ? imgSrc(r.img) : "";
                     var leftCalc = "calc(" + (ri * step * 100) + "% - " + (ri * step * RUNE_W) + "px)";
-                    return <div key={r.uid} data-uid={r.uid} style={{ width: RUNE_W, height: RUNE_H, borderRadius: 5, overflow: "hidden", border: "1.5px solid " + (r.exhausted ? "#333" : DOM[r.domain].c + "55"), filter: r.exhausted ? "brightness(0.58)" : "none", transform: r.exhausted ? "rotate(90deg)" : "none", position: "absolute", left: leftCalc, top: 0, zIndex: ri }}>{rUrl ? <img src={rUrl} style={{ width: "100%", height: "100%", objectFit: "fill" }} /> : <div style={{ width: "100%", height: "100%", background: DOM[r.domain].c + "33", display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: RUNE_W * 0.3 }}>{DOM[r.domain].i}</span></div>}</div>;
+                    return <div key={r.uid} data-uid={r.uid} style={{ width: RUNE_W, height: RUNE_H, borderRadius: 5, overflow: "hidden", border: "1.5px solid " + (r.exhausted ? "#333" : DOM[r.domain].c + "55"), filter: r.exhausted ? "brightness(0.58)" : "none", transform: r.exhausted ? "rotate(30deg)" : "none", position: "absolute", left: leftCalc, top: 0, zIndex: ri }}>{rUrl ? <img src={rUrl} style={{ width: "100%", height: "100%", objectFit: "fill" }} /> : <div style={{ width: "100%", height: "100%", background: DOM[r.domain].c + "33", display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: RUNE_W * 0.3 }}>{DOM[r.domain].i}</span></div>}</div>;
                   })}
                 </div>
               </div>;
@@ -2880,7 +3015,7 @@ function RiftboundGame() {
                   var rUrl = r.img ? imgSrc(r.img) : "";
                   var at = getAnimType(r.uid); var animCls = at === "recycle" ? " anim-recycle" : at === "draw" ? " anim-rune-draw" : "";
                   var leftCalc = "calc(" + (ri * step * 100) + "% - " + (ri * step * RUNE_W) + "px)";
-                  return <div key={r.uid} data-uid={r.uid} draggable={false} className={(r.exhausted ? "card-tapped" : "card-hover") + animCls} onClick={function() { toggleTap(r.uid); }} style={{ width: RUNE_W, height: RUNE_H, borderRadius: 5, border: "2px solid " + (r.exhausted ? "#DC262644" : DOM[r.domain].c + "66"), filter: r.exhausted ? "brightness(0.58)" : "none", transform: r.exhausted ? "rotate(90deg)" : "none", position: "absolute", left: leftCalc, top: 0, zIndex: ri, overflow: "visible", cursor: "pointer" }}>
+                  return <div key={r.uid} data-uid={r.uid} draggable={false} className={(r.exhausted ? "card-tapped" : "card-hover") + animCls} onClick={function() { toggleTap(r.uid); }} style={{ width: RUNE_W, height: RUNE_H, borderRadius: 5, border: "2px solid " + (r.exhausted ? "#DC262644" : DOM[r.domain].c + "66"), filter: r.exhausted ? "brightness(0.58)" : "none", transform: r.exhausted ? "rotate(30deg)" : "none", position: "absolute", left: leftCalc, top: 0, zIndex: ri, overflow: "visible", cursor: "pointer" }}>
                     <div style={{ width: "100%", height: "100%", borderRadius: 3, overflow: "hidden" }}>{rUrl ? <img draggable={false} src={rUrl} style={{ width: "100%", height: "100%", objectFit: "fill" }} /> : <div style={{ width: "100%", height: "100%", background: DOM[r.domain].c + "33", display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: RUNE_W * 0.3 }}>{DOM[r.domain].i}</span></div>}</div>
                     {canMoveOwn && !fc && !tm && <button onClick={function(e) { e.stopPropagation(); recycleRune(r.uid); }} style={{ position: "absolute", top: -8, right: -8, width: 27, height: 27, borderRadius: "50%", border: "2px solid #FFD70066", background: "#1a1a3a", color: "#FFD700", fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 1000 }} title="Recycle rune">⟲</button>}
                   </div>;
@@ -2904,8 +3039,8 @@ function RiftboundGame() {
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", flexShrink: 0, overflow: "visible", padding: "2px 6px 4px", height: HAND_H + Math.round(26 * vScale), minHeight: HAND_H + Math.round(26 * vScale), maxHeight: HAND_H + Math.round(26 * vScale) }}>
             <div style={{ display: "flex", flexDirection: "row", gap: 3, alignItems: "center", padding: "4px 2px", flexShrink: 0 }}>
               <div data-uid={"slot-" + mySlot + "-runes"} onClick={canMoveOwn && myCur.runeDeck && myCur.runeDeck.length > 0 && myCur.runes.length < 12 ? function() { var idx = myActIdx; var _me = ps[idx]; if (!_me) return; if (sd) setSd(Object.assign({}, sd, { acted: true })); var p = Object.assign({}, _me, { runeDeck: _me.runeDeck.slice(), runes: _me.runes.slice() }); var r = p.runeDeck.shift(); p.runes.push(r); addAnim(r.uid, "draw"); aL(pName(idx) + " channels 1 rune"); var np = ps.slice(); np[idx] = p; setPs(np); } : undefined} style={{ cursor: canMoveOwn && myCur.runeDeck && myCur.runeDeck.length > 0 && myCur.runes.length < 12 ? "pointer" : "default" }}><CardBack w={HAND_W} h={HAND_H} count={myCur.runeDeck ? myCur.runeDeck.length : 0} label="RUNES" /></div>
-              {myCur.champion && <div data-uid={myCur.champion.uid} className={myCur.champion.exhausted ? "card-tapped" : "card-hover"} draggable={!myCur.championPlayed && canMoveOwn && !tm && !fc} onDragStart={!myCur.championPlayed && canMoveOwn && !tm && !fc ? function(e) { e.dataTransfer.setData("text/plain", "champ:" + myCur.champion.uid); } : undefined} onClick={function() { toggleTap(myCur.champion.uid); }} onMouseEnter={function(e) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: myCur.champion, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }); }} onMouseLeave={function() { setHoverCard(null); }} style={{ width: HAND_W, height: HAND_H, borderRadius: 6, overflow: "hidden", border: "2px solid " + (myCur.championPlayed ? "#FFD70015" : "#FFD70055"), cursor: "pointer", opacity: myCur.championPlayed ? 0.4 : 1, transform: myCur.champion.exhausted ? "rotate(90deg)" : "none", filter: myCur.champion.exhausted ? "brightness(0.58)" : "none", flexShrink: 0 }}>{myCur.champion.img ? <img src={imgSrc(myCur.champion.img)} style={{ width: "100%", height: "100%", objectFit: "fill" }} onError={function(e) { if (PA[myCur.champion.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[myCur.champion.name] + ".webp"; } }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#FFD700", padding: 2, textAlign: "center" }}>{myCur.champion.name}</div>}</div>}
-              {myCur.legend && <div data-uid={myCur.legend.uid} className={myCur.legend.exhausted ? "card-tapped" : "card-hover"} onClick={function() { toggleTap(myCur.legend.uid); }} onMouseEnter={function(e) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: myCur.legend, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }); }} onMouseLeave={function() { setHoverCard(null); }} style={{ width: HAND_W, height: HAND_H, borderRadius: 6, overflow: "hidden", border: "2px solid #FFD70033", cursor: "pointer", transform: myCur.legend.exhausted ? "rotate(90deg)" : "none", filter: myCur.legend.exhausted ? "brightness(0.58)" : "none", flexShrink: 0 }}>{myCur.legend.img ? <img src={imgSrc(myCur.legend.img)} style={{ width: "100%", height: "100%", objectFit: "fill" }} onError={function(e) { if (PA[myCur.legend.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[myCur.legend.name] + ".webp"; } }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#FFD700", padding: 2, textAlign: "center" }}>{myCur.legend.name}</div>}</div>}
+              {myCur.champion ? <div data-uid={myCur.champion.uid} className={myCur.champion.exhausted ? "card-tapped" : "card-hover"} draggable={!myCur.championPlayed && canMoveOwn && !tm && !fc} onDragStart={!myCur.championPlayed && canMoveOwn && !tm && !fc ? function(e) { e.dataTransfer.setData("text/plain", "champ:" + myCur.champion.uid); } : undefined} onClick={function() { toggleTap(myCur.champion.uid); }} onMouseEnter={function(e) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: myCur.champion, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }); }} onMouseLeave={function() { setHoverCard(null); }} style={{ width: HAND_W, height: HAND_H, borderRadius: 6, overflow: "hidden", border: "2px solid " + (myCur.championPlayed ? "#FFD70015" : "#FFD70055"), cursor: "pointer", opacity: myCur.championPlayed ? 0.4 : 1, transform: myCur.champion.exhausted ? "rotate(30deg)" : "none", filter: myCur.champion.exhausted ? "brightness(0.58)" : "none", flexShrink: 0 }}>{myCur.champion.img ? <img src={imgSrc(myCur.champion.img)} style={{ width: "100%", height: "100%", objectFit: "fill" }} onError={function(e) { if (PA[myCur.champion.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[myCur.champion.name] + ".webp"; } }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#FFD700", padding: 2, textAlign: "center" }}>{myCur.champion.name}</div>}</div> : (myCur.championPlayed && <div onDragOver={canMoveOwn ? function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } : undefined} onDrop={canMoveOwn ? function(e) { e.preventDefault(); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var uid2 = parts.length > 1 ? parts[1] : parts[0]; returnChampionToSlot(uid2); } : undefined} style={{ width: HAND_W, height: HAND_H, borderRadius: 6, border: "2px dashed #FFD70033", background: "rgba(255,215,0,0.03)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: "#FFD70055", fontSize: 10, fontFamily: "Spectral,serif", letterSpacing: 1, textAlign: "center", padding: 4 }}>CHAMPION<br />SLOT</div>)}
+              {myCur.legend && <div data-uid={myCur.legend.uid} className={myCur.legend.exhausted ? "card-tapped" : "card-hover"} onClick={function() { toggleTap(myCur.legend.uid); }} onMouseEnter={function(e) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: myCur.legend, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }); }} onMouseLeave={function() { setHoverCard(null); }} style={{ width: HAND_W, height: HAND_H, borderRadius: 6, overflow: "hidden", border: "2px solid #FFD70033", cursor: "pointer", transform: myCur.legend.exhausted ? "rotate(30deg)" : "none", filter: myCur.legend.exhausted ? "brightness(0.58)" : "none", flexShrink: 0 }}>{myCur.legend.img ? <img src={imgSrc(myCur.legend.img)} style={{ width: "100%", height: "100%", objectFit: "fill" }} onError={function(e) { if (PA[myCur.legend.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[myCur.legend.name] + ".webp"; } }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#FFD700", padding: 2, textAlign: "center" }}>{myCur.legend.name}</div>}</div>}
             </div>
             <div style={{ flex: 1, overflow: "visible", minWidth: 0, display: "flex", justifyContent: "center" }}
               onDragOver={canMoveOwn ? function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } : undefined}
@@ -2937,7 +3072,7 @@ function RiftboundGame() {
             </div>
             <div style={{ display: "flex", gap: 3, alignItems: "flex-start", padding: "4px 2px", flexShrink: 0 }}>
               {/* Token pile */}
-              <div data-uid={"slot-" + mySlot + "-tokens"} onClick={canMoveOwn ? function() { var tk = mkToken(tokenType); if (!tk) return; var idx = myActIdx; var _me = ps[idx]; if (!_me) return; if (sd) setSd(Object.assign({}, sd, { acted: true })); var p = Object.assign({}, _me, { base: _me.base.slice() }); p.base.push(tk); aL(pName(idx) + " creates " + tk.name + " token"); var np = ps.slice(); np[idx] = p; setPs(np); } : undefined} style={{ width: HAND_W, height: HAND_H, borderRadius: 6, background: "linear-gradient(160deg,#2a1a3a,#1a1028)", border: "2px solid #aa66ff45", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, position: "relative", overflow: "hidden", padding: "4px 2px" }}>
+              <div data-uid={"slot-" + mySlot + "-tokens"} onClick={canMoveOwn ? function() { var tk = mkToken(tokenType); if (!tk) return; var idx = myActIdx; var _me = ps[idx]; if (!_me) return; if (sd) setSd(Object.assign({}, sd, { acted: true })); var p = Object.assign({}, _me, { base: _me.base.slice() }); p.base.push(Object.assign({}, tk, { exhausted: true, counter: 1 })); aL(pName(idx) + " creates " + tk.name + " token"); var np = ps.slice(); np[idx] = p; setPs(np); } : undefined} style={{ width: HAND_W, height: HAND_H, borderRadius: 6, background: "linear-gradient(160deg,#2a1a3a,#1a1028)", border: "2px solid #aa66ff45", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, position: "relative", overflow: "hidden", padding: "4px 2px" }}>
                 <span style={{ fontSize: 24, opacity: 0.3, position: "absolute", top: "25%", transform: "translateY(-50%)" }}>⚔</span>
                 <span style={{ fontSize: 12, color: "#aa66ff99", fontFamily: "Spectral,serif", letterSpacing: 1, zIndex: 1, marginTop: "auto" }}>TOKENS</span>
                 <select value={tokenType} onClick={function(e) { e.stopPropagation(); }} onChange={function(e) { e.stopPropagation(); setTokenType(e.target.value); var preview = mkToken(e.target.value); if (preview) setHoverCard(preview); }} onMouseLeave={function() { setHoverCard(null); }} style={{ fontSize: 12, padding: "2px 3px", borderRadius: 3, border: "1px solid #aa66ff30", background: "rgba(170,102,255,0.1)", color: "#ccaaff", cursor: "pointer", fontFamily: "Spectral,serif", outline: "none", width: "90%", zIndex: 1, marginTop: 4, marginBottom: 2 }}>
@@ -3030,7 +3165,7 @@ function RiftboundGame() {
             onDragOver={function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; if (!dragOverShowcase) setDragOverShowcase(true); }}
             onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverShowcase(false); }}
             onDrop={function(e) { e.preventDefault(); e.stopPropagation(); setDragOverShowcase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; var card = null; if (myCur) { if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } else if (type === "base") { card = myCur.base.find(function(c) { return c.uid === uid2; }); } else if (type === "bf") { for (var bk = 0; bk < bfs.length; bk++) { var uArr = bfs[bk].units[myActIdx]; if (!uArr) continue; var found = uArr.find(function(u) { return u.uid === uid2; }); if (found) { card = found; break; } } } else if (type === "bin") { card = (myCur.trash || []).find(function(c) { return c.uid === uid2; }); } } if (card) pushShowcase(card); }}
-            style={{ flexShrink: 0, height: Math.round(370 * vScale), padding: "6px 4px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", margin: "0 4px", border: sd ? "2px solid #FF6B35" : (dragOverShowcase ? "1.5px solid #ffffff55" : "1.5px solid #ffffff20"), borderTop: sd ? "none" : undefined, borderRadius: sd ? "0 0 6px 6px" : 4, transition: "border 0.15s ease", overflow: "visible" }}>
+            style={{ flexShrink: 0, height: Math.round(370 * vScale), padding: "6px 4px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", margin: "0 4px", border: sd ? "2px solid #FF6B35" : (dragOverShowcase ? "1.5px solid #ffffff55" : "1.5px solid #ffffff20"), borderTop: sd ? "none" : undefined, borderRadius: sd ? "0 0 6px 6px" : 4, transition: "border 0.15s ease", overflow: "visible", position: "relative", zIndex: scryMode && showcaseCard ? 1250 : undefined }}>
             <div style={{ fontSize: 11, color: "#ffffff44", fontFamily: "Spectral,serif", letterSpacing: 1, marginBottom: 3 }}>SHOWCASE</div>
             {showcaseCard ? (<>
               {!sd && showcaseOwner && isOnlineGame && (function() {
@@ -3069,7 +3204,7 @@ function RiftboundGame() {
                     </div>;
                   })}
                   {/* Main showcase card (most recent, on top/right) */}
-                  <div data-uid={showcaseCard.uid} onClick={function() { if (!drawingArrow && (!isOnlineGame || showcaseOwner === myUid)) { if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false); setShowcasePriority(null); setShowcaseActed(false); } } }} onMouseEnter={function() { setScHovIdx(-1); }} style={{ position: "relative", cursor: drawingArrow ? "crosshair" : (!isOnlineGame || showcaseOwner === myUid) ? "pointer" : "default", width: scCardW, height: scCardH, flexShrink: 0, overflow: "visible", zIndex: scHistLen + 2 }}>
+                  <div data-uid={showcaseCard.uid} onMouseEnter={function() { setScHovIdx(-1); }} style={{ position: "relative", cursor: drawingArrow ? "crosshair" : "default", width: scCardW, height: scCardH, flexShrink: 0, overflow: "visible", zIndex: scHistLen + 2 }}>
                     <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: 6 }}>
                       {showcaseCard.img ? <img src={imgSrc(showcaseCard.img)} onError={function(e) { if (PA[showcaseCard.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[showcaseCard.name] + ".webp"; } }} style={{ width: "100%", height: "100%", objectFit: "fill", display: "block" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 16, fontFamily: "Spectral,serif", border: "1px solid #ffffff20", textAlign: "center", padding: 8 }}>{showcaseCard.name}</div>}
                     </div>
