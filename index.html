@@ -2056,11 +2056,14 @@ function RiftboundGame() {
   // and only when they aren't typing in an input/textarea).
   var endTurnKeyRef = useRef();
   endTurnKeyRef.current = function() {
-    if (screen !== "play") return;
     if (awakenPhase || sd || tm || fc || scryMode || showcaseCard) return;
     var isOnlineGameKey = lobbyType === "host" || lobbyType === "join";
-    var isMyTurnKey = isOnlineGameKey ? act === mySlot : true;
-    if (!isMyTurnKey) return;
+    if (isOnlineGameKey) {
+      if (_gamePhaseRef.current !== "playing") return;
+      if (act !== mySlot) return;
+    } else {
+      if (screen !== "play") return;
+    }
     endTurn();
   };
   useEffect(function() {
@@ -2073,6 +2076,22 @@ function RiftboundGame() {
     window.addEventListener("keydown", onKey);
     return function() { window.removeEventListener("keydown", onKey); };
   }, []);
+
+  // Defensive: if act becomes my slot in online play but the [screen, act] auto-start-turn
+  // effect missed firing (e.g. because _gamePhaseRef wasn't yet "playing" at that moment, and
+  // refs don't trigger re-runs), retry doStartTurn shortly after to break the stall.
+  useEffect(function() {
+    if (screen !== "wait" || awakenPhase) return;
+    var isOnlineGameRetry = lobbyType === "host" || lobbyType === "join";
+    if (!isOnlineGameRetry) return;
+    if (act !== mySlot) return;
+    var t = setTimeout(function() {
+      if (screen === "wait" && !awakenPhase && _gamePhaseRef.current === "playing" && act === mySlot && ps[mySlot]) {
+        doStartTurn();
+      }
+    }, 600);
+    return function() { clearTimeout(t); };
+  }, [act, screen, mySlot, lobbyType]);
 
   function returnToBase(cardUid) {
     if (!canMoveOwn) return;
@@ -3257,7 +3276,7 @@ function RiftboundGame() {
             {tm && <div style={{ background: "#FFD70010", borderRadius: 4, padding: 5, fontSize: 13, color: "#FFD700", textAlign: "center", border: "1px solid #FFD70040" }}>{tm.ty === "buff" ? "Pick friendly" : tm.ty === "dmg" ? "Pick to damage" : tm.ty === "stun" ? "Pick enemy" : "Target"}<br /><button onClick={function() { setTm(null); }} style={{ marginTop: 3, padding: "1px 6px", border: "1px solid #333", background: "transparent", color: "#555", cursor: "pointer", fontSize: 11, borderRadius: 3 }}>cancel</button></div>}
             {screen === "wait" && !awakenPhase && turn === 1 && act === 0 && (lobbyType === "test" || (_gamePhaseRef.current === "playing" && isHost)) && <button onClick={function() { doStartTurn(); }} style={{ padding: 10, borderRadius: 5, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0015)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>START GAME</button>}
             {awakenPhase && <div style={{ textAlign: "center", padding: 6, background: "#FFD70008", borderRadius: 4, border: "1px solid #FFD70040" }}><div className="anim-pulse" style={{ fontSize: 15, fontWeight: 700, fontFamily: "Spectral,serif", color: "#FFD700", textTransform: "uppercase", letterSpacing: 2 }}>New Turn</div></div>}
-            {screen === "play" && !awakenPhase && (function() { var isOnlineGame = lobbyType === "host" || lobbyType === "join"; var isMyTurn = isOnlineGame ? act === mySlot : true; return isMyTurn ? <button onClick={endTurn} style={{ padding: 10, borderRadius: 5, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0015)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>END TURN</button> : <div style={{ padding: 10, borderRadius: 5, border: "1px solid #ffffff20", background: "transparent", color: "#888", fontSize: 14, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif", textAlign: "center" }}>{pName(act) + "'s turn"}</div>; })()}
+            {!awakenPhase && (function() { var isOnlineGame = lobbyType === "host" || lobbyType === "join"; if (isOnlineGame) { if (_gamePhaseRef.current !== "playing") return null; var isMyTurnO = act === mySlot; return isMyTurnO ? <button onClick={endTurn} style={{ padding: 10, borderRadius: 5, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0015)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>END TURN</button> : <div style={{ padding: 10, borderRadius: 5, border: "1px solid #ffffff20", background: "transparent", color: "#888", fontSize: 14, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif", textAlign: "center" }}>{pName(act) + "'s turn"}</div>; } else { if (screen !== "play") return null; return <button onClick={endTurn} style={{ padding: 10, borderRadius: 5, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0015)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>END TURN</button>; } })()}
             {sel && canAct && !tm && !fc && <div style={{ padding: 5, fontSize: 13, color: "#aaa", textAlign: "center", background: "#FFD70008", borderRadius: 4, border: "1px solid #FFD70040" }}>Selected: <b style={{ color: "#FFD700" }}>{sel.name}</b><br /><span style={{ fontSize: 12, color: "#888" }}>click a battlefield</span></div>}
           </div>
           {/* Chat log — upper half */}
