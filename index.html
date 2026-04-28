@@ -227,9 +227,14 @@ var CARD_EFFECTS = {
 
   "First Mate": {
     onPlay: function(ctx) {
-      var others = ctx.countFriendlyUnits(ctx.card.uid);
-      if (others <= 0) { ctx.flash(ctx.card.uid); ctx.banner("First Mate — no other friendly units to ready"); return; }
+      var ids = ctx.friendlyUnitUids(ctx.card.uid);
+      if (ids.length === 0) { ctx.flash(ctx.card.uid); ctx.banner("First Mate — no other friendly units to ready"); return; }
       ctx.flash(ctx.card.uid);
+      if (ids.length === 1) {
+        ctx.readyUids(ids);
+        ctx.banner("First Mate — auto-readied 1 friendly unit");
+        return;
+      }
       ctx.prompt({ kind: "pickFriendlyUnits", n: 1, excludeUid: ctx.card.uid, sourceName: "First Mate", sourceUid: ctx.card.uid, effect: "ready" });
     }
   },
@@ -278,8 +283,16 @@ var CARD_EFFECTS = {
   "Recruit the Vanguard": {
     onCast: function(ctx) {
       ctx.flash(ctx.card.uid);
-      ctx.spawnInBase("Recruit (Demacian)", 4);
-      ctx.banner("Recruit the Vanguard — 4 Recruit tokens to base");
+      // If the player controls any battlefields, prompt for placement; otherwise dump to base.
+      var locations = [{ key: "base", label: "Base" }];
+      // bfs is captured via the helper closures inside ctx; we build locations via a hint:
+      ctx._buildPlacementLocations && ctx._buildPlacementLocations(locations);
+      if (locations.length === 1) {
+        ctx.spawnInBase("Recruit (Demacian)", 4);
+        ctx.banner("Recruit the Vanguard — 4 Recruit tokens to base");
+      } else {
+        ctx.prompt({ kind: "placeTokens", tokenName: "Recruit (Demacian)", total: 4, locations: locations, sourceName: "Recruit the Vanguard", sourceUid: ctx.card.uid });
+      }
     }
   },
 
@@ -291,22 +304,62 @@ var CARD_EFFECTS = {
   "Petty Officer":      { passive: "Assault — +1 might while attacking (manual)" },
   "Garen, Rugged":      { passive: "Assault 2 / Shield 2 — +2 might attacking or defending (manual)" },
 
-  // --- Cards that need hooks not yet implemented (registered as no-ops for now so they're
-  //     recognized; banners explain the limitation). ---
-  "Crackshot Corsair":  { passive: "On-attack damage — needs attack hook (manual)" },
-  "Dune Drake":         { passive: "On-attack conditional buff — needs attack hook (manual)" },
-  "Garen, Commander":   { passive: "Aura: other friendly units at this BF +1 might (manual)" },
+  // --- On-attack triggered abilities ---
+  "Crackshot Corsair": {
+    onAttack: function(ctx) {
+      var enemies = ctx.enemyUnits();
+      if (enemies.length === 0) { ctx.banner("Crackshot Corsair — no enemy units here"); return; }
+      var target = enemies[0]; // simple auto-target: first enemy unit at this battlefield
+      ctx.flash(ctx.unit.uid);
+      ctx.dealDamage(target.uid, 1);
+      ctx.banner("Crackshot Corsair — 1 dmg to " + (target.name || "enemy"));
+    }
+  },
+  "Dune Drake": {
+    onAttack: function(ctx) {
+      var hasReadyEnemy = ctx.enemyUnits().some(function(u) { return !u.exhausted; });
+      if (!hasReadyEnemy) return;
+      ctx.flash(ctx.unit.uid);
+      ctx.applyTempMightToUids([ctx.unit.uid], 2);
+      ctx.banner("Dune Drake — +2 might (ready enemy here)");
+    }
+  },
 
-  // Champion's signature card — no per-card text effect at base; aura belongs to Commander/Rugged forms.
-  // (No CARD_EFFECTS entry needed; this comment is just for clarity.)
+  // --- Aura units (no auto-implementation: requires live aura recalc system) ---
+  "Garen, Commander": { passive: "Aura: other friendly units at this BF +1 might (manual)" },
+
+  // --- Vanilla / passive-keyword units (Assault/Shield handled generically by parseKeywordBonus
+  //     in fireShowdownStartEffects). Registered so the engine knows the card is recognized. ---
+  "Daring Poro":        { passive: "Assault — auto-buffed at showdown start" },
+  "Vanguard Sergeant":  { passive: "Vanilla 4/4 (no ability)" },
+  "Petty Officer":      { passive: "Assault — auto-buffed at showdown start" },
+  "Garen, Rugged":      { passive: "Assault 2 / Shield 2 — auto-buffed at showdown start" },
 
   // --- Legend ---
-  "Might of Demacia - Starter": { passive: "On-conquer w/ 4+ units: draw 2 — needs on-conquer hook (manual)" },
+  "Might of Demacia - Starter": {
+    onConquer: function(ctx) {
+      var unitCount = ctx.friendlyUnitsHere().length;
+      if (unitCount >= 4) {
+        ctx.draw(2);
+        ctx.banner("Might of Demacia — drew 2 (" + unitCount + " units at " + ctx.bfName + ")");
+      }
+    }
+  },
 
   // --- Battlefields ---
   "Trifarian War Camp": { passive: "Aura: units here +1 might — needs aura system (manual)" },
-  "The Grand Plaza":    { passive: "Hold w/ 7+ units: instant win — needs on-hold hook (manual)" },
-  "Altar to Unity":     { passive: "On-hold: spawn Recruit token in base — needs on-hold hook (manual)" }
+  "The Grand Plaza": {
+    onHold: function(ctx) {
+      var unitCount = ctx.friendlyUnitsHere().length;
+      if (unitCount >= 7) ctx.banner("The Grand Plaza — instant-win condition met (" + unitCount + " units)! Manually click + on score to claim, the auto-win hook isn't wired into the score loop yet.");
+    }
+  },
+  "Altar to Unity": {
+    onHold: function(ctx) {
+      ctx.spawnInBase("Recruit (Demacian)", 1);
+      ctx.banner("Altar to Unity — Recruit token to base (you held " + ctx.bfName + ")");
+    }
+  }
 };
 </script>
 <script type="text/babel">
@@ -1143,6 +1196,7 @@ function RiftboundGame() {
         var np2 = ps.slice(); np2[sd.atkIdx] = Object.assign({}, np2[sd.atkIdx], { score: np2[sd.atkIdx].score + 1 });
         aL(pName(sd.atkIdx) + " conquers " + bf.name + "! (" + np2[sd.atkIdx].score + "/8)");
         setBfs(nb2); setPs(np2);
+        fireConquerEffects(sd.atkIdx, bi);
         if (np2[sd.atkIdx].score >= 8 && !continuePlaying) { setWin(sd.atkIdx); setScreen("go"); setSd(null); return; }
       }
       aL("Showdown ends - attacker holds.");
@@ -2261,8 +2315,144 @@ function RiftboundGame() {
       spawnInBattlefield: function(tokenName, count, bi2) { spawnTokensInBattlefield(tokenName, count || 1, (bi2 != null) ? bi2 : bi); },
       spawnHere: function(tokenName, count) { spawnHere(tokenName, count || 1, where, bi); },
       countFriendlyUnits: function(excludeUid) { return countFriendlyUnits(excludeUid); },
-      applyTempMightToAllFriendly: function(amount) { return applyTempMightToAllFriendly(amount); }
+      friendlyUnitUids: function(excludeUid) { return friendlyUnitUids(excludeUid); },
+      readyUids: function(uids) { readyUidsAcrossPsAndBfs(uids); },
+      applyTempMightToAllFriendly: function(amount) { return applyTempMightToAllFriendly(amount); },
+      applyTempMightToUids: function(uids, amount) { applyTempMightToUids(uids, amount); },
+      _buildPlacementLocations: function(locations) {
+        // Append controlled battlefields to the given list (mutated).
+        var idx = myActIdx;
+        bfs.forEach(function(b, bi2) { if (b && b.controller === idx) locations.push({ key: "bf:" + bi2, label: b.name, bi: bi2 }); });
+      }
     };
+  }
+  // --- Keyword parsers + combat helpers ---
+  function parseKeywordBonus(keywords, kw) {
+    if (!keywords) return 0;
+    for (var i = 0; i < keywords.length; i++) {
+      var k = keywords[i];
+      if (k === kw) return 1;
+      var m = new RegExp("^" + kw + " (\\d+)$").exec(k);
+      if (m) return parseInt(m[1], 10);
+    }
+    return 0;
+  }
+  function dealDamageToUid(victimUid, amount) {
+    var killedUnit = null; var killedPidx = -1;
+    setBfs(function(prev) {
+      var nb = prev.slice();
+      for (var bi2 = 0; bi2 < nb.length; bi2++) {
+        var b = nb[bi2];
+        var newUnitsAll = b.units.map(function(pu) { return pu.slice(); });
+        for (var pi = 0; pi < newUnitsAll.length; pi++) {
+          var idx = newUnitsAll[pi].findIndex(function(u) { return u.uid === victimUid; });
+          if (idx >= 0) {
+            var u = newUnitsAll[pi][idx];
+            var newDmg = (u.damage || 0) + amount;
+            var maxHP = (u.might || 0) + (u.tempMight || 0);
+            if (newDmg >= maxHP) {
+              newUnitsAll[pi].splice(idx, 1);
+              killedUnit = u; killedPidx = pi;
+            } else {
+              newUnitsAll[pi][idx] = Object.assign({}, u, { damage: newDmg });
+            }
+            nb[bi2] = Object.assign({}, b, { units: newUnitsAll });
+            return nb;
+          }
+        }
+      }
+      return prev;
+    });
+    if (killedUnit && killedPidx >= 0) {
+      setPs(function(prevPs) {
+        var nps = prevPs.slice();
+        if (nps[killedPidx]) nps[killedPidx] = Object.assign({}, nps[killedPidx], { trash: ((nps[killedPidx].trash) || []).concat([Object.assign({}, killedUnit, { damage: 0, tempMight: 0 })]) });
+        return nps;
+      });
+    }
+  }
+  function makeShowdownCtx(unit, bf, atkIdx, bfIdx) {
+    return {
+      unit: unit, card: unit, bf: bf, atkIdx: atkIdx, bi: bfIdx, bfName: bf ? bf.name : null,
+      flash: function(uid2) { addAnim(uid2, "flash", 800); },
+      banner: function(text) { showAutoBanner("AUTO · " + text); },
+      enemyUnits: function() { var out = []; if (!bf) return out; for (var pi = 0; pi < bf.units.length; pi++) { if (pi === atkIdx) continue; (bf.units[pi] || []).forEach(function(u) { out.push(u); }); } return out; },
+      friendlyUnits: function() { return (bf && bf.units[atkIdx]) ? bf.units[atkIdx].slice() : []; },
+      applyTempMightToUids: function(uids, amount) { applyTempMightToUids(uids, amount); },
+      dealDamage: function(victimUid, amount) { dealDamageToUid(victimUid, amount); },
+      draw: function(n) { drawCards(n); }
+    };
+  }
+  function makeConquerCtx(playerIdx, bfIdx, bf) {
+    return {
+      player: playerIdx, bi: bfIdx, bf: bf, bfName: bf ? bf.name : null,
+      flash: function(uid2) { addAnim(uid2, "flash", 800); },
+      banner: function(text) { showAutoBanner("AUTO · " + text); },
+      draw: function(n) { drawCards(n); },
+      spawnInBase: function(tokenName, count) { spawnTokensInBase(tokenName, count || 1); },
+      spawnInBattlefield: function(tokenName, count, bi2) { spawnTokensInBattlefield(tokenName, count || 1, (bi2 != null) ? bi2 : bfIdx); },
+      friendlyUnitsHere: function() { return (bf && bf.units[playerIdx]) ? bf.units[playerIdx].slice() : []; }
+    };
+  }
+  function fireShowdownStartEffects(deployedCard, bfIdx, atkIdx) {
+    if (!autoMode) return;
+    // Use a small delay so setBfs from the deploy has settled.
+    setTimeout(function() {
+      var bf = bfs[bfIdx]; if (!bf) return;
+      var assaultBuffs = []; var shieldBuffs = [];
+      // Apply [Assault N] to all attackers
+      (bf.units[atkIdx] || []).forEach(function(u) {
+        var bonus = parseKeywordBonus(u.keywords, "Assault");
+        if (bonus > 0) { assaultBuffs.push({ uid: u.uid, name: u.name, n: bonus }); addAnim(u.uid, "flash", 800); }
+      });
+      if (assaultBuffs.length > 0) {
+        applyTempMightToUids(assaultBuffs.map(function(b2) { return b2.uid; }), 0); // noop to share array; we'll apply per-bonus below
+        // Apply each unique bonus level via separate calls (since amounts may differ)
+        var byN = {};
+        assaultBuffs.forEach(function(b2) { (byN[b2.n] = byN[b2.n] || []).push(b2.uid); });
+        Object.keys(byN).forEach(function(k) { applyTempMightToUids(byN[k], parseInt(k, 10)); });
+        showAutoBanner("AUTO · Assault — " + assaultBuffs.length + " attacker" + (assaultBuffs.length === 1 ? "" : "s") + " buffed");
+      }
+      // Apply [Shield N] to all defenders
+      for (var pi = 0; pi < bf.units.length; pi++) {
+        if (pi === atkIdx) continue;
+        (bf.units[pi] || []).forEach(function(u) {
+          var bonus = parseKeywordBonus(u.keywords, "Shield");
+          if (bonus > 0) { shieldBuffs.push({ uid: u.uid, name: u.name, n: bonus }); addAnim(u.uid, "flash", 800); }
+        });
+      }
+      if (shieldBuffs.length > 0) {
+        var byNS = {};
+        shieldBuffs.forEach(function(b2) { (byNS[b2.n] = byNS[b2.n] || []).push(b2.uid); });
+        Object.keys(byNS).forEach(function(k) { applyTempMightToUids(byNS[k], parseInt(k, 10)); });
+        showAutoBanner("AUTO · Shield — " + shieldBuffs.length + " defender" + (shieldBuffs.length === 1 ? "" : "s") + " buffed");
+      }
+      // Fire onAttack for the deploying unit
+      if (deployedCard && CARD_EFFECTS[deployedCard.name] && CARD_EFFECTS[deployedCard.name].onAttack) {
+        var ctx = makeShowdownCtx(deployedCard, bf, atkIdx, bfIdx);
+        try { CARD_EFFECTS[deployedCard.name].onAttack(ctx); } catch(e) { console.error("onAttack error for " + deployedCard.name + ":", e); }
+      }
+    }, 80);
+  }
+  function fireConquerEffects(playerIdx, bfIdx) {
+    if (!autoMode) return;
+    if (playerIdx !== myActIdx) return; // only the conquering player's client fires
+    setTimeout(function() {
+      var bf = bfs[bfIdx]; if (!bf) return;
+      var legend = ps[playerIdx] && ps[playerIdx].legend;
+      if (legend) {
+        var lEff = CARD_EFFECTS[legend.name];
+        if (lEff && lEff.onConquer) { try { lEff.onConquer(makeConquerCtx(playerIdx, bfIdx, bf)); } catch(e) { console.error("legend onConquer error:", e); } }
+      }
+      var bfEff = CARD_EFFECTS[bf.name];
+      if (bfEff && bfEff.onConquer) { try { bfEff.onConquer(makeConquerCtx(playerIdx, bfIdx, bf)); } catch(e) { console.error("bf onConquer error:", e); } }
+    }, 80);
+  }
+  function fireHoldEffects(playerIdx, bfIdx, bf) {
+    if (!autoMode) return;
+    if (playerIdx !== myActIdx) return;
+    var bfEff = CARD_EFFECTS[bf.name];
+    if (bfEff && bfEff.onHold) { try { bfEff.onHold(makeConquerCtx(playerIdx, bfIdx, bf)); } catch(e) { console.error("onHold error:", e); } }
   }
   function runAutoOnCast(card) {
     if (!autoMode || !card) return;
@@ -2284,6 +2474,30 @@ function RiftboundGame() {
     }
     setAutoPrompt(null);
     _autoSelRef.current = [];
+  }
+  function resolvePlacementPrompt() {
+    var p = autoPrompt; if (!p || p.kind !== "placeTokens") return;
+    var placements = p._placements || {};
+    var placedTotal = 0;
+    Object.keys(placements).forEach(function(k) {
+      var c = placements[k] || 0; if (c <= 0) return;
+      placedTotal += c;
+      if (k === "base") spawnTokensInBase(p.tokenName, c);
+      else if (k.indexOf("bf:") === 0) spawnTokensInBattlefield(p.tokenName, c, parseInt(k.slice(3), 10));
+    });
+    showAutoBanner("AUTO · " + p.sourceName + " — placed " + placedTotal + " " + p.tokenName + " token" + (placedTotal === 1 ? "" : "s"));
+    if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+    setAutoPrompt(null);
+  }
+  function bumpPlacementCount(key, delta) {
+    if (!autoPrompt || autoPrompt.kind !== "placeTokens") return;
+    var p2 = Object.assign({}, autoPrompt);
+    var pl = Object.assign({}, p2._placements || {});
+    pl[key] = Math.max(0, (pl[key] || 0) + delta);
+    var sum = Object.keys(pl).reduce(function(a, k) { return a + (pl[k] || 0); }, 0);
+    if (sum > p2.total) { pl[key] = (pl[key] || 0) - delta; return; }
+    p2._placements = pl;
+    setAutoPrompt(p2);
   }
   function toggleAutoSel(uid) {
     if (!autoPrompt) return;
@@ -2315,7 +2529,7 @@ function RiftboundGame() {
       var _teammateLastScored = (_myTeammateIdx >= 0 && ps[_myTeammateIdx] && ps[_myTeammateIdx].lastScoredBfs) ? ps[_myTeammateIdx].lastScoredBfs : [];
       var sc = 0;
       var scoredBfUidsThisTurn = [];
-      nb.forEach(function(bf) {
+      nb.forEach(function(bf, bfIdxLocal) {
         if (bf.controller === turnIdx && bf.units[turnIdx].length > 0) {
           var contested = false; for (var i = 0; i < pc; i++) { if (i !== turnIdx && bf.units[i].length > 0) contested = true; }
           // Doubles rule: can't score on a battlefield teammate just conquered last turn
@@ -2323,6 +2537,7 @@ function RiftboundGame() {
           if (!contested && !blockedByTeammate) {
             sc++; scoredBfUidsThisTurn.push(bf.uid);
             aL(pName(turnIdx) + " gets a holding point from " + bf.name + "!");
+            fireHoldEffects(turnIdx, bfIdxLocal, bf);
           } else if (!contested && blockedByTeammate) {
             aL("  " + bf.name + " skipped — teammate just scored here");
           }
@@ -2818,6 +3033,7 @@ function RiftboundGame() {
       var newSd2 = { bfIdx: bi, atkIdx: myActIdx, priority: myActIdx, lastPass: null, acted: false, contested: _defPresent, acceptors: _initAcc2 };
       setSd(newSd2);
       setScreen("sd");
+      fireShowdownStartEffects(card, bi, myActIdx);
       if (roomCode && lobbyType !== "test") {
         _lastSyncVersion.current++;
         var cleanPs4 = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
@@ -3029,11 +3245,13 @@ function RiftboundGame() {
     if (mode === "attacker") {
       nb[bi].controller = savedSd.atkIdx; np[savedSd.atkIdx].score++;
       aL(pName(savedSd.atkIdx) + " conquers " + nb[bi].name + "! (" + np[savedSd.atkIdx].score + (continuePlaying ? "" : "/8") + ")");
+      fireConquerEffects(savedSd.atkIdx, bi);
       if (np[savedSd.atkIdx].score >= 8 && !continuePlaying) { setWin(savedSd.atkIdx); setScreen("go"); setBfs(nb); setPs(np); return; }
     } else if (mode === "defender") {
       var defIdx = 0; for (var j = 0; j < pc; j++) { if (j !== savedSd.atkIdx) { defIdx = j; break; } }
       nb[bi].controller = defIdx; np[defIdx].score++;
       aL(pName(defIdx) + " holds " + nb[bi].name + "! (" + np[defIdx].score + (continuePlaying ? "" : "/8") + ")");
+      fireConquerEffects(defIdx, bi);
       if (np[defIdx].score >= 8 && !continuePlaying) { setWin(defIdx); setScreen("go"); setBfs(nb); setPs(np); return; }
     } else {
       aL("No points awarded.");
@@ -3175,9 +3393,29 @@ function RiftboundGame() {
       </div>}
 
       {/* Auto-mode prompt modal */}
-      {autoPrompt && <div style={{ position: "fixed", top: 60, left: "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #FFD70088", boxShadow: "0 8px 32px #000c, 0 0 24px #FFD70022", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 280, pointerEvents: "auto" }}>
+      {autoPrompt && autoPrompt.kind === "placeTokens" && (function() {
+        var placed = Object.keys(autoPrompt._placements || {}).reduce(function(a, k) { return a + (autoPrompt._placements[k] || 0); }, 0);
+        var remaining = autoPrompt.total - placed;
+        return <div style={{ position: "fixed", top: 60, left: "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #FFD70088", boxShadow: "0 8px 32px #000c, 0 0 24px #FFD70022", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 320, pointerEvents: "auto" }}>
+          <div style={{ fontSize: 11, color: "#FFD70099", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
+          <div style={{ fontSize: 14, color: "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{"Place " + autoPrompt.total + " " + autoPrompt.tokenName + " (" + remaining + " left)"}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
+            {autoPrompt.locations.map(function(loc) { var c = (autoPrompt._placements && autoPrompt._placements[loc.key]) || 0; return <div key={loc.key} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px", borderRadius: 4, background: "rgba(255,215,0,0.05)", border: "1px solid #FFD70033" }}>
+              <span style={{ flex: 1, fontFamily: "Spectral,serif", color: "#ddd", fontSize: 13 }}>{loc.label}</span>
+              <span style={{ fontFamily: "Spectral,serif", fontWeight: 700, color: c > 0 ? "#FFD700" : "#666", minWidth: 20, textAlign: "center" }}>{c}</span>
+              <button onClick={function() { bumpPlacementCount(loc.key, -1); }} disabled={c === 0} style={{ width: 24, height: 24, borderRadius: "50%", border: "1px solid #FFD70044", background: c === 0 ? "transparent" : "rgba(255,215,0,0.1)", color: c === 0 ? "#444" : "#FFD700", cursor: c === 0 ? "not-allowed" : "pointer", fontSize: 14, fontWeight: 700 }}>−</button>
+              <button onClick={function() { bumpPlacementCount(loc.key, 1); }} disabled={remaining === 0} style={{ width: 24, height: 24, borderRadius: "50%", border: "1px solid #4ADE8066", background: remaining === 0 ? "transparent" : "rgba(74,222,128,0.1)", color: remaining === 0 ? "#444" : "#4ADE80", cursor: remaining === 0 ? "not-allowed" : "pointer", fontSize: 14, fontWeight: 700 }}>+</button>
+            </div>; })}
+          </div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button onClick={function() { resolvePlacementPrompt(); }} disabled={remaining !== 0} style={{ padding: "5px 16px", borderRadius: 5, border: "1.5px solid " + (remaining === 0 ? "#4ADE80" : "#444"), background: remaining === 0 ? "rgba(74,222,128,0.15)" : "transparent", color: remaining === 0 ? "#4ADE80" : "#666", cursor: remaining === 0 ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 700, fontFamily: "Spectral,serif" }}>Confirm</button>
+            <button onClick={function() { spawnTokensInBase(autoPrompt.tokenName, autoPrompt.total - placed); setAutoPrompt(null); }} style={{ padding: "5px 16px", borderRadius: 5, border: "1px solid #555", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif" }}>Rest to Base</button>
+          </div>
+        </div>;
+      })()}
+      {autoPrompt && autoPrompt.kind === "pickFriendlyUnits" && <div style={{ position: "fixed", top: 60, left: "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #FFD70088", boxShadow: "0 8px 32px #000c, 0 0 24px #FFD70022", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 280, pointerEvents: "auto" }}>
         <div style={{ fontSize: 11, color: "#FFD70099", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
-        <div style={{ fontSize: 14, color: "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{autoPrompt.kind === "pickFriendlyUnits" ? ("Click " + autoPrompt.n + " friendly unit" + (autoPrompt.n > 1 ? "s" : "") + " (" + ((autoPrompt._sel || []).length) + "/" + autoPrompt.n + ")") : "Make a choice"}</div>
+        <div style={{ fontSize: 14, color: "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{"Click " + autoPrompt.n + " friendly unit" + (autoPrompt.n > 1 ? "s" : "") + " (" + ((autoPrompt._sel || []).length) + "/" + autoPrompt.n + ")"}</div>
         <div style={{ display: "flex", gap: 6 }}>
           <button onClick={function() { var sel = _autoSelRef.current.slice(); if (sel.length === autoPrompt.n) resolveAutoPrompt(sel); }} disabled={(autoPrompt._sel || []).length !== autoPrompt.n} style={{ padding: "5px 16px", borderRadius: 5, border: "1.5px solid " + ((autoPrompt._sel || []).length === autoPrompt.n ? "#4ADE80" : "#444"), background: (autoPrompt._sel || []).length === autoPrompt.n ? "rgba(74,222,128,0.15)" : "transparent", color: (autoPrompt._sel || []).length === autoPrompt.n ? "#4ADE80" : "#666", cursor: (autoPrompt._sel || []).length === autoPrompt.n ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 700, fontFamily: "Spectral,serif" }}>Confirm</button>
           <button onClick={function() { setAutoPrompt(null); _autoSelRef.current = []; }} style={{ padding: "5px 16px", borderRadius: 5, border: "1px solid #555", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif" }}>Skip</button>
