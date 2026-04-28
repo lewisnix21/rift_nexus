@@ -153,7 +153,7 @@ function writeGameAction(code, state) {
   fbDb.ref("lobbies/" + code + "/gameState").set(state);
 }
 </script>
-<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}html,body{background:#0f0f23;overflow:hidden;font-family:'Inter',sans-serif;color:#ddd;text-rendering:optimizeLegibility;height:100%;width:100%}img{image-rendering:auto;-webkit-backface-visibility:hidden;backface-visibility:hidden}.card-hover,.bf-hover{-webkit-backface-visibility:hidden;backface-visibility:hidden;will-change:transform}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#FFD70033;border-radius:3px}button:hover{filter:brightness(1.15)}.card-hover{position:relative;z-index:1}.card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.hand-card-hover{position:relative;z-index:1}.hand-card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.75))}.card-tapped{position:relative;z-index:1}.card-tapped:hover{z-index:999 !important;filter:brightness(0.72) drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.gear-peek{position:relative;z-index:1}.gear-peek:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover{position:relative;z-index:1}.bf-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover-land{position:relative;z-index:1}.bf-hover-land:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.no-hover,.no-hover *{transition:none !important}.no-hover:hover,.no-hover:hover *{transform:none !important;filter:none !important;z-index:auto !important}@keyframes drawIn{0%{transform:translateX(500px) scale(0.4) rotate(-180deg);opacity:0}40%{opacity:1}100%{transform:translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}@keyframes fadeSlideUp{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-20px);opacity:0}}@keyframes untapGlow{0%{box-shadow:0 0 0 #FFD70000}50%{box-shadow:0 0 12px #FFD70066}100%{box-shadow:0 0 0 #FFD70000}}@keyframes cardDrawIn{0%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(180deg);opacity:0}40%{opacity:1}100%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes cardDrawOut{0%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}50%{opacity:0.7}100%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(-180deg);opacity:0}}.anim-recycle{animation:cardDrawOut 0.25s ease-in forwards !important;pointer-events:none;transition:none !important}.anim-rune-draw{animation:cardDrawIn 0.25s ease-out;transition:none !important}.anim-draw{animation:drawIn 0.25s ease-out;transition:none !important}@keyframes nameGlow{0%,100%{text-shadow:0 0 6px #FFD70033;opacity:0.7}50%{text-shadow:0 0 25px #FFD700ff,0 0 50px #FFD70088,0 0 80px #FFD70044;opacity:1}}@keyframes showdownPulse{0%,100%{box-shadow:inset 0 0 6px rgba(255,107,53,0.15),0 0 4px rgba(255,107,53,0.1);border-color:#FF6B3566}50%{box-shadow:inset 0 0 24px rgba(255,107,53,0.5),0 0 16px rgba(255,107,53,0.4);border-color:#FF6B35}}@keyframes turnPulse{0%,100%{box-shadow:inset 0 0 8px rgba(255,215,0,0.1),0 0 6px rgba(255,215,0,0.08);border-color:#FFD70044}50%{box-shadow:inset 0 0 20px rgba(255,215,0,0.3),0 0 14px rgba(255,215,0,0.25);border-color:#FFD700aa}}.anim-turn-pulse{animation:turnPulse 1.8s ease-in-out infinite}.anim-sd-pulse{animation:showdownPulse 1.2s ease-in-out infinite}.anim-name-glow{animation:nameGlow 1.2s ease-in-out infinite}.anim-pulse{animation:pulse 0.8s ease-in-out infinite}.anim-bin{animation:fadeSlideUp 0.4s ease-out forwards}.anim-untap{animation:untapGlow 0.6s ease-out}@keyframes pingRipple{0%{transform:translate(-50%,-50%) scale(0.3);opacity:1}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0}}.ping-dot{position:fixed;width:30px;height:30px;pointer-events:none;z-index:9997}.ping-dot::before,.ping-dot::after{content:'';position:absolute;top:50%;left:50%;width:100%;height:100%;border-radius:50%;border:2.5px solid #FFD700;transform:translate(-50%,-50%) scale(0.3);animation:pingRipple 0.8s ease-out forwards}.ping-dot::after{animation-delay:0.15s}[draggable=true]{cursor:grab;-webkit-user-select:none;user-select:none;touch-action:none;transition:none !important;animation-duration:0s !important}[draggable=true]:active{cursor:grabbing;opacity:0.6}[draggable=true] *{transition:none !important}[draggable=true] img{pointer-events:none;-webkit-user-drag:none}[data-action]{position:relative}[data-action]::after{content:attr(data-action);position:absolute;inset:0;background:rgba(0,0,0,0.42);color:#fff;display:none;align-items:center;justify-content:center;font-family:'Spectral',serif;font-weight:800;letter-spacing:3px;text-transform:uppercase;text-shadow:0 2px 8px rgba(0,0,0,0.9);pointer-events:none;border-radius:inherit;z-index:20;font-size:14px;text-align:center;padding:0 4px}[data-action]:hover::after{display:flex}@keyframes autoFlash{0%,100%{box-shadow:0 0 0 #FFD70000;filter:brightness(1)}40%{box-shadow:0 0 32px #FFD700cc,0 0 64px #FFD70066;filter:brightness(1.45) saturate(1.2)}}.anim-flash{animation:autoFlash 0.8s ease-in-out;border-radius:6px}@keyframes autoBannerIn{0%{transform:translate(-50%,-12px);opacity:0}15%{transform:translate(-50%,0);opacity:1}85%{transform:translate(-50%,0);opacity:1}100%{transform:translate(-50%,-12px);opacity:0}}.auto-banner{position:fixed;top:14px;left:50%;transform:translate(-50%,0);z-index:1500;padding:8px 22px;border-radius:6px;background:linear-gradient(135deg,#1a1a3a,#0f0f23);border:2px solid #FFD70088;color:#FFD700;font-family:'Spectral',serif;font-weight:700;font-size:15px;letter-spacing:1.5px;text-transform:uppercase;box-shadow:0 6px 24px #000a,0 0 20px #FFD70033;pointer-events:none;animation:autoBannerIn 2.4s ease-out forwards}.auto-banner .auto-tag{font-size:10px;color:#FFD70099;letter-spacing:3px;display:block;margin-bottom:2px}</style></head><body><div id="root"></div>
+<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}html,body{background:#0f0f23;overflow:hidden;font-family:'Inter',sans-serif;color:#ddd;text-rendering:optimizeLegibility;height:100%;width:100%}img{image-rendering:auto;-webkit-backface-visibility:hidden;backface-visibility:hidden}.card-hover,.bf-hover{-webkit-backface-visibility:hidden;backface-visibility:hidden;will-change:transform}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#FFD70033;border-radius:3px}button:hover{filter:brightness(1.15)}.card-hover{position:relative;z-index:1}.card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.hand-card-hover{position:relative;z-index:1}.hand-card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.75))}.card-tapped{position:relative;z-index:1}.card-tapped:hover{z-index:999 !important;filter:brightness(0.72) drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.gear-peek{position:relative;z-index:1}.gear-peek:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover{position:relative;z-index:1}.bf-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover-land{position:relative;z-index:1}.bf-hover-land:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.no-hover,.no-hover *{transition:none !important}.no-hover:hover,.no-hover:hover *{transform:none !important;filter:none !important;z-index:auto !important}@keyframes drawIn{0%{transform:translateX(500px) scale(0.4) rotate(-180deg);opacity:0}40%{opacity:1}100%{transform:translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}@keyframes fadeSlideUp{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-20px);opacity:0}}@keyframes untapGlow{0%{box-shadow:0 0 0 #FFD70000}50%{box-shadow:0 0 12px #FFD70066}100%{box-shadow:0 0 0 #FFD70000}}@keyframes cardDrawIn{0%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(180deg);opacity:0}40%{opacity:1}100%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes cardDrawOut{0%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}50%{opacity:0.7}100%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(-180deg);opacity:0}}.anim-recycle{animation:cardDrawOut 0.25s ease-in forwards !important;pointer-events:none;transition:none !important}.anim-rune-draw{animation:cardDrawIn 0.25s ease-out;transition:none !important}.anim-draw{animation:drawIn 0.25s ease-out;transition:none !important}@keyframes nameGlow{0%,100%{text-shadow:0 0 6px #FFD70033;opacity:0.7}50%{text-shadow:0 0 25px #FFD700ff,0 0 50px #FFD70088,0 0 80px #FFD70044;opacity:1}}@keyframes showdownPulse{0%,100%{box-shadow:inset 0 0 6px rgba(255,107,53,0.15),0 0 4px rgba(255,107,53,0.1);border-color:#FF6B3566}50%{box-shadow:inset 0 0 24px rgba(255,107,53,0.5),0 0 16px rgba(255,107,53,0.4);border-color:#FF6B35}}@keyframes turnPulse{0%,100%{box-shadow:inset 0 0 8px rgba(255,215,0,0.1),0 0 6px rgba(255,215,0,0.08);border-color:#FFD70044}50%{box-shadow:inset 0 0 20px rgba(255,215,0,0.3),0 0 14px rgba(255,215,0,0.25);border-color:#FFD700aa}}.anim-turn-pulse{animation:turnPulse 1.8s ease-in-out infinite}.anim-sd-pulse{animation:showdownPulse 1.2s ease-in-out infinite}.anim-name-glow{animation:nameGlow 1.2s ease-in-out infinite}.anim-pulse{animation:pulse 0.8s ease-in-out infinite}.anim-bin{animation:fadeSlideUp 0.4s ease-out forwards}.anim-untap{animation:untapGlow 0.6s ease-out}@keyframes pingRipple{0%{transform:translate(-50%,-50%) scale(0.3);opacity:1}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0}}.ping-dot{position:fixed;width:30px;height:30px;pointer-events:none;z-index:9997}.ping-dot::before,.ping-dot::after{content:'';position:absolute;top:50%;left:50%;width:100%;height:100%;border-radius:50%;border:2.5px solid #FFD700;transform:translate(-50%,-50%) scale(0.3);animation:pingRipple 0.8s ease-out forwards}.ping-dot::after{animation-delay:0.15s}[draggable=true]{cursor:grab;-webkit-user-select:none;user-select:none;touch-action:none;transition:none !important;animation-duration:0s !important}[draggable=true]:active{cursor:grabbing;opacity:0.6}[draggable=true] *{transition:none !important}[draggable=true] img{pointer-events:none;-webkit-user-drag:none}[data-action]{position:relative}[data-action]::after{content:attr(data-action);position:absolute;inset:0;background:rgba(0,0,0,0.42);color:#fff;display:none;align-items:center;justify-content:center;font-family:'Spectral',serif;font-weight:800;letter-spacing:3px;text-transform:uppercase;text-shadow:0 2px 8px rgba(0,0,0,0.9);pointer-events:none;border-radius:inherit;z-index:20;font-size:14px;text-align:center;padding:0 4px}[data-action]:hover::after{display:flex}@keyframes autoFlash{0%,100%{box-shadow:0 0 0 #FFD70000;filter:brightness(1)}40%{box-shadow:0 0 32px #FFD700cc,0 0 64px #FFD70066;filter:brightness(1.45) saturate(1.2)}}.anim-flash{animation:autoFlash 0.8s ease-in-out;border-radius:6px}@keyframes autoBannerIn{0%{transform:translate(-50%,-12px);opacity:0}15%{transform:translate(-50%,0);opacity:1}85%{transform:translate(-50%,0);opacity:1}100%{transform:translate(-50%,-12px);opacity:0}}.auto-banner{position:fixed;top:14px;left:50%;transform:translate(-50%,0);z-index:1500;padding:8px 22px;border-radius:6px;background:linear-gradient(135deg,#1a1a3a,#0f0f23);border:2px solid #FFD70088;color:#FFD700;font-family:'Spectral',serif;font-weight:700;font-size:15px;letter-spacing:1.5px;text-transform:uppercase;box-shadow:0 6px 24px #000a,0 0 20px #FFD70033;pointer-events:none;animation:autoBannerIn 4.4s ease-out forwards}.auto-banner .auto-tag{font-size:10px;color:#FFD70099;letter-spacing:3px;display:block;margin-bottom:2px}</style></head><body><div id="root"></div>
 <script>
 var IG="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/";
 var CARD_BACK="data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140"><rect width="100" height="140" rx="5" fill="#0f2640"/><rect x="4" y="4" width="92" height="132" rx="3" fill="none" stroke="#c8a84e" stroke-width="1"/><g stroke="#c8a84e" fill="none" stroke-width="0.8"><line x1="50" y1="18" x2="82" y2="50"/><line x1="50" y1="18" x2="18" y2="50"/><circle cx="50" cy="70" r="22"/><line x1="50" y1="122" x2="82" y2="90"/><line x1="50" y1="122" x2="18" y2="90"/><line x1="12" y1="70" x2="50" y2="38"/><line x1="88" y1="70" x2="50" y2="38"/><line x1="12" y1="70" x2="50" y2="102"/><line x1="88" y1="70" x2="50" y2="102"/><polygon points="50,38 82,70 50,102 18,70" stroke-width="1"/></g><text x="50" y="67" text-anchor="middle" font-size="7" font-weight="bold" fill="#c8a84e" font-family="serif">LEAGUE</text><text x="50" y="74" text-anchor="middle" font-size="5" fill="#c8a84e" font-family="serif">OF</text><text x="50" y="81" text-anchor="middle" font-size="6" font-weight="bold" fill="#c8a84e" font-family="serif">LEGENDS</text><polygon points="50,14 51.5,17 48.5,17" fill="#c8a84e"/><polygon points="50,126 51.5,123 48.5,123" fill="#c8a84e"/></svg>');
@@ -212,20 +212,101 @@ return{name:c.n,type:c.t,domain:c.d,domains:c.ds,energy:c.e,might:c.m,keywords:c
 //   onCast(ctx): runs when a Spell is cast. ctx has { card, flash(uid), banner(text), addWatcher(w), prompt(p) }
 //   watch.onUnitPlayed(ctx, unit): runs whenever a friendly unit is played while this watcher is active
 var CARD_EFFECTS = {
+  // ============ Garen precon (Body/Order) ============
+
+  // --- Units with ETB triggers ---
   "Vanguard Attendant": { entersReady: true, banner: "Vanguard Attendant enters ready" },
+
+  "Faithful Manufactor": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.spawnHere("Recruit (Demacian)", 1);
+      ctx.banner("Faithful Manufactor — Recruit token " + (ctx.where === "battlefield" ? "at " + (ctx.bfName || "battlefield") : "to base"));
+    }
+  },
+
+  "First Mate": {
+    onPlay: function(ctx) {
+      var others = ctx.countFriendlyUnits(ctx.card.uid);
+      if (others <= 0) { ctx.flash(ctx.card.uid); ctx.banner("First Mate — no other friendly units to ready"); return; }
+      ctx.flash(ctx.card.uid);
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, excludeUid: ctx.card.uid, sourceName: "First Mate", sourceUid: ctx.card.uid, effect: "ready" });
+    }
+  },
+
+  "Noxian Drummer": {
+    onPlay: function(ctx) {
+      // "When I move to a battlefield, play a 1 might Recruit token here." Auto-mode handles
+      // the play-direct-to-battlefield case (the most common); manual moves between battlefields
+      // would need an on-move hook (not yet implemented).
+      if (ctx.where !== "battlefield") return;
+      ctx.flash(ctx.card.uid);
+      ctx.spawnInBattlefield("Recruit (Demacian)", 1);
+      ctx.banner("Noxian Drummer — Recruit token at " + (ctx.bfName || "battlefield"));
+    }
+  },
+
+  // --- Spells ---
   "Confront": {
     onCast: function(ctx) {
       ctx.flash(ctx.card.uid);
       ctx.banner("Confront — your units enter ready this turn, draw 1");
       ctx.addWatcher({ kind: "ownUnitEntersReady", source: ctx.card.uid, sourceName: "Confront" });
+      ctx.draw(1);
     }
   },
+
   "Back to Back": {
     onCast: function(ctx) {
+      var friendly = ctx.countFriendlyUnits();
+      if (friendly <= 0) { ctx.flash(ctx.card.uid); ctx.banner("Back to Back — no friendly units to buff"); return; }
+      var n = Math.min(2, friendly);
       ctx.flash(ctx.card.uid);
-      ctx.prompt({ kind: "pickFriendlyUnits", n: 2, sourceName: "Back to Back", sourceUid: ctx.card.uid, effect: "tempMight", amount: 2, scope: "thisTurn" });
+      ctx.prompt({ kind: "pickFriendlyUnits", n: n, sourceName: "Back to Back", sourceUid: ctx.card.uid, effect: "tempMight", amount: 2, scope: "thisTurn" });
     }
-  }
+  },
+
+  "Decisive Strike": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var n = ctx.applyTempMightToAllFriendly(2);
+      if (n > 0) ctx.banner("Decisive Strike — +2 might to " + n + " friendly unit" + (n === 1 ? "" : "s"));
+      else ctx.banner("Decisive Strike — no friendly units to buff");
+    }
+  },
+
+  "Recruit the Vanguard": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.spawnInBase("Recruit (Demacian)", 4);
+      ctx.banner("Recruit the Vanguard — 4 Recruit tokens to base");
+    }
+  },
+
+  // --- Vanilla / passive-keyword units (no ETB; combat-time keywords like [Assault]/[Shield]
+  //     would need an on-attack/on-defend hook which isn't wired yet). Registered so the engine
+  //     knows the card is intentionally inert for auto-mode. ---
+  "Daring Poro":        { passive: "Assault — +1 might while attacking (manual)" },
+  "Vanguard Sergeant":  { passive: "Vanilla 4/4 (no ability)" },
+  "Petty Officer":      { passive: "Assault — +1 might while attacking (manual)" },
+  "Garen, Rugged":      { passive: "Assault 2 / Shield 2 — +2 might attacking or defending (manual)" },
+
+  // --- Cards that need hooks not yet implemented (registered as no-ops for now so they're
+  //     recognized; banners explain the limitation). ---
+  "Crackshot Corsair":  { passive: "On-attack damage — needs attack hook (manual)" },
+  "Dune Drake":         { passive: "On-attack conditional buff — needs attack hook (manual)" },
+  "Garen, Commander":   { passive: "Aura: other friendly units at this BF +1 might (manual)" },
+
+  // Champion's signature card — no per-card text effect at base; aura belongs to Commander/Rugged forms.
+  // (No CARD_EFFECTS entry needed; this comment is just for clarity.)
+
+  // --- Legend ---
+  "Might of Demacia - Starter": { passive: "On-conquer w/ 4+ units: draw 2 — needs on-conquer hook (manual)" },
+
+  // --- Battlefields ---
+  "Trifarian War Camp": { passive: "Aura: units here +1 might — needs aura system (manual)" },
+  "The Grand Plaza":    { passive: "Hold w/ 7+ units: instant win — needs on-hold hook (manual)" },
+  "Altar to Unity":     { passive: "On-hold: spawn Recruit token in base — needs on-hold hook (manual)" }
 };
 </script>
 <script type="text/babel">
@@ -2063,7 +2144,7 @@ function RiftboundGame() {
   var myPs = ps[myActIdx] || null;
 
   function addAnim(id, type, dur) { var d = dur || 300; var ts = Date.now(); setAnims(function(prev) { return prev.concat([{ id: id, type: type, ts: ts }]); }); setTimeout(function() { setAnims(function(prev) { return prev.filter(function(a) { return !(a.id === id && a.ts === ts); }); }); }, d); }
-  function showAutoBanner(text) { var ts = Date.now(); setAutoBanner({ text: text, ts: ts }); setTimeout(function() { setAutoBanner(function(b) { return (b && b.ts === ts) ? null : b; }); }, 2400); }
+  function showAutoBanner(text) { var ts = Date.now(); setAutoBanner({ text: text, ts: ts }); setTimeout(function() { setAutoBanner(function(b) { return (b && b.ts === ts) ? null : b; }); }, 4400); }
   function shouldEnterReady(card) {
     if (!autoMode) return false;
     var eff = CARD_EFFECTS[card.name];
@@ -2071,7 +2152,75 @@ function RiftboundGame() {
     if (autoWatchers.some(function(w) { return w.kind === "ownUnitEntersReady"; })) return true;
     return false;
   }
-  function fireUnitPlayedEffects(card) {
+  // --- Auto-mode helper functions (used inside CARD_EFFECTS via ctx) ---
+  function drawCards(n) {
+    setPs(function(prev) {
+      var idx = myActIdx; var p = prev[idx]; if (!p) return prev;
+      var d = Math.min(n, (p.mainDeck || []).length);
+      if (d <= 0) return prev;
+      var hand = (p.hand || []).slice(); var deck = (p.mainDeck || []).slice();
+      for (var i = 0; i < d; i++) { var c = deck.shift(); hand.push(c); addAnim(c.uid, "draw"); }
+      var np = prev.slice(); np[idx] = Object.assign({}, p, { hand: hand, mainDeck: deck });
+      return np;
+    });
+  }
+  function spawnTokensInBase(tokenName, count) {
+    setPs(function(prev) {
+      var idx = myActIdx; var p = prev[idx]; if (!p) return prev;
+      var base = (p.base || []).slice();
+      for (var i = 0; i < count; i++) { var tk = mkToken(tokenName); if (tk) { base.push(Object.assign({}, tk, { exhausted: true, counter: 1 })); addAnim(tk.uid, "draw"); } }
+      var np = prev.slice(); np[idx] = Object.assign({}, p, { base: base });
+      return np;
+    });
+  }
+  function spawnTokensInBattlefield(tokenName, count, bi) {
+    setBfs(function(prev) {
+      if (bi == null || bi < 0 || bi >= prev.length) return prev;
+      var idx = myActIdx;
+      var nb = prev.slice();
+      var b = Object.assign({}, nb[bi], { units: nb[bi].units.map(function(pu) { return pu.slice(); }) });
+      for (var i = 0; i < count; i++) { var tk = mkToken(tokenName); if (tk) { b.units[idx].push(Object.assign({}, tk, { exhausted: true, counter: 1 })); addAnim(tk.uid, "draw"); } }
+      nb[bi] = b;
+      return nb;
+    });
+  }
+  function spawnHere(tokenName, count, where, bi) {
+    if (where === "battlefield" && bi != null) spawnTokensInBattlefield(tokenName, count, bi);
+    else spawnTokensInBase(tokenName, count);
+  }
+  function countFriendlyUnits(excludeUid) {
+    var idx = myActIdx; var meP = ps[idx]; if (!meP) return 0;
+    var n = 0;
+    (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && c.uid !== excludeUid) n++; });
+    bfs.forEach(function(b) { var u = (b.units && b.units[idx]) || []; u.forEach(function(c) { if (c.uid !== excludeUid) n++; }); });
+    return n;
+  }
+  function friendlyUnitUids(excludeUid) {
+    var idx = myActIdx; var meP = ps[idx]; if (!meP) return [];
+    var ids = [];
+    (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && c.uid !== excludeUid) ids.push(c.uid); });
+    bfs.forEach(function(b) { var u = (b.units && b.units[idx]) || []; u.forEach(function(c) { if (c.uid !== excludeUid) ids.push(c.uid); }); });
+    return ids;
+  }
+  function applyTempMightToAllFriendly(amount) {
+    var ids = friendlyUnitUids();
+    if (ids.length > 0) applyTempMightToUids(ids, amount);
+    return ids.length;
+  }
+  function readyUidsAcrossPsAndBfs(uids) {
+    setPs(function(prev) {
+      var idx = myActIdx; var p = prev[idx]; if (!p) return prev;
+      var newBase = (p.base || []).map(function(c) { return uids.indexOf(c.uid) >= 0 ? Object.assign({}, c, { exhausted: false }) : c; });
+      var np = prev.slice(); np[idx] = Object.assign({}, p, { base: newBase });
+      return np;
+    });
+    setBfs(function(prev) {
+      var idx = myActIdx;
+      return prev.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu, pi) { return pi === idx ? pu.map(function(u) { return uids.indexOf(u.uid) >= 0 ? Object.assign({}, u, { exhausted: false }) : u; }) : pu; }) }); });
+    });
+    uids.forEach(function(uid2) { addAnim(uid2, "flash", 800); });
+  }
+  function fireUnitPlayedEffects(card, where, bi) {
     if (!autoMode) return;
     var eff = CARD_EFFECTS[card.name];
     if (eff && eff.entersReady && eff.banner) showAutoBanner("AUTO · " + eff.banner);
@@ -2081,27 +2230,46 @@ function RiftboundGame() {
         showAutoBanner("AUTO · " + w.sourceName + " — " + (card.name || "unit") + " enters ready");
       }
     });
+    if (eff && eff.onPlay) {
+      var ctx = makeAutoCtx(card, where, bi);
+      try { eff.onPlay(ctx); } catch(e) { console.error("CARD_EFFECTS onPlay error for " + card.name + ":", e); }
+    }
   }
   function applyTempMightToUids(uids, amount) {
-    var idx = myActIdx;
-    var meP = ps[idx]; if (!meP) return;
-    var newP = Object.assign({}, meP, { base: meP.base.map(function(c) { return uids.indexOf(c.uid) >= 0 ? Object.assign({}, c, { tempMight: (c.tempMight || 0) + amount }) : c; }) });
-    var newBfs = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.map(function(u) { return uids.indexOf(u.uid) >= 0 ? Object.assign({}, u, { tempMight: (u.tempMight || 0) + amount }) : u; }); }) }); });
-    var np = ps.slice(); np[idx] = newP;
-    setPs(np); setBfs(newBfs);
+    setPs(function(prev) {
+      var idx = myActIdx; var p = prev[idx]; if (!p) return prev;
+      var newP = Object.assign({}, p, { base: (p.base || []).map(function(c) { return uids.indexOf(c.uid) >= 0 ? Object.assign({}, c, { tempMight: (c.tempMight || 0) + amount }) : c; }) });
+      var np = prev.slice(); np[idx] = newP;
+      return np;
+    });
+    setBfs(function(prev) {
+      return prev.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.map(function(u) { return uids.indexOf(u.uid) >= 0 ? Object.assign({}, u, { tempMight: (u.tempMight || 0) + amount }) : u; }); }) }); });
+    });
+  }
+  function makeAutoCtx(card, where, bi) {
+    return {
+      card: card,
+      where: where || "base",
+      bi: (bi != null) ? bi : null,
+      bfName: (bi != null && bfs[bi]) ? bfs[bi].name : null,
+      flash: function(uid2) { addAnim(uid2, "flash", 800); },
+      banner: function(text) { showAutoBanner("AUTO · " + text); },
+      addWatcher: function(w) { setAutoWatchers(function(prev) { return prev.concat([w]); }); },
+      prompt: function(p2) { _autoSelRef.current = []; setAutoPrompt(p2); },
+      draw: function(n) { drawCards(n); },
+      spawnInBase: function(tokenName, count) { spawnTokensInBase(tokenName, count || 1); },
+      spawnInBattlefield: function(tokenName, count, bi2) { spawnTokensInBattlefield(tokenName, count || 1, (bi2 != null) ? bi2 : bi); },
+      spawnHere: function(tokenName, count) { spawnHere(tokenName, count || 1, where, bi); },
+      countFriendlyUnits: function(excludeUid) { return countFriendlyUnits(excludeUid); },
+      applyTempMightToAllFriendly: function(amount) { return applyTempMightToAllFriendly(amount); }
+    };
   }
   function runAutoOnCast(card) {
     if (!autoMode || !card) return;
     var eff = CARD_EFFECTS[card.name];
     if (!eff || !eff.onCast) return;
-    var ctx = {
-      card: card,
-      flash: function(uid) { addAnim(uid, "flash", 800); },
-      banner: function(text) { showAutoBanner("AUTO · " + text); },
-      addWatcher: function(w) { setAutoWatchers(function(prev) { return prev.concat([w]); }); },
-      prompt: function(p) { _autoSelRef.current = []; setAutoPrompt(p); }
-    };
-    eff.onCast(ctx);
+    var ctx = makeAutoCtx(card, "spell", null);
+    try { eff.onCast(ctx); } catch(e) { console.error("CARD_EFFECTS onCast error for " + card.name + ":", e); }
   }
   function resolveAutoPrompt(uids) {
     var p = autoPrompt; if (!p) return;
@@ -2109,12 +2277,17 @@ function RiftboundGame() {
       applyTempMightToUids(uids, p.amount);
       showAutoBanner("AUTO · " + p.sourceName + " — +" + p.amount + " might to " + uids.length + " unit" + (uids.length === 1 ? "" : "s"));
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+    } else if (p.effect === "ready") {
+      readyUidsAcrossPsAndBfs(uids);
+      showAutoBanner("AUTO · " + p.sourceName + " — readied " + uids.length + " unit" + (uids.length === 1 ? "" : "s"));
+      if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
     }
     setAutoPrompt(null);
     _autoSelRef.current = [];
   }
   function toggleAutoSel(uid) {
     if (!autoPrompt) return;
+    if (autoPrompt.excludeUid && uid === autoPrompt.excludeUid) return;
     var sel = _autoSelRef.current.slice();
     var i = sel.indexOf(uid);
     if (i >= 0) sel.splice(i, 1);
@@ -2629,9 +2802,10 @@ function RiftboundGame() {
     var _enterReadyBF = shouldEnterReady(card);
     nb[bi].units[myActIdx].push(Object.assign({}, card, { exhausted: !_enterReadyBF }));
     aL(pName(myActIdx) + " deploys " + cName(card) + " to " + nb[bi].name);
-    fireUnitPlayedEffects(card);
     if (autoRunes && (tappedDomainsBF.length > 0 || recycledDomainsBF.length > 0)) { var partsBF = []; if (tappedDomainsBF.length) partsBF.push("tapped " + _fmtDomainsBF(tappedDomainsBF)); if (recycledDomainsBF.length) partsBF.push("recycled " + _fmtDomainsBF(recycledDomainsBF)); aL("  Paid: " + partsBF.join("; ")); }
     var np = ps.slice(); np[myActIdx] = p; setPs(np); setBfs(nb);
+    // Defer auto-mode play effects so they see the post-update state when reading ps/bfs.
+    var _bfBi = bi; setTimeout(function() { fireUnitPlayedEffects(card, "battlefield", _bfBi); }, 0);
     // Firming up an already-conquered battlefield (our units present, no enemy units) — no new showdown
     var _alreadyHeld = bfs[bi].units[myActIdx] && bfs[bi].units[myActIdx].length > 0;
     var _noEnemy = true;
@@ -2721,7 +2895,7 @@ function RiftboundGame() {
       if (autoRunes && (tappedDomains.length > 0 || recycledDomains.length > 0)) { var parts = []; if (tappedDomains.length) parts.push("tapped " + _fmtDomains(tappedDomains)); if (recycledDomains.length) parts.push("recycled " + _fmtDomains(recycledDomains)); aL("  Paid: " + parts.join("; ")); }
       if (/draw 1/i.test(card.text) && p.mainDeck.length > 0) { p.hand = p.hand.concat([p.mainDeck.shift()]); aL("  Draw 1"); }
       if (/draw 2/i.test(card.text)) { var d = p.mainDeck.splice(0, Math.min(2, p.mainDeck.length)); p.hand = p.hand.concat(d); }
-      fireUnitPlayedEffects(card);
+      setTimeout(function() { fireUnitPlayedEffects(card, "base", null); }, 0);
     } else if (card.type === "Gear") {
       p.base = p.base.concat([Object.assign({}, card, { exhausted: false })]);
       aL(pName(myActIdx) + " plays " + cName(card) + " to base");
@@ -2755,7 +2929,7 @@ function RiftboundGame() {
       aL(pName(idx) + " plays " + cName(card));
       if (/draw 1/i.test(card.text) && p.mainDeck.length > 0) { p.hand = p.hand.concat([p.mainDeck.shift()]); aL("  Draw 1"); }
       if (/draw 2/i.test(card.text)) { var d = p.mainDeck.splice(0, Math.min(2, p.mainDeck.length)); p.hand = p.hand.concat(d); }
-      fireUnitPlayedEffects(card);
+      setTimeout(function() { fireUnitPlayedEffects(card, "base", null); }, 0);
     } else if (card.type === "Spell") {
       p.trash = (p.trash || []).concat([card]); aL(pName(idx) + " casts " + cName(card));
       if (/Draw 2 cards/i.test(card.text)) { var d2 = p.mainDeck.splice(0, 2); p.hand = p.hand.concat(d2); }
