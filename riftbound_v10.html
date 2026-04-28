@@ -94,7 +94,9 @@ function createLobby(mode, password, cb) {
     settings: { mode: mode.name, pc: mode.pc, password: password || null, status: "waiting", createdAt: Date.now() },
     players: {}
   };
-  lobby.players[myUid] = { name: myName, deck: null, ready: false, slot: 0 };
+  // Doubles: alternate default team assignment by slot (slot 0,2 -> red; 1,3 -> blue)
+  var _initTeam = mode.name === "Doubles" ? "red" : null;
+  lobby.players[myUid] = { name: myName, deck: null, ready: false, slot: 0, team: _initTeam };
   fbDb.ref("lobbies/" + code).set(lobby, function(err) {
     if (!err) {
       _currentLobbyCode = code;
@@ -113,7 +115,10 @@ function joinLobby(code, password, cb, errCb) {
     if (lobby.settings.password && lobby.settings.password !== password) { if (errCb) errCb("Wrong password"); return; }
     var playerCount = Object.keys(lobby.players || {}).length;
     if (playerCount >= lobby.settings.pc) { if (errCb) errCb("Lobby full"); return; }
-    var playerData = { name: myName, deck: null, ready: false, slot: playerCount };
+    // Doubles: default team alternates with slot — slot 0,2 -> red; 1,3 -> blue
+    var _isDoubles = lobby.settings && lobby.settings.mode === "Doubles";
+    var _joinTeam = _isDoubles ? (playerCount % 2 === 0 ? "red" : "blue") : null;
+    var playerData = { name: myName, deck: null, ready: false, slot: playerCount, team: _joinTeam };
     fbDb.ref("lobbies/" + code + "/players/" + myUid).set(playerData, function(err) {
       if (!err) {
         _currentLobbyCode = code;
@@ -447,6 +452,9 @@ function RiftboundGame() {
       setShowcaseCard(card);
       setShowcaseOwner(myUid);
       setShowcaseAccepted(false);
+      // Caster's acceptance is implicit — they're the actor, others must accept.
+      var initAcc = {}; initAcc[myUid] = true;
+      setShowcaseAcceptors(initAcc);
       setShowcasePriority(otherUid || myUid);
       setShowcaseActed(false);
       return;
@@ -455,16 +463,50 @@ function RiftboundGame() {
     setShowcaseCard(card);
     if (!showcaseOwner) { setShowcaseOwner(myUid); }
     setShowcaseAccepted(false);
+    // Caster's acceptance is implicit — they're the actor, others must accept.
+    var newCastAcc = {}; newCastAcc[myUid] = true;
+    setShowcaseAcceptors(newCastAcc);
     // Priority passes to the OTHER player after any spell cast — they now have the chance to respond
     setShowcasePriority(otherUid || myUid);
     setShowcaseActed(false);
   }
   var _scOwner = useState(null), showcaseOwner = _scOwner[0], setShowcaseOwner = _scOwner[1];
   var _scAccepted = useState(false), showcaseAccepted = _scAccepted[0], setShowcaseAccepted = _scAccepted[1];
+  // 3+ player games: per-uid acceptance tracking. Keys are uids of non-owners who have accepted the current showcase.
+  var _scAcceptors = useState({}), showcaseAcceptors = _scAcceptors[0], setShowcaseAcceptors = _scAcceptors[1];
   var _scPriority = useState(null), showcasePriority = _scPriority[0], setShowcasePriority = _scPriority[1];
   var _scActed = useState(false), showcaseActed = _scActed[0], setShowcaseActed = _scActed[1];
   function _otherPlayerUid() { var ks = Object.keys(lobbyPlayers || {}); for (var i = 0; i < ks.length; i++) { if (ks[i] !== myUid) return ks[i]; } return null; }
-  function markShowcaseActed() { if (showcaseCard && !showcaseAccepted && showcasePriority === myUid) setShowcaseActed(true); }
+  function markShowcaseActed() {
+    if (!showcaseCard || showcaseAccepted) return;
+    if (pc >= 3) {
+      // 3+ players: any action by player X invalidates the OTHER players' acceptances —
+      // remaining players must re-accept. The actor is treated as implicitly having accepted.
+      var hadOthers = Object.keys(showcaseAcceptors).some(function(u) { return u !== myUid; });
+      var newAcc = {}; newAcc[myUid] = true;
+      setShowcaseAcceptors(newAcc);
+      if (hadOthers) aL(pName(mySlot) + " interrupted — remaining players must re-accept the showcase");
+      setShowcaseActed(true);
+    } else if (showcasePriority === myUid) {
+      // 1v1: only the priority holder can mark acted
+      setShowcaseActed(true);
+    }
+  }
+  // Helper: mark a showdown action; in 3+ player games, the actor's acceptance is preserved
+  // but everyone else's is invalidated.
+  function markSdActed(currentSd) {
+    var src = currentSd || sd;
+    if (!src) return null;
+    var next = Object.assign({}, src, { acted: true });
+    if (pc >= 3) {
+      var hadOthers = src.acceptors && Object.keys(src.acceptors).some(function(k) { return Number(k) !== mySlot; });
+      var newAcc = {}; newAcc[mySlot] = true;
+      next.acceptors = newAcc;
+      if (hadOthers) aL(pName(mySlot) + " interrupted — remaining players must re-pass the showdown");
+    }
+    setSd(next);
+    return next;
+  }
   var _deckTab = useState(null), deckTab = _deckTab[0], setDeckTab = _deckTab[1];
   var _readyErr = useState(""), readyErr = _readyErr[0], setReadyErr = _readyErr[1];
   var _preDeck = useState(null), preselectedDeck = _preDeck[0], setPreselectedDeck = _preDeck[1];
@@ -492,6 +534,10 @@ function RiftboundGame() {
   var _diceRoll = useState(null), diceRoll = _diceRoll[0], setDiceRoll = _diceRoll[1];
   var _diceWinner = useState(null), diceWinner = _diceWinner[0], setDiceWinner = _diceWinner[1];
   var _firstPlayerIdx = useState(0), firstPlayerIdx = _firstPlayerIdx[0], setFirstPlayerIdx = _firstPlayerIdx[1];
+  // Multi-player spotlight: which non-self player is shown in the top enemy zone.
+  // null = use the default (active player). Hover takes priority over click.
+  var _spotlightClick = useState(null), spotlightClickIdx = _spotlightClick[0], setSpotlightClickIdx = _spotlightClick[1];
+  var _spotlightHov = useState(null), spotlightHovIdx = _spotlightHov[0], setSpotlightHovIdx = _spotlightHov[1];
   var _dbSavedDecks = useState([]), dbSavedDecks = _dbSavedDecks[0], setDbSavedDecks = _dbSavedDecks[1];
   var _dbEditId = useState(null), dbEditId = _dbEditId[0], setDbEditId = _dbEditId[1];
   var _dbSearch = useState(""), dbSearch = _dbSearch[0], setDbSearch = _dbSearch[1];
@@ -623,6 +669,21 @@ function RiftboundGame() {
   var _syncTimer = useRef(null);
   var _lastSyncVersion = useRef(0);
   var _isReceivingSync = useRef(false);
+  // Remember the last enemy shown in the spotlight, so when it becomes my turn we don't reset focus.
+  var _lastSpotlightRef = useRef(null);
+  // Spacebar end-turn ref + listener — defined at the top so hooks aren't called conditionally.
+  // The function body that reads current state is reassigned to .current on each render below.
+  var endTurnKeyRef = useRef(function() {});
+  useEffect(function() {
+    function onKey(e) {
+      if (e.code !== "Space" && e.key !== " ") return;
+      var t = e.target;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || (t.isContentEditable))) return;
+      if (endTurnKeyRef.current) { e.preventDefault(); endTurnKeyRef.current(); }
+    }
+    window.addEventListener("keydown", onKey);
+    return function() { window.removeEventListener("keydown", onKey); };
+  }, []);
 
   function syncGameState() {
     if (!roomCode || lobbyType === "test") return;
@@ -673,10 +734,10 @@ function RiftboundGame() {
     if (!roomCode || lobbyType === "test" || _scFromRemote.current) return;
     if (_gamePhaseRef.current !== "playing") return;
     try {
-      var scData = { card: serializeCard(showcaseCard), history: showcaseHistory.map(serializeCard), owner: showcaseOwner, accepted: showcaseAccepted, priority: showcasePriority, acted: showcaseActed, by: myUid };
+      var scData = { card: serializeCard(showcaseCard), history: showcaseHistory.map(serializeCard), owner: showcaseOwner, accepted: showcaseAccepted, priority: showcasePriority, acted: showcaseActed, acceptors: showcaseAcceptors || {}, by: myUid };
       fbDb.ref("lobbies/" + roomCode + "/showcase").set(scData);
     } catch(e) { console.error("Showcase sync error:", e); }
-  }, [showcaseCard, showcaseHistory, showcaseAccepted, showcasePriority, showcaseActed]);
+  }, [showcaseCard, showcaseHistory, showcaseAccepted, showcasePriority, showcaseActed, showcaseAcceptors]);
 
   // Listen for showcase from other players
   useEffect(function() {
@@ -692,6 +753,7 @@ function RiftboundGame() {
       setShowcaseAccepted(data ? !!data.accepted : false);
       setShowcasePriority(data ? data.priority || null : null);
       setShowcaseActed(data ? !!data.acted : false);
+      setShowcaseAcceptors(data && data.acceptors ? data.acceptors : {});
       setTimeout(function() { _scFromRemote.current = false; }, 50);
     });
     return function() { ref.off("value", handler); };
@@ -825,7 +887,7 @@ function RiftboundGame() {
         var myIdx = slots.findIndex(function(s) { return s.uid === myUid; });
         setMySlot(myIdx >= 0 ? myIdx : 0);
         slots.forEach(function(s) { if (s.deckData && !DECKS[s.deck]) { DECKS[s.deck] = s.deckData; if (DNAMES.indexOf(s.deck) < 0) DNAMES.push(s.deck); } });
-        var nps = slots.map(function(s) { return initPlayer(s.deck); });
+        var nps = slots.map(function(s) { var pl = initPlayer(s.deck); pl.team = s.team || null; return pl; });
         setPs(nps);
         if (_isHostNow && _roomNow) {
           _lastSyncVersion.current++;
@@ -853,14 +915,20 @@ function RiftboundGame() {
         setDiceRoll(null);
         aL(slots[fpIdx] ? slots[fpIdx].name + " draws first." : "");
         // Update phase in Firebase so BF completion check works
-        if (_roomNow) fbDb.ref("lobbies/" + _roomNow + "/gameState/phase").set("bf");
+        if (_roomNow) {
+          fbDb.ref("lobbies/" + _roomNow + "/gameState/phase").set("bf");
+          // 4-player: first player skips the BF pick (only 3 battlefields, contributed by the other three).
+          if (slots && slots.length === 4 && slots[fpIdx]) {
+            fbDb.ref("lobbies/" + _roomNow + "/gameState/bfChoices/" + slots[fpIdx].uid).set("__skipped__");
+          }
+        }
       }
       // Step 3: BF selection
       if (gs.phase === "bf" && gs.bfChoices) {
         var bfSlots = gs.slots || [];
         var allChosen = bfSlots.every(function(s) { return gs.bfChoices[s.uid]; });
         if (allChosen && _gamePhaseRef.current !== "mull" && _gamePhaseRef.current !== "mullDone" && _gamePhaseRef.current !== "playing") {
-          var chosenBfs = bfSlots.map(function(s) { return gs.bfChoices[s.uid]; }).filter(Boolean);
+          var chosenBfs = bfSlots.map(function(s) { return gs.bfChoices[s.uid]; }).filter(function(v) { return v && v !== "__skipped__"; });
           var numB = bfSlots.length === 2 ? 2 : 3;
           var gb = chosenBfs.slice(0, numB).map(function(bfName) { var bfCard = mkC(bfName); return bfCard ? Object.assign({}, bfCard, { controller: null, units: Array.from({ length: bfSlots.length }, function() { return []; }), uid: uid() }) : null; }).filter(Boolean);
           setBfs(gb);
@@ -889,7 +957,11 @@ function RiftboundGame() {
               });
             });
           });
-          setTurn(1); setAct(firstPlayerIdx);
+          // Read first-player from Firebase data, NOT React closure state — the listener can be
+          // a stale closure where firstPlayerIdx hasn't been updated yet.
+          var fpIdxNow = (typeof gs.firstPlayer === "number") ? gs.firstPlayer : 0;
+          setFirstPlayerIdx(fpIdxNow);
+          setTurn(1); setAct(fpIdxNow);
           aL("Game on!");
           setScreen("wait");
         }
@@ -973,6 +1045,25 @@ function RiftboundGame() {
 
   var isOnlineGame = lobbyType === "host" || lobbyType === "join";
   var viewSlot = isOnlineGame ? mySlot : act;
+  // Compute the effective spotlight enemy index — the player shown in the top enemy zone.
+  // Default order: active player (if not me) → last spotlight (when it's my turn) → first non-self.
+  // Click overrides default; hover overrides click.
+  var _validSpotlight = function(v) { return v !== null && v !== undefined && v !== viewSlot && v >= 0 && v < ps.length; };
+  var _defaultSpotlight;
+  if (act !== viewSlot) {
+    _defaultSpotlight = act;
+  } else if (_validSpotlight(_lastSpotlightRef.current)) {
+    // It's my turn — keep showing whoever was previously spotlighted instead of jumping to "first enemy".
+    _defaultSpotlight = _lastSpotlightRef.current;
+  } else {
+    _defaultSpotlight = ps.findIndex(function(_, i) { return i !== viewSlot; });
+  }
+  var effectiveSpotlight = _validSpotlight(spotlightHovIdx) ? spotlightHovIdx : (_validSpotlight(spotlightClickIdx) ? spotlightClickIdx : _defaultSpotlight);
+  if (!_validSpotlight(effectiveSpotlight)) effectiveSpotlight = _defaultSpotlight;
+  // Remember the current spotlight so we can fall back to it next render. (Skip hover so it doesn't stick on a transient peek.)
+  if (_validSpotlight(effectiveSpotlight) && spotlightHovIdx === null) {
+    _lastSpotlightRef.current = effectiveSpotlight;
+  }
   var cur = ps[act] || null; // Active player's data (used by all game logic)
   var myCur = ps[viewSlot] || null; // My own data (used for rendering my hand/runes/base)
   var numBfs = pc === 2 ? 2 : 3;
@@ -989,7 +1080,7 @@ function RiftboundGame() {
     _gamePhaseRef.current = null;
     setScreen("mode"); setPs([]); setBfs([]); setTurn(1); setAct(0); setWin(null);
     setLog([]); setDp({}); setSel(null); setTm(null); setFc(null); setTr([]);
-    setZoom(null); setSd(null); setPc(2); setMc([]); setContinuePlaying(false); setCpVotes({}); setArrows([]); setDrawingArrow(null); setShowcaseHistory([]); setShowcaseOwner(null); setShowcaseAccepted(false); setShowcasePriority(null); setShowcaseActed(false);
+    setZoom(null); setSd(null); setPc(2); setMc([]); setContinuePlaying(false); setCpVotes({}); setArrows([]); setDrawingArrow(null); setShowcaseHistory([]); setShowcaseOwner(null); setShowcaseAccepted(false); setShowcaseAcceptors({}); setShowcasePriority(null); setShowcaseActed(false);
   }
 
   // lobbyType/lobbyMode/lobbyFilter moved to top of component (before early returns)
@@ -1023,7 +1114,28 @@ function RiftboundGame() {
   if (screen === "mode") {
     var modes = [{name:"Normal",sub:"1v1",pc:2},{name:"3 Player",sub:"1v1v1",pc:3},{name:"4 Player",sub:"1v1v1v1",pc:4},{name:"Doubles",sub:"2v2",pc:4},{name:"Quick Start",sub:"Lee Sin vs Garen",pc:2,quick:true}];
     var lpArr = Object.keys(lobbyPlayers).map(function(uid2) { return Object.assign({}, lobbyPlayers[uid2], { uid: uid2 }); }).sort(function(a, b) { return a.slot - b.slot; });
-    var allLobbyReady = roomCode && lpArr.length >= (lobbySettings ? lobbySettings.pc : 2) && lpArr.every(function(p) { return p.deck && p.name && p.name.trim() && p.ready; });
+    var _isDoublesLobby = lobbySettings && lobbySettings.mode === "Doubles";
+    // Doubles validation: 2 reds + 2 blues, each team has unique legends, each team has unique battlefields
+    var _doublesIssues = [];
+    if (_isDoublesLobby && lpArr.length === 4) {
+      var redP = lpArr.filter(function(p) { return p.team === "red"; });
+      var blueP = lpArr.filter(function(p) { return p.team === "blue"; });
+      if (redP.length !== 2 || blueP.length !== 2) _doublesIssues.push("teams must be 2v2 (currently " + redP.length + "v" + blueP.length + ")");
+      [["red", redP], ["blue", blueP]].forEach(function(pair) {
+        var team = pair[0]; var members = pair[1];
+        if (members.length !== 2) return;
+        var p1 = members[0]; var p2 = members[1];
+        var d1 = p1.deck && DECKS[p1.deck];
+        var d2 = p2.deck && DECKS[p2.deck];
+        if (d1 && d2) {
+          if (d1.legend && d2.legend && d1.legend === d2.legend) _doublesIssues.push(team + " team: both players have legend " + d1.legend + " — partners must bring different legends");
+          var bfs1 = (d1.bfs || []); var bfs2 = (d2.bfs || []);
+          var dupes = bfs1.filter(function(b) { return bfs2.indexOf(b) >= 0; });
+          if (dupes.length > 0) _doublesIssues.push(team + " team: shared battlefields (" + dupes.join(", ") + ") — partners must bring different battlefields");
+        }
+      });
+    }
+    var allLobbyReady = roomCode && lpArr.length >= (lobbySettings ? lobbySettings.pc : 2) && lpArr.every(function(p) { return p.deck && p.name && p.name.trim() && p.ready && (!_isDoublesLobby || p.team); }) && _doublesIssues.length === 0;
     return (
     <div style={{ height: "100vh", maxHeight: "100vh", background: "linear-gradient(180deg, #2a2a50 0%, #333368 30%, #3d3d7a 50%, #333368 70%, #2a2a50 100%)", color: "#ddd", fontFamily: "sans-serif", display: "flex", flexDirection: "column", alignItems: "center", overflow: "hidden", padding: 0, position: "relative" }}>
       {/* Top header bar */}
@@ -1103,7 +1215,7 @@ function RiftboundGame() {
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
           {modes.filter(function(m) { return !m.quick; }).map(function(mode) {
             var sel2 = lobbyMode && lobbyMode.name === mode.name;
-            var isAvail = mode.name === "Normal" || mode.quick;
+            var isAvail = mode.name === "Normal" || mode.name === "3 Player" || mode.name === "4 Player" || mode.name === "Doubles" || mode.quick;
             return <button key={mode.name} onClick={isAvail ? function() { setLobbyMode(mode); localStorage.setItem("riftNexusLastMode", mode.name); setDp({}); } : undefined} style={{ padding: "8px 14px", borderRadius: 6, border: "2px solid " + (sel2 ? "#FFD700" : isAvail ? "#FFD70044" : "#ffffff12"), background: sel2 ? "#FFD70020" : isAvail ? "#FFD70008" : "transparent", color: sel2 ? "#FFD700" : isAvail ? "#FFD700aa" : "#ffffff25", cursor: isAvail ? "pointer" : "not-allowed", fontSize: 15, fontWeight: 700, minWidth: 90, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, transition: "all 0.15s ease", opacity: isAvail ? 1 : 0.4 }}><span>{mode.name}</span><span style={{ fontSize: 11, fontWeight: 400, color: sel2 ? "#FFD700aa" : isAvail ? "#FFD70066" : "#ffffff15" }}>{isAvail ? mode.sub : "Coming Soon"}</span></button>;
           })}
         </div>
@@ -1143,7 +1255,7 @@ function RiftboundGame() {
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
-          {lpArr.map(function(p, i) { var isMe = p.uid === myUid; var displayDeckName = p.deck ? (p.deck.indexOf(" (") > 0 ? p.deck.substring(0, p.deck.indexOf(" (")) : p.deck) : null; return <div key={p.uid} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 5, border: "1px solid " + (isMe ? "#FFD70055" : "#ffffff20"), background: isMe ? "#FFD70008" : "transparent" }}><span style={{ fontSize: 14, fontWeight: 700, color: isMe ? "#FFD700" : "#aaa", flex: 1 }}>{p.name} {i === 0 ? "👑" : ""}</span><span style={{ fontSize: 12, color: p.ready ? "#4ADE80" : p.deck ? "#888" : "#666" }}>{p.ready ? "✓ Ready" : (displayDeckName || "Choosing...")}</span></div>; })}
+          {lpArr.map(function(p, i) { var isMe = p.uid === myUid; var displayDeckName = p.deck ? (p.deck.indexOf(" (") > 0 ? p.deck.substring(0, p.deck.indexOf(" (")) : p.deck) : null; var teamCol = p.team === "red" ? "#ef4444" : p.team === "blue" ? "#3b82f6" : null; return <div key={p.uid} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 5, border: "1px solid " + (isMe ? "#FFD70055" : "#ffffff20"), background: isMe ? "#FFD70008" : "transparent" }}>{teamCol && <span style={{ fontSize: 10, color: teamCol, fontWeight: 700, fontFamily: "Spectral,serif", letterSpacing: 1, padding: "1px 5px", borderRadius: 3, border: "1px solid " + teamCol + "66", background: teamCol + "15" }}>{p.team.toUpperCase()}</span>}<span style={{ fontSize: 14, fontWeight: 700, color: isMe ? "#FFD700" : "#aaa", flex: 1 }}>{p.name} {i === 0 ? "👑" : ""}</span><span style={{ fontSize: 12, color: p.ready ? "#4ADE80" : p.deck ? "#888" : "#666" }}>{p.ready ? "✓ Ready" : (displayDeckName || "Choosing...")}</span></div>; })}
           {Array.from({ length: Math.max(0, (lobbySettings ? lobbySettings.pc : 2) - lpArr.length) }).map(function(_, i) { return <div key={"e" + i} style={{ padding: "6px 10px", borderRadius: 5, border: "1px dashed #ffffff20" }}><span style={{ fontSize: 13, color: "#444" }}>Waiting...</span></div>; })}
         </div>
         {/* Deck selector moved to right column */}
@@ -1182,6 +1294,7 @@ function RiftboundGame() {
             var reasons = [];
             if (!roomCode) reasons.push("lobby not ready");
             if (lpArr.length < (lobbySettings ? lobbySettings.pc : 2)) reasons.push("waiting for " + ((lobbySettings ? lobbySettings.pc : 2) - lpArr.length) + " more player(s)");
+            if (_doublesIssues.length > 0) _doublesIssues.forEach(function(d) { reasons.push(d); });
             var notReady = lpArr.filter(function(p) { return !(p.deck && p.name && p.name.trim() && p.ready); });
             if (notReady.length > 0) reasons.push(notReady.map(function(p) { var bits = []; if (!p.name || !p.name.trim()) bits.push("name"); if (!p.deck) bits.push("deck"); if (!p.ready) bits.push("ready"); return (p.name || "Unknown") + " (missing " + bits.join(", ") + ")"; }).join("; "));
             return reasons.length > 0 ? <div style={{ fontSize: 11, color: "#FFD700aa", fontFamily: "Spectral,serif", textAlign: "center" }}>{reasons.join(" · ")}</div> : null;
@@ -1203,7 +1316,7 @@ function RiftboundGame() {
             var slotsData = sorted.map(function(p) {
               // For custom decks, embed the full deck data so the other player can use it
               var deckData = DECKS[p.deck];
-              return { uid: p.uid, deck: p.deck, name: p.name, deckData: deckData ? { legend: deckData.legend, champ: deckData.champ, deck: deckData.deck, bfs: deckData.bfs, runes: deckData.runes } : null };
+              return { uid: p.uid, deck: p.deck, name: p.name, team: p.team || null, deckData: deckData ? { legend: deckData.legend, champ: deckData.champ, deck: deckData.deck, bfs: deckData.bfs, runes: deckData.runes } : null };
             });
             // Safety net: if anything's still missing after registration, abort cleanly
             var missing = slotsData.filter(function(s) { return !DECKS[s.deck]; });
@@ -1215,7 +1328,7 @@ function RiftboundGame() {
             setPc(sorted.length);
             var hostIdx = slotsData.findIndex(function(s) { return s.uid === myUid; });
             setMySlot(hostIdx >= 0 ? hostIdx : 0);
-            var nps = slotsData.map(function(s) { return initPlayer(s.deck); });
+            var nps = slotsData.map(function(s) { var pl = initPlayer(s.deck); pl.team = s.team || null; return pl; });
             setPs(nps);
             setTurn(1); setAct(0);
             // Roll dice locally for host
@@ -1281,7 +1394,7 @@ function RiftboundGame() {
       {lobbyType === "join" && roomCode && <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, marginTop: 8, padding: "12px 20px", width: "100%", maxWidth: "min(95vw, 900px)", maxHeight: "calc(100vh - 180px)", overflow: "auto" }}>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}><span style={{ fontSize: 13, color: "#888" }}>Room:</span><span style={{ fontSize: 18, fontFamily: "Spectral,serif", fontWeight: 700, color: "#4ADE80", letterSpacing: 3 }}>{roomCode}</span><span style={{ fontSize: 13, color: "#666" }}>Waiting for host to start...</span></div>
         <div style={{ display: "flex", flexDirection: "column", gap: 3, width: "100%" }}>
-          {lpArr.map(function(p, i) { var isMe = p.uid === myUid; var displayDeckName = p.deck ? (p.deck.indexOf(" (") > 0 ? p.deck.substring(0, p.deck.indexOf(" (")) : p.deck) : null; return <div key={p.uid} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 8px", borderRadius: 4, border: "1px solid " + (isMe ? "#4ADE8055" : "#ffffff20"), background: isMe ? "#4ADE8008" : "transparent" }}><span style={{ fontSize: 13, fontWeight: 700, color: isMe ? "#4ADE80" : "#aaa", flex: 1 }}>{p.name} {i === 0 ? "👑" : ""}</span><span style={{ fontSize: 12, color: p.deck ? "#4ADE80" : "#666" }}>{displayDeckName || "..."}</span></div>; })}
+          {lpArr.map(function(p, i) { var isMe = p.uid === myUid; var displayDeckName = p.deck ? (p.deck.indexOf(" (") > 0 ? p.deck.substring(0, p.deck.indexOf(" (")) : p.deck) : null; var teamCol = p.team === "red" ? "#ef4444" : p.team === "blue" ? "#3b82f6" : null; return <div key={p.uid} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 8px", borderRadius: 4, border: "1px solid " + (isMe ? "#4ADE8055" : "#ffffff20"), background: isMe ? "#4ADE8008" : "transparent" }}>{teamCol && <span style={{ fontSize: 10, color: teamCol, fontWeight: 700, fontFamily: "Spectral,serif", letterSpacing: 1, padding: "1px 5px", borderRadius: 3, border: "1px solid " + teamCol + "66", background: teamCol + "15" }}>{p.team.toUpperCase()}</span>}<span style={{ fontSize: 13, fontWeight: 700, color: isMe ? "#4ADE80" : "#aaa", flex: 1 }}>{p.name} {i === 0 ? "👑" : ""}</span><span style={{ fontSize: 12, color: p.deck ? "#4ADE80" : "#666" }}>{displayDeckName || "..."}</span></div>; })}
         </div>
         {/* Deck selector moved to right column */}
         <div style={{ display: "none" }}>
@@ -1343,6 +1456,17 @@ function RiftboundGame() {
                 <span style={{ fontSize: "clamp(13px, 1.4vw, 19px)", color: "#888" }}>Display Name:</span>
                 <input defaultValue={myName} placeholder="Enter name..." onBlur={function(e) { var v = e.target.value.trim(); if (v) { myName = v; localStorage.setItem("riftNexusName", myName); if (hasLobby) { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/name").set(myName); fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/ready").set(false); } setReadyErr(""); } else { myName = ""; try { localStorage.removeItem("riftNexusName"); } catch(_e) {} if (hasLobby) { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/name").set(""); fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/ready").set(false); } setReadyErr("Please enter a display name before readying up."); } }} style={{ padding: "clamp(5px, 0.7vw, 8px) clamp(10px, 1vw, 14px)", borderRadius: 5, border: "1px solid " + accentBorder, background: "#ffffff08", color: accent, fontSize: "clamp(14px, 1.4vw, 20px)", outline: "none", width: "clamp(170px, 16vw, 230px)", fontFamily: "Spectral,serif", textAlign: "center" }} />
               </div>
+              {/* Team picker — only for Doubles */}
+              {lobbySettings && lobbySettings.mode === "Doubles" && hasLobby && (function() {
+                var myTeam = (lobbyPlayers[myUid] && lobbyPlayers[myUid].team) || null;
+                return <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
+                  <span style={{ fontSize: "clamp(13px, 1.4vw, 19px)", color: "#888" }}>Team:</span>
+                  {[{id:"red",label:"RED",color:"#ef4444"},{id:"blue",label:"BLUE",color:"#3b82f6"}].map(function(t) {
+                    var sel = myTeam === t.id;
+                    return <button key={t.id} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/team").set(t.id); fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/ready").set(false); setReadyErr(""); }} style={{ padding: "5px 14px", borderRadius: 5, border: "2px solid " + (sel ? t.color : t.color + "55"), background: sel ? t.color + "25" : "transparent", color: sel ? t.color : t.color + "aa", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Spectral,serif", letterSpacing: 1 }}>{t.label}</button>;
+                  })}
+                </div>;
+              })()}
               {/* Deck picker: dropdown-style */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                 <span style={{ fontSize: 13, color: "#888", fontFamily: "Spectral,serif", letterSpacing: 2 }}>DECK</span>
@@ -1896,10 +2020,31 @@ function RiftboundGame() {
       var p = Object.assign({}, turnPlayer, { runes: turnPlayer.runes.map(function(r) { return Object.assign({}, r, { exhausted: false }); }), base: turnPlayer.base.map(function(c) { return Object.assign({}, c, { exhausted: false, stunned: false }); }), legend: Object.assign({}, turnPlayer.legend, { exhausted: false }), runeDeck: turnPlayer.runeDeck.slice(), mainDeck: turnPlayer.mainDeck.slice(), hand: turnPlayer.hand.slice() });
       var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu, i) { return i === turnIdx ? pu.map(function(u) { return Object.assign({}, u, { exhausted: false, stunned: false, tempMight: 0 }); }) : pu.slice(); }) }); });
       // Begin: score
+      var _isDoublesGame = lobbySettings && lobbySettings.mode === "Doubles";
+      var _myTeammateIdx = -1;
+      if (_isDoublesGame && p.team) {
+        _myTeammateIdx = ps.findIndex(function(other, oi) { return oi !== turnIdx && other && other.team === p.team; });
+      }
+      var _teammateLastScored = (_myTeammateIdx >= 0 && ps[_myTeammateIdx] && ps[_myTeammateIdx].lastScoredBfs) ? ps[_myTeammateIdx].lastScoredBfs : [];
       var sc = 0;
-      nb.forEach(function(bf) { if (bf.controller === turnIdx && bf.units[turnIdx].length > 0) { var contested = false; for (var i = 0; i < pc; i++) { if (i !== turnIdx && bf.units[i].length > 0) contested = true; } if (!contested) { sc++; aL(pName(turnIdx) + " gets a holding point from " + bf.name + "!"); } } });
+      var scoredBfUidsThisTurn = [];
+      nb.forEach(function(bf) {
+        if (bf.controller === turnIdx && bf.units[turnIdx].length > 0) {
+          var contested = false; for (var i = 0; i < pc; i++) { if (i !== turnIdx && bf.units[i].length > 0) contested = true; }
+          // Doubles rule: can't score on a battlefield teammate just conquered last turn
+          var blockedByTeammate = _isDoublesGame && _teammateLastScored.indexOf(bf.uid) >= 0;
+          if (!contested && !blockedByTeammate) {
+            sc++; scoredBfUidsThisTurn.push(bf.uid);
+            aL(pName(turnIdx) + " gets a holding point from " + bf.name + "!");
+          } else if (!contested && blockedByTeammate) {
+            aL("  " + bf.name + " skipped — teammate just scored here");
+          }
+        }
+      });
+      p.lastScoredBfs = scoredBfUidsThisTurn;
       if (sc > 0) { p.score += sc; }
-      if (p.score >= 8 && !continuePlaying) { setWin(turnIdx); setScreen("go"); aL(pName(turnIdx) + " wins!"); var npW = ps.slice(); npW[turnIdx] = p; setPs(npW); setBfs(nb); setAwakenPhase(null); return; }
+      var winThreshold = _isDoublesGame ? 11 : 8;
+      if (p.score >= winThreshold && !continuePlaying) { setWin(turnIdx); setScreen("go"); aL(pName(turnIdx) + " wins!"); var npW = ps.slice(); npW[turnIdx] = p; if (_isDoublesGame && _myTeammateIdx >= 0) { npW[_myTeammateIdx] = Object.assign({}, npW[_myTeammateIdx], { score: p.score }); } setPs(npW); setBfs(nb); setAwakenPhase(null); return; }
       // Channel: gain runes (max 12) — on turn 1 the non-first player gets +1 to compensate for going second
       var nr = turn === 1 && turnIdx !== firstPlayerIdx ? 3 : 2;
       var runeSpace = 12 - p.runes.length;
@@ -1908,9 +2053,14 @@ function RiftboundGame() {
       p.runes = p.runes.concat(ch);
       ch.forEach(function(r) { addAnim(r.uid, "draw"); });
       if (actualDraw < nr) { aL("  Channel " + ch.length + " runes (max reached)"); } else { aL("  Channel " + ch.length + " runes"); }
-      // Draw: draw a card
-      if (p.mainDeck.length > 0) { var drawn = p.mainDeck.shift(); p.hand = p.hand.concat([drawn]); addAnim(drawn.uid, "draw"); aL("  Draw 1 card"); }
-      var np2 = ps.slice(); np2[turnIdx] = p; setPs(np2); setBfs(nb);
+      // Draw: draw a card. In 3+ player games, the first player skips their turn-1 draw.
+      var skipDraw = turn === 1 && turnIdx === firstPlayerIdx && pc >= 3;
+      if (!skipDraw && p.mainDeck.length > 0) { var drawn = p.mainDeck.shift(); p.hand = p.hand.concat([drawn]); addAnim(drawn.uid, "draw"); aL("  Draw 1 card"); }
+      else if (skipDraw) { aL("  (No draw — first player on turn 1)"); }
+      var np2 = ps.slice(); np2[turnIdx] = p;
+      // Doubles: shared team score — mirror this player's score onto the teammate
+      if (_isDoublesGame && _myTeammateIdx >= 0) { np2[_myTeammateIdx] = Object.assign({}, np2[_myTeammateIdx], { score: p.score }); }
+      setPs(np2); setBfs(nb);
       setAwakenPhase(null); setScreen("play");
       // Sync after turn start with explicit values
       if (roomCode && lobbyType !== "test" && _gamePhaseRef.current === "playing") {
@@ -1939,10 +2089,37 @@ function RiftboundGame() {
       np[meIdx] = binP;
       if (allShowcaseCards.length > 0) aL(allShowcaseCards.length + " showcase card" + (allShowcaseCards.length > 1 ? "s" : "") + " sent to bin");
     }
-    var nx = (act + 1) % pc;
-    var newTurn = nx === 0 ? turn + 1 : turn;
+    // Zigzag turn order for Doubles: alternate teams, take the next un-played player on the other team
+    var nx;
+    var _isDoublesEt = lobbySettings && lobbySettings.mode === "Doubles";
+    if (_isDoublesEt && ps[act] && ps[act].team) {
+      var reds = []; var blues = [];
+      ps.forEach(function(pp, ii) { if (pp && pp.team === "red") reds.push(ii); else if (pp && pp.team === "blue") blues.push(ii); });
+      reds.sort(function(a, b) { return a - b; });
+      blues.sort(function(a, b) { return a - b; });
+      if (reds.length === 2 && blues.length === 2) {
+        // Build zigzag order rooted at firstPlayerIdx
+        var firstTeamD = ps[firstPlayerIdx] && ps[firstPlayerIdx].team;
+        var orderD;
+        if (firstTeamD === "red") {
+          var otherR = reds.filter(function(r) { return r !== firstPlayerIdx; })[0];
+          orderD = [firstPlayerIdx, blues[0], otherR, blues[1]];
+        } else {
+          var otherB = blues.filter(function(b) { return b !== firstPlayerIdx; })[0];
+          orderD = [firstPlayerIdx, reds[0], otherB, reds[1]];
+        }
+        var idxD = orderD.indexOf(act);
+        nx = orderD[(idxD + 1) % orderD.length];
+      } else {
+        nx = (act + 1) % pc;
+      }
+    } else {
+      nx = (act + 1) % pc;
+    }
+    // Round increments when cycling back to the first player.
+    var newTurn = nx === firstPlayerIdx ? turn + 1 : turn;
     setPs(np); setBfs(nb); setAct(nx); setTurn(newTurn);
-    setSel(null); setTm(null); setFc(null); setTr([]); setSd(null); setArrows([]); setDrawingArrow(null); setShowcaseCard(null); setShowcaseHistory([]); setShowcaseOwner(null); setShowcaseAccepted(false); setShowcasePriority(null); setShowcaseActed(false);
+    setSel(null); setTm(null); setFc(null); setTr([]); setSd(null); setArrows([]); setDrawingArrow(null); setShowcaseCard(null); setShowcaseHistory([]); setShowcaseOwner(null); setShowcaseAccepted(false); setShowcaseAcceptors({}); setShowcasePriority(null); setShowcaseActed(false);
     setScreen("wait");
     // Force sync with explicit new values (state updates are async)
     if (roomCode && lobbyType !== "test" && _gamePhaseRef.current === "playing") {
@@ -1953,9 +2130,8 @@ function RiftboundGame() {
     }
   }
 
-  // Spacebar ends the current player's turn (only during play, only when it's their turn,
-  // and only when they aren't typing in an input/textarea).
-  var endTurnKeyRef = useRef();
+  // Update the spacebar handler each render so it sees current state.
+  // (The useRef + useEffect are declared at the top of the component to satisfy hook rules.)
   endTurnKeyRef.current = function() {
     if (screen !== "play") return;
     if (awakenPhase || sd || tm || fc || scryMode || showcaseCard) return;
@@ -1964,22 +2140,12 @@ function RiftboundGame() {
     if (!isMyTurnKey) return;
     endTurn();
   };
-  useEffect(function() {
-    function onKey(e) {
-      if (e.code !== "Space" && e.key !== " ") return;
-      var t = e.target;
-      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || (t.isContentEditable))) return;
-      if (endTurnKeyRef.current) { e.preventDefault(); endTurnKeyRef.current(); }
-    }
-    window.addEventListener("keydown", onKey);
-    return function() { window.removeEventListener("keydown", onKey); };
-  }, []);
 
   function returnToBase(cardUid) {
     if (!canMoveOwn) return;
     var idx = myActIdx;
     var _me = ps[idx]; if (!_me) return;
-    if (sd) setSd(Object.assign({}, sd, { acted: true }));
+    if (sd) markSdActed();
     markShowcaseActed();
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
     var p = Object.assign({}, _me, { base: _me.base.slice(), trash: (_me.trash || []).slice() });
@@ -1997,7 +2163,7 @@ function RiftboundGame() {
     if (!canMoveOwn) return;
     var idx = myActIdx;
     var _me = ps[idx]; if (!_me) return;
-    if (sd) setSd(Object.assign({}, sd, { acted: true }));
+    if (sd) markSdActed();
     markShowcaseActed();
     var p = Object.assign({}, _me, { base: _me.base.slice(), hand: _me.hand.slice(), trash: (_me.trash || []).slice() });
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
@@ -2034,7 +2200,7 @@ function RiftboundGame() {
     if (!canMoveOwn) return;
     var idx = myActIdx;
     var _me = ps[idx]; if (!_me) return;
-    if (sd) setSd(Object.assign({}, sd, { acted: true }));
+    if (sd) markSdActed();
     markShowcaseActed();
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
     var p = Object.assign({}, _me, { hand: _me.hand.slice() });
@@ -2056,7 +2222,7 @@ function RiftboundGame() {
     if (!canMoveOwn) return;
     var idx2 = myActIdx;
     var _me = ps[idx2]; if (!_me) return;
-    if (sd) setSd(Object.assign({}, sd, { acted: true }));
+    if (sd) markSdActed();
     markShowcaseActed();
     var p = Object.assign({}, _me, { base: _me.base.slice(), hand: _me.hand.slice(), trash: (_me.trash || []).slice() });
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
@@ -2089,7 +2255,7 @@ function RiftboundGame() {
     markShowcaseActed();
     var idx = myActIdx;
     var _me = ps[idx]; if (!_me) return;
-    if (sd) setSd(Object.assign({}, sd, { acted: true }));
+    if (sd) markSdActed();
     markShowcaseActed();
     var p = Object.assign({}, _me, { base: _me.base.slice(), hand: _me.hand.slice(), runes: _me.runes.slice(), trash: (_me.trash || []).slice() });
     // Check base
@@ -2110,7 +2276,7 @@ function RiftboundGame() {
   function attachGear(gearUid, unitUid) {
     if (!canMoveOwn) return;
     var idx = myActIdx;
-    if (sd) setSd(Object.assign({}, sd, { acted: true }));
+    if (sd) markSdActed();
     markShowcaseActed();
     var _me = ps[idx]; if (!_me) return;
     var p = Object.assign({}, _me, { base: _me.base.slice(), hand: _me.hand.slice(), trash: (_me.trash || []).slice() });
@@ -2137,7 +2303,7 @@ function RiftboundGame() {
     if (!canMoveOwn) return;
     var idx = myActIdx;
     var _me = ps[idx]; if (!_me) return;
-    if (sd) setSd(Object.assign({}, sd, { acted: true }));
+    if (sd) markSdActed();
     markShowcaseActed();
     var p = Object.assign({}, _me, { base: _me.base.slice(), trash: (_me.trash || []).slice() });
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
@@ -2171,7 +2337,7 @@ function RiftboundGame() {
     if (!canMoveOwn) return;
     var idx = myActIdx;
     var _me = ps[idx]; if (!_me) return;
-    if (sd) setSd(Object.assign({}, sd, { acted: true }));
+    if (sd) markSdActed();
     markShowcaseActed();
     var p = Object.assign({}, _me, { base: _me.base.slice() });
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
@@ -2190,7 +2356,7 @@ function RiftboundGame() {
     if (!canMoveOwn) return;
     var idx = myActIdx;
     var _me = ps[idx]; if (!_me) return;
-    if (sd) setSd(Object.assign({}, sd, { acted: true }));
+    if (sd) markSdActed();
     markShowcaseActed();
     var p = Object.assign({}, _me, { base: _me.base.slice() });
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
@@ -2210,7 +2376,7 @@ function RiftboundGame() {
     if (!canMoveOwn) return;
     var idx = myActIdx;
     var _me = ps[idx]; if (!_me) return;
-    if (sd) setSd(Object.assign({}, sd, { acted: true }));
+    if (sd) markSdActed();
     markShowcaseActed();
     var p = Object.assign({}, _me, { base: _me.base.slice() });
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
@@ -2228,7 +2394,7 @@ function RiftboundGame() {
     if (!canMoveOwn) return;
     var idx = myActIdx;
     var _me = ps[idx]; if (!_me) return;
-    if (sd) setSd(Object.assign({}, sd, { acted: true }));
+    if (sd) markSdActed();
     markShowcaseActed();
     var p = Object.assign({}, _me, { base: _me.base.slice(), hand: _me.hand.slice() });
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
@@ -2257,7 +2423,7 @@ function RiftboundGame() {
     if (drawingArrow) return;
     if (!canMoveOwn) return;
     var idx = myActIdx;
-    if (sd) setSd(Object.assign({}, sd, { acted: true }));
+    if (sd) markSdActed();
     markShowcaseActed();
     var p = Object.assign({}, ps[idx]);
     // Check champion
@@ -2282,7 +2448,7 @@ function RiftboundGame() {
   function recycleRune(runeUid) {
     var idx = myActIdx;
     var _me = ps[idx]; if (!_me) return;
-    if (sd) setSd(Object.assign({}, sd, { acted: true }));
+    if (sd) markSdActed();
     markShowcaseActed();
     var rune = _me.runes.find(function(r) { return r.uid === runeUid; });
     if (!rune) return;
@@ -2301,7 +2467,7 @@ function RiftboundGame() {
   function playToBattlefield(card, bi) {
     var _me = ps[myActIdx]; if (!_me) return;
     if (tm || fc) return;
-    if (sd) setSd(Object.assign({}, sd, { acted: true }));
+    if (sd) markSdActed();
     markShowcaseActed();
     if (card.type !== "Unit" && card.type !== "Champion") { aL("Only units can deploy to battlefields!"); return; }
     // Handle auto-runes
@@ -2354,7 +2520,8 @@ function RiftboundGame() {
     if (!sd && !_firmingUp) {
       aL("SHOWDOWN at " + nb[bi].name + "!");
       var _defPresent = false; for (var _j = 0; _j < pc; _j++) { if (_j !== myActIdx && nb[bi].units[_j] && nb[bi].units[_j].length > 0) _defPresent = true; }
-      var newSd2 = { bfIdx: bi, atkIdx: myActIdx, priority: myActIdx, lastPass: null, acted: false, contested: _defPresent };
+      var _initAcc2 = {}; _initAcc2[myActIdx] = true; // attacker is implicitly accepted (they're the actor)
+      var newSd2 = { bfIdx: bi, atkIdx: myActIdx, priority: myActIdx, lastPass: null, acted: false, contested: _defPresent, acceptors: _initAcc2 };
       setSd(newSd2);
       setScreen("sd");
       if (roomCode && lobbyType !== "test") {
@@ -2448,7 +2615,7 @@ function RiftboundGame() {
       else if (/Stun/i.test(card.text)) setTm({ ty: "stun" });
     }
     var np = ps.slice(); np[myActIdx] = p; setPs(np);
-    if (sd) setSd(Object.assign({}, sd, { acted: true }));
+    if (sd) markSdActed();
     markShowcaseActed();
   }
 
@@ -2475,7 +2642,7 @@ function RiftboundGame() {
       else if (/Stun/i.test(card.text)) setTm({ ty: "stun" });
     }
     var np = ps.slice(); np[idx] = p; setPs(np); setFc(null); setTr([]);
-    if (sd) setSd(Object.assign({}, sd, { acted: true }));
+    if (sd) markSdActed();
     markShowcaseActed();
   }
 
@@ -2500,7 +2667,7 @@ function RiftboundGame() {
     var idx = myActIdx;
     var _me = ps[idx]; if (!_me) return;
     if (!canMoveOwn || !_me.champion || _me.championPlayed) return;
-    if (sd) setSd(Object.assign({}, sd, { acted: true }));
+    if (sd) markSdActed();
     markShowcaseActed();
     var np = ps.slice();
     var p = Object.assign({}, _me, { championPlayed: true, champion: null, base: _me.base.concat([Object.assign({}, _me.champion, { exhausted: true })]) });
@@ -2510,7 +2677,7 @@ function RiftboundGame() {
 
   function moveUnit(uUid, bi) {
     if (!canMoveOwn) return;
-    if (sd) setSd(Object.assign({}, sd, { acted: true }));
+    if (sd) markSdActed();
     markShowcaseActed();
     var idx = myActIdx;
     var p = Object.assign({}, ps[idx], { base: ps[idx].base.slice(), trash: (ps[idx].trash || []).slice(), hand: ps[idx].hand.slice() });
@@ -2585,7 +2752,39 @@ function RiftboundGame() {
 
   function passPriority() {
     if (!sd) return;
-    // Build involved list — always include all players in the game
+    // 3+ player flow: track every player who has passed (including attacker via init).
+    // Resolve only when ALL slots are in acceptors.
+    if (pc >= 3) {
+      var newAcc = Object.assign({}, sd.acceptors || {}); newAcc[sd.priority] = true;
+      aL(pName(sd.priority) + " passes priority");
+      // Find next slot (any player) who hasn't passed yet
+      var nextP3 = sd.priority;
+      var allPassed = true;
+      for (var k3 = 1; k3 <= pc; k3++) {
+        var cand = (sd.priority + k3) % pc;
+        if (!newAcc[cand]) { nextP3 = cand; allPassed = false; break; }
+      }
+      var newSd3 = Object.assign({}, sd, { acceptors: newAcc, acted: false });
+      if (allPassed) {
+        // Everyone passed — show resolve options to the attacker
+        newSd3.priority = sd.atkIdx;
+        newSd3.lastPass = sd.priority;
+        aL("All players passed — " + pName(sd.atkIdx) + " can resolve");
+      } else {
+        newSd3.priority = nextP3;
+        newSd3.lastPass = sd.priority;
+      }
+      setSd(newSd3);
+      setAct(newSd3.priority);
+      if (roomCode && lobbyType !== "test") {
+        _lastSyncVersion.current++;
+        var cleanPs3p = ps.map(function(p) { if (!p) return p; return Object.assign({}, p, { hand: p.hand || [], base: (p.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: p.trash || [], runes: p.runes || [], runeDeck: p.runeDeck || [], mainDeck: p.mainDeck || [], battlefields: p.battlefields || [] }); });
+        var cleanBfs3p = bfs.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
+        fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPs3p, bfs: cleanBfs3p, turn: turn, act: newSd3.priority, screen: "sd", log: log.slice(-30), sd: newSd3, ver: _lastSyncVersion.current, by: myUid })));
+      }
+      return;
+    }
+    // 1v1 flow (unchanged)
     var involved = [];
     for (var j2 = 0; j2 < pc; j2++) involved.push(j2);
     if (sd.lastPass !== null && sd.lastPass !== sd.priority && !sd.acted) {
@@ -2657,7 +2856,7 @@ function RiftboundGame() {
         var isDraggable2 = !isEnemy && canMoveOwn && !tm && !fc && playable;
         var handShift = 0;
         if (handHovIdx >= 0 && i !== handHovIdx && total > 3) { handShift = i < handHovIdx ? -15 : 15; }
-        return React.createElement("div", { key: c.uid, className: "hand-card-hover" + animCls, draggable: isDraggable2, onDragStart: isDraggable2 ? function(e) { e.dataTransfer.setData("text/plain", "hand:" + c.uid); setDragUnit(c); } : undefined, onDragEnd: function() { setDragUnit(null); }, onDoubleClick: canMoveOwn ? function() { if (tm || fc) return; if (c.type === "Unit" || c.type === "Champion" || c.type === "Gear") { onPlay(c); } else if (c.type === "Spell") { if (showcaseCard && showcaseCard.uid === c.uid) { setShowcaseCard(null); } else { var idx = myActIdx; var _me = ps[idx]; if (_me) { var sp = Object.assign({}, _me, { hand: _me.hand.filter(function(h) { return h.uid !== c.uid; }) }); if (autoRunes) { var rcN = (c.rc || []).slice(); var eN = c.energy || 0; var aR = _me.runes.slice(); var recUids = []; rcN.forEach(function(dom) { var f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0; }); if (f) { recUids.push(f.uid); if (eN > 0) eN--; } }); var tapUids = []; if (eN > 0) { var av = aR.filter(function(r) { return !r.exhausted && recUids.indexOf(r.uid) < 0; }); av.slice(0, eN).forEach(function(r) { tapUids.push(r.uid); }); } sp.runes = _me.runes.filter(function(r) { return recUids.indexOf(r.uid) < 0; }).map(function(r) { return tapUids.indexOf(r.uid) >= 0 ? Object.assign({}, r, { exhausted: true }) : r; }); sp.runeDeck = shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); }))); } var np = ps.slice(); np[idx] = sp; setPs(np); pushShowcase(c); aL(pName(idx) + " casts " + cName(c)); } } if (sd) setSd(Object.assign({}, sd, { acted: true })); } } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { setHandHovIdx(i); if (_setHoverCard && !c.hidden) _setHoverCard(c, e, true); }, onMouseLeave: function() { setHandCtxUid(null); if (_clearHoverCard) _clearHoverCard(); }, style: { width: HAND_W, height: HAND_H, borderRadius: 6, overflow: "hidden", border: "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + (playable ? "55" : "20")), flexShrink: 0, cursor: isDraggable2 ? "grab" : "pointer", transform: "rotate(" + rot + "deg) translateY(" + ty + "px) translateX(" + handShift + "px)", transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -30 : total > 5 ? -16 : 0), transition: "transform 0.075s ease", position: "relative", zIndex: i === handHovIdx ? 998 : i, boxShadow: "0 4px 16px #000a", opacity: 1 } },
+        return React.createElement("div", { key: c.uid, className: "hand-card-hover" + animCls, draggable: isDraggable2, onDragStart: isDraggable2 ? function(e) { e.dataTransfer.setData("text/plain", "hand:" + c.uid); setDragUnit(c); } : undefined, onDragEnd: function() { setDragUnit(null); }, onDoubleClick: canMoveOwn ? function() { if (tm || fc) return; if (c.type === "Unit" || c.type === "Champion" || c.type === "Gear") { onPlay(c); } else if (c.type === "Spell") { if (showcaseCard && showcaseCard.uid === c.uid) { setShowcaseCard(null); } else { var idx = myActIdx; var _me = ps[idx]; if (_me) { var sp = Object.assign({}, _me, { hand: _me.hand.filter(function(h) { return h.uid !== c.uid; }) }); if (autoRunes) { var rcN = (c.rc || []).slice(); var eN = c.energy || 0; var aR = _me.runes.slice(); var recUids = []; rcN.forEach(function(dom) { var f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0; }); if (f) { recUids.push(f.uid); if (eN > 0) eN--; } }); var tapUids = []; if (eN > 0) { var av = aR.filter(function(r) { return !r.exhausted && recUids.indexOf(r.uid) < 0; }); av.slice(0, eN).forEach(function(r) { tapUids.push(r.uid); }); } sp.runes = _me.runes.filter(function(r) { return recUids.indexOf(r.uid) < 0; }).map(function(r) { return tapUids.indexOf(r.uid) >= 0 ? Object.assign({}, r, { exhausted: true }) : r; }); sp.runeDeck = shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); }))); } var np = ps.slice(); np[idx] = sp; setPs(np); pushShowcase(c); aL(pName(idx) + " casts " + cName(c)); } } if (sd) markSdActed(); } } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { setHandHovIdx(i); if (_setHoverCard && !c.hidden) _setHoverCard(c, e, true); }, onMouseLeave: function() { setHandCtxUid(null); if (_clearHoverCard) _clearHoverCard(); }, style: { width: HAND_W, height: HAND_H, borderRadius: 6, overflow: "hidden", border: "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + (playable ? "55" : "20")), flexShrink: 0, cursor: isDraggable2 ? "grab" : "pointer", transform: "rotate(" + rot + "deg) translateY(" + ty + "px) translateX(" + handShift + "px)", transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -30 : total > 5 ? -16 : 0), transition: "transform 0.075s ease", position: "relative", zIndex: i === handHovIdx ? 998 : i, boxShadow: "0 4px 16px #000a", opacity: 1 } },
           c.hidden ? React.createElement("img", { src: CARD_BACK, style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : (c.img ? React.createElement("img", { src: imgSrc(c.img), style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : React.createElement("div", { style: { width: "100%", height: "100%", background: "linear-gradient(180deg," + (DOM[c.domain] || DOM.Colorless).c + "15,#0a0a18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#666", padding: 4, textAlign: "center" } }, c.name)),
           handCtxUid === c.uid ? React.createElement("button", { onClick: function(e) { e.stopPropagation(); toggleHide(c.uid); setHandCtxUid(null); }, style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 10, padding: "4px 12px", borderRadius: 4, border: "1.5px solid #ffffff40", background: "rgba(20,20,50,0.92)", color: "#ddd", fontSize: 12, cursor: "pointer", fontFamily: "Spectral,serif", fontWeight: 700, boxShadow: "0 4px 12px #000a", whiteSpace: "nowrap" } }, c.hidden ? "Reveal" : "Hide") : null
         );
@@ -2801,10 +3000,12 @@ function RiftboundGame() {
           })}
         </div>
         {diceWinner === myUid ? <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 10 }}>
-          <div style={{ fontSize: 16, color: "#ddd", fontFamily: "Spectral,serif" }}>You won the roll! Choose your position:</div>
-          <div style={{ display: "flex", gap: 12 }}>
-            <button onClick={function() { if (roomCode) { var myIdx3 = (lobbyPlayers && Object.keys(lobbyPlayers).length > 0) ? Object.keys(lobbyPlayers).sort().indexOf(myUid) : 0; fbDb.ref("lobbies/" + roomCode + "/gameState/firstPlayer").set(myIdx3 >= 0 ? myIdx3 : 0); } }} style={{ padding: "10px 24px", borderRadius: 6, border: "2px solid #4ADE80", background: "rgba(74,222,128,0.15)", color: "#4ADE80", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif" }}>Go First</button>
-            <button onClick={function() { if (roomCode) { var otherIdx = 0; var slots3 = diceRoll; for (var k = 0; k < slots3.length; k++) { if (slots3[k].uid !== myUid) { otherIdx = k; break; } } fbDb.ref("lobbies/" + roomCode + "/gameState/firstPlayer").set(otherIdx); } }} style={{ padding: "10px 24px", borderRadius: 6, border: "2px solid #8B5CF6", background: "rgba(139,92,246,0.15)", color: "#8B5CF6", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif" }}>Go Second</button>
+          <div style={{ fontSize: 16, color: "#ddd", fontFamily: "Spectral,serif" }}>You won the roll! Choose who goes first:</div>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
+            {/* Always show "I'll go first" */}
+            <button onClick={function() { if (roomCode) { var myIdx3 = diceRoll.findIndex(function(d) { return d.uid === myUid; }); fbDb.ref("lobbies/" + roomCode + "/gameState/firstPlayer").set(myIdx3 >= 0 ? myIdx3 : 0); } }} style={{ padding: "10px 24px", borderRadius: 6, border: "2px solid #4ADE80", background: "rgba(74,222,128,0.15)", color: "#4ADE80", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif" }}>I'll go first</button>
+            {/* Per-player buttons for the other slots — works for any player count */}
+            {diceRoll.map(function(d, k) { if (d.uid === myUid) return null; return <button key={d.uid} onClick={function() { if (roomCode) { fbDb.ref("lobbies/" + roomCode + "/gameState/firstPlayer").set(k); } }} style={{ padding: "10px 24px", borderRadius: 6, border: "2px solid #8B5CF6", background: "rgba(139,92,246,0.15)", color: "#8B5CF6", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif" }}>{d.name} first</button>; })}
           </div>
         </div> : <div style={{ fontSize: 16, color: "#888", fontFamily: "Spectral,serif", marginTop: 10 }}>Waiting for {diceRoll.find(function(d) { return d.uid === diceWinner; }) ? diceRoll.find(function(d) { return d.uid === diceWinner; }).name : "winner"} to choose...</div>}
       </div>}
@@ -2817,7 +3018,9 @@ function RiftboundGame() {
       </div>}
       {/* Online battlefield selection overlay */}
       {screen === "bf" && (lobbyType === "host" || lobbyType === "join") && myCur && (function() {
-        var myBfPicked = ps[mySlot] && ps[mySlot].chosenBf;
+        // 4-player: first player skips the BF pick — treat as already picked so they see the waiting screen.
+        var iSkipBf = pc === 4 && mySlot === firstPlayerIdx;
+        var myBfPicked = iSkipBf || (ps[mySlot] && ps[mySlot].chosenBf);
         return <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, zIndex: 1100, overflow: "auto", padding: "40px 20px" }}>
           {!myBfPicked ? <>
             <h2 style={{ fontSize: 22, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700" }}>Choose Your Battlefield</h2>
@@ -2894,8 +3097,19 @@ function RiftboundGame() {
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end", alignItems: "center", flexShrink: 0, width: Math.round(70 * vScale), background: "rgba(255,215,0,0.03)", borderRight: "1px solid #FFD70025", padding: "8px 4px" }}>
           <div style={{ flex: 1 }} />
           <div className={isMyTurn ? "anim-name-glow" : ""} style={{ writingMode: "vertical-rl", textOrientation: "mixed", transform: "rotate(180deg)", fontSize: 18, fontFamily: "Spectral,serif", fontWeight: 700, color: isMyTurn ? "#FFD700" : "#FFD70055", letterSpacing: 2, marginBottom: 8, transition: "color 0.3s ease" }}>{pName(isOnlineGame ? mySlot : act)}</div>
+          {/* Teammate tab (Doubles only) — sits above my score; clicking spotlights teammate's board on the bottom */}
+          {lobbySettings && lobbySettings.mode === "Doubles" && (function() {
+            var teammate = ps.find(function(other, oi) { return oi !== mySlot && other && other.team === (myCur && myCur.team); });
+            if (!teammate) return null;
+            var teammateIdx = ps.indexOf(teammate);
+            var isTeammateActive = act === teammateIdx;
+            return <div onMouseEnter={function() { /* future: hover preview */ }} onMouseLeave={function() { /* future */ }} onClick={function() { /* future: swap bottom */ }} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: 4, marginBottom: 8, borderRadius: 8, cursor: "default", background: "rgba(74,222,128,0.05)", border: "1.5px solid #4ADE8033" }}>
+              <div className={isTeammateActive ? "anim-name-glow" : ""} style={{ writingMode: "vertical-rl", textOrientation: "mixed", transform: "rotate(180deg)", fontSize: 14, fontFamily: "Spectral,serif", fontWeight: 700, color: isTeammateActive ? "#4ADE80" : "#4ADE8088", letterSpacing: 2 }}>{pName(teammateIdx)}</div>
+              <div style={{ fontSize: 10, color: "#4ADE80aa", fontFamily: "Spectral,serif", letterSpacing: 1 }}>ALLY</div>
+            </div>;
+          })()}
           <div style={{ position: "relative", width: 50, height: 50 }} onMouseEnter={function() { setScoreHov(true); }} onMouseLeave={function() { setScoreHov(false); }}>
-            <div style={{ width: Math.round(50 * vScale), height: Math.round(50 * vScale), borderRadius: "50%", border: "3px solid #FFD700", background: "linear-gradient(135deg,#FFD70030,#FF8C0015)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, color: "#FFD700", fontFamily: "Spectral,serif" }}>{scoreHov ? "" : (myCur.score + (continuePlaying ? "" : "/8"))}</div>
+            <div style={{ width: Math.round(50 * vScale), height: Math.round(50 * vScale), borderRadius: "50%", border: "3px solid #FFD700", background: "linear-gradient(135deg,#FFD70030,#FF8C0015)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, color: "#FFD700", fontFamily: "Spectral,serif" }}>{scoreHov ? "" : (myCur.score + (continuePlaying ? "" : (lobbySettings && lobbySettings.mode === "Doubles" ? "/11" : "/8")))}</div>
             {scoreHov && <>
               <button onClick={function() { var idx = myActIdx; var np = ps.slice(); np[idx] = Object.assign({}, np[idx], { score: np[idx].score + 1 }); setPs(np); }} style={{ position: "absolute", top: 2, left: "50%", transform: "translateX(-50%)", width: 20, height: 20, borderRadius: "50%", border: "none", background: "transparent", color: "#FFD700", fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>+</button>
               <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: 16, fontWeight: 700, color: "#FFD700", fontFamily: "Spectral,serif", pointerEvents: "none" }}>{myCur.score}</div>
@@ -2907,10 +3121,10 @@ function RiftboundGame() {
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", overflow: "hidden", position: "relative" }}>
 
           {/* ENEMY ZONE wrapper — pulses on enemy turn */}
-          <div className={isOnlineGame && !isMyTurnOnline && screen === "play" && !awakenPhase ? "anim-turn-pulse" : ""} style={{ margin: "4px 4px 4px", padding: 2, flexShrink: 0, overflow: "visible", border: "2px solid transparent", borderRadius: 8 }}>
+          <div className={isOnlineGame && !isMyTurnOnline && act === effectiveSpotlight && screen === "play" && !awakenPhase ? "anim-turn-pulse" : ""} style={{ margin: "4px 4px 4px", padding: 2, flexShrink: 0, overflow: "visible", border: "2px solid transparent", borderRadius: 8 }}>
           {/* ROW 1: ENEMY HAND */}
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center", flexShrink: 0, overflow: "visible", padding: "4px 6px 2px", zIndex: 5, position: "relative", gap: 0, height: HAND_H + Math.round(22 * vScale), minHeight: HAND_H + Math.round(22 * vScale), maxHeight: HAND_H + Math.round(22 * vScale) }}>
-            {ps.filter(function(_, i) { return i !== viewSlot; }).map(function(enemy) {
+            {ps.filter(function(_, i) { return i === effectiveSpotlight; }).map(function(enemy) {
               var enemySlot = ps.indexOf(enemy);
               return <div key={"ehand"} style={{ display: "flex", alignItems: "flex-start", flex: 1 }}>
                 <div onClick={function() { if (enemy.trash && enemy.trash.length > 0) setShowEnemyBin(enemy.trash); }} style={{ cursor: enemy.trash && enemy.trash.length > 0 ? "pointer" : "default" }}><BinPile trash={enemy.trash} /></div>
@@ -2936,7 +3150,7 @@ function RiftboundGame() {
           {/* ROW 2: ENEMY RUNES + BASE */}
           <div style={{ display: "flex", alignItems: "stretch", flexShrink: 0, padding: "2px 6px", gap: 6, overflow: "visible", zIndex: 1, height: HAND_H + Math.round(80 * vScale), minHeight: HAND_H + Math.round(80 * vScale), maxHeight: HAND_H + Math.round(80 * vScale) }}>
             {/* Enemy base - horizontal (gold) */}
-            {ps.filter(function(_, i) { return i !== viewSlot; }).map(function(enemy) {
+            {ps.filter(function(_, i) { return i === effectiveSpotlight; }).map(function(enemy) {
               var eI = ps.indexOf(enemy);
               return <div key={"ebase"} style={{ display: "flex", flexDirection: "row", gap: 3, padding: "3px 4px", borderRadius: 6, border: "1.5px solid #FFD70055", alignItems: "center", flexWrap: "nowrap", flex: 9, height: HAND_H + Math.round(70 * vScale), minHeight: HAND_H + Math.round(70 * vScale), maxHeight: HAND_H + Math.round(70 * vScale), overflow: "hidden" }}>
                 <div style={{ fontSize: 13, color: "#FFD70077", fontFamily: "Spectral,serif", letterSpacing: 1 }}>BASE</div>
@@ -2944,7 +3158,7 @@ function RiftboundGame() {
               </div>;
             })}
             {/* Enemy runes - horizontal (white), overlapping via absolute positioning */}
-            {ps.filter(function(_, i) { return i !== viewSlot; }).map(function(enemy) {
+            {ps.filter(function(_, i) { return i === effectiveSpotlight; }).map(function(enemy) {
               var erc = enemy.runes.length;
               var step = 1 / 11;
               return <div key={"erunes"} style={{ display: "flex", flexDirection: "row", padding: "3px 4px", borderRadius: 6, border: "1.5px solid #ffffff35", alignItems: "center", flex: 7, overflow: "visible", height: HAND_H + Math.round(70 * vScale), minHeight: HAND_H + Math.round(70 * vScale), maxHeight: HAND_H + Math.round(70 * vScale) }}>
@@ -3038,7 +3252,7 @@ function RiftboundGame() {
           {/* ROW 5: PLAYER HAND */}
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", flexShrink: 0, overflow: "visible", padding: "2px 6px 4px", height: HAND_H + Math.round(26 * vScale), minHeight: HAND_H + Math.round(26 * vScale), maxHeight: HAND_H + Math.round(26 * vScale) }}>
             <div style={{ display: "flex", flexDirection: "row", gap: 3, alignItems: "center", padding: "4px 2px", flexShrink: 0 }}>
-              <div data-uid={"slot-" + mySlot + "-runes"} onClick={canMoveOwn && myCur.runeDeck && myCur.runeDeck.length > 0 && myCur.runes.length < 12 ? function() { var idx = myActIdx; var _me = ps[idx]; if (!_me) return; if (sd) setSd(Object.assign({}, sd, { acted: true })); var p = Object.assign({}, _me, { runeDeck: _me.runeDeck.slice(), runes: _me.runes.slice() }); var r = p.runeDeck.shift(); p.runes.push(r); addAnim(r.uid, "draw"); aL(pName(idx) + " channels 1 rune"); var np = ps.slice(); np[idx] = p; setPs(np); } : undefined} style={{ cursor: canMoveOwn && myCur.runeDeck && myCur.runeDeck.length > 0 && myCur.runes.length < 12 ? "pointer" : "default" }}><CardBack w={HAND_W} h={HAND_H} count={myCur.runeDeck ? myCur.runeDeck.length : 0} label="RUNES" /></div>
+              <div data-uid={"slot-" + mySlot + "-runes"} onClick={canMoveOwn && myCur.runeDeck && myCur.runeDeck.length > 0 && myCur.runes.length < 12 ? function() { var idx = myActIdx; var _me = ps[idx]; if (!_me) return; if (sd) markSdActed(); var p = Object.assign({}, _me, { runeDeck: _me.runeDeck.slice(), runes: _me.runes.slice() }); var r = p.runeDeck.shift(); p.runes.push(r); addAnim(r.uid, "draw"); aL(pName(idx) + " channels 1 rune"); var np = ps.slice(); np[idx] = p; setPs(np); } : undefined} style={{ cursor: canMoveOwn && myCur.runeDeck && myCur.runeDeck.length > 0 && myCur.runes.length < 12 ? "pointer" : "default" }}><CardBack w={HAND_W} h={HAND_H} count={myCur.runeDeck ? myCur.runeDeck.length : 0} label="RUNES" /></div>
               {myCur.champion ? <div data-uid={myCur.champion.uid} className={myCur.champion.exhausted ? "card-tapped" : "card-hover"} draggable={!myCur.championPlayed && canMoveOwn && !tm && !fc} onDragStart={!myCur.championPlayed && canMoveOwn && !tm && !fc ? function(e) { e.dataTransfer.setData("text/plain", "champ:" + myCur.champion.uid); } : undefined} onClick={function() { toggleTap(myCur.champion.uid); }} onMouseEnter={function(e) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: myCur.champion, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }); }} onMouseLeave={function() { setHoverCard(null); }} style={{ width: HAND_W, height: HAND_H, borderRadius: 6, overflow: "hidden", border: "2px solid " + (myCur.championPlayed ? "#FFD70015" : "#FFD70055"), cursor: "pointer", opacity: myCur.championPlayed ? 0.4 : 1, transform: myCur.champion.exhausted ? "rotate(30deg)" : "none", filter: myCur.champion.exhausted ? "brightness(0.58)" : "none", flexShrink: 0 }}>{myCur.champion.img ? <img src={imgSrc(myCur.champion.img)} style={{ width: "100%", height: "100%", objectFit: "fill" }} onError={function(e) { if (PA[myCur.champion.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[myCur.champion.name] + ".webp"; } }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#FFD700", padding: 2, textAlign: "center" }}>{myCur.champion.name}</div>}</div> : (myCur.championPlayed && <div onDragOver={canMoveOwn ? function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } : undefined} onDrop={canMoveOwn ? function(e) { e.preventDefault(); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var uid2 = parts.length > 1 ? parts[1] : parts[0]; returnChampionToSlot(uid2); } : undefined} style={{ width: HAND_W, height: HAND_H, borderRadius: 6, border: "2px dashed #FFD70033", background: "rgba(255,215,0,0.03)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: "#FFD70055", fontSize: 10, fontFamily: "Spectral,serif", letterSpacing: 1, textAlign: "center", padding: 4 }}>CHAMPION<br />SLOT</div>)}
               {myCur.legend && <div data-uid={myCur.legend.uid} className={myCur.legend.exhausted ? "card-tapped" : "card-hover"} onClick={function() { toggleTap(myCur.legend.uid); }} onMouseEnter={function(e) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: myCur.legend, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }); }} onMouseLeave={function() { setHoverCard(null); }} style={{ width: HAND_W, height: HAND_H, borderRadius: 6, overflow: "hidden", border: "2px solid #FFD70033", cursor: "pointer", transform: myCur.legend.exhausted ? "rotate(30deg)" : "none", filter: myCur.legend.exhausted ? "brightness(0.58)" : "none", flexShrink: 0 }}>{myCur.legend.img ? <img src={imgSrc(myCur.legend.img)} style={{ width: "100%", height: "100%", objectFit: "fill" }} onError={function(e) { if (PA[myCur.legend.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[myCur.legend.name] + ".webp"; } }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#FFD700", padding: 2, textAlign: "center" }}>{myCur.legend.name}</div>}</div>}
             </div>
@@ -3072,7 +3286,7 @@ function RiftboundGame() {
             </div>
             <div style={{ display: "flex", gap: 3, alignItems: "flex-start", padding: "4px 2px", flexShrink: 0 }}>
               {/* Token pile */}
-              <div data-uid={"slot-" + mySlot + "-tokens"} onClick={canMoveOwn ? function() { var tk = mkToken(tokenType); if (!tk) return; var idx = myActIdx; var _me = ps[idx]; if (!_me) return; if (sd) setSd(Object.assign({}, sd, { acted: true })); var p = Object.assign({}, _me, { base: _me.base.slice() }); p.base.push(Object.assign({}, tk, { exhausted: true, counter: 1 })); aL(pName(idx) + " creates " + tk.name + " token"); var np = ps.slice(); np[idx] = p; setPs(np); } : undefined} style={{ width: HAND_W, height: HAND_H, borderRadius: 6, background: "linear-gradient(160deg,#2a1a3a,#1a1028)", border: "2px solid #aa66ff45", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, position: "relative", overflow: "hidden", padding: "4px 2px" }}>
+              <div data-uid={"slot-" + mySlot + "-tokens"} onClick={canMoveOwn ? function() { var tk = mkToken(tokenType); if (!tk) return; var idx = myActIdx; var _me = ps[idx]; if (!_me) return; if (sd) markSdActed(); var p = Object.assign({}, _me, { base: _me.base.slice() }); p.base.push(Object.assign({}, tk, { exhausted: true, counter: 1 })); aL(pName(idx) + " creates " + tk.name + " token"); var np = ps.slice(); np[idx] = p; setPs(np); } : undefined} style={{ width: HAND_W, height: HAND_H, borderRadius: 6, background: "linear-gradient(160deg,#2a1a3a,#1a1028)", border: "2px solid #aa66ff45", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, position: "relative", overflow: "hidden", padding: "4px 2px" }}>
                 <span style={{ fontSize: 24, opacity: 0.3, position: "absolute", top: "25%", transform: "translateY(-50%)" }}>⚔</span>
                 <span style={{ fontSize: 12, color: "#aa66ff99", fontFamily: "Spectral,serif", letterSpacing: 1, zIndex: 1, marginTop: "auto" }}>TOKENS</span>
                 <select value={tokenType} onClick={function(e) { e.stopPropagation(); }} onChange={function(e) { e.stopPropagation(); setTokenType(e.target.value); var preview = mkToken(e.target.value); if (preview) setHoverCard(preview); }} onMouseLeave={function() { setHoverCard(null); }} style={{ fontSize: 12, padding: "2px 3px", borderRadius: 3, border: "1px solid #aa66ff30", background: "rgba(170,102,255,0.1)", color: "#ccaaff", cursor: "pointer", fontFamily: "Spectral,serif", outline: "none", width: "90%", zIndex: 1, marginTop: 4, marginBottom: 2 }}>
@@ -3083,7 +3297,7 @@ function RiftboundGame() {
               <div style={{ position: "relative" }}
                 onDragOver={canMoveOwn ? function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } : undefined}
                 onDrop={canMoveOwn ? function(e) { e.preventDefault(); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts.length > 1 ? parts[1] : parts[0]; var idx = myActIdx; var _me = ps[idx]; if (!_me) return; var p = Object.assign({}, _me, { hand: _me.hand.slice(), base: _me.base.slice(), mainDeck: _me.mainDeck.slice() }); var card = null; if (type === "hand") { var hi = p.hand.findIndex(function(c) { return c.uid === uid2; }); if (hi >= 0) card = p.hand.splice(hi, 1)[0]; } else if (type === "base") { var bi2 = p.base.findIndex(function(c) { return c.uid === uid2; }); if (bi2 >= 0) card = p.base.splice(bi2, 1)[0]; } else if (type === "bf") { var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); }); for (var bk = 0; bk < nb.length; bk++) { if (!nb[bk].units[idx]) continue; var ui = nb[bk].units[idx].findIndex(function(u) { return u.uid === uid2; }); if (ui >= 0) { card = nb[bk].units[idx].splice(ui, 1)[0]; setBfs(nb); break; } } } if (card) { p.mainDeck.push(Object.assign({}, card, { exhausted: false })); aL(pName(idx) + " recycles " + cName(card) + " to deck"); var np = ps.slice(); np[idx] = p; setPs(np); } } : undefined}>
-                <div data-uid={"slot-" + mySlot + "-deck"} onClick={canMoveOwn && myCur.mainDeck.length > 0 ? function() { var idx = myActIdx; var _me = ps[idx]; if (!_me) return; if (sd) setSd(Object.assign({}, sd, { acted: true })); var p = Object.assign({}, _me, { mainDeck: _me.mainDeck.slice(), hand: _me.hand.slice() }); var c = p.mainDeck.shift(); p.hand.push(c); addAnim(c.uid, "draw"); aL(pName(idx) + " draws 1 card"); var np = ps.slice(); np[idx] = p; setPs(np); } : undefined} style={{ cursor: canMoveOwn && myCur.mainDeck.length > 0 ? "pointer" : "default" }}><CardBack w={HAND_W} h={HAND_H} count={myCur.mainDeck.length} label="DECK" /></div>
+                <div data-uid={"slot-" + mySlot + "-deck"} onClick={canMoveOwn && myCur.mainDeck.length > 0 ? function() { var idx = myActIdx; var _me = ps[idx]; if (!_me) return; if (sd) markSdActed(); var p = Object.assign({}, _me, { mainDeck: _me.mainDeck.slice(), hand: _me.hand.slice() }); var c = p.mainDeck.shift(); p.hand.push(c); addAnim(c.uid, "draw"); aL(pName(idx) + " draws 1 card"); var np = ps.slice(); np[idx] = p; setPs(np); } : undefined} style={{ cursor: canMoveOwn && myCur.mainDeck.length > 0 ? "pointer" : "default" }}><CardBack w={HAND_W} h={HAND_H} count={myCur.mainDeck.length} label="DECK" /></div>
                 {myCur.mainDeck.length > 0 && <button onClick={function(e) { e.stopPropagation(); setScryMode("prompt"); setScryCount(1); }} style={{ position: "absolute", top: -6, right: -6, padding: "2px 6px", borderRadius: 4, border: "1.5px solid #8B5CF688", background: "rgba(139,92,246,0.8)", color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif", cursor: "pointer", zIndex: 6, letterSpacing: 0.5 }}>Scry</button>}
               </div>
               {/* Bin pile */}
@@ -3098,9 +3312,29 @@ function RiftboundGame() {
           {ps.filter(function(_, i) { return isOnlineGame ? i !== mySlot : i !== act; }).map(function(enemy, ei) {
             var eIdx = ps.indexOf(enemy);
             var isEnemyTurn = act === eIdx;
-            return <div key={"escore" + ei} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-              <div style={{ width: Math.round(50 * vScale), height: Math.round(50 * vScale), borderRadius: "50%", border: "3px solid #FFD70055", background: "rgba(255,215,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, color: "#FFD70088", fontFamily: "Spectral,serif" }}>{(enemy.score || 0) + (continuePlaying ? "" : "/8")}</div>
-              <div className={isEnemyTurn ? "anim-name-glow" : ""} style={{ writingMode: "vertical-rl", textOrientation: "mixed", fontSize: 18, fontFamily: "Spectral,serif", fontWeight: 700, color: isEnemyTurn ? "#FFD700" : "#FFD70055", letterSpacing: 2, marginTop: 4, transition: "color 0.3s ease" }}>{pName(eIdx)}</div>
+            var isSpotlightTab = pc >= 3 && eIdx === effectiveSpotlight;
+            var isClickable = pc >= 3;
+            return <div
+              key={"escore" + ei}
+              onClick={isClickable ? function() { setSpotlightClickIdx(eIdx); setSpotlightHovIdx(null); } : undefined}
+              onMouseEnter={isClickable ? function() { setSpotlightHovIdx(eIdx); } : undefined}
+              onMouseLeave={isClickable ? function() { setSpotlightHovIdx(null); } : undefined}
+              title={isClickable ? (isEnemyTurn ? pName(eIdx) + " — current turn (click to spotlight, hover to preview)" : "Click to spotlight " + pName(eIdx)) : undefined}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 6,
+                cursor: isClickable ? "pointer" : "default",
+                padding: 4,
+                borderRadius: 8,
+                background: isSpotlightTab ? "rgba(255,215,0,0.10)" : "transparent",
+                border: isSpotlightTab ? "1.5px solid #FFD70066" : "1.5px solid transparent",
+                transition: "background 0.12s ease, border-color 0.12s ease"
+              }}
+            >
+              <div style={{ width: Math.round(50 * vScale), height: Math.round(50 * vScale), borderRadius: "50%", border: "3px solid " + (isSpotlightTab ? "#FFD700" : "#FFD70055"), background: isSpotlightTab ? "rgba(255,215,0,0.10)" : "rgba(255,215,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, color: isSpotlightTab ? "#FFD700" : "#FFD70088", fontFamily: "Spectral,serif" }}>{(enemy.score || 0) + (continuePlaying ? "" : (lobbySettings && lobbySettings.mode === "Doubles" ? "/11" : "/8"))}</div>
+              <div className={isEnemyTurn ? "anim-name-glow" : ""} style={{ writingMode: "vertical-rl", textOrientation: "mixed", fontSize: 18, fontFamily: "Spectral,serif", fontWeight: 700, color: isEnemyTurn ? "#FFD700" : isSpotlightTab ? "#FFD700cc" : "#FFD70055", letterSpacing: 2, marginTop: 4, transition: "color 0.3s ease" }}>{pName(eIdx)}</div>
             </div>;
           })}
           <div style={{ flex: 1 }} />
@@ -3170,20 +3404,36 @@ function RiftboundGame() {
             {showcaseCard ? (<>
               {!sd && showcaseOwner && isOnlineGame && (function() {
                 var boxStyle = { width: "100%", maxWidth: Math.round(215 * vScale), padding: "4px 0", flexShrink: 0, textAlign: "center", marginBottom: 3 };
-                // Accepted by priority holder — chain resolved
+                // Accepted (resolved) — chain finished, owner can resolve cards
                 if (showcaseAccepted) {
                   return <div style={boxStyle}><div style={{ width: "100%", padding: "4px 8px", borderRadius: 5, border: "1.5px solid #4ADE80", background: "rgba(74,222,128,0.12)", color: "#4ADE80", fontSize: 13, fontFamily: "Spectral,serif", fontWeight: 700, boxShadow: "0 0 10px rgba(74,222,128,0.3)" }}>Accepted ✓ - resolve your cards</div></div>;
                 }
+                // 3+ player flow: every player must accept individually (the actor is implicit).
+                // Any action resets others' acceptances; the new actor is implicitly accepted.
+                if (pc >= 3) {
+                  var allUids = Object.keys(lobbyPlayers || {});
+                  var iAccepted = !!showcaseAcceptors[myUid];
+                  var pendingNames = allUids.filter(function(uid) { return !showcaseAcceptors[uid]; }).map(function(uid) { var slot = lobbyPlayers[uid] && typeof lobbyPlayers[uid].slot === "number" ? lobbyPlayers[uid].slot : -1; return slot >= 0 ? pName(slot) : (lobbyPlayers[uid] && lobbyPlayers[uid].name) || "?"; });
+                  if (iAccepted) {
+                    return <div style={boxStyle}><div style={{ padding: "4px 8px", borderRadius: 5, border: "1.5px solid #4ADE80", background: "rgba(74,222,128,0.12)", color: "#4ADE80", fontSize: 12, fontFamily: "Spectral,serif", fontWeight: 700 }}>Waiting for {pendingNames.length === 0 ? "resolve" : pendingNames.join(", ")} to accept...</div></div>;
+                  }
+                  return <div style={boxStyle}><button onClick={function() {
+                    var newAcc = Object.assign({}, showcaseAcceptors); newAcc[myUid] = true;
+                    setShowcaseAcceptors(newAcc);
+                    aL(pName(mySlot) + " accepts the showcase");
+                    // If every player has now accepted, mark resolved
+                    var allAcceptedNow = allUids.every(function(uid) { return newAcc[uid]; });
+                    if (allAcceptedNow) { setShowcaseAccepted(true); aL("All players accepted — resolving showcase"); }
+                  }} style={{ width: "100%", padding: "4px 8px", borderRadius: 5, border: "1.5px solid #FFD700", background: "rgba(255,215,0,0.12)", color: "#FFD700", fontSize: 13, fontFamily: "Spectral,serif", fontWeight: 700, cursor: "pointer", boxShadow: "0 0 10px rgba(255,215,0,0.3)" }}>Accept</button></div>;
+                }
+                // 1v1 flow: priority cycles between the two players
                 var hasPriorityLocal = showcasePriority === myUid;
                 if (hasPriorityLocal) {
-                  // Priority holder has acted since gaining priority — they must now pass
                   if (showcaseActed) {
                     return <div style={boxStyle}><button onClick={function() { var other = _otherPlayerUid(); setShowcasePriority(other || myUid); setShowcaseActed(false); aL(pName(mySlot) + " passes priority"); }} style={{ width: "100%", padding: "4px 8px", borderRadius: 5, border: "1.5px solid #FF6B35", background: "rgba(255,107,53,0.15)", color: "#FF6B35", fontSize: 13, fontFamily: "Spectral,serif", fontWeight: 700, cursor: "pointer", boxShadow: "0 0 10px rgba(255,107,53,0.3)" }}>Pass Priority</button></div>;
                   }
-                  // Priority holder hasn't acted yet — can accept to resolve
                   return <div style={boxStyle}><button onClick={function() { setShowcaseAccepted(true); }} style={{ width: "100%", padding: "4px 8px", borderRadius: 5, border: "1.5px solid #FFD700", background: "rgba(255,215,0,0.12)", color: "#FFD700", fontSize: 13, fontFamily: "Spectral,serif", fontWeight: 700, cursor: "pointer", boxShadow: "0 0 10px rgba(255,215,0,0.3)" }}>Accept - no more responses</button></div>;
                 }
-                // Not priority holder — waiting
                 var otherSlot = (lobbyPlayers && showcasePriority && lobbyPlayers[showcasePriority] && typeof lobbyPlayers[showcasePriority].slot === "number") ? lobbyPlayers[showcasePriority].slot : (mySlot === 0 ? 1 : 0);
                 return <div style={boxStyle}><div style={{ padding: "4px 8px", borderRadius: 5, border: "1.5px solid #ff4444", background: "rgba(255,68,68,0.12)", color: "#ff6666", fontSize: 13, fontFamily: "Spectral,serif", fontWeight: 700, boxShadow: "0 0 10px rgba(255,68,68,0.3)" }}>Waiting for {pName(otherSlot)}...</div></div>;
               })()}
@@ -3210,7 +3460,7 @@ function RiftboundGame() {
                     </div>
                     {showcaseCard.counter2 !== 0 && showcaseCard.counter2 !== undefined && <div style={{ position: "absolute", top: -8, right: -8, background: "#854d0e", color: "#FACC15", borderRadius: 12, minWidth: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, boxShadow: "0 2px 6px #000a", padding: "0 4px", zIndex: 3 }}>{showcaseCard.counter2 > 0 ? "+" : ""}{showcaseCard.counter2}</div>}
                     {showcaseCard.counter !== 0 && showcaseCard.counter !== undefined && <div style={{ position: "absolute", top: -8, right: showcaseCard.counter2 ? 30 : -8, background: "#166534", color: "#4ADE80", borderRadius: 12, minWidth: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, boxShadow: "0 2px 6px #000a", padding: "0 4px", zIndex: 3 }}>{showcaseCard.counter > 0 ? "+" : ""}{showcaseCard.counter}</div>}
-                    {showcaseOwner === myUid && <button onClick={function(e) { e.stopPropagation(); var idx = myActIdx; var _me = ps[idx]; if (_me) { var p = Object.assign({}, _me, { trash: (_me.trash || []).slice() }); p.trash.push(Object.assign({}, showcaseCard, { exhausted: false, gear: [] })); var np = ps.slice(); np[idx] = p; setPs(np); aL(pName(idx) + " bins " + cName(showcaseCard)); if (sd) setSd(Object.assign({}, sd, { acted: true })); } if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false); setShowcasePriority(null); setShowcaseActed(false); } }} style={{ position: "absolute", bottom: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.75)", color: "#ffaaaa", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>🗑</button>}
+                    {showcaseOwner === myUid && <button onClick={function(e) { e.stopPropagation(); var idx = myActIdx; var _me = ps[idx]; if (_me) { var p = Object.assign({}, _me, { trash: (_me.trash || []).slice() }); p.trash.push(Object.assign({}, showcaseCard, { exhausted: false, gear: [] })); var np = ps.slice(); np[idx] = p; setPs(np); aL(pName(idx) + " bins " + cName(showcaseCard)); if (sd) markSdActed(); } if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false); setShowcaseAcceptors({}); setShowcasePriority(null); setShowcaseActed(false); } }} style={{ position: "absolute", bottom: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.75)", color: "#ffaaaa", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>🗑</button>}
                     <button onClick={function(e) { e.stopPropagation(); startArrow(showcaseCard.uid); }} style={{ position: "absolute", top: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #3B82F688", background: "rgba(59,130,246,0.75)", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>↗</button>
                     {cardHasArrow(showcaseCard.uid) && <button onClick={function(e) { e.stopPropagation(); removeArrow(showcaseCard.uid); }} style={{ position: "absolute", top: -8, left: 22, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(200,40,40,0.85)", color: "#fff", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, fontWeight: 700, zIndex: 3 }}>✕</button>}
                   </div>
