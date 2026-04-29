@@ -815,6 +815,55 @@ function RiftboundGame() {
   var _hc = useState(null), hoverCard = _hc[0], setHoverCard = _hc[1];
   _setHoverCard = function(card, e, inHand) { if (e && e.currentTarget) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: card, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2, inHand: !!inHand }); } else if (e && e.clientX !== undefined) { setHoverCard({ card: card, left: e.clientX, right: e.clientX, top: e.clientY, bottom: e.clientY, cx: e.clientX, cy: e.clientY, inHand: !!inHand }); } else { setHoverCard(card ? { card: card, left: 0, right: 0, top: 0, bottom: 0, cx: 0, cy: 0, inHand: !!inHand } : null); } };
   _clearHoverCard = function() { setHoverCard(null); };
+  // Floating hover preview block — usable from any screen (lobby, deck builder, in-game).
+  // Uses the global _gvScale so it works even before HAND_W is defined inside the in-game render.
+  function renderHoverPreview() {
+    if (!hoverCard || !hoverCard.card) return null;
+    var hc = hoverCard.card;
+    var HW = Math.round(100 * _gvScale), HH = Math.round(140 * _gvScale);
+    var tw = Math.round(HW * hoverSize), th = Math.round(HH * hoverSize);
+    var vw = typeof window !== "undefined" ? window.innerWidth : 1920;
+    var vh = typeof window !== "undefined" ? window.innerHeight : 1080;
+    var tx, ty;
+    if (hoverCard.inHand) {
+      tx = Math.max(8, Math.min(hoverCard.cx - tw / 2, vw - tw - 8));
+      ty = Math.max(8, hoverCard.top - th - 16);
+    } else {
+      var onLeft = hoverCard.cx > vw / 2;
+      tx = onLeft ? hoverCard.left - tw - 20 : hoverCard.right + 20;
+      ty = Math.max(8, Math.min(hoverCard.cy - th / 2, vh - th - 8));
+    }
+    if (hc._isBf) {
+      var bfIsLand = hc._isLandscape;
+      var bfContW = th; var bfContH = tw;
+      var onLeftBf = hoverCard.cx > vw / 2;
+      var bfTx = onLeftBf ? hoverCard.left - bfContW - 20 : hoverCard.right + 20;
+      var bfTy = Math.max(8, Math.min(hoverCard.cy - bfContH / 2, vh - bfContH - 8));
+      if (bfTx < 4) bfTx = 4; if (bfTx + bfContW > vw - 4) bfTx = vw - bfContW - 4;
+      return <div style={{ position: "fixed", left: bfTx, top: bfTy, zIndex: 9999, pointerEvents: "none" }}>
+        <div style={{ width: bfContW, height: bfContH, display: "flex", justifyContent: "center", alignItems: "center" }}>
+          {hc._bfUrl ? <img src={hc._bfUrl} style={bfIsLand ? { width: bfContW, height: bfContH, objectFit: "fill", display: "block", borderRadius: 6, border: "1px solid #ffffff25", boxShadow: "0 8px 32px #000c" } : { width: tw, height: th, objectFit: "fill", display: "block", borderRadius: 6, border: "1px solid #ffffff25", transform: "rotate(90deg)", boxShadow: "0 8px 32px #000c" }} /> : <div style={{ width: tw, height: th, display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 18, fontFamily: "Spectral,serif", borderRadius: 6, border: "1px solid #ffffff25", transform: bfIsLand ? "none" : "rotate(90deg)", background: "#0c0c18" }}>{hc.name}</div>}
+        </div>
+      </div>;
+    }
+    if (tx < 4) tx = 4; if (tx + tw > vw - 4) tx = vw - tw - 4;
+    return <div style={{ position: "fixed", left: tx, top: ty, zIndex: 9999, pointerEvents: "none" }}>
+      <div style={{ position: "relative" }}>
+        {hc.img ? <img src={imgSrc(hc.img)} onError={function(e) { if (PA[hc.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[hc.name] + ".webp"; } }} style={{ width: tw, height: th, objectFit: "fill", display: "block", borderRadius: 6, border: "1px solid #ffffff25", boxShadow: "0 8px 32px #000c" }} /> : <div style={{ width: tw, height: th, display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 18, fontFamily: "Spectral,serif", padding: 12, textAlign: "center", borderRadius: 6, border: "1px solid #ffffff25", background: "#0c0c18", boxShadow: "0 8px 32px #000c" }}>{hc.name}</div>}
+      </div>
+    </div>;
+  }
+  // Helper: trigger the floating preview from a card name + mouse event (used by deck builder + lobby preview).
+  function _hoverByName(name, e, isBattlefield) {
+    if (!name) return;
+    if (isBattlefield) {
+      var bfImg = CI[name] ? imgSrc(CI[name]) : (PA[name] ? PA_CDN + PA[name] + ".webp" : "");
+      var isLand = bfImg && (bfImg.indexOf("1038x744") > -1 || bfImg.indexOf("1039x744") > -1);
+      _setHoverCard({ name: name, _isBf: true, _bfUrl: bfImg, _isLandscape: isLand }, e, false);
+    } else {
+      var c = mkC(name); if (c) _setHoverCard(c, e, false);
+    }
+  }
   var lr = useRef(null);
   var _chatMsgs = useState([]), chatMsgs = _chatMsgs[0], setChatMsgs = _chatMsgs[1];
   var _chatInput = useState(""), chatInput = _chatInput[0], setChatInput = _chatInput[1];
@@ -1719,7 +1768,11 @@ function RiftboundGame() {
                     <span style={{ fontSize: 10, color: "#888", fontFamily: "Spectral,serif", letterSpacing: 1 }}>RUNES</span>
                     <div style={{ display: "flex", gap: 4, justifyContent: "center" }}>{uniqueR.map(function(r) { var rImg = CI[r + " Rune"] ? imgSrc(CI[r + " Rune"]) : ""; return rImg ? <img key={r} src={rImg} style={{ width: "clamp(28px, 3.8vh, 42px)", height: "clamp(39px, 5.3vh, 59px)", objectFit: "fill", borderRadius: 3, border: "1px solid " + (DOM[r] || DOM.Colorless).c + "55" }} /> : <span key={r} style={{ color: (DOM[r] || DOM.Colorless).c, fontSize: 20 }}>{(DOM[r] || DOM.Colorless).i}</span>; })}</div>
                   </div>
-                  <div style={{ fontSize: 12, color: "#888", textAlign: "center", fontFamily: "Spectral,serif" }}>{(currentDeckData.deck || []).length} cards · {(currentDeckData.bfs || []).length} battlefields</div>
+                  <div style={{ fontSize: 11, color: "#888", textAlign: "center", fontFamily: "Spectral,serif", letterSpacing: 1 }}>{(currentDeckData.deck || []).length} cards · {(currentDeckData.bfs || []).length} battlefields <span style={{ color: "#666" }}>(hover to preview)</span></div>
+                  {/* Battlefield thumbnails */}
+                  {(currentDeckData.bfs || []).length > 0 && <div style={{ display: "flex", gap: 4, justifyContent: "center", flexWrap: "wrap" }}>{(currentDeckData.bfs || []).map(function(b, bi3) { var bImg = CI[b] ? imgSrc(CI[b]) : (PA[b] ? PA_CDN + PA[b] + ".webp" : ""); var bLand = bImg && (bImg.indexOf("1038x744") > -1 || bImg.indexOf("1039x744") > -1); return <div key={"bf-" + bi3} onMouseEnter={function(e) { _hoverByName(b, e, true); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ cursor: "pointer", flexShrink: 0 }}>{bImg ? <img src={bImg} style={{ width: 56, height: 40, objectFit: "fill", borderRadius: 3, border: "1px solid " + accent + "44", display: "block" }} /> : <div style={{ width: 56, height: 40, borderRadius: 3, border: "1px solid " + accent + "44", background: "#0c0c18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, color: "#aaa", textAlign: "center", padding: 2 }}>{b}</div>}</div>; })}</div>}
+                  {/* Main deck thumbnails (deduped, with x-counts) */}
+                  {(currentDeckData.deck || []).length > 0 && (function() { var mc = {}; (currentDeckData.deck || []).forEach(function(n) { mc[n] = (mc[n] || 0) + 1; }); return <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(44px, 1fr))", gap: 3, maxHeight: 260, overflowY: "auto", paddingRight: 4 }}>{Object.keys(mc).sort().map(function(n) { var c = findCard(n); var dc = c ? (DOM[c.d] || DOM.Colorless) : DOM.Colorless; var mi = CI[n] ? imgSrc(CI[n]) : (PA[n] ? PA_CDN + PA[n] + ".webp" : ""); return <div key={n} onMouseEnter={function(e) { _hoverByName(n, e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ position: "relative", cursor: "pointer" }}>{mi ? <img src={mi} style={{ width: "100%", aspectRatio: "5/7", objectFit: "fill", borderRadius: 3, border: "1px solid " + dc.c + "44", display: "block" }} /> : <div style={{ width: "100%", aspectRatio: "5/7", borderRadius: 3, border: "1px solid " + dc.c + "44", background: dc.c + "10", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, color: dc.c, textAlign: "center", padding: 1 }}>{n}</div>}{mc[n] > 1 && <div style={{ position: "absolute", top: 1, right: 1, background: "#000c", color: "#fff", borderRadius: 4, minWidth: 14, height: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, padding: "0 2px" }}>×{mc[n]}</div>}</div>; })}</div>; })()}
                 </div></div>;
               })()}
               {/* Ready button + inline error */}
@@ -1762,6 +1815,7 @@ function RiftboundGame() {
           })()}
         </div>{/* end shared container (PLAY NOW + SETUP) */}
       </div>{/* end body row */}
+      {renderHoverPreview()}
     </div>
   );
   }
@@ -2083,13 +2137,13 @@ function RiftboundGame() {
             {/* Main deck */}
             <div style={{ marginBottom: 10 }}>
               <div style={{ fontSize: 15, color: "#888", fontFamily: "Spectral,serif", letterSpacing: 1, marginBottom: 3 }}>MAIN DECK ({dbCards.length}/39)</div>
-              {dbCards.length > 0 ? (function() { var mc = {}; dbCards.forEach(function(n) { mc[n] = (mc[n] || 0) + 1; }); return <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(84px, 1fr))", gap: 4 }}>{Object.keys(mc).sort().map(function(n) { var c = findCard(n); var dc = c ? (DOM[c.d] || DOM.Colorless) : DOM.Colorless; var mi = CI[n] ? imgSrc(CI[n]) : (PA[n] ? PA_CDN + PA[n] + ".webp" : ""); return <div key={n} style={{ position: "relative" }}>{mi ? <img src={mi} style={{ width: "100%", aspectRatio: "5/7", objectFit: "fill", borderRadius: 3, border: "1px solid " + dc.c + "44", display: "block" }} /> : <div style={{ width: "100%", aspectRatio: "5/7", borderRadius: 3, border: "1px solid " + dc.c + "44", background: dc.c + "10", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: dc.c, textAlign: "center", padding: 2 }}>{n}</div>}<div style={{ position: "absolute", top: 2, right: 2, display: "flex", gap: 2, zIndex: 2 }}><div style={{ background: "#333", color: "#fff", borderRadius: 6, minWidth: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700 }}>×{mc[n]}</div><button onClick={function() { var idx = dbCards.indexOf(n); if (idx >= 0) { var nc = dbCards.slice(); nc.splice(idx, 1); setDbCards(nc); } }} style={{ background: "#DC2626", color: "#fff", borderRadius: 6, width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, border: "none", cursor: "pointer" }}>−</button></div><div style={{ fontSize: 13, color: "#aaa", textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n}</div></div>; })}</div>; })() : <div style={{ padding: "3px 8px", borderRadius: 4, border: "1px dashed #ffffff15", color: "#444", fontSize: 16 }}>No cards added</div>}
+              {dbCards.length > 0 ? (function() { var mc = {}; dbCards.forEach(function(n) { mc[n] = (mc[n] || 0) + 1; }); return <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(84px, 1fr))", gap: 4 }}>{Object.keys(mc).sort().map(function(n) { var c = findCard(n); var dc = c ? (DOM[c.d] || DOM.Colorless) : DOM.Colorless; var mi = CI[n] ? imgSrc(CI[n]) : (PA[n] ? PA_CDN + PA[n] + ".webp" : ""); return <div key={n} onMouseEnter={function(e) { _hoverByName(n, e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ position: "relative", cursor: "pointer" }}>{mi ? <img src={mi} style={{ width: "100%", aspectRatio: "5/7", objectFit: "fill", borderRadius: 3, border: "1px solid " + dc.c + "44", display: "block" }} /> : <div style={{ width: "100%", aspectRatio: "5/7", borderRadius: 3, border: "1px solid " + dc.c + "44", background: dc.c + "10", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: dc.c, textAlign: "center", padding: 2 }}>{n}</div>}<div style={{ position: "absolute", top: 2, right: 2, display: "flex", gap: 2, zIndex: 2 }}><div style={{ background: "#333", color: "#fff", borderRadius: 6, minWidth: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700 }}>×{mc[n]}</div><button onClick={function(e) { e.stopPropagation(); var idx = dbCards.indexOf(n); if (idx >= 0) { var nc = dbCards.slice(); nc.splice(idx, 1); setDbCards(nc); } }} style={{ background: "#DC2626", color: "#fff", borderRadius: 6, width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, border: "none", cursor: "pointer" }}>−</button></div><div style={{ fontSize: 13, color: "#aaa", textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n}</div></div>; })}</div>; })() : <div style={{ padding: "3px 8px", borderRadius: 4, border: "1px dashed #ffffff15", color: "#444", fontSize: 16 }}>No cards added</div>}
             </div>
             {/* Battlefields */}
             <div style={{ marginBottom: 10 }}>
               <div style={{ fontSize: 15, color: "#888", fontFamily: "Spectral,serif", letterSpacing: 1, marginBottom: 3 }}>BATTLEFIELDS ({dbBfs.length}/3)</div>
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-              {dbBfs.map(function(b, i) { var bi2 = CI[b] ? imgSrc(CI[b]) : (PA[b] ? PA_CDN + PA[b] + ".webp" : ""); var bfLand = bi2 && (bi2.indexOf("1039x744") > -1 || bi2.indexOf("1038x744") > -1); return <div key={i} style={{ display: "inline-block", position: "relative" }}>{bi2 ? <img src={bi2} style={bfLand ? { width: 134, height: 96, objectFit: "fill", borderRadius: 4, border: "1.5px solid #ffffff30", display: "block" } : { width: 134, height: 96, objectFit: "fill", borderRadius: 4, border: "1.5px solid #ffffff30", display: "block" }} /> : <div style={{ width: 134, height: 96, borderRadius: 4, border: "1.5px solid #ffffff30", background: "#ffffff08", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "#aaa", textAlign: "center", padding: 2 }}>{b}</div>}<button onClick={function() { setDbBfs(dbBfs.filter(function(_, j) { return j !== i; })); }} style={{ position: "absolute", top: -4, right: -4, width: 18, height: 18, borderRadius: "50%", border: "none", background: "#DC2626", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button><div style={{ fontSize: 13, color: "#aaa", textAlign: "center", marginTop: 2, maxWidth: 134, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b}</div></div>; })}
+              {dbBfs.map(function(b, i) { var bi2 = CI[b] ? imgSrc(CI[b]) : (PA[b] ? PA_CDN + PA[b] + ".webp" : ""); var bfLand = bi2 && (bi2.indexOf("1039x744") > -1 || bi2.indexOf("1038x744") > -1); return <div key={i} onMouseEnter={function(e) { _hoverByName(b, e, true); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ display: "inline-block", position: "relative", cursor: "pointer" }}>{bi2 ? <img src={bi2} style={bfLand ? { width: 134, height: 96, objectFit: "fill", borderRadius: 4, border: "1.5px solid #ffffff30", display: "block" } : { width: 134, height: 96, objectFit: "fill", borderRadius: 4, border: "1.5px solid #ffffff30", display: "block" }} /> : <div style={{ width: 134, height: 96, borderRadius: 4, border: "1.5px solid #ffffff30", background: "#ffffff08", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "#aaa", textAlign: "center", padding: 2 }}>{b}</div>}<button onClick={function(e) { e.stopPropagation(); setDbBfs(dbBfs.filter(function(_, j) { return j !== i; })); }} style={{ position: "absolute", top: -4, right: -4, width: 18, height: 18, borderRadius: "50%", border: "none", background: "#DC2626", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button><div style={{ fontSize: 13, color: "#aaa", textAlign: "center", marginTop: 2, maxWidth: 134, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b}</div></div>; })}
               {dbBfs.length === 0 && <div style={{ width: 134, height: 96, borderRadius: 4, border: "1px dashed #ffffff20", display: "flex", alignItems: "center", justifyContent: "center", color: "#444", fontSize: 15 }}>None</div>}
               </div>
             </div>
@@ -2101,6 +2155,7 @@ function RiftboundGame() {
           </div>
         </div>
       </div>
+      {renderHoverPreview()}
     </div>
     );
   }
