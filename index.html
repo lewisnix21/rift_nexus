@@ -463,6 +463,109 @@ var CARD_EFFECTS = {
       if (allUids.length === 0) { ctx.banner("Combat Experience — no units on the board"); return; }
       ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Combat Experience", sourceUid: ctx.card.uid, effect: "tempMight", amount: 1 });
     }
+  },
+
+  // ============ Batch 3: 10 cards across precon decks ============
+
+  "Pit Rookie": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var ids = ctx.friendlyUnitUids(ctx.card.uid);
+      if (ids.length === 0) { ctx.banner("Pit Rookie — no other friendly units to buff"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, excludeUid: ctx.card.uid, sourceName: "Pit Rookie", sourceUid: ctx.card.uid, effect: "tempMight", amount: 1 });
+    }
+  },
+
+  "Ravenbloom Student": {
+    onSpellCast: function(ctx) {
+      ctx.flash(ctx.unit.uid);
+      ctx.applyTempMightToUids([ctx.unit.uid], 1, "Ravenbloom Student");
+    }
+  },
+
+  "Tibbers": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allBfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allBfUids.push(u.uid); }); }); });
+      if (allBfUids.length === 0) { ctx.banner("Tibbers — no units at any battlefield"); return; }
+      allBfUids.forEach(function(uid2) { ctx.dealDamage(uid2, 3, "Tibbers"); });
+      ctx.banner("Tibbers — 3 dmg to " + allBfUids.length + " unit" + (allBfUids.length === 1 ? "" : "s") + " across battlefields");
+    }
+  },
+
+  "Disintegrate": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+      if (bfUids.length === 0) { ctx.banner("Disintegrate — no units at battlefields"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Disintegrate", sourceUid: ctx.card.uid, effect: "damage", amount: 3, andDrawOnKill: 1 });
+    }
+  },
+
+  "Incinerate": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+      if (bfUids.length === 0) { ctx.banner("Incinerate — no units at battlefields"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Incinerate", sourceUid: ctx.card.uid, effect: "damage", amount: 2 });
+    }
+  },
+
+  "Falling Comet": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+      if (bfUids.length === 0) { ctx.banner("Falling Comet — no units at battlefields"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Falling Comet", sourceUid: ctx.card.uid, effect: "damage", amount: 6 });
+    }
+  },
+
+  "Discipline": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      var meP = ps[ctx.myActIdx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+      if (allUids.length === 0) { ctx.banner("Discipline — no units on the board, drew 1"); ctx.draw(1); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Discipline", sourceUid: ctx.card.uid, effect: "tempMight", amount: 2, andDraw: 1 });
+    }
+  },
+
+  "Stupefy": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      var meP = ps[ctx.myActIdx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+      if (allUids.length === 0) { ctx.banner("Stupefy — no units on the board, drew 1"); ctx.draw(1); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Stupefy", sourceUid: ctx.card.uid, effect: "tempMight", amount: -1, andDraw: 1 });
+    }
+  },
+
+  "Punch First": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      var meP = ps[ctx.myActIdx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+      if (allUids.length === 0) { ctx.banner("Punch First — no units on the board"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Punch First", sourceUid: ctx.card.uid, effect: "tempMight", amount: 5 });
+    }
+  },
+
+  "Plundering Poro": {
+    onConquer: function(ctx) {
+      ctx.flash(ctx.unit ? ctx.unit.uid : ctx.bf.uid);
+      ctx.spawnInBase("Gold", 1);
+      ctx.banner("Plundering Poro — Gold gear token to base (conquered " + ctx.bfName + ")");
+    }
   }
 };
 </script>
@@ -2719,6 +2822,15 @@ function RiftboundGame() {
       }
       var bfEff = CARD_EFFECTS[bf.name];
       if (bfEff && bfEff.onConquer) { try { bfEff.onConquer(makeConquerCtx(playerIdx, bfIdx, bf)); } catch(e) { console.error("bf onConquer error:", e); } }
+      // Unit-level "When I conquer" triggers (e.g. Plundering Poro) — fire for each conquering unit at the BF.
+      (bf.units[playerIdx] || []).forEach(function(u) {
+        var uEff = CARD_EFFECTS[u.name];
+        if (uEff && uEff.onConquer) {
+          var ctx = makeConquerCtx(playerIdx, bfIdx, bf);
+          ctx.unit = u; ctx.card = u;
+          try { uEff.onConquer(ctx); } catch(e) { console.error("unit onConquer error for " + u.name + ":", e); }
+        }
+      });
     }, 80);
   }
   function fireHoldEffects(playerIdx, bfIdx, bf) {
@@ -2792,9 +2904,29 @@ function RiftboundGame() {
     if (card) _cardsPlayedThisTurnRef.current++;
     if (!autoMode || !card) return;
     var eff = CARD_EFFECTS[card.name];
-    if (!eff || !eff.onCast) return;
-    var ctx = makeAutoCtx(card, "spell", null);
-    try { eff.onCast(ctx); } catch(e) { console.error("CARD_EFFECTS onCast error for " + card.name + ":", e); }
+    if (eff && eff.onCast) {
+      var ctx = makeAutoCtx(card, "spell", null);
+      try { eff.onCast(ctx); } catch(e) { console.error("CARD_EFFECTS onCast error for " + card.name + ":", e); }
+    }
+    // Fire onSpellCast hook on every friendly unit in play (e.g. Ravenbloom Student gets +1 might).
+    fireFriendlyOnSpellCast(card);
+  }
+  function fireFriendlyOnSpellCast(spellCard) {
+    if (!autoMode) return;
+    var idx = myActIdx; var meP = ps[idx]; if (!meP) return;
+    var allies = (meP.base || []).filter(function(c) { return c && (c.type === "Unit" || c.type === "Champion"); }).slice();
+    bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { allies.push(u); }); });
+    allies.forEach(function(u) {
+      var uEff = CARD_EFFECTS[u.name];
+      if (!uEff || !uEff.onSpellCast) return;
+      var ctx = {
+        unit: u, spell: spellCard,
+        flash: function(uid2) { addAnim(uid2, "flash", 800); },
+        banner: function(text) { showAutoBanner("AUTO · " + text); },
+        applyTempMightToUids: function(uids, amount, source) { applyTempMightToUids(uids, amount, source || u.name); }
+      };
+      try { uEff.onSpellCast(ctx); } catch(e) { console.error("CARD_EFFECTS onSpellCast error for " + u.name + ":", e); }
+    });
   }
   function resolveAutoPrompt(uids) {
     var p = autoPrompt; if (!p) return;
@@ -2802,14 +2934,27 @@ function RiftboundGame() {
       applyTempMightToUids(uids, p.amount, p.sourceName);
       var amtStr = p.amount >= 0 ? "+" + p.amount : "" + p.amount;
       showAutoBanner("AUTO · " + p.sourceName + " — " + amtStr + " might to " + uids.length + " unit" + (uids.length === 1 ? "" : "s"));
+      if (p.andDraw) drawCards(p.andDraw);
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
     } else if (p.effect === "ready") {
       readyUidsAcrossPsAndBfs(uids);
       showAutoBanner("AUTO · " + p.sourceName + " — readied " + uids.length + " unit" + (uids.length === 1 ? "" : "s"));
+      if (p.andDraw) drawCards(p.andDraw);
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
     } else if (p.effect === "damage") {
+      // Optional draw-on-kill: check if the damage would kill (might+temp+aura <= amount).
+      if (p.andDrawOnKill) {
+        uids.forEach(function(u2) {
+          var found = null;
+          bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { if (u.uid === u2) found = u; }); }); });
+          if (found && p.amount >= ((found.might || 0) + (found.tempMight || 0) + (found._aura || 0) - (found.damage || 0))) {
+            drawCards(p.andDrawOnKill);
+          }
+        });
+      }
       uids.forEach(function(u2) { dealDamageToUid(u2, p.amount, p.sourceName); });
       showAutoBanner("AUTO · " + p.sourceName + " — " + p.amount + " dmg to " + uids.length + " unit" + (uids.length === 1 ? "" : "s"));
+      if (p.andDraw) drawCards(p.andDraw);
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
     } else if (p.effect === "returnToHand") {
       var pickedName = "card";
