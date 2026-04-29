@@ -401,32 +401,32 @@ var CARD_EFFECTS = {
 
   "Annie, Stubborn": {
     onPlay: function(ctx) {
-      var c = ctx.returnFromTrash(function(t) { return t && t.type === "Spell"; });
       ctx.flash(ctx.card.uid);
-      if (c) ctx.banner("Annie, Stubborn — returned " + c.name + " from bin");
-      else ctx.banner("Annie, Stubborn — no spell in bin to return");
+      var spells = ctx.trashByType ? ctx.trashByType("Spell") : [];
+      if (spells.length === 0) { ctx.banner("Annie, Stubborn — no spell in bin to return"); return; }
+      ctx.prompt({ kind: "pickFromTrash", n: 1, label: "spell", validUids: spells.map(function(c) { return c.uid; }), cardsSnap: spells, sourceName: "Annie, Stubborn", sourceUid: ctx.card.uid, effect: "returnToHand" });
     }
   },
 
   "Aspiring Engineer": {
     onPlay: function(ctx) {
-      var c = ctx.returnFromTrash(function(t) { return t && t.type === "Gear"; });
       ctx.flash(ctx.card.uid);
-      if (c) ctx.banner("Aspiring Engineer — returned " + c.name + " from bin");
-      else ctx.banner("Aspiring Engineer — no gear in bin to return");
+      var gears = ctx.trashByType ? ctx.trashByType("Gear") : [];
+      if (gears.length === 0) { ctx.banner("Aspiring Engineer — no gear in bin to return"); return; }
+      ctx.prompt({ kind: "pickFromTrash", n: 1, label: "gear", validUids: gears.map(function(c) { return c.uid; }), cardsSnap: gears, sourceName: "Aspiring Engineer", sourceUid: ctx.card.uid, effect: "returnToHand" });
     }
   },
 
   "Vanguard Captain": {
     onPlay: function(ctx) {
-      // [Legion] is treated as always-met for now (auto mode is lenient on conditional triggers).
       ctx.flash(ctx.card.uid);
+      if (!ctx.legionMet) { ctx.banner("Vanguard Captain — [Legion] not met (no other card played this turn)"); return; }
       if (ctx.where === "battlefield") {
         ctx.spawnInBattlefield("Recruit (Demacian)", 2);
-        ctx.banner("Vanguard Captain — 2 Recruit tokens at " + (ctx.bfName || "battlefield"));
+        ctx.banner("Vanguard Captain — [Legion] 2 Recruit tokens at " + (ctx.bfName || "battlefield"));
       } else {
         ctx.spawnInBase("Recruit (Demacian)", 2);
-        ctx.banner("Vanguard Captain — 2 Recruit tokens to base");
+        ctx.banner("Vanguard Captain — [Legion] 2 Recruit tokens to base");
       }
     }
   },
@@ -456,27 +456,32 @@ var CARD_EFFECTS = {
   "Cannon Barrage": {
     onCast: function(ctx) {
       ctx.flash(ctx.card.uid);
-      if (!ctx.sd) { ctx.banner("Cannon Barrage — no active showdown to target"); return; }
+      if (!ctx.sd) { ctx.banner("Cannon Barrage — no active combat (showdown) to target"); return; }
       var bf = ctx.bfs[ctx.sd.bfIdx]; if (!bf) return;
+      // "Enemy units in combat" = units at the showdown's battlefield that aren't the caster's.
       var enemies = []; for (var pi = 0; pi < bf.units.length; pi++) { if (pi === ctx.myActIdx) continue; (bf.units[pi] || []).forEach(function(u) { enemies.push(u); }); }
-      if (enemies.length === 0) { ctx.banner("Cannon Barrage — no enemies at this battlefield"); return; }
+      if (enemies.length === 0) { ctx.banner("Cannon Barrage — no enemy units in combat"); return; }
       enemies.forEach(function(u) { ctx.dealDamage(u.uid, 2, "Cannon Barrage"); });
-      ctx.banner("Cannon Barrage — 2 dmg to " + enemies.length + " enemy unit" + (enemies.length === 1 ? "" : "s"));
+      ctx.banner("Cannon Barrage — 2 dmg to " + enemies.length + " enemy unit" + (enemies.length === 1 ? "" : "s") + " in combat");
     }
   },
 
   "Combat Experience": {
     onCast: function(ctx) {
-      var friendly = ctx.countFriendlyUnits();
-      if (friendly === 0) { ctx.banner("Combat Experience — no friendly units"); return; }
       ctx.flash(ctx.card.uid);
-      if (friendly === 1) {
-        var ids = ctx.friendlyUnitUids();
-        ctx.applyTempMightToUids(ids, 1, "Combat Experience");
-        ctx.banner("Combat Experience — +1 might to your unit");
-      } else {
-        ctx.prompt({ kind: "pickFriendlyUnits", n: 1, sourceName: "Combat Experience", sourceUid: ctx.card.uid, effect: "tempMight", amount: 1 });
+      // "Give a unit +1 might this turn" — any unit (friendly or enemy).
+      var allUids = [];
+      var idx = ctx.myActIdx;
+      var meP = ps[idx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+      if (allUids.length === 0) { ctx.banner("Combat Experience — no units on the board"); return; }
+      if (allUids.length === 1) {
+        ctx.applyTempMightToUids([allUids[0]], 1, "Combat Experience");
+        ctx.banner("Combat Experience — +1 might to the only unit on the board");
+        return;
       }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Combat Experience", sourceUid: ctx.card.uid, effect: "tempMight", amount: 1 });
     }
   }
 };
@@ -995,6 +1000,9 @@ function RiftboundGame() {
   var _aBnr = useState(null), autoBanner = _aBnr[0], setAutoBanner = _aBnr[1];
   var _aWatch = useState([]), autoWatchers = _aWatch[0], setAutoWatchers = _aWatch[1];
   var _autoSelRef = useRef([]);
+  // Cards-played-this-turn counter (used by Legion-style triggers like Vanguard Captain).
+  // Reset at the start of each turn; incremented on every successful play (unit/champion/gear/spell).
+  var _cardsPlayedThisTurnRef = useRef(0);
   var autoMode = !!(lobbySettings && lobbySettings.autoMode);
   var _lobbyList = useState([]), lobbyList = _lobbyList[0], setLobbyList = _lobbyList[1];
   var _lobbyErr = useState(null), lobbyErr = _lobbyErr[0], setLobbyErr = _lobbyErr[1];
@@ -2455,6 +2463,7 @@ function RiftboundGame() {
     uids.forEach(function(uid2) { addAnim(uid2, "flash", 800); });
   }
   function fireUnitPlayedEffects(card, where, bi) {
+    _cardsPlayedThisTurnRef.current++;
     if (!autoMode) return;
     var eff = CARD_EFFECTS[card.name];
     if (eff && eff.entersReady && eff.banner) showAutoBanner("AUTO · " + eff.banner);
@@ -2528,7 +2537,17 @@ function RiftboundGame() {
       sd: sd,
       bfs: bfs,
       myActIdx: myActIdx,
+      // Legion: true if any other card was already played this turn before this one.
+      // (The play path increments _cardsPlayedThisTurnRef before fireUnitPlayedEffects/runAutoOnCast
+      // run, so a count > 1 means at least one earlier card.)
+      legionMet: _cardsPlayedThisTurnRef.current > 1,
       dealDamage: function(uid2, amount, source) { dealDamageToUid(uid2, amount, source || (card && card.name)); },
+      // Snapshot of the local player's trash filtered by card type (e.g. "Spell", "Gear").
+      // Used by pickFromTrash prompts so the modal can render the candidate cards.
+      trashByType: function(typeName) {
+        var meP = ps[myActIdx]; if (!meP) return [];
+        return (meP.trash || []).filter(function(c) { return c && c.type === typeName; });
+      },
       // Move the most-recently-binned card matching `predicate` from trash back to hand.
       // Returns the card object (read at the moment of mutation) or null.
       returnFromTrash: function(predicate) {
@@ -2790,6 +2809,7 @@ function RiftboundGame() {
     });
   }
   function runAutoOnCast(card) {
+    if (card) _cardsPlayedThisTurnRef.current++;
     if (!autoMode || !card) return;
     var eff = CARD_EFFECTS[card.name];
     if (!eff || !eff.onCast) return;
@@ -2810,6 +2830,23 @@ function RiftboundGame() {
     } else if (p.effect === "damage") {
       uids.forEach(function(u2) { dealDamageToUid(u2, p.amount, p.sourceName); });
       showAutoBanner("AUTO · " + p.sourceName + " — " + p.amount + " dmg to " + uids.length + " unit" + (uids.length === 1 ? "" : "s"));
+      if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+    } else if (p.effect === "returnToHand") {
+      var pickedName = "card";
+      uids.forEach(function(u2) {
+        setPs(function(prev) {
+          var idx = myActIdx; var pp = prev[idx]; if (!pp) return prev;
+          var trash = (pp.trash || []).slice();
+          var ti = trash.findIndex(function(c) { return c.uid === u2; });
+          if (ti < 0) return prev;
+          var card = trash.splice(ti, 1)[0]; pickedName = card.name || pickedName;
+          var hand = (pp.hand || []).slice(); hand.push(card);
+          var np = prev.slice(); np[idx] = Object.assign({}, pp, { trash: trash, hand: hand });
+          addAnim(card.uid, "draw");
+          return np;
+        });
+      });
+      showAutoBanner("AUTO · " + p.sourceName + " — returned " + (uids.length === 1 ? pickedName : (uids.length + " cards")) + " from bin");
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
     }
     setAutoPrompt(null);
@@ -2905,6 +2942,7 @@ function RiftboundGame() {
       if (_isDoublesGame && _myTeammateIdx >= 0) { np2[_myTeammateIdx] = Object.assign({}, np2[_myTeammateIdx], { score: p.score }); }
       setPs(np2); setBfs(nb);
       setAwakenPhase(null); setScreen("play");
+      _cardsPlayedThisTurnRef.current = 0;
       setTimeout(recalcAuras, 0);
       // Sync after turn start with explicit values
       if (roomCode && lobbyType !== "test" && _gamePhaseRef.current === "playing") {
@@ -3459,6 +3497,7 @@ function RiftboundGame() {
       p.base = p.base.concat([Object.assign({}, card, { exhausted: false })]);
       aL(pName(myActIdx) + " plays " + cName(card) + " to base");
       if (autoRunes && (tappedDomains.length > 0 || recycledDomains.length > 0)) { var partsG = []; if (tappedDomains.length) partsG.push("tapped " + _fmtDomains(tappedDomains)); if (recycledDomains.length) partsG.push("recycled " + _fmtDomains(recycledDomains)); aL("  Paid: " + partsG.join("; ")); }
+      _cardsPlayedThisTurnRef.current++;
     } else if (card.type === "Spell") {
       p.trash = (p.trash || []).concat([card]); aL(pName(myActIdx) + " casts " + cName(card));
       if (autoRunes && (tappedDomains.length > 0 || recycledDomains.length > 0)) { var partsS = []; if (tappedDomains.length) partsS.push("tapped " + _fmtDomains(tappedDomains)); if (recycledDomains.length) partsS.push("recycled " + _fmtDomains(recycledDomains)); aL("  Paid: " + partsS.join("; ")); }
@@ -3763,9 +3802,20 @@ function RiftboundGame() {
           </div>
         </div>;
       })()}
-      {autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || autoPrompt.kind === "pickEnemyUnit") && <div style={{ position: "fixed", top: 60, left: "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #FFD70088", boxShadow: "0 8px 32px #000c, 0 0 24px #FFD70022", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 280, pointerEvents: "auto" }}>
+      {autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || autoPrompt.kind === "pickEnemyUnit" || autoPrompt.kind === "pickAnyUnit") && <div style={{ position: "fixed", top: 60, left: "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #FFD70088", boxShadow: "0 8px 32px #000c, 0 0 24px #FFD70022", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 280, pointerEvents: "auto" }}>
         <div style={{ fontSize: 11, color: "#FFD70099", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
-        <div style={{ fontSize: 14, color: "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{(autoPrompt.kind === "pickEnemyUnit" ? "Click " + autoPrompt.n + " enemy unit" : "Click " + autoPrompt.n + " friendly unit") + (autoPrompt.n > 1 ? "s" : "") + " (" + ((autoPrompt._sel || []).length) + "/" + autoPrompt.n + ")"}</div>
+        <div style={{ fontSize: 14, color: "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{(autoPrompt.kind === "pickEnemyUnit" ? "Click " + autoPrompt.n + " enemy unit" : autoPrompt.kind === "pickAnyUnit" ? "Click " + autoPrompt.n + " unit (friendly or enemy)" : "Click " + autoPrompt.n + " friendly unit") + (autoPrompt.kind !== "pickAnyUnit" && autoPrompt.n > 1 ? "s" : "") + " (" + ((autoPrompt._sel || []).length) + "/" + autoPrompt.n + ")"}</div>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button onClick={function() { var sel = _autoSelRef.current.slice(); if (sel.length === autoPrompt.n) resolveAutoPrompt(sel); }} disabled={(autoPrompt._sel || []).length !== autoPrompt.n} style={{ padding: "5px 16px", borderRadius: 5, border: "1.5px solid " + ((autoPrompt._sel || []).length === autoPrompt.n ? "#4ADE80" : "#444"), background: (autoPrompt._sel || []).length === autoPrompt.n ? "rgba(74,222,128,0.15)" : "transparent", color: (autoPrompt._sel || []).length === autoPrompt.n ? "#4ADE80" : "#666", cursor: (autoPrompt._sel || []).length === autoPrompt.n ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 700, fontFamily: "Spectral,serif" }}>Confirm</button>
+          <button onClick={function() { setAutoPrompt(null); _autoSelRef.current = []; }} style={{ padding: "5px 16px", borderRadius: 5, border: "1px solid #555", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif" }}>Skip</button>
+        </div>
+      </div>}
+      {autoPrompt && autoPrompt.kind === "pickFromTrash" && <div style={{ position: "fixed", top: 60, left: "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #FFD70088", boxShadow: "0 8px 32px #000c, 0 0 24px #FFD70022", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 320, maxWidth: "90vw", pointerEvents: "auto" }}>
+        <div style={{ fontSize: 11, color: "#FFD70099", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
+        <div style={{ fontSize: 14, color: "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{"Pick a " + (autoPrompt.label || "card") + " from your bin to return to hand"}</div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", maxWidth: "min(80vw, 760px)", maxHeight: 320, overflowY: "auto" }}>
+          {(autoPrompt.cardsSnap || []).map(function(c) { var ci = CI[c.name] ? imgSrc(CI[c.name]) : (PA[c.name] ? PA_CDN + PA[c.name] + ".webp" : ""); var dc = DOM[c.domain] || DOM.Colorless; var sel = (autoPrompt._sel || []).indexOf(c.uid) >= 0; return <div key={c.uid} onClick={function() { toggleAutoSel(c.uid); }} onMouseEnter={function(e) { _hoverByName(c.name, e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ cursor: "pointer", width: 100, position: "relative" }}>{ci ? <img src={ci} style={{ width: 100, height: 140, objectFit: "fill", borderRadius: 4, border: sel ? "2px solid #FFD700" : "1px solid " + dc.c + "55", boxShadow: sel ? "0 0 12px #FFD70066" : "0 2px 6px #000a", display: "block" }} /> : <div style={{ width: 100, height: 140, borderRadius: 4, border: sel ? "2px solid #FFD700" : "1px solid " + dc.c + "55", background: dc.c + "10", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: dc.c, textAlign: "center", padding: 4 }}>{c.name}</div>}</div>; })}
+        </div>
         <div style={{ display: "flex", gap: 6 }}>
           <button onClick={function() { var sel = _autoSelRef.current.slice(); if (sel.length === autoPrompt.n) resolveAutoPrompt(sel); }} disabled={(autoPrompt._sel || []).length !== autoPrompt.n} style={{ padding: "5px 16px", borderRadius: 5, border: "1.5px solid " + ((autoPrompt._sel || []).length === autoPrompt.n ? "#4ADE80" : "#444"), background: (autoPrompt._sel || []).length === autoPrompt.n ? "rgba(74,222,128,0.15)" : "transparent", color: (autoPrompt._sel || []).length === autoPrompt.n ? "#4ADE80" : "#666", cursor: (autoPrompt._sel || []).length === autoPrompt.n ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 700, fontFamily: "Spectral,serif" }}>Confirm</button>
           <button onClick={function() { setAutoPrompt(null); _autoSelRef.current = []; }} style={{ padding: "5px 16px", borderRadius: 5, border: "1px solid #555", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif" }}>Skip</button>
@@ -4101,7 +4151,7 @@ function RiftboundGame() {
                 <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 1 }}>
                   {/* Enemy units — to the right of BF card, bottom aligned with BF bottom (top-right from your POV) */}
                   <div style={{ position: "absolute", left: "100%", bottom: 0, display: "flex", flexDirection: "row", flexWrap: "nowrap", marginLeft: Math.round(4 * vScale), zIndex: 2 }}>
-                    {ps.map(function(p, pi) { if (pi === bottomPlayer || !bf.units[pi] || bf.units[pi].length === 0) return null; var isMyUnits = pi === myActIdx; var units = bf.units[pi]; var totalU = units.length; var overlapPx = totalU <= 1 ? 0 : totalU === 2 ? 30 : totalU === 3 ? 50 : totalU === 4 ? 65 : totalU === 5 ? 75 : 82; return units.map(function(u, ui) { var wrapStyle = { marginLeft: ui === 0 ? 0 : Math.round(-overlapPx * vScale), zIndex: totalU - ui, position: "relative", flexShrink: 0 }; var _fizzle = getAnimType(u.uid) === "fizzle" ? "anim-fizzle" : ""; return isMyUnits ? <div key={u.uid} className={_fizzle} style={wrapStyle}><Card card={u} small isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow && !autoPrompt ? "bf:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} onClick={function() { if (autoPrompt && autoPrompt.kind === "pickFriendlyUnits") { toggleAutoSel(u.uid); return; } toggleTap(u.uid); }} actionLabel={autoPrompt && autoPrompt.kind === "pickFriendlyUnits" ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (u.exhausted ? "Untap" : "Tap")} selected={!!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} /></div> : <div key={u.uid} className={_fizzle} style={wrapStyle}><Card card={u} small onClick={(autoPrompt && autoPrompt.kind === "pickEnemyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0) ? function() { toggleAutoSel(u.uid); } : (tm ? function() { resTarget(u, pi, bi); } : undefined)} actionLabel={(autoPrompt && autoPrompt.kind === "pickEnemyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (tm ? "Target" : undefined)} selected={!!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} /></div>; }); })}
+                    {ps.map(function(p, pi) { if (pi === bottomPlayer || !bf.units[pi] || bf.units[pi].length === 0) return null; var isMyUnits = pi === myActIdx; var units = bf.units[pi]; var totalU = units.length; var overlapPx = totalU <= 1 ? 0 : totalU === 2 ? 30 : totalU === 3 ? 50 : totalU === 4 ? 65 : totalU === 5 ? 75 : 82; return units.map(function(u, ui) { var wrapStyle = { marginLeft: ui === 0 ? 0 : Math.round(-overlapPx * vScale), zIndex: totalU - ui, position: "relative", flexShrink: 0 }; var _fizzle = getAnimType(u.uid) === "fizzle" ? "anim-fizzle" : ""; return isMyUnits ? <div key={u.uid} className={_fizzle} style={wrapStyle}><Card card={u} small isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow && !autoPrompt ? "bf:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} onClick={function() { if (autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0))) { toggleAutoSel(u.uid); return; } toggleTap(u.uid); }} actionLabel={autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0)) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (u.exhausted ? "Untap" : "Tap")} selected={!!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} /></div> : <div key={u.uid} className={_fizzle} style={wrapStyle}><Card card={u} small onClick={(autoPrompt && (autoPrompt.kind === "pickEnemyUnit" || autoPrompt.kind === "pickAnyUnit") && (autoPrompt.validUids || []).indexOf(u.uid) >= 0) ? function() { toggleAutoSel(u.uid); } : (tm ? function() { resTarget(u, pi, bi); } : undefined)} actionLabel={(autoPrompt && (autoPrompt.kind === "pickEnemyUnit" || autoPrompt.kind === "pickAnyUnit") && (autoPrompt.validUids || []).indexOf(u.uid) >= 0) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (tm ? "Target" : undefined)} selected={!!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} /></div>; }); })}
                   </div>
                   {/* BF card itself */}
                   <div data-uid={bf.uid} style={{ width: BF_H, height: BF_W, display: "flex", justifyContent: "center", alignItems: "center" }}>
@@ -4109,7 +4159,7 @@ function RiftboundGame() {
                   </div>
                   {/* Your units — to the left of BF card, top aligned with BF top (bottom-left from your POV) */}
                   <div style={{ position: "absolute", right: "100%", top: 0, display: "flex", flexDirection: "row-reverse", flexWrap: "nowrap", marginRight: Math.round(4 * vScale), zIndex: 2 }}>
-                    {bf.units[bottomPlayer] && (function() { var units = bf.units[bottomPlayer]; var totalU = units.length; var overlapPx = totalU <= 1 ? 0 : totalU === 2 ? 30 : totalU === 3 ? 50 : totalU === 4 ? 65 : totalU === 5 ? 75 : 82; return units.map(function(u, ui) { var wrapStyle = { marginRight: ui === 0 ? 0 : Math.round(-overlapPx * vScale), zIndex: totalU - ui, position: "relative", flexShrink: 0 }; return <div key={u.uid} style={wrapStyle}><Card card={u} small isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow && !autoPrompt ? "bf:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} onClick={function() { if (autoPrompt && autoPrompt.kind === "pickFriendlyUnits") { toggleAutoSel(u.uid); return; } toggleTap(u.uid); }} actionLabel={autoPrompt && autoPrompt.kind === "pickFriendlyUnits" ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (u.exhausted ? "Untap" : "Tap")} selected={!!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} /></div>; }); })()}
+                    {bf.units[bottomPlayer] && (function() { var units = bf.units[bottomPlayer]; var totalU = units.length; var overlapPx = totalU <= 1 ? 0 : totalU === 2 ? 30 : totalU === 3 ? 50 : totalU === 4 ? 65 : totalU === 5 ? 75 : 82; return units.map(function(u, ui) { var wrapStyle = { marginRight: ui === 0 ? 0 : Math.round(-overlapPx * vScale), zIndex: totalU - ui, position: "relative", flexShrink: 0 }; return <div key={u.uid} style={wrapStyle}><Card card={u} small isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow && !autoPrompt ? "bf:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} onClick={function() { if (autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0))) { toggleAutoSel(u.uid); return; } toggleTap(u.uid); }} actionLabel={autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0)) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (u.exhausted ? "Untap" : "Tap")} selected={!!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} /></div>; }); })()}
                   </div>
                 </div>
               </div>;
@@ -4148,7 +4198,7 @@ function RiftboundGame() {
               style={{ display: "flex", flexDirection: "row", gap: 3, padding: "3px 4px", borderRadius: 6, border: dragOverBase ? "2px solid #FFD700" : "1.5px solid #FFD70055", background: dragOverBase ? "rgba(255,215,0,0.08)" : "transparent", boxShadow: dragOverBase ? "0 0 16px rgba(255,215,0,0.3), inset 0 0 16px rgba(255,215,0,0.05)" : "none", alignItems: "center", flexWrap: "nowrap", flex: 9, height: HAND_H + Math.round(70 * vScale), minHeight: HAND_H + Math.round(70 * vScale), maxHeight: HAND_H + Math.round(70 * vScale), overflow: "hidden", transition: "border 0.15s ease, background 0.15s ease, box-shadow 0.15s ease", position: "relative" }}>
               <div style={{ fontSize: 13, color: "#FFD70077", fontFamily: "Spectral,serif", letterSpacing: 1 }}>BASE</div>
               {myCur.base.map(function(u) {
-                return <Card key={u.uid} card={u} small isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow ? "base:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} selected={(sel && sel.uid === u.uid) || !!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} onClick={function() { if (autoPrompt && autoPrompt.kind === "pickFriendlyUnits") { toggleAutoSel(u.uid); return; } if (tm) { resTarget(u, myActIdx, null); } else { toggleTap(u.uid); } }} actionLabel={autoPrompt && autoPrompt.kind === "pickFriendlyUnits" ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (tm ? "Target" : (u.exhausted ? "Untap" : "Tap"))} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} />;
+                return <Card key={u.uid} card={u} small isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow ? "base:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} selected={(sel && sel.uid === u.uid) || !!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} onClick={function() { if (autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0))) { toggleAutoSel(u.uid); return; } if (tm) { resTarget(u, myActIdx, null); } else { toggleTap(u.uid); } }} actionLabel={autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0)) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (tm ? "Target" : (u.exhausted ? "Untap" : "Tap"))} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} />;
               })}
             </div>
           </div>
