@@ -215,12 +215,7 @@ function _ahriInquisitiveDebuff(ctx) {
   var enemies = ctx.enemyUnits();
   if (enemies.length === 0) return;
   ctx.flash(ctx.unit.uid);
-  if (enemies.length === 1) {
-    ctx.applyTempMightToUids([enemies[0].uid], -2, "Ahri, Inquisitive");
-    ctx.banner("Ahri, Inquisitive — -2 might to " + (enemies[0].name || "enemy"));
-  } else {
-    ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemies.map(function(u) { return u.uid; }), sourceName: "Ahri, Inquisitive", sourceUid: ctx.unit.uid, effect: "tempMight", amount: -2 });
-  }
+  ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemies.map(function(u) { return u.uid; }), sourceName: "Ahri, Inquisitive", sourceUid: ctx.unit.uid, effect: "tempMight", amount: -2 });
 }
 
 var CARD_EFFECTS = {
@@ -242,11 +237,6 @@ var CARD_EFFECTS = {
       var ids = ctx.friendlyUnitUids(ctx.card.uid);
       if (ids.length === 0) { ctx.flash(ctx.card.uid); ctx.banner("First Mate — no other friendly units to ready"); return; }
       ctx.flash(ctx.card.uid);
-      if (ids.length === 1) {
-        ctx.readyUids(ids);
-        ctx.banner("First Mate — auto-readied 1 friendly unit");
-        return;
-      }
       ctx.prompt({ kind: "pickFriendlyUnits", n: 1, excludeUid: ctx.card.uid, sourceName: "First Mate", sourceUid: ctx.card.uid, effect: "ready" });
     }
   },
@@ -322,12 +312,7 @@ var CARD_EFFECTS = {
       var enemies = ctx.enemyUnits();
       if (enemies.length === 0) { ctx.banner("Crackshot Corsair — no enemy units here"); return; }
       ctx.flash(ctx.unit.uid);
-      if (enemies.length === 1) {
-        ctx.dealDamage(enemies[0].uid, 1);
-        ctx.banner("Crackshot Corsair — 1 dmg to " + (enemies[0].name || "enemy"));
-      } else {
-        ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemies.map(function(u) { return u.uid; }), sourceName: "Crackshot Corsair", sourceUid: ctx.unit.uid, effect: "damage", amount: 1 });
-      }
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemies.map(function(u) { return u.uid; }), sourceName: "Crackshot Corsair", sourceUid: ctx.unit.uid, effect: "damage", amount: 1 });
     }
   },
   "Dune Drake": {
@@ -476,11 +461,6 @@ var CARD_EFFECTS = {
       if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
       ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
       if (allUids.length === 0) { ctx.banner("Combat Experience — no units on the board"); return; }
-      if (allUids.length === 1) {
-        ctx.applyTempMightToUids([allUids[0]], 1, "Combat Experience");
-        ctx.banner("Combat Experience — +1 might to the only unit on the board");
-        return;
-      }
       ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Combat Experience", sourceUid: ctx.card.uid, effect: "tempMight", amount: 1 });
     }
   }
