@@ -1503,6 +1503,7 @@ function RiftboundGame() {
             <span style={{ fontSize: 20, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700", letterSpacing: 4 }}>{roomCode}</span>
             <button onClick={function() { navigator.clipboard.writeText(roomCode); }} style={{ padding: "2px 8px", borderRadius: 3, border: "1px solid #FFD70044", background: "transparent", color: "#FFD700aa", cursor: "pointer", fontSize: 11 }}>Copy</button>
             {lobbySettings && lobbySettings.password && <span>🔒</span>}
+            {lobbySettings && <span style={{ padding: "2px 8px", borderRadius: 3, border: "1px solid " + (lobbySettings.autoMode ? "#FFD700" : "#ffffff20"), background: lobbySettings.autoMode ? "rgba(255,215,0,0.10)" : "transparent", color: lobbySettings.autoMode ? "#FFD700" : "#666", fontFamily: "Spectral,serif", fontSize: 11, fontWeight: 700, letterSpacing: 1.5 }} title={lobbySettings.autoMode ? "Auto Mode is ON — card abilities resolve automatically" : "Auto Mode is OFF — card abilities are manual"}>AUTO {lobbySettings.autoMode ? "ON" : "OFF"}</span>}
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
@@ -1643,7 +1644,7 @@ function RiftboundGame() {
 
       {/* Join: In lobby (after joining) */}
       {lobbyType === "join" && roomCode && <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, marginTop: 8, padding: "12px 20px", width: "100%", maxWidth: "min(95vw, 900px)", maxHeight: "calc(100vh - 180px)", overflow: "auto" }}>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}><span style={{ fontSize: 13, color: "#888" }}>Room:</span><span style={{ fontSize: 18, fontFamily: "Spectral,serif", fontWeight: 700, color: "#4ADE80", letterSpacing: 3 }}>{roomCode}</span><span style={{ fontSize: 13, color: "#666" }}>Waiting for host to start...</span></div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}><span style={{ fontSize: 13, color: "#888" }}>Room:</span><span style={{ fontSize: 18, fontFamily: "Spectral,serif", fontWeight: 700, color: "#4ADE80", letterSpacing: 3 }}>{roomCode}</span>{lobbySettings && <span style={{ padding: "2px 8px", borderRadius: 3, border: "1px solid " + (lobbySettings.autoMode ? "#FFD700" : "#ffffff20"), background: lobbySettings.autoMode ? "rgba(255,215,0,0.10)" : "transparent", color: lobbySettings.autoMode ? "#FFD700" : "#666", fontFamily: "Spectral,serif", fontSize: 11, fontWeight: 700, letterSpacing: 1.5 }} title={lobbySettings.autoMode ? "Auto Mode is ON — card abilities resolve automatically" : "Auto Mode is OFF — card abilities are manual"}>AUTO {lobbySettings.autoMode ? "ON" : "OFF"}</span>}<span style={{ fontSize: 13, color: "#666" }}>Waiting for host to start...</span></div>
         <div style={{ display: "flex", flexDirection: "column", gap: 3, width: "100%" }}>
           {lpArr.map(function(p, i) { var isMe = p.uid === myUid; var displayDeckName = p.deck ? (p.deck.indexOf(" (") > 0 ? p.deck.substring(0, p.deck.indexOf(" (")) : p.deck) : null; var teamCol = p.team === "red" ? "#ef4444" : p.team === "blue" ? "#3b82f6" : null; return <div key={p.uid} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 8px", borderRadius: 4, border: "1px solid " + (isMe ? "#4ADE8055" : "#ffffff20"), background: isMe ? "#4ADE8008" : "transparent" }}>{teamCol && <span style={{ fontSize: 10, color: teamCol, fontWeight: 700, fontFamily: "Spectral,serif", letterSpacing: 1, padding: "1px 5px", borderRadius: 3, border: "1px solid " + teamCol + "66", background: teamCol + "15" }}>{p.team.toUpperCase()}</span>}<span style={{ fontSize: 13, fontWeight: 700, color: isMe ? "#4ADE80" : "#aaa", flex: 1 }}>{p.name} {i === 0 ? "👑" : ""}</span><span style={{ fontSize: 12, color: p.deck ? "#4ADE80" : "#666" }}>{displayDeckName || "..."}</span></div>; })}
         </div>
@@ -2389,9 +2390,20 @@ function RiftboundGame() {
       applyTempMightToAllFriendly: function(amount, source) { return applyTempMightToAllFriendly(amount, source || (card && card.name)); },
       applyTempMightToUids: function(uids, amount, source) { applyTempMightToUids(uids, amount, source || (card && card.name)); },
       _buildPlacementLocations: function(locations) {
-        // Append controlled battlefields to the given list (mutated).
+        // Append battlefields that count as "yours" — strict controller match, plus
+        // implicit control: you have units present and no enemy is contesting. The
+        // implicit case is a safety net for moments when bf.controller hasn't been
+        // written through after a fresh conquer.
         var idx = myActIdx;
-        bfs.forEach(function(b, bi2) { if (b && b.controller === idx) locations.push({ key: "bf:" + bi2, label: b.name, bi: bi2 }); });
+        bfs.forEach(function(b, bi2) {
+          if (!b) return;
+          if (b.controller === idx) { locations.push({ key: "bf:" + bi2, label: b.name, bi: bi2 }); return; }
+          var myUnits = (b.units && b.units[idx]) || [];
+          if (myUnits.length === 0) return;
+          var hasEnemy = false;
+          for (var pi = 0; pi < (b.units || []).length; pi++) { if (pi !== idx && (b.units[pi] || []).length > 0) { hasEnemy = true; break; } }
+          if (!hasEnemy) locations.push({ key: "bf:" + bi2, label: b.name + " (held)", bi: bi2 });
+        });
       }
     };
   }
