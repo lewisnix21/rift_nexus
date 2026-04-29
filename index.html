@@ -472,7 +472,8 @@ var CARD_EFFECTS = {
       ctx.flash(ctx.card.uid);
       var ids = ctx.friendlyUnitUids(ctx.card.uid);
       if (ids.length === 0) { ctx.banner("Pit Rookie — no other friendly units to buff"); return; }
-      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, excludeUid: ctx.card.uid, sourceName: "Pit Rookie", sourceUid: ctx.card.uid, effect: "tempMight", amount: 1 });
+      // "Buff" mechanic: attach a persistent +1 counter token rather than a turn-end-clearing tempMight.
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, excludeUid: ctx.card.uid, sourceName: "Pit Rookie", sourceUid: ctx.card.uid, effect: "addCounter", amount: 1 });
     }
   },
 
@@ -562,7 +563,11 @@ var CARD_EFFECTS = {
 
   "Plundering Poro": {
     onConquer: function(ctx) {
-      ctx.flash(ctx.unit ? ctx.unit.uid : ctx.bf.uid);
+      // "When I conquer" — only triggers when the Poro itself is the unit involved in
+      // the conquer event (i.e. ctx.unit is set by the unit-level onConquer dispatch and
+      // matches this card). Defensive guard against other dispatch paths firing it.
+      if (!ctx.unit || ctx.unit.name !== "Plundering Poro") return;
+      ctx.flash(ctx.unit.uid);
       ctx.spawnInBase("Gold", 1);
       ctx.banner("Plundering Poro — Gold gear token to base (conquered " + ctx.bfName + ")");
     }
@@ -2939,6 +2944,12 @@ function RiftboundGame() {
     } else if (p.effect === "ready") {
       readyUidsAcrossPsAndBfs(uids);
       showAutoBanner("AUTO · " + p.sourceName + " — readied " + uids.length + " unit" + (uids.length === 1 ? "" : "s"));
+      if (p.andDraw) drawCards(p.andDraw);
+      if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+    } else if (p.effect === "addCounter") {
+      // Persistent buff token (the green +N badge), e.g. Pit Rookie's "buff" mechanic.
+      uids.forEach(function(u2) { addCounter(u2, p.amount || 1); addAnim(u2, "flash", 800); });
+      showAutoBanner("AUTO · " + p.sourceName + " — buff token (+" + (p.amount || 1) + ") to " + uids.length + " unit" + (uids.length === 1 ? "" : "s"));
       if (p.andDraw) drawCards(p.andDraw);
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
     } else if (p.effect === "damage") {
