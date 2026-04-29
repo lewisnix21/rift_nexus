@@ -211,6 +211,18 @@ return{name:c.n,type:c.t,domain:c.d,domains:c.ds,energy:c.e,might:c.m,keywords:c
 //   entersReady: unit/champion enters the battlefield (or base) ready instead of exhausted
 //   onCast(ctx): runs when a Spell is cast. ctx has { card, flash(uid), banner(text), addWatcher(w), prompt(p) }
 //   watch.onUnitPlayed(ctx, unit): runs whenever a friendly unit is played while this watcher is active
+function _ahriInquisitiveDebuff(ctx) {
+  var enemies = ctx.enemyUnits();
+  if (enemies.length === 0) return;
+  ctx.flash(ctx.unit.uid);
+  if (enemies.length === 1) {
+    ctx.applyTempMightToUids([enemies[0].uid], -2, "Ahri, Inquisitive");
+    ctx.banner("Ahri, Inquisitive — -2 might to " + (enemies[0].name || "enemy"));
+  } else {
+    ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemies.map(function(u) { return u.uid; }), sourceName: "Ahri, Inquisitive", sourceUid: ctx.unit.uid, effect: "tempMight", amount: -2 });
+  }
+}
+
 var CARD_EFFECTS = {
   // ============ Garen precon (Body/Order) ============
 
@@ -365,6 +377,106 @@ var CARD_EFFECTS = {
     onHold: function(ctx) {
       ctx.spawnInBase("Recruit (Demacian)", 1);
       ctx.banner("Altar to Unity — Recruit token to base (you held " + ctx.bfName + ")");
+    }
+  },
+
+  // ============ Batch 2: 10 cards across deck pool ============
+
+  "Lecturing Yordle": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.draw(1);
+      ctx.banner("Lecturing Yordle — drew 1");
+    }
+  },
+
+  "Kinkou Initiate": {
+    onPlay: function(ctx) {
+      var total = ctx.totalFriendlyMight ? ctx.totalFriendlyMight(ctx.card.uid) : 0;
+      ctx.flash(ctx.card.uid);
+      if (total >= 5) { ctx.draw(1); ctx.banner("Kinkou Initiate — drew 1 (other units total " + total + " might)"); }
+      else { ctx.banner("Kinkou Initiate — no draw (other units total " + total + ", need 5+)"); }
+    }
+  },
+
+  "Annie, Stubborn": {
+    onPlay: function(ctx) {
+      var c = ctx.returnFromTrash(function(t) { return t && t.type === "Spell"; });
+      ctx.flash(ctx.card.uid);
+      if (c) ctx.banner("Annie, Stubborn — returned " + c.name + " from bin");
+      else ctx.banner("Annie, Stubborn — no spell in bin to return");
+    }
+  },
+
+  "Aspiring Engineer": {
+    onPlay: function(ctx) {
+      var c = ctx.returnFromTrash(function(t) { return t && t.type === "Gear"; });
+      ctx.flash(ctx.card.uid);
+      if (c) ctx.banner("Aspiring Engineer — returned " + c.name + " from bin");
+      else ctx.banner("Aspiring Engineer — no gear in bin to return");
+    }
+  },
+
+  "Vanguard Captain": {
+    onPlay: function(ctx) {
+      // [Legion] is treated as always-met for now (auto mode is lenient on conditional triggers).
+      ctx.flash(ctx.card.uid);
+      if (ctx.where === "battlefield") {
+        ctx.spawnInBattlefield("Recruit (Demacian)", 2);
+        ctx.banner("Vanguard Captain — 2 Recruit tokens at " + (ctx.bfName || "battlefield"));
+      } else {
+        ctx.spawnInBase("Recruit (Demacian)", 2);
+        ctx.banner("Vanguard Captain — 2 Recruit tokens to base");
+      }
+    }
+  },
+
+  "Anivia, Primal": {
+    onAttack: function(ctx) {
+      var enemies = ctx.enemyUnits();
+      if (enemies.length === 0) { ctx.banner("Anivia, Primal — no enemies here"); return; }
+      ctx.flash(ctx.unit.uid);
+      enemies.forEach(function(u) { ctx.dealDamage(u.uid, 3); });
+      ctx.banner("Anivia, Primal — 3 dmg to " + enemies.length + " enemy unit" + (enemies.length === 1 ? "" : "s"));
+    }
+  },
+
+  "Ahri, Inquisitive": {
+    onAttack: function(ctx) { _ahriInquisitiveDebuff(ctx); },
+    onDefend: function(ctx) { _ahriInquisitiveDebuff(ctx); }
+  },
+
+  "Ahri, Alluring": {
+    onHold: function(ctx) {
+      ctx.incrementScore(1);
+      ctx.banner("Ahri, Alluring — +1 score for holding " + ctx.bfName);
+    }
+  },
+
+  "Cannon Barrage": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      if (!ctx.sd) { ctx.banner("Cannon Barrage — no active showdown to target"); return; }
+      var bf = ctx.bfs[ctx.sd.bfIdx]; if (!bf) return;
+      var enemies = []; for (var pi = 0; pi < bf.units.length; pi++) { if (pi === ctx.myActIdx) continue; (bf.units[pi] || []).forEach(function(u) { enemies.push(u); }); }
+      if (enemies.length === 0) { ctx.banner("Cannon Barrage — no enemies at this battlefield"); return; }
+      enemies.forEach(function(u) { ctx.dealDamage(u.uid, 2, "Cannon Barrage"); });
+      ctx.banner("Cannon Barrage — 2 dmg to " + enemies.length + " enemy unit" + (enemies.length === 1 ? "" : "s"));
+    }
+  },
+
+  "Combat Experience": {
+    onCast: function(ctx) {
+      var friendly = ctx.countFriendlyUnits();
+      if (friendly === 0) { ctx.banner("Combat Experience — no friendly units"); return; }
+      ctx.flash(ctx.card.uid);
+      if (friendly === 1) {
+        var ids = ctx.friendlyUnitUids();
+        ctx.applyTempMightToUids(ids, 1, "Combat Experience");
+        ctx.banner("Combat Experience — +1 might to your unit");
+      } else {
+        ctx.prompt({ kind: "pickFriendlyUnits", n: 1, sourceName: "Combat Experience", sourceUid: ctx.card.uid, effect: "tempMight", amount: 1 });
+      }
     }
   }
 };
@@ -2386,6 +2498,13 @@ function RiftboundGame() {
       spawnHere: function(tokenName, count) { spawnHere(tokenName, count || 1, where, bi); },
       countFriendlyUnits: function(excludeUid) { return countFriendlyUnits(excludeUid); },
       friendlyUnitUids: function(excludeUid) { return friendlyUnitUids(excludeUid); },
+      totalFriendlyMight: function(excludeUid) {
+        var idx = myActIdx; var meP = ps[idx]; if (!meP) return 0;
+        var sum = 0;
+        (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && c.uid !== excludeUid) sum += (c.might || 0); });
+        bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if (u.uid !== excludeUid) sum += (u.might || 0); }); });
+        return sum;
+      },
       readyUids: function(uids) { readyUidsAcrossPsAndBfs(uids); },
       applyTempMightToAllFriendly: function(amount, source) { return applyTempMightToAllFriendly(amount, source || (card && card.name)); },
       applyTempMightToUids: function(uids, amount, source) { applyTempMightToUids(uids, amount, source || (card && card.name)); },
@@ -2404,6 +2523,30 @@ function RiftboundGame() {
           for (var pi = 0; pi < (b.units || []).length; pi++) { if (pi !== idx && (b.units[pi] || []).length > 0) { hasEnemy = true; break; } }
           if (!hasEnemy) locations.push({ key: "bf:" + bi2, label: b.name + " (held)", bi: bi2 });
         });
+      },
+      // Closure snapshots so spells (e.g. Cannon Barrage) can read showdown context.
+      sd: sd,
+      bfs: bfs,
+      myActIdx: myActIdx,
+      dealDamage: function(uid2, amount, source) { dealDamageToUid(uid2, amount, source || (card && card.name)); },
+      // Move the most-recently-binned card matching `predicate` from trash back to hand.
+      // Returns the card object (read at the moment of mutation) or null.
+      returnFromTrash: function(predicate) {
+        var foundCard = null;
+        setPs(function(prev) {
+          var idx = myActIdx; var p = prev[idx]; if (!p) return prev;
+          var trash = (p.trash || []).slice();
+          var fIdx = -1;
+          for (var i = trash.length - 1; i >= 0; i--) { if (predicate(trash[i])) { fIdx = i; break; } }
+          if (fIdx < 0) return prev;
+          var c = trash.splice(fIdx, 1)[0];
+          foundCard = c;
+          var hand = (p.hand || []).slice(); hand.push(c);
+          var np = prev.slice(); np[idx] = Object.assign({}, p, { trash: trash, hand: hand });
+          addAnim(c.uid, "draw");
+          return np;
+        });
+        return foundCard;
       }
     };
   }
@@ -2475,16 +2618,26 @@ function RiftboundGame() {
     }
   }
   function makeShowdownCtx(unit, bf, atkIdx, bfIdx) {
+    // Owner = whichever slot in bf.units already contains this uid; falls back to atkIdx
+    // for the just-deployed unit (which may not be in the captured bfs closure yet).
+    var ownerIdx = -1;
+    if (bf && unit) {
+      for (var pi = 0; pi < bf.units.length; pi++) {
+        if ((bf.units[pi] || []).some(function(u) { return u.uid === unit.uid; })) { ownerIdx = pi; break; }
+      }
+    }
+    if (ownerIdx < 0) ownerIdx = atkIdx;
     var sname = unit && unit.name;
     return {
-      unit: unit, card: unit, bf: bf, atkIdx: atkIdx, bi: bfIdx, bfName: bf ? bf.name : null,
+      unit: unit, card: unit, bf: bf, atkIdx: atkIdx, ownerIdx: ownerIdx, bi: bfIdx, bfName: bf ? bf.name : null,
       flash: function(uid2) { addAnim(uid2, "flash", 800); },
       banner: function(text) { showAutoBanner("AUTO · " + text); },
-      enemyUnits: function() { var out = []; if (!bf) return out; for (var pi = 0; pi < bf.units.length; pi++) { if (pi === atkIdx) continue; (bf.units[pi] || []).forEach(function(u) { out.push(u); }); } return out; },
-      friendlyUnits: function() { return (bf && bf.units[atkIdx]) ? bf.units[atkIdx].slice() : []; },
+      enemyUnits: function() { var out = []; if (!bf) return out; for (var pi = 0; pi < bf.units.length; pi++) { if (pi === ownerIdx) continue; (bf.units[pi] || []).forEach(function(u) { out.push(u); }); } return out; },
+      friendlyUnits: function() { return (bf && bf.units[ownerIdx]) ? bf.units[ownerIdx].slice() : []; },
       applyTempMightToUids: function(uids, amount, source) { applyTempMightToUids(uids, amount, source || sname); },
       dealDamage: function(victimUid, amount, source) { dealDamageToUid(victimUid, amount, source || sname); },
-      draw: function(n) { drawCards(n); }
+      draw: function(n) { drawCards(n); },
+      prompt: function(p2) { _autoSelRef.current = []; setAutoPrompt(p2); }
     };
   }
   function makeConquerCtx(playerIdx, bfIdx, bf) {
@@ -2495,7 +2648,14 @@ function RiftboundGame() {
       draw: function(n) { drawCards(n); },
       spawnInBase: function(tokenName, count) { spawnTokensInBase(tokenName, count || 1); },
       spawnInBattlefield: function(tokenName, count, bi2) { spawnTokensInBattlefield(tokenName, count || 1, (bi2 != null) ? bi2 : bfIdx); },
-      friendlyUnitsHere: function() { return (bf && bf.units[playerIdx]) ? bf.units[playerIdx].slice() : []; }
+      friendlyUnitsHere: function() { return (bf && bf.units[playerIdx]) ? bf.units[playerIdx].slice() : []; },
+      incrementScore: function(amount) {
+        setPs(function(prev) {
+          var p = prev[playerIdx]; if (!p) return prev;
+          var np = prev.slice(); np[playerIdx] = Object.assign({}, p, { score: (p.score || 0) + (amount || 0) });
+          return np;
+        });
+      }
     };
   }
   function fireShowdownStartEffects(deployedCard, bfIdx, atkIdx) {
@@ -2534,6 +2694,17 @@ function RiftboundGame() {
       if (deployedCard && CARD_EFFECTS[deployedCard.name] && CARD_EFFECTS[deployedCard.name].onAttack) {
         var ctx = makeShowdownCtx(deployedCard, bf, atkIdx, bfIdx);
         try { CARD_EFFECTS[deployedCard.name].onAttack(ctx); } catch(e) { console.error("onAttack error for " + deployedCard.name + ":", e); }
+      }
+      // Fire onDefend for every defender at the battlefield (showdown is starting from their POV).
+      for (var pid = 0; pid < bf.units.length; pid++) {
+        if (pid === atkIdx) continue;
+        (bf.units[pid] || []).forEach(function(u) {
+          var dEff = CARD_EFFECTS[u.name];
+          if (dEff && dEff.onDefend) {
+            var ctxD = makeShowdownCtx(u, bf, atkIdx, bfIdx);
+            try { dEff.onDefend(ctxD); } catch(e) { console.error("onDefend error for " + u.name + ":", e); }
+          }
+        });
       }
     }, 80);
   }
@@ -2629,7 +2800,8 @@ function RiftboundGame() {
     var p = autoPrompt; if (!p) return;
     if (p.effect === "tempMight") {
       applyTempMightToUids(uids, p.amount, p.sourceName);
-      showAutoBanner("AUTO · " + p.sourceName + " — +" + p.amount + " might to " + uids.length + " unit" + (uids.length === 1 ? "" : "s"));
+      var amtStr = p.amount >= 0 ? "+" + p.amount : "" + p.amount;
+      showAutoBanner("AUTO · " + p.sourceName + " — " + amtStr + " might to " + uids.length + " unit" + (uids.length === 1 ? "" : "s"));
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
     } else if (p.effect === "ready") {
       readyUidsAcrossPsAndBfs(uids);
