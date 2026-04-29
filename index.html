@@ -153,7 +153,7 @@ function writeGameAction(code, state) {
   fbDb.ref("lobbies/" + code + "/gameState").set(state);
 }
 </script>
-<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}html,body{background:#0f0f23;overflow:hidden;font-family:'Inter',sans-serif;color:#ddd;text-rendering:optimizeLegibility;height:100%;width:100%}img{image-rendering:auto;-webkit-backface-visibility:hidden;backface-visibility:hidden}.card-hover,.bf-hover{-webkit-backface-visibility:hidden;backface-visibility:hidden;will-change:transform}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#FFD70033;border-radius:3px}button:hover{filter:brightness(1.15)}.card-hover{position:relative;z-index:1}.card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.hand-card-hover{position:relative;z-index:1}.hand-card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.75))}.card-tapped{position:relative;z-index:1}.card-tapped:hover{z-index:999 !important;filter:brightness(0.72) drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.gear-peek{position:relative;z-index:1}.gear-peek:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover{position:relative;z-index:1}.bf-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover-land{position:relative;z-index:1}.bf-hover-land:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.no-hover,.no-hover *{transition:none !important}.no-hover:hover,.no-hover:hover *{transform:none !important;filter:none !important;z-index:auto !important}@keyframes drawIn{0%{transform:translateX(500px) scale(0.4) rotate(-180deg);opacity:0}40%{opacity:1}100%{transform:translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}@keyframes fadeSlideUp{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-20px);opacity:0}}@keyframes untapGlow{0%{box-shadow:0 0 0 #FFD70000}50%{box-shadow:0 0 12px #FFD70066}100%{box-shadow:0 0 0 #FFD70000}}@keyframes cardDrawIn{0%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(180deg);opacity:0}40%{opacity:1}100%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes cardDrawOut{0%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}50%{opacity:0.7}100%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(-180deg);opacity:0}}.anim-recycle{animation:cardDrawOut 0.25s ease-in forwards !important;pointer-events:none;transition:none !important}.anim-rune-draw{animation:cardDrawIn 0.25s ease-out;transition:none !important}.anim-draw{animation:drawIn 0.25s ease-out;transition:none !important}@keyframes nameGlow{0%,100%{text-shadow:0 0 6px #FFD70033;opacity:0.7}50%{text-shadow:0 0 25px #FFD700ff,0 0 50px #FFD70088,0 0 80px #FFD70044;opacity:1}}@keyframes showdownPulse{0%,100%{box-shadow:inset 0 0 6px rgba(255,107,53,0.15),0 0 4px rgba(255,107,53,0.1);border-color:#FF6B3566}50%{box-shadow:inset 0 0 24px rgba(255,107,53,0.5),0 0 16px rgba(255,107,53,0.4);border-color:#FF6B35}}@keyframes turnPulse{0%,100%{box-shadow:inset 0 0 8px rgba(255,215,0,0.1),0 0 6px rgba(255,215,0,0.08);border-color:#FFD70044}50%{box-shadow:inset 0 0 20px rgba(255,215,0,0.3),0 0 14px rgba(255,215,0,0.25);border-color:#FFD700aa}}.anim-turn-pulse{animation:turnPulse 1.8s ease-in-out infinite}.anim-sd-pulse{animation:showdownPulse 1.2s ease-in-out infinite}.anim-name-glow{animation:nameGlow 1.2s ease-in-out infinite}.anim-pulse{animation:pulse 0.8s ease-in-out infinite}.anim-bin{animation:fadeSlideUp 0.4s ease-out forwards}.anim-untap{animation:untapGlow 0.6s ease-out}@keyframes pingRipple{0%{transform:translate(-50%,-50%) scale(0.3);opacity:1}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0}}.ping-dot{position:fixed;width:30px;height:30px;pointer-events:none;z-index:9997}.ping-dot::before,.ping-dot::after{content:'';position:absolute;top:50%;left:50%;width:100%;height:100%;border-radius:50%;border:2.5px solid #FFD700;transform:translate(-50%,-50%) scale(0.3);animation:pingRipple 0.8s ease-out forwards}.ping-dot::after{animation-delay:0.15s}[draggable=true]{cursor:grab;-webkit-user-select:none;user-select:none;touch-action:none;transition:none !important;animation-duration:0s !important}[draggable=true]:active{cursor:grabbing;opacity:0.6}[draggable=true] *{transition:none !important}[draggable=true] img{pointer-events:none;-webkit-user-drag:none}[data-action]{position:relative}[data-action]::after{content:attr(data-action);position:absolute;inset:0;background:rgba(0,0,0,0.42);color:#fff;display:none;align-items:center;justify-content:center;font-family:'Spectral',serif;font-weight:800;letter-spacing:3px;text-transform:uppercase;text-shadow:0 2px 8px rgba(0,0,0,0.9);pointer-events:none;border-radius:inherit;z-index:20;font-size:14px;text-align:center;padding:0 4px}[data-action]:hover::after{display:flex}@keyframes autoFlash{0%,100%{box-shadow:0 0 0 #FFD70000;filter:brightness(1)}40%{box-shadow:0 0 32px #FFD700cc,0 0 64px #FFD70066;filter:brightness(1.45) saturate(1.2)}}.anim-flash{animation:autoFlash 0.8s ease-in-out;border-radius:6px}@keyframes autoBannerIn{0%{transform:translate(-50%,-12px);opacity:0}15%{transform:translate(-50%,0);opacity:1}85%{transform:translate(-50%,0);opacity:1}100%{transform:translate(-50%,-12px);opacity:0}}.auto-banner{position:fixed;top:14px;left:50%;transform:translate(-50%,0);z-index:1500;padding:8px 22px;border-radius:6px;background:linear-gradient(135deg,#1a1a3a,#0f0f23);border:2px solid #FFD70088;color:#FFD700;font-family:'Spectral',serif;font-weight:700;font-size:15px;letter-spacing:1.5px;text-transform:uppercase;box-shadow:0 6px 24px #000a,0 0 20px #FFD70033;pointer-events:none;animation:autoBannerIn 4.4s ease-out forwards}.auto-banner .auto-tag{font-size:10px;color:#FFD70099;letter-spacing:3px;display:block;margin-bottom:2px}</style></head><body><div id="root"></div>
+<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}html,body{background:#0f0f23;overflow:hidden;font-family:'Inter',sans-serif;color:#ddd;text-rendering:optimizeLegibility;height:100%;width:100%}img{image-rendering:auto;-webkit-backface-visibility:hidden;backface-visibility:hidden}.card-hover,.bf-hover{-webkit-backface-visibility:hidden;backface-visibility:hidden;will-change:transform}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#FFD70033;border-radius:3px}button:hover{filter:brightness(1.15)}.card-hover{position:relative;z-index:1}.card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.hand-card-hover{position:relative;z-index:1}.hand-card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.75))}.card-tapped{position:relative;z-index:1}.card-tapped:hover{z-index:999 !important;filter:brightness(0.72) drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.gear-peek{position:relative;z-index:1}.gear-peek:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover{position:relative;z-index:1}.bf-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover-land{position:relative;z-index:1}.bf-hover-land:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.no-hover,.no-hover *{transition:none !important}.no-hover:hover,.no-hover:hover *{transform:none !important;filter:none !important;z-index:auto !important}@keyframes drawIn{0%{transform:translateX(500px) scale(0.4) rotate(-180deg);opacity:0}40%{opacity:1}100%{transform:translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}@keyframes fadeSlideUp{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-20px);opacity:0}}@keyframes untapGlow{0%{box-shadow:0 0 0 #FFD70000}50%{box-shadow:0 0 12px #FFD70066}100%{box-shadow:0 0 0 #FFD70000}}@keyframes cardDrawIn{0%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(180deg);opacity:0}40%{opacity:1}100%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes cardDrawOut{0%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}50%{opacity:0.7}100%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(-180deg);opacity:0}}.anim-recycle{animation:cardDrawOut 0.25s ease-in forwards !important;pointer-events:none;transition:none !important}.anim-rune-draw{animation:cardDrawIn 0.25s ease-out;transition:none !important}.anim-draw{animation:drawIn 0.25s ease-out;transition:none !important}@keyframes nameGlow{0%,100%{text-shadow:0 0 6px #FFD70033;opacity:0.7}50%{text-shadow:0 0 25px #FFD700ff,0 0 50px #FFD70088,0 0 80px #FFD70044;opacity:1}}@keyframes showdownPulse{0%,100%{box-shadow:inset 0 0 6px rgba(255,107,53,0.15),0 0 4px rgba(255,107,53,0.1);border-color:#FF6B3566}50%{box-shadow:inset 0 0 24px rgba(255,107,53,0.5),0 0 16px rgba(255,107,53,0.4);border-color:#FF6B35}}@keyframes turnPulse{0%,100%{box-shadow:inset 0 0 8px rgba(255,215,0,0.1),0 0 6px rgba(255,215,0,0.08);border-color:#FFD70044}50%{box-shadow:inset 0 0 20px rgba(255,215,0,0.3),0 0 14px rgba(255,215,0,0.25);border-color:#FFD700aa}}.anim-turn-pulse{animation:turnPulse 1.8s ease-in-out infinite}.anim-sd-pulse{animation:showdownPulse 1.2s ease-in-out infinite}.anim-name-glow{animation:nameGlow 1.2s ease-in-out infinite}.anim-pulse{animation:pulse 0.8s ease-in-out infinite}.anim-bin{animation:fadeSlideUp 0.4s ease-out forwards}.anim-untap{animation:untapGlow 0.6s ease-out}@keyframes pingRipple{0%{transform:translate(-50%,-50%) scale(0.3);opacity:1}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0}}.ping-dot{position:fixed;width:30px;height:30px;pointer-events:none;z-index:9997}.ping-dot::before,.ping-dot::after{content:'';position:absolute;top:50%;left:50%;width:100%;height:100%;border-radius:50%;border:2.5px solid #FFD700;transform:translate(-50%,-50%) scale(0.3);animation:pingRipple 0.8s ease-out forwards}.ping-dot::after{animation-delay:0.15s}[draggable=true]{cursor:grab;-webkit-user-select:none;user-select:none;touch-action:none;transition:none !important;animation-duration:0s !important}[draggable=true]:active{cursor:grabbing;opacity:0.6}[draggable=true] *{transition:none !important}[draggable=true] img{pointer-events:none;-webkit-user-drag:none}[data-action]{position:relative}[data-action]::after{content:attr(data-action);position:absolute;inset:0;background:rgba(0,0,0,0.42);color:#fff;display:none;align-items:center;justify-content:center;font-family:'Spectral',serif;font-weight:800;letter-spacing:3px;text-transform:uppercase;text-shadow:0 2px 8px rgba(0,0,0,0.9);pointer-events:none;border-radius:inherit;z-index:20;font-size:14px;text-align:center;padding:0 4px}[data-action]:hover::after{display:flex}@keyframes autoFlash{0%,100%{box-shadow:0 0 0 #FFD70000;filter:brightness(1)}40%{box-shadow:0 0 32px #FFD700cc,0 0 64px #FFD70066;filter:brightness(1.45) saturate(1.2)}}.anim-flash{animation:autoFlash 0.8s ease-in-out;border-radius:6px}@keyframes fizzleOut{0%{opacity:1;transform:scale(1) rotate(0deg);filter:brightness(1) blur(0)}25%{opacity:0.95;transform:scale(1.04) rotate(-2deg);filter:brightness(1.6) saturate(1.4) blur(0.5px);box-shadow:0 0 32px #ff6b35cc,0 0 60px #ff6b3566}55%{opacity:0.7;transform:scale(0.92) rotate(4deg);filter:brightness(1.2) blur(1.5px) hue-rotate(-15deg)}100%{opacity:0;transform:scale(0.45) rotate(12deg) translateY(20px);filter:brightness(0.4) blur(4px)}}.anim-fizzle{animation:fizzleOut 0.7s ease-out forwards;pointer-events:none;z-index:50!important}@keyframes autoBannerIn{0%{transform:translate(-50%,-12px);opacity:0}15%{transform:translate(-50%,0);opacity:1}85%{transform:translate(-50%,0);opacity:1}100%{transform:translate(-50%,-12px);opacity:0}}.auto-banner{position:fixed;top:14px;left:50%;transform:translate(-50%,0);z-index:1500;padding:8px 22px;border-radius:6px;background:linear-gradient(135deg,#1a1a3a,#0f0f23);border:2px solid #FFD70088;color:#FFD700;font-family:'Spectral',serif;font-weight:700;font-size:15px;letter-spacing:1.5px;text-transform:uppercase;box-shadow:0 6px 24px #000a,0 0 20px #FFD70033;pointer-events:none;animation:autoBannerIn 4.4s ease-out forwards}.auto-banner .auto-tag{font-size:10px;color:#FFD70099;letter-spacing:3px;display:block;margin-bottom:2px}</style></head><body><div id="root"></div>
 <script>
 var IG="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/";
 var CARD_BACK="data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140"><rect width="100" height="140" rx="5" fill="#0f2640"/><rect x="4" y="4" width="92" height="132" rx="3" fill="none" stroke="#c8a84e" stroke-width="1"/><g stroke="#c8a84e" fill="none" stroke-width="0.8"><line x1="50" y1="18" x2="82" y2="50"/><line x1="50" y1="18" x2="18" y2="50"/><circle cx="50" cy="70" r="22"/><line x1="50" y1="122" x2="82" y2="90"/><line x1="50" y1="122" x2="18" y2="90"/><line x1="12" y1="70" x2="50" y2="38"/><line x1="88" y1="70" x2="50" y2="38"/><line x1="12" y1="70" x2="50" y2="102"/><line x1="88" y1="70" x2="50" y2="102"/><polygon points="50,38 82,70 50,102 18,70" stroke-width="1"/></g><text x="50" y="67" text-anchor="middle" font-size="7" font-weight="bold" fill="#c8a84e" font-family="serif">LEAGUE</text><text x="50" y="74" text-anchor="middle" font-size="5" fill="#c8a84e" font-family="serif">OF</text><text x="50" y="81" text-anchor="middle" font-size="6" font-weight="bold" fill="#c8a84e" font-family="serif">LEGENDS</text><polygon points="50,14 51.5,17 48.5,17" fill="#c8a84e"/><polygon points="50,126 51.5,123 48.5,123" fill="#c8a84e"/></svg>');
@@ -309,10 +309,13 @@ var CARD_EFFECTS = {
     onAttack: function(ctx) {
       var enemies = ctx.enemyUnits();
       if (enemies.length === 0) { ctx.banner("Crackshot Corsair — no enemy units here"); return; }
-      var target = enemies[0]; // simple auto-target: first enemy unit at this battlefield
       ctx.flash(ctx.unit.uid);
-      ctx.dealDamage(target.uid, 1);
-      ctx.banner("Crackshot Corsair — 1 dmg to " + (target.name || "enemy"));
+      if (enemies.length === 1) {
+        ctx.dealDamage(enemies[0].uid, 1);
+        ctx.banner("Crackshot Corsair — 1 dmg to " + (enemies[0].name || "enemy"));
+      } else {
+        ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemies.map(function(u) { return u.uid; }), sourceName: "Crackshot Corsair", sourceUid: ctx.unit.uid, effect: "damage", amount: 1 });
+      }
     }
   },
   "Dune Drake": {
@@ -325,8 +328,8 @@ var CARD_EFFECTS = {
     }
   },
 
-  // --- Aura units (no auto-implementation: requires live aura recalc system) ---
-  "Garen, Commander": { passive: "Aura: other friendly units at this BF +1 might (manual)" },
+  // --- Aura units (handled by recalcAuras / computeAuraForUnit; no per-card hook needed) ---
+  "Garen, Commander": { passive: "Aura: +1 might to other friendly units at this BF (auto)" },
 
   // --- Vanilla / passive-keyword units (Assault/Shield handled generically by parseKeywordBonus
   //     in fireShowdownStartEffects). Registered so the engine knows the card is recognized. ---
@@ -347,11 +350,15 @@ var CARD_EFFECTS = {
   },
 
   // --- Battlefields ---
-  "Trifarian War Camp": { passive: "Aura: units here +1 might — needs aura system (manual)" },
+  "Trifarian War Camp": { passive: "Aura: +1 might to all units here (auto)" },
   "The Grand Plaza": {
     onHold: function(ctx) {
       var unitCount = ctx.friendlyUnitsHere().length;
-      if (unitCount >= 7) ctx.banner("The Grand Plaza — instant-win condition met (" + unitCount + " units)! Manually click + on score to claim, the auto-win hook isn't wired into the score loop yet.");
+      if (unitCount >= 7) {
+        ctx.banner("The Grand Plaza — INSTANT WIN with " + unitCount + " units!");
+        // Defer slightly so the banner registers and other hold effects this turn complete.
+        setTimeout(function() { setWin(ctx.player); setScreen("go"); }, 200);
+      }
     }
   },
   "Altar to Unity": {
@@ -381,7 +388,7 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
   var w = small ? Math.round(125 * _gvScale) : zoomed ? 374 : 187;
   var h = small ? Math.round(175 * _gvScale) : zoomed ? 524 : 262;
   var ex = card.exhausted && !zoomed;
-  var buff = card.tempMight || 0;
+  var buff = (card.tempMight || 0) + (card._aura || 0);
 
   if (faceDown) return (
     <div onClick={onClick} style={{ width: 100, height: 140, borderRadius: 6, overflow: "hidden", border: "2px solid #FFD70040", cursor: onClick ? "pointer" : "default", flexShrink: 0 }}>
@@ -1197,6 +1204,7 @@ function RiftboundGame() {
         aL(pName(sd.atkIdx) + " conquers " + bf.name + "! (" + np2[sd.atkIdx].score + "/8)");
         setBfs(nb2); setPs(np2);
         fireConquerEffects(sd.atkIdx, bi);
+        setTimeout(recalcAuras, 0);
         if (np2[sd.atkIdx].score >= 8 && !continuePlaying) { setWin(sd.atkIdx); setScreen("go"); setSd(null); return; }
       }
       aL("Showdown ends - attacker holds.");
@@ -2338,36 +2346,57 @@ function RiftboundGame() {
     return 0;
   }
   function dealDamageToUid(victimUid, amount) {
-    var killedUnit = null; var killedPidx = -1;
-    setBfs(function(prev) {
-      var nb = prev.slice();
-      for (var bi2 = 0; bi2 < nb.length; bi2++) {
-        var b = nb[bi2];
-        var newUnitsAll = b.units.map(function(pu) { return pu.slice(); });
-        for (var pi = 0; pi < newUnitsAll.length; pi++) {
-          var idx = newUnitsAll[pi].findIndex(function(u) { return u.uid === victimUid; });
-          if (idx >= 0) {
-            var u = newUnitsAll[pi][idx];
-            var newDmg = (u.damage || 0) + amount;
-            var maxHP = (u.might || 0) + (u.tempMight || 0);
-            if (newDmg >= maxHP) {
-              newUnitsAll[pi].splice(idx, 1);
-              killedUnit = u; killedPidx = pi;
-            } else {
-              newUnitsAll[pi][idx] = Object.assign({}, u, { damage: newDmg });
+    // Look up the victim first so we can decide whether to apply damage in-place or kill+animate.
+    var found = null;
+    for (var bi2 = 0; bi2 < bfs.length; bi2++) {
+      var b = bfs[bi2];
+      for (var pi = 0; pi < b.units.length; pi++) {
+        var idx = (b.units[pi] || []).findIndex(function(u) { return u.uid === victimUid; });
+        if (idx >= 0) { found = { bi: bi2, pi: pi, unit: b.units[pi][idx] }; break; }
+      }
+      if (found) break;
+    }
+    if (!found) return;
+    var newDmg = (found.unit.damage || 0) + amount;
+    var maxHP = (found.unit.might || 0) + (found.unit.tempMight || 0) + (found.unit._aura || 0);
+    if (newDmg >= maxHP) {
+      // Kill: trigger fizzle anim first, defer state mutation so the animation has time to play.
+      addAnim(victimUid, "fizzle", 700);
+      var snap = found;
+      setTimeout(function() {
+        setBfs(function(prev) {
+          var nb = prev.slice();
+          for (var bi3 = 0; bi3 < nb.length; bi3++) {
+            var b3 = nb[bi3]; var ua = b3.units.map(function(pu) { return pu.slice(); });
+            var hit = false;
+            for (var pi3 = 0; pi3 < ua.length; pi3++) {
+              var ix = ua[pi3].findIndex(function(u) { return u.uid === victimUid; });
+              if (ix >= 0) { ua[pi3].splice(ix, 1); hit = true; break; }
             }
-            nb[bi2] = Object.assign({}, b, { units: newUnitsAll });
-            return nb;
+            if (hit) { nb[bi3] = Object.assign({}, b3, { units: ua }); return nb; }
+          }
+          return prev;
+        });
+        setPs(function(prevPs) {
+          var nps = prevPs.slice();
+          if (nps[snap.pi]) nps[snap.pi] = Object.assign({}, nps[snap.pi], { trash: ((nps[snap.pi].trash) || []).concat([Object.assign({}, snap.unit, { damage: 0, tempMight: 0, _aura: 0 })]) });
+          return nps;
+        });
+        // Auras may need to update once the unit is gone (e.g. removing a Garen Commander).
+        setTimeout(recalcAuras, 0);
+      }, 700);
+    } else {
+      // Just apply damage — no animation needed.
+      setBfs(function(prev) {
+        var nb = prev.slice();
+        for (var bi3 = 0; bi3 < nb.length; bi3++) {
+          var b3 = nb[bi3]; var ua = b3.units.map(function(pu) { return pu.slice(); });
+          for (var pi3 = 0; pi3 < ua.length; pi3++) {
+            var ix = ua[pi3].findIndex(function(u) { return u.uid === victimUid; });
+            if (ix >= 0) { ua[pi3][ix] = Object.assign({}, ua[pi3][ix], { damage: newDmg }); nb[bi3] = Object.assign({}, b3, { units: ua }); return nb; }
           }
         }
-      }
-      return prev;
-    });
-    if (killedUnit && killedPidx >= 0) {
-      setPs(function(prevPs) {
-        var nps = prevPs.slice();
-        if (nps[killedPidx]) nps[killedPidx] = Object.assign({}, nps[killedPidx], { trash: ((nps[killedPidx].trash) || []).concat([Object.assign({}, killedUnit, { damage: 0, tempMight: 0 })]) });
-        return nps;
+        return prev;
       });
     }
   }
@@ -2454,6 +2483,33 @@ function RiftboundGame() {
     var bfEff = CARD_EFFECTS[bf.name];
     if (bfEff && bfEff.onHold) { try { bfEff.onHold(makeConquerCtx(playerIdx, bfIdx, bf)); } catch(e) { console.error("onHold error:", e); } }
   }
+  // --- Aura system: recompute static aura bonuses (Garen Commander, Trifarian War Camp).
+  // Stored in unit._aura and re-derived on each call so units lose the buff when the source leaves.
+  // Effective max-HP = might + tempMight + _aura. Display shows the sum as the +might badge. ---
+  function computeAuraForUnit(unit, bf, pidx) {
+    if (!unit) return 0;
+    var n = 0;
+    if (bf && bf.name === "Trifarian War Camp") n += 1;
+    if (bf && (bf.units[pidx] || []).some(function(o) { return o.name === "Garen, Commander" && o.uid !== unit.uid; })) n += 1;
+    return n;
+  }
+  function recalcAuras() {
+    if (!autoMode) return;
+    setBfs(function(prev) {
+      var changed = false;
+      var nb = prev.map(function(b) {
+        var newUnits = b.units.map(function(pu, pi) {
+          return pu.map(function(u) {
+            var newAura = computeAuraForUnit(u, b, pi);
+            if ((u._aura || 0) !== newAura) { changed = true; return Object.assign({}, u, { _aura: newAura }); }
+            return u;
+          });
+        });
+        return Object.assign({}, b, { units: newUnits });
+      });
+      return changed ? nb : prev;
+    });
+  }
   function runAutoOnCast(card) {
     if (!autoMode || !card) return;
     var eff = CARD_EFFECTS[card.name];
@@ -2470,6 +2526,10 @@ function RiftboundGame() {
     } else if (p.effect === "ready") {
       readyUidsAcrossPsAndBfs(uids);
       showAutoBanner("AUTO · " + p.sourceName + " — readied " + uids.length + " unit" + (uids.length === 1 ? "" : "s"));
+      if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+    } else if (p.effect === "damage") {
+      uids.forEach(function(u2) { dealDamageToUid(u2, p.amount); });
+      showAutoBanner("AUTO · " + p.sourceName + " — " + p.amount + " dmg to " + uids.length + " unit" + (uids.length === 1 ? "" : "s"));
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
     }
     setAutoPrompt(null);
@@ -2502,6 +2562,7 @@ function RiftboundGame() {
   function toggleAutoSel(uid) {
     if (!autoPrompt) return;
     if (autoPrompt.excludeUid && uid === autoPrompt.excludeUid) return;
+    if (autoPrompt.validUids && autoPrompt.validUids.indexOf(uid) < 0) return;
     var sel = _autoSelRef.current.slice();
     var i = sel.indexOf(uid);
     if (i >= 0) sel.splice(i, 1);
@@ -2564,6 +2625,7 @@ function RiftboundGame() {
       if (_isDoublesGame && _myTeammateIdx >= 0) { np2[_myTeammateIdx] = Object.assign({}, np2[_myTeammateIdx], { score: p.score }); }
       setPs(np2); setBfs(nb);
       setAwakenPhase(null); setScreen("play");
+      setTimeout(recalcAuras, 0);
       // Sync after turn start with explicit values
       if (roomCode && lobbyType !== "test" && _gamePhaseRef.current === "playing") {
         _lastSyncVersion.current++;
@@ -3019,6 +3081,7 @@ function RiftboundGame() {
     aL(pName(myActIdx) + " deploys " + cName(card) + " to " + nb[bi].name);
     if (autoRunes && (tappedDomainsBF.length > 0 || recycledDomainsBF.length > 0)) { var partsBF = []; if (tappedDomainsBF.length) partsBF.push("tapped " + _fmtDomainsBF(tappedDomainsBF)); if (recycledDomainsBF.length) partsBF.push("recycled " + _fmtDomainsBF(recycledDomainsBF)); aL("  Paid: " + partsBF.join("; ")); }
     var np = ps.slice(); np[myActIdx] = p; setPs(np); setBfs(nb);
+    setTimeout(recalcAuras, 0);
     // Defer auto-mode play effects so they see the post-update state when reading ps/bfs.
     var _bfBi = bi; setTimeout(function() { fireUnitPlayedEffects(card, "battlefield", _bfBi); }, 0);
     // Firming up an already-conquered battlefield (our units present, no enemy units) — no new showdown
@@ -3170,7 +3233,7 @@ function RiftboundGame() {
     if (idx < 0) { setTm(null); return; }
     var target = arr[idx];
     if (tm.ty === "buff" && pi === myActIdx) { target.tempMight = (target.tempMight || 0) + tm.v; aL("  " + cName(target) + " +" + tm.v + "M!"); }
-    else if (tm.ty === "dmg") { target.damage = (target.damage || 0) + tm.v; if (target.damage >= (target.might || 0) + (target.tempMight || 0)) { aL("  " + cName(target) + " killed!"); np[pi].trash.push(target); arr.splice(idx, 1); } else { aL("  " + cName(target) + " takes " + tm.v); } }
+    else if (tm.ty === "dmg") { target.damage = (target.damage || 0) + tm.v; if (target.damage >= (target.might || 0) + (target.tempMight || 0) + (target._aura || 0)) { aL("  " + cName(target) + " killed!"); np[pi].trash.push(target); arr.splice(idx, 1); } else { aL("  " + cName(target) + " takes " + tm.v); } }
     else if (tm.ty === "stun" && pi !== myActIdx) { target.stunned = true; aL("  " + cName(target) + " stunned!"); }
     setBfs(nb); setPs(np); setTm(null);
   }
@@ -3209,12 +3272,14 @@ function RiftboundGame() {
     nb[bi].units[idx].push(Object.assign({}, unit, { exhausted: true }));
     aL(pName(idx) + " moves " + cName(unit) + " to " + nb[bi].name);
     var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); setSel(null);
+    setTimeout(recalcAuras, 0);
     if (!sd) {
       aL("SHOWDOWN at " + nb[bi].name + "!");
       var _defPresent2 = false; for (var _j2 = 0; _j2 < pc; _j2++) { if (_j2 !== idx && nb[bi].units[_j2] && nb[bi].units[_j2].length > 0) _defPresent2 = true; }
       var newSd3 = { bfIdx: bi, atkIdx: idx, priority: idx, lastPass: null, acted: false, contested: _defPresent2 };
       setSd(newSd3);
       setScreen("sd");
+      fireShowdownStartEffects(unit, bi, idx);
       if (roomCode && lobbyType !== "test") {
         _lastSyncVersion.current++;
         var cleanPs5 = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
@@ -3246,12 +3311,14 @@ function RiftboundGame() {
       nb[bi].controller = savedSd.atkIdx; np[savedSd.atkIdx].score++;
       aL(pName(savedSd.atkIdx) + " conquers " + nb[bi].name + "! (" + np[savedSd.atkIdx].score + (continuePlaying ? "" : "/8") + ")");
       fireConquerEffects(savedSd.atkIdx, bi);
+      setTimeout(recalcAuras, 0);
       if (np[savedSd.atkIdx].score >= 8 && !continuePlaying) { setWin(savedSd.atkIdx); setScreen("go"); setBfs(nb); setPs(np); return; }
     } else if (mode === "defender") {
       var defIdx = 0; for (var j = 0; j < pc; j++) { if (j !== savedSd.atkIdx) { defIdx = j; break; } }
       nb[bi].controller = defIdx; np[defIdx].score++;
       aL(pName(defIdx) + " holds " + nb[bi].name + "! (" + np[defIdx].score + (continuePlaying ? "" : "/8") + ")");
       fireConquerEffects(defIdx, bi);
+      setTimeout(recalcAuras, 0);
       if (np[defIdx].score >= 8 && !continuePlaying) { setWin(defIdx); setScreen("go"); setBfs(nb); setPs(np); return; }
     } else {
       aL("No points awarded.");
@@ -3413,9 +3480,9 @@ function RiftboundGame() {
           </div>
         </div>;
       })()}
-      {autoPrompt && autoPrompt.kind === "pickFriendlyUnits" && <div style={{ position: "fixed", top: 60, left: "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #FFD70088", boxShadow: "0 8px 32px #000c, 0 0 24px #FFD70022", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 280, pointerEvents: "auto" }}>
+      {autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || autoPrompt.kind === "pickEnemyUnit") && <div style={{ position: "fixed", top: 60, left: "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #FFD70088", boxShadow: "0 8px 32px #000c, 0 0 24px #FFD70022", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 280, pointerEvents: "auto" }}>
         <div style={{ fontSize: 11, color: "#FFD70099", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
-        <div style={{ fontSize: 14, color: "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{"Click " + autoPrompt.n + " friendly unit" + (autoPrompt.n > 1 ? "s" : "") + " (" + ((autoPrompt._sel || []).length) + "/" + autoPrompt.n + ")"}</div>
+        <div style={{ fontSize: 14, color: "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{(autoPrompt.kind === "pickEnemyUnit" ? "Click " + autoPrompt.n + " enemy unit" : "Click " + autoPrompt.n + " friendly unit") + (autoPrompt.n > 1 ? "s" : "") + " (" + ((autoPrompt._sel || []).length) + "/" + autoPrompt.n + ")"}</div>
         <div style={{ display: "flex", gap: 6 }}>
           <button onClick={function() { var sel = _autoSelRef.current.slice(); if (sel.length === autoPrompt.n) resolveAutoPrompt(sel); }} disabled={(autoPrompt._sel || []).length !== autoPrompt.n} style={{ padding: "5px 16px", borderRadius: 5, border: "1.5px solid " + ((autoPrompt._sel || []).length === autoPrompt.n ? "#4ADE80" : "#444"), background: (autoPrompt._sel || []).length === autoPrompt.n ? "rgba(74,222,128,0.15)" : "transparent", color: (autoPrompt._sel || []).length === autoPrompt.n ? "#4ADE80" : "#666", cursor: (autoPrompt._sel || []).length === autoPrompt.n ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 700, fontFamily: "Spectral,serif" }}>Confirm</button>
           <button onClick={function() { setAutoPrompt(null); _autoSelRef.current = []; }} style={{ padding: "5px 16px", borderRadius: 5, border: "1px solid #555", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif" }}>Skip</button>
@@ -3751,7 +3818,7 @@ function RiftboundGame() {
                 <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 1 }}>
                   {/* Enemy units — to the right of BF card, bottom aligned with BF bottom (top-right from your POV) */}
                   <div style={{ position: "absolute", left: "100%", bottom: 0, display: "flex", flexDirection: "row", flexWrap: "nowrap", marginLeft: Math.round(4 * vScale), zIndex: 2 }}>
-                    {ps.map(function(p, pi) { if (pi === bottomPlayer || !bf.units[pi] || bf.units[pi].length === 0) return null; var isMyUnits = pi === myActIdx; var units = bf.units[pi]; var totalU = units.length; var overlapPx = totalU <= 1 ? 0 : totalU === 2 ? 30 : totalU === 3 ? 50 : totalU === 4 ? 65 : totalU === 5 ? 75 : 82; return units.map(function(u, ui) { var wrapStyle = { marginLeft: ui === 0 ? 0 : Math.round(-overlapPx * vScale), zIndex: totalU - ui, position: "relative", flexShrink: 0 }; return isMyUnits ? <div key={u.uid} style={wrapStyle}><Card card={u} small isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow && !autoPrompt ? "bf:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} onClick={function() { if (autoPrompt && autoPrompt.kind === "pickFriendlyUnits") { toggleAutoSel(u.uid); return; } toggleTap(u.uid); }} actionLabel={autoPrompt && autoPrompt.kind === "pickFriendlyUnits" ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (u.exhausted ? "Untap" : "Tap")} selected={!!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} /></div> : <div key={u.uid} style={wrapStyle}><Card card={u} small onClick={tm ? function() { resTarget(u, pi, bi); } : undefined} actionLabel={tm ? "Target" : undefined} /></div>; }); })}
+                    {ps.map(function(p, pi) { if (pi === bottomPlayer || !bf.units[pi] || bf.units[pi].length === 0) return null; var isMyUnits = pi === myActIdx; var units = bf.units[pi]; var totalU = units.length; var overlapPx = totalU <= 1 ? 0 : totalU === 2 ? 30 : totalU === 3 ? 50 : totalU === 4 ? 65 : totalU === 5 ? 75 : 82; return units.map(function(u, ui) { var wrapStyle = { marginLeft: ui === 0 ? 0 : Math.round(-overlapPx * vScale), zIndex: totalU - ui, position: "relative", flexShrink: 0 }; var _fizzle = getAnimType(u.uid) === "fizzle" ? "anim-fizzle" : ""; return isMyUnits ? <div key={u.uid} className={_fizzle} style={wrapStyle}><Card card={u} small isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow && !autoPrompt ? "bf:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} onClick={function() { if (autoPrompt && autoPrompt.kind === "pickFriendlyUnits") { toggleAutoSel(u.uid); return; } toggleTap(u.uid); }} actionLabel={autoPrompt && autoPrompt.kind === "pickFriendlyUnits" ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (u.exhausted ? "Untap" : "Tap")} selected={!!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} /></div> : <div key={u.uid} className={_fizzle} style={wrapStyle}><Card card={u} small onClick={(autoPrompt && autoPrompt.kind === "pickEnemyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0) ? function() { toggleAutoSel(u.uid); } : (tm ? function() { resTarget(u, pi, bi); } : undefined)} actionLabel={(autoPrompt && autoPrompt.kind === "pickEnemyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (tm ? "Target" : undefined)} selected={!!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} /></div>; }); })}
                   </div>
                   {/* BF card itself */}
                   <div data-uid={bf.uid} style={{ width: BF_H, height: BF_W, display: "flex", justifyContent: "center", alignItems: "center" }}>
