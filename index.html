@@ -1140,7 +1140,6 @@ function RiftboundGame() {
   var _sbf = useState(null), selectedBf = _sbf[0], setSelectedBf = _sbf[1];
   var _du = useState(null), dragUnit = _du[0], setDragUnit = _du[1];
   var _dob = useState(false), dragOverBase = _dob[0], setDragOverBase = _dob[1];
-  var _ar = useState(false), autoRunes = _ar[0], setAutoRunes = _ar[1];
   var _hs = useState("drawn"), handSort = _hs[0], setHandSort = _hs[1];
   var _hovSize = useState(function() { try { var v = parseFloat(localStorage.getItem("riftNexusHoverSize")); return isFinite(v) && v >= 1.5 && v <= 5.5 ? v : 3.5; } catch(e) { return 3.5; } }), hoverSize = _hovSize[0], setHoverSize = _hovSize[1];
   useEffect(function() { try { localStorage.setItem("riftNexusHoverSize", String(hoverSize)); } catch(e) {} }, [hoverSize]);
@@ -4064,7 +4063,7 @@ function RiftboundGame() {
     // Handle auto-runes
     var tappedUids = [];
     var recycleUids = [];
-    if (autoRunes) {
+    if (autoMode) {
       var rcNeeded = (card.rc || []).slice();
       var energyNeeded = card.energy || 0;
       var allRunes = _me.runes.slice();
@@ -4084,7 +4083,7 @@ function RiftboundGame() {
       var canAfford = (tappedUids.length + recycleUids.length) >= totalEnergy && recycleUids.length >= (card.rc || []).length;
       if (totalEnergy > 0 && !canAfford) {
         aL("Not enough runes to play " + cName(card) + "!");
-        setGameMsg("Not enough runes to play " + cName(card) + ". (Turn off auto runes & recycling to stop this message.)");
+        setGameMsg("Not enough runes to play " + cName(card) + ". (Turn off auto mode to stop this message.)");
         return;
       }
     }
@@ -4102,7 +4101,7 @@ function RiftboundGame() {
     var _enterReadyBF = shouldEnterReady(card);
     nb[bi].units[myActIdx].push(Object.assign({}, card, { exhausted: !_enterReadyBF }));
     aL(pName(myActIdx) + " deploys " + cName(card) + " to " + nb[bi].name);
-    if (autoRunes && (tappedDomainsBF.length > 0 || recycledDomainsBF.length > 0)) { var partsBF = []; if (tappedDomainsBF.length) partsBF.push("tapped " + _fmtDomainsBF(tappedDomainsBF)); if (recycledDomainsBF.length) partsBF.push("recycled " + _fmtDomainsBF(recycledDomainsBF)); aL("  Paid: " + partsBF.join("; ")); }
+    if (autoMode && (tappedDomainsBF.length > 0 || recycledDomainsBF.length > 0)) { var partsBF = []; if (tappedDomainsBF.length) partsBF.push("tapped " + _fmtDomainsBF(tappedDomainsBF)); if (recycledDomainsBF.length) partsBF.push("recycled " + _fmtDomainsBF(recycledDomainsBF)); aL("  Paid: " + partsBF.join("; ")); }
     var np = ps.slice(); np[myActIdx] = p; setPs(np); setBfs(nb);
     setTimeout(recalcAuras, 0);
     // Defer auto-mode play effects so they see the post-update state when reading ps/bfs.
@@ -4143,7 +4142,7 @@ function RiftboundGame() {
     // Auto-tap and recycle runes if toggle is on
     var tappedUids = [];
     var recycleUids = [];
-    if (autoRunes) {
+    if (autoMode) {
       var rcNeeded = (card.rc || []).slice(); // domains that need recycling
       var energyNeeded = card.energy || 0;
       var allRunes = _me.runes.slice();
@@ -4175,7 +4174,7 @@ function RiftboundGame() {
       var canAfford = (tappedUids.length + recycleUids.length) >= totalEnergy && recycleUids.length >= (card.rc || []).length;
       if (totalEnergy > 0 && !canAfford) {
         aL("Not enough runes to play " + cName(card) + "!");
-        setGameMsg("Not enough runes to play " + cName(card) + ". (Turn off auto runes & recycling to stop this message.)");
+        setGameMsg("Not enough runes to play " + cName(card) + ". (Turn off auto mode to stop this message.)");
         return;
       }
     }
@@ -4194,18 +4193,18 @@ function RiftboundGame() {
       p.base = p.base.concat([Object.assign({}, card, { exhausted: !_enterReady })]);
       if (isChamp) { p.championPlayed = true; p.champion = null; }
       aL(pName(myActIdx) + " plays " + cName(card));
-      if (autoRunes && (tappedDomains.length > 0 || recycledDomains.length > 0)) { var parts = []; if (tappedDomains.length) parts.push("tapped " + _fmtDomains(tappedDomains)); if (recycledDomains.length) parts.push("recycled " + _fmtDomains(recycledDomains)); aL("  Paid: " + parts.join("; ")); }
+      if (autoMode && (tappedDomains.length > 0 || recycledDomains.length > 0)) { var parts = []; if (tappedDomains.length) parts.push("tapped " + _fmtDomains(tappedDomains)); if (recycledDomains.length) parts.push("recycled " + _fmtDomains(recycledDomains)); aL("  Paid: " + parts.join("; ")); }
       if (/draw 1/i.test(card.text) && p.mainDeck.length > 0) { p.hand = p.hand.concat([p.mainDeck.shift()]); aL("  Draw 1"); }
       if (/draw 2/i.test(card.text)) { var d = p.mainDeck.splice(0, Math.min(2, p.mainDeck.length)); p.hand = p.hand.concat(d); }
       setTimeout(function() { fireUnitPlayedEffects(card, "base", null); }, 0);
     } else if (card.type === "Gear") {
       p.base = p.base.concat([Object.assign({}, card, { exhausted: false })]);
       aL(pName(myActIdx) + " plays " + cName(card) + " to base");
-      if (autoRunes && (tappedDomains.length > 0 || recycledDomains.length > 0)) { var partsG = []; if (tappedDomains.length) partsG.push("tapped " + _fmtDomains(tappedDomains)); if (recycledDomains.length) partsG.push("recycled " + _fmtDomains(recycledDomains)); aL("  Paid: " + partsG.join("; ")); }
+      if (autoMode && (tappedDomains.length > 0 || recycledDomains.length > 0)) { var partsG = []; if (tappedDomains.length) partsG.push("tapped " + _fmtDomains(tappedDomains)); if (recycledDomains.length) partsG.push("recycled " + _fmtDomains(recycledDomains)); aL("  Paid: " + partsG.join("; ")); }
       _cardsPlayedThisTurnRef.current++;
     } else if (card.type === "Spell") {
       p.trash = (p.trash || []).concat([card]); aL(pName(myActIdx) + " casts " + cName(card));
-      if (autoRunes && (tappedDomains.length > 0 || recycledDomains.length > 0)) { var partsS = []; if (tappedDomains.length) partsS.push("tapped " + _fmtDomains(tappedDomains)); if (recycledDomains.length) partsS.push("recycled " + _fmtDomains(recycledDomains)); aL("  Paid: " + partsS.join("; ")); }
+      if (autoMode && (tappedDomains.length > 0 || recycledDomains.length > 0)) { var partsS = []; if (tappedDomains.length) partsS.push("tapped " + _fmtDomains(tappedDomains)); if (recycledDomains.length) partsS.push("recycled " + _fmtDomains(recycledDomains)); aL("  Paid: " + partsS.join("; ")); }
       if (/Draw 2 cards/i.test(card.text)) { var d2 = p.mainDeck.splice(0, 2); p.hand = p.hand.concat(d2); }
       if (/\+2 Might/i.test(card.text)) setTm({ ty: "buff", v: 2 });
       else if (/\+3 Might/i.test(card.text)) setTm({ ty: "buff", v: 3 });
@@ -4467,7 +4466,7 @@ function RiftboundGame() {
         var handShift = 0;
         if (handHovIdx >= 0 && i !== handHovIdx && total > 3) { handShift = i < handHovIdx ? -15 : 15; }
         var _handAct = (canMoveOwn && !tm && !fc && !c.hidden) ? (c.type === "Spell" ? "Cast" : "Play") : undefined;
-        return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover" + animCls, draggable: isDraggable2, onDragStart: isDraggable2 ? function(e) { e.dataTransfer.setData("text/plain", "hand:" + c.uid); setDragUnit(c); } : undefined, onDragEnd: function() { setDragUnit(null); }, onClick: canMoveOwn ? function() { if (tm || fc) return; if (c.type === "Unit" || c.type === "Champion" || c.type === "Gear") { onPlay(c); } else if (c.type === "Spell") { if (showcaseCard && showcaseCard.uid === c.uid) { setShowcaseCard(null); } else { var idx = myActIdx; var _me = ps[idx]; if (_me) { var sp = Object.assign({}, _me, { hand: _me.hand.filter(function(h) { return h.uid !== c.uid; }) }); if (autoRunes) { var rcN = (c.rc || []).slice(); var eN = c.energy || 0; var _hasEager = (_me.base || []).some(function(u){return u.name==="Eager Apprentice";})||bfs.some(function(b){return((b.units&&b.units[idx])||[]).some(function(u){return u.name==="Eager Apprentice";});}); if(_hasEager&&eN>1)eN--; var _xEnergy=_extraEnergyRef.current; if(_xEnergy>0){_extraEnergyRef.current=0;eN=Math.max(0,eN-_xEnergy);} var aR = _me.runes.slice(); var recUids = []; rcN.forEach(function(dom) { var f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0; }); if (f) { recUids.push(f.uid); if (eN > 0) eN--; } }); var tapUids = []; if (eN > 0) { var av = aR.filter(function(r) { return !r.exhausted && recUids.indexOf(r.uid) < 0; }); av.slice(0, eN).forEach(function(r) { tapUids.push(r.uid); }); } sp.runes = _me.runes.filter(function(r) { return recUids.indexOf(r.uid) < 0; }).map(function(r) { return tapUids.indexOf(r.uid) >= 0 ? Object.assign({}, r, { exhausted: true }) : r; }); sp.runeDeck = shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); }))); } var np = ps.slice(); np[idx] = sp; setPs(np); pushShowcase(c); aL(pName(idx) + " casts " + cName(c)); runAutoOnCast(c); } } if (sd) markSdActed(); } } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { setHandHovIdx(i); if (_setHoverCard && !c.hidden) _setHoverCard(c, e, true); }, onMouseLeave: function() { setHandCtxUid(null); if (_clearHoverCard) _clearHoverCard(); }, style: { width: HAND_W, height: HAND_H, borderRadius: 6, overflow: "hidden", border: "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + (playable ? "55" : "20")), flexShrink: 0, cursor: isDraggable2 ? "grab" : "pointer", transform: "rotate(" + rot + "deg) translateY(" + ty + "px) translateX(" + handShift + "px)", transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -30 : total > 5 ? -16 : 0), transition: "transform 0.075s ease", position: "relative", zIndex: i === handHovIdx ? 998 : i, boxShadow: "0 4px 16px #000a", opacity: 1 } },
+        return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover" + animCls, draggable: isDraggable2, onDragStart: isDraggable2 ? function(e) { e.dataTransfer.setData("text/plain", "hand:" + c.uid); setDragUnit(c); } : undefined, onDragEnd: function() { setDragUnit(null); }, onClick: canMoveOwn ? function() { if (tm || fc) return; if (c.type === "Unit" || c.type === "Champion" || c.type === "Gear") { onPlay(c); } else if (c.type === "Spell") { if (showcaseCard && showcaseCard.uid === c.uid) { setShowcaseCard(null); } else { var idx = myActIdx; var _me = ps[idx]; if (_me) { var sp = Object.assign({}, _me, { hand: _me.hand.filter(function(h) { return h.uid !== c.uid; }) }); if (autoMode) { var rcN = (c.rc || []).slice(); var eN = c.energy || 0; var _hasEager = (_me.base || []).some(function(u){return u.name==="Eager Apprentice";})||bfs.some(function(b){return((b.units&&b.units[idx])||[]).some(function(u){return u.name==="Eager Apprentice";});}); if(_hasEager&&eN>1)eN--; var _xEnergy=_extraEnergyRef.current; if(_xEnergy>0){_extraEnergyRef.current=0;eN=Math.max(0,eN-_xEnergy);} var aR = _me.runes.slice(); var recUids = []; rcN.forEach(function(dom) { var f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0; }); if (f) { recUids.push(f.uid); if (eN > 0) eN--; } }); var tapUids = []; if (eN > 0) { var av = aR.filter(function(r) { return !r.exhausted && recUids.indexOf(r.uid) < 0; }); av.slice(0, eN).forEach(function(r) { tapUids.push(r.uid); }); } sp.runes = _me.runes.filter(function(r) { return recUids.indexOf(r.uid) < 0; }).map(function(r) { return tapUids.indexOf(r.uid) >= 0 ? Object.assign({}, r, { exhausted: true }) : r; }); sp.runeDeck = shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); }))); } var np = ps.slice(); np[idx] = sp; setPs(np); pushShowcase(c); aL(pName(idx) + " casts " + cName(c)); runAutoOnCast(c); } } if (sd) markSdActed(); } } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { setHandHovIdx(i); if (_setHoverCard && !c.hidden) _setHoverCard(c, e, true); }, onMouseLeave: function() { setHandCtxUid(null); if (_clearHoverCard) _clearHoverCard(); }, style: { width: HAND_W, height: HAND_H, borderRadius: 6, overflow: "hidden", border: "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + (playable ? "55" : "20")), flexShrink: 0, cursor: isDraggable2 ? "grab" : "pointer", transform: "rotate(" + rot + "deg) translateY(" + ty + "px) translateX(" + handShift + "px)", transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -30 : total > 5 ? -16 : 0), transition: "transform 0.075s ease", position: "relative", zIndex: i === handHovIdx ? 998 : i, boxShadow: "0 4px 16px #000a", opacity: 1 } },
           c.hidden ? React.createElement("img", { src: CARD_BACK, style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : (c.img ? React.createElement("img", { src: imgSrc(c.img), style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : React.createElement("div", { style: { width: "100%", height: "100%", background: "linear-gradient(180deg," + (DOM[c.domain] || DOM.Colorless).c + "15,#0a0a18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#666", padding: 4, textAlign: "center" } }, c.name)),
           handCtxUid === c.uid ? React.createElement("button", { onClick: function(e) { e.stopPropagation(); toggleHide(c.uid); setHandCtxUid(null); }, style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 10, padding: "4px 12px", borderRadius: 4, border: "1.5px solid #ffffff40", background: "rgba(20,20,50,0.92)", color: "#ddd", fontSize: 12, cursor: "pointer", fontFamily: "Spectral,serif", fontWeight: 700, boxShadow: "0 4px 12px #000a", whiteSpace: "nowrap" } }, c.hidden ? "Reveal" : "Hide") : null
         );
@@ -4951,12 +4950,6 @@ function RiftboundGame() {
                   <input type="range" min="1.5" max="5.5" step="0.5" value={hoverSize} onChange={function(e) { setHoverSize(parseFloat(e.target.value)); }} style={{ width: 80, cursor: "pointer", accentColor: "#888" }} />
                   <span style={{ fontSize: 12, color: "#aaa", fontFamily: "Spectral,serif", minWidth: 24, textAlign: "center" }}>{hoverSize.toFixed(1)}x</span>
                 </div>
-              </div>
-              <div onClick={function() { setAutoRunes(!autoRunes); }} style={{ cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, padding: "4px 8px", borderRadius: 6, border: "1.5px solid " + (autoRunes ? "#FFD700" : "#ffffff20"), background: autoRunes ? "rgba(255,215,0,0.1)" : "transparent", transition: "all 0.15s ease" }}>
-                <div style={{ width: 32, height: 18, borderRadius: 9, background: autoRunes ? "#FFD700" : "#333", position: "relative", transition: "background 0.2s ease" }}>
-                  <div style={{ width: 14, height: 14, borderRadius: "50%", background: autoRunes ? "#000" : "#666", position: "absolute", top: 2, left: autoRunes ? 16 : 2, transition: "left 0.2s ease, background 0.2s ease" }} />
-                </div>
-                <div style={{ fontSize: 12, color: autoRunes ? "#FFD700" : "#777", fontFamily: "Spectral,serif", letterSpacing: 0.3, textAlign: "center", lineHeight: 1.3 }}>AUTO RUNES<br/>&amp; RECYCLING</div>
               </div>
             </div>
             <div style={{ display: "flex", gap: 3, alignItems: "flex-start", padding: "4px 2px", flexShrink: 0 }}>
