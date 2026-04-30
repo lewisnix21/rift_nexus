@@ -1144,6 +1144,7 @@ function RiftboundGame() {
   var _hovSize = useState(function() { try { var v = parseFloat(localStorage.getItem("riftNexusHoverSize")); return isFinite(v) && v >= 1.5 && v <= 5.5 ? v : 3.5; } catch(e) { return 3.5; } }), hoverSize = _hovSize[0], setHoverSize = _hovSize[1];
   useEffect(function() { try { localStorage.setItem("riftNexusHoverSize", String(hoverSize)); } catch(e) {} }, [hoverSize]);
   var _tt = useState("Recruit (Demacian)"), tokenType = _tt[0], setTokenType = _tt[1];
+  var _btab = useState(null), bottomTab = _btab[0], setBottomTab = _btab[1];
   var _pings = useState([]), pings = _pings[0], setPings = _pings[1];
   var _altPing = useState(false), altPing = _altPing[0], setAltPing = _altPing[1];
   var _scryMode = useState(null), scryMode = _scryMode[0], setScryMode = _scryMode[1];
@@ -5024,8 +5025,8 @@ function RiftboundGame() {
           <div style={{ flex: 1 }} />
         </div>); }()}
 
-        {/* Right panel */}
-        <div style={{ width: Math.round(250 * vScale), background: "transparent", borderLeft: "1px solid #FFD70015", display: "flex", flexDirection: "column", flexShrink: 0, overflow: "visible", position: "relative", zIndex: 20 }}>
+        {/* Right panel — hidden in auto mode */}
+        <div style={{ width: autoMode ? 0 : Math.round(250 * vScale), background: "transparent", borderLeft: autoMode ? "none" : "1px solid #FFD70015", display: autoMode ? "none" : "flex", flexDirection: "column", flexShrink: 0, overflow: "visible", position: "relative", zIndex: 20 }}>
           <div style={{ padding: 8, borderBottom: "1px solid #FFD70015", display: "flex", flexDirection: "column", gap: 5 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontWeight: 700, fontSize: 18, fontFamily: "Spectral,serif", background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Turn {turn}</span>
@@ -5149,6 +5150,71 @@ function RiftboundGame() {
           </div>
         </div>
       </div>
+      {/* AUTO MODE: Floating showcase (right side, no border) */}
+      {autoMode && (showcaseCard || dragOverShowcase) && <div className={sd ? "anim-sd-pulse" : ""}
+        onDragOver={function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; if (!dragOverShowcase) setDragOverShowcase(true); }}
+        onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverShowcase(false); }}
+        onDrop={function(e) { e.preventDefault(); e.stopPropagation(); setDragOverShowcase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; var card = null; if (myCur) { if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } else if (type === "base") { card = myCur.base.find(function(c) { return c.uid === uid2; }); } else if (type === "bf") { for (var bk = 0; bk < bfs.length; bk++) { var uArr = bfs[bk].units[myActIdx]; if (!uArr) continue; var found = uArr.find(function(u) { return u.uid === uid2; }); if (found) { card = found; break; } } } else if (type === "bin") { card = (myCur.trash || []).find(function(c) { return c.uid === uid2; }); } } if (card) { pushShowcase(card); if (card.type === "Spell") runAutoOnCast(card); } }}
+        style={{ position: "fixed", right: 12, top: "12%", padding: "6px 4px", display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "flex-start", overflow: "visible", zIndex: scryMode && showcaseCard ? 1250 : 800, pointerEvents: "auto" }}>
+        {showcaseCard ? (function() {
+          var scCardW = Math.round(215 * vScale); var scCardH = Math.round(301 * vScale);
+          var scPeek = Math.round(scCardW * 0.3);
+          var scHistLen = showcaseHistory.length;
+          return <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "flex-end", overflow: "visible" }}>
+            <div onMouseLeave={function() { setScHovIdx(-1); }} style={{ display: "flex", flexDirection: "row", alignItems: "center", overflow: "visible" }}>
+              {showcaseHistory.slice().reverse().map(function(hc, ri) {
+                var hi = scHistLen - 1 - ri;
+                var hImg = hc.img ? imgSrc(hc.img) : "";
+                var isHovered = scHovIdx === hi;
+                return <div key={hc.uid + "-" + hi} data-uid={hc.uid} className={getAnimType(hc.uid) === "flash" ? "anim-flash" : ""} onMouseEnter={function() { setScHovIdx(hi); }} style={{ width: isHovered ? scCardW : scPeek, height: scCardH, flexShrink: 0, borderRadius: 6, overflow: "hidden", border: isHovered ? "2px solid #FFD700" : "1.5px solid #FFD70044", boxShadow: isHovered ? "0 4px 20px #000c" : "0 2px 6px #000a", cursor: "pointer", transition: "width 0.2s ease, border 0.15s ease, box-shadow 0.15s ease", zIndex: ri + 1 }}>
+                  {hImg ? <img src={hImg} style={{ width: scCardW, height: scCardH, objectFit: "fill", display: "block" }} /> : <div style={{ width: scCardW, height: scCardH, background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#FFD700" }}>{hc.name}</div>}
+                </div>;
+              })}
+              <div data-uid={showcaseCard.uid} className={getAnimType(showcaseCard.uid) === "flash" ? "anim-flash" : ""} onMouseEnter={function() { setScHovIdx(-1); }} style={{ position: "relative", cursor: drawingArrow ? "crosshair" : "default", width: scCardW, height: scCardH, flexShrink: 0, overflow: "visible", zIndex: scHistLen + 2 }}>
+                <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: 6 }}>
+                  {showcaseCard.img ? <img src={imgSrc(showcaseCard.img)} onError={function(e) { if (PA[showcaseCard.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[showcaseCard.name] + ".webp"; } }} style={{ width: "100%", height: "100%", objectFit: "fill", display: "block" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 16, fontFamily: "Spectral,serif", border: "1px solid #ffffff20", textAlign: "center", padding: 8 }}>{showcaseCard.name}</div>}
+                </div>
+                {showcaseCard.counter2 !== 0 && showcaseCard.counter2 !== undefined && <div style={{ position: "absolute", top: -8, right: -8, background: "#854d0e", color: "#FACC15", borderRadius: 12, minWidth: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, boxShadow: "0 2px 6px #000a", padding: "0 4px", zIndex: 3 }}>{showcaseCard.counter2 > 0 ? "+" : ""}{showcaseCard.counter2}</div>}
+                {showcaseCard.counter !== 0 && showcaseCard.counter !== undefined && <div style={{ position: "absolute", top: -8, right: showcaseCard.counter2 ? 30 : -8, background: "#166534", color: "#4ADE80", borderRadius: 12, minWidth: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, boxShadow: "0 2px 6px #000a", padding: "0 4px", zIndex: 3 }}>{showcaseCard.counter > 0 ? "+" : ""}{showcaseCard.counter}</div>}
+                {showcaseOwner === myUid && <button onClick={function(e) { e.stopPropagation(); var idx = myActIdx; var _me = ps[idx]; if (_me) { var p = Object.assign({}, _me, { trash: (_me.trash || []).slice() }); p.trash.push(Object.assign({}, showcaseCard, { exhausted: false, gear: [] })); var np = ps.slice(); np[idx] = p; setPs(np); aL(pName(idx) + " bins " + cName(showcaseCard)); if (sd) markSdActed(); } if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false); setShowcaseAcceptors({}); setShowcasePriority(null); setShowcaseActed(false); } }} style={{ position: "absolute", bottom: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.75)", color: "#ffaaaa", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>🗑</button>}
+                <button onClick={function(e) { e.stopPropagation(); startArrow(showcaseCard.uid); }} style={{ position: "absolute", top: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #3B82F688", background: "rgba(59,130,246,0.75)", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>↗</button>
+                {cardHasArrow(showcaseCard.uid) && <button onClick={function(e) { e.stopPropagation(); removeArrow(showcaseCard.uid); }} style={{ position: "absolute", top: -8, left: 22, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(200,40,40,0.85)", color: "#fff", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, fontWeight: 700, zIndex: 3 }}>✕</button>}
+              </div>
+            </div>
+          </div>;
+        })() : <div style={{ width: Math.round(215 * vScale), height: Math.round(301 * vScale), border: "2px dashed #FFD70066", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD70088", fontSize: 12, fontFamily: "Spectral,serif", background: "rgba(255,215,0,0.05)" }}>Drop here</div>}
+      </div>}
+      {/* AUTO MODE: Floating END TURN button (bottom-right) */}
+      {autoMode && screen === "play" && !awakenPhase && (function() {
+        var isOnlineGame = lobbyType === "host" || lobbyType === "join";
+        if (isOnlineGame) { if (_gamePhaseRef.current !== "playing") return null; if (act !== mySlot) return null; }
+        return <button onClick={endTurn} style={{ position: "fixed", bottom: 24, right: 24, padding: "12px 28px", borderRadius: 8, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70060,#FF8C0030)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif", zIndex: 950, boxShadow: "0 4px 16px #000c, 0 0 24px rgba(255,215,0,0.2)", letterSpacing: 1 }}>END TURN</button>;
+      })()}
+      {/* AUTO MODE: Bottom tabs (Log + Chat) */}
+      {autoMode && <div style={{ position: "fixed", bottom: 0, left: 12, zIndex: 900, display: "flex", flexDirection: "column", alignItems: "flex-start", pointerEvents: "auto" }}>
+        {bottomTab && <div style={{ width: 380, height: 240, background: "rgba(20,20,50,0.95)", border: "1px solid #ffffff20", borderBottom: "none", borderRadius: "6px 6px 0 0", padding: 8, display: "flex", flexDirection: "column" }}>
+          {bottomTab === "log" && <>
+            <div ref={lr} style={{ flex: 1, overflow: "auto", padding: 4, fontSize: 12, lineHeight: 1.5 }}>
+              {log.map(function(e, i) { return <div key={i} style={{ color: e.m.indexOf("===") >= 0 ? "#FFD700" : e.m.indexOf("wins") >= 0 ? "#FFD700" : e.m.indexOf("SHOWDOWN") >= 0 ? "#FF6B35" : e.m.indexOf("onquer") >= 0 || e.m.indexOf("holding point") >= 0 ? "#4ADE80" : "#667", marginBottom: 2, fontFamily: e.m.indexOf("===") >= 0 ? "Spectral,serif" : "inherit" }}>{e.m}</div>; })}
+            </div>
+            <button onClick={function() { var txt = log.map(function(e) { return e.m; }).join("\n"); navigator.clipboard.writeText(txt); }} style={{ padding: "2px 6px", borderRadius: 3, border: "1px solid #ffffff15", background: "transparent", color: "#555", cursor: "pointer", fontSize: 10, marginTop: 4, alignSelf: "flex-start" }}>Copy Log</button>
+          </>}
+          {bottomTab === "chat" && <>
+            <div ref={chatRef} style={{ flex: 1, overflow: "auto", fontSize: 12, lineHeight: 1.4, padding: "2px 4px" }}>
+              {chatMsgs.length === 0 && <div style={{ color: "#ffffff30", fontSize: 11, fontFamily: "Spectral,serif", textAlign: "center", marginTop: 8 }}>{roomCode ? "No messages yet" : "Chat available in online games"}</div>}
+              {chatMsgs.map(function(m, i) { var isMe = m.uid === myUid; return <div key={i} style={{ marginBottom: 2 }}><span style={{ color: isMe ? "#4ADE80" : "#FFD700", fontWeight: 700, fontSize: 11 }}>{m.name}: </span><span style={{ color: "#bbb" }}>{m.text}</span></div>; })}
+            </div>
+            {roomCode && lobbyType !== "test" && <div style={{ display: "flex", gap: 3, marginTop: 4 }}>
+              <input value={chatInput} onChange={function(e) { setChatInput(e.target.value); }} onKeyDown={function(e) { if (e.key === "Enter") sendChat(); }} placeholder="Type a message..." style={{ flex: 1, padding: "4px 6px", borderRadius: 4, border: "1px solid #ffffff15", background: "rgba(255,255,255,0.05)", color: "#ddd", fontSize: 12, outline: "none", fontFamily: "Inter,sans-serif" }} />
+              <button onClick={sendChat} style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #FFD70033", background: "rgba(255,215,0,0.1)", color: "#FFD700", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Send</button>
+            </div>}
+          </>}
+        </div>}
+        <div style={{ display: "flex", gap: 0 }}>
+          <button onClick={function() { setBottomTab(bottomTab === "log" ? null : "log"); }} style={{ padding: "6px 16px", border: "1px solid #ffffff20", background: bottomTab === "log" ? "rgba(20,20,50,0.95)" : "rgba(0,0,0,0.6)", color: "#FFD700", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif", borderRadius: "4px 4px 0 0", borderBottom: bottomTab === "log" ? "1px solid rgba(20,20,50,0.95)" : "1px solid #ffffff20", letterSpacing: 1 }}>LOG</button>
+          <button onClick={function() { setBottomTab(bottomTab === "chat" ? null : "chat"); }} style={{ padding: "6px 16px", border: "1px solid #ffffff20", borderLeft: "none", background: bottomTab === "chat" ? "rgba(20,20,50,0.95)" : "rgba(0,0,0,0.6)", color: "#FFD700", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif", borderRadius: "4px 4px 0 0", borderBottom: bottomTab === "chat" ? "1px solid rgba(20,20,50,0.95)" : "1px solid #ffffff20", letterSpacing: 1 }}>CHAT</button>
+        </div>
+      </div>}
       {/* Ping effects */}
       {pings.map(function(p) { var el = document.querySelector("[data-uid='" + p.cardUid + "']"); if (!el) return null; var r = el.getBoundingClientRect(); return <div key={p.id} className="ping-dot" style={{ left: r.left + r.width / 2, top: r.top + r.height / 2 }} />; })}
       {/* Arrow SVG overlay */}
