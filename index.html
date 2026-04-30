@@ -843,9 +843,14 @@ var CARD_EFFECTS = {
     onPlay: function(ctx) {
       if (ctx.where !== "battlefield") return;
       ctx.flash(ctx.card.uid);
-      var meP = ps[ctx.myActIdx];
-      var hand = (meP && meP.hand || []).filter(function(c) { return c.uid !== ctx.card.uid; });
-      if (hand.length === 0) { ctx.draw(1); ctx.banner("Traveling Merchant — no cards to discard, drew 1"); return; }
+      var meP = ps[ctx.myActIdx]; var hand = (meP && meP.hand || []).filter(function(c) { return c.uid !== ctx.card.uid; });
+      if (!hand.length) { ctx.draw(1); ctx.banner("Traveling Merchant — no cards to discard, drew 1"); return; }
+      ctx.prompt({ kind: "pickFromHand", n: 1, label: "card", validUids: hand.map(function(c) { return c.uid; }), cardsSnap: hand, sourceName: "Traveling Merchant", sourceUid: ctx.card.uid, effect: "discard", andDraw: 1 });
+    },
+    onMoveToBase: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.myActIdx]; var hand = (meP && meP.hand || []).filter(function(c) { return c.uid !== ctx.card.uid; });
+      if (!hand.length) { ctx.draw(1); ctx.banner("Traveling Merchant — no cards to discard, drew 1"); return; }
       ctx.prompt({ kind: "pickFromHand", n: 1, label: "card", validUids: hand.map(function(c) { return c.uid; }), cardsSnap: hand, sourceName: "Traveling Merchant", sourceUid: ctx.card.uid, effect: "discard", andDraw: 1 });
     }
   },
@@ -861,7 +866,22 @@ var CARD_EFFECTS = {
     }
   },
 
-  "Sneaky Deckhand": { passive: "Can deploy to any open (uncontested) battlefield" },
+  "Sneaky Deckhand": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx;
+      var openBfs = [];
+      ctx.bfs.forEach(function(b, bi2) {
+        if (!b || !b.units) return;
+        var hasEnemy = false;
+        for (var pi = 0; pi < b.units.length; pi++) { if (pi !== idx && (b.units[pi] || []).length > 0) { hasEnemy = true; break; } }
+        if (!hasEnemy) openBfs.push({ key: "bf:" + bi2, label: b.name, bi: bi2 });
+      });
+      if (!openBfs.length) { ctx.banner("Sneaky Deckhand — no open battlefields available"); return; }
+      var locations = [{ key: "base", label: "Base (stay here)" }].concat(openBfs);
+      ctx.prompt({ kind: "pickLocation", sourceName: "Sneaky Deckhand", question: "Deploy to:", cardUid: ctx.card.uid, locations: locations });
+    }
+  },
 
   "Annie, Fiery": {
     onPlay: function(ctx) {
@@ -873,11 +893,19 @@ var CARD_EFFECTS = {
   "Sai Scout": {
     onPlay: function(ctx) {
       ctx.flash(ctx.card.uid);
-      var meP = ps[ctx.myActIdx];
-      var deck = (meP && meP.mainDeck) || [];
-      if (!deck.length) { ctx.banner("Sai Scout — [Vision] deck empty"); return; }
-      var top = deck[deck.length - 1];
-      ctx.prompt({ kind: "confirmAction", sourceName: "Sai Scout", question: "[Vision] Top card: " + top.name + " — recycle it?", yesEffect: "recycleTopCard" });
+      var idx = ctx.myActIdx;
+      var meP = ps[idx]; var deck = (meP && meP.mainDeck) || [];
+      var visionPrompt = deck.length ? { kind: "confirmAction", sourceName: "Sai Scout", question: "[Vision] Top card: " + deck[deck.length - 1].name + " — recycle it?", yesEffect: "recycleTopCard" } : null;
+      var openBfs = [];
+      ctx.bfs.forEach(function(b, bi2) {
+        if (!b || !b.units) return;
+        var hasEnemy = false;
+        for (var pi = 0; pi < b.units.length; pi++) { if (pi !== idx && (b.units[pi] || []).length > 0) { hasEnemy = true; break; } }
+        if (!hasEnemy) openBfs.push({ key: "bf:" + bi2, label: b.name, bi: bi2 });
+      });
+      if (!openBfs.length) { if (visionPrompt) ctx.prompt(visionPrompt); else ctx.banner("Sai Scout — [Vision] deck empty, no open battlefields"); return; }
+      var locations = [{ key: "base", label: "Base (stay here)" }].concat(openBfs);
+      ctx.prompt({ kind: "pickLocation", sourceName: "Sai Scout", question: "Deploy to:", cardUid: ctx.card.uid, locations: locations, thenPrompt: visionPrompt });
     }
   },
 
@@ -895,10 +923,10 @@ var CARD_EFFECTS = {
   },
 
   // --- Legend ---
-  "Dark Child - Starter": { passive: "End of turn — ready up to 2 runes (manual)" },
+  "Dark Child - Starter": { passive: "End of turn — ready up to 2 runes (automated in endTurn)" },
 
   // --- Battlefields ---
-  "The Arena's Greatest": { passive: "First beginning phase: each player gains 1 point (manual)" },
+  "The Arena's Greatest": { passive: "First beginning phase: each player +1 point (automated in doStartTurn)" },
   "Windswept Hillock":    { passive: "Units here have [Ganking] — can move BF to BF" }
 };
 </script>
@@ -1420,6 +1448,7 @@ function RiftboundGame() {
   // Reset at the start of each turn; incremented on every successful play (unit/champion/gear/spell).
   var _cardsPlayedThisTurnRef = useRef(0);
   var _extraEnergyRef = useRef(0);
+  var _arenaFirstTurnRef = useRef({});
   var autoMode = !!(lobbySettings && lobbySettings.autoMode);
   var _lobbyList = useState([]), lobbyList = _lobbyList[0], setLobbyList = _lobbyList[1];
   var _lobbyErr = useState(null), lobbyErr = _lobbyErr[0], setLobbyErr = _lobbyErr[1];
@@ -3438,6 +3467,7 @@ function RiftboundGame() {
           addAnim(_u.uid, "flash", 800);
           return np;
         });
+        fireOnMoveToBaseEffect(_u);
       });
       showAutoBanner("AUTO · " + p.sourceName + " — " + uids.length + " unit" + (uids.length === 1 ? "" : "s") + " returned to base");
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
@@ -3522,6 +3552,13 @@ function RiftboundGame() {
       // Awaken: untap everything
       var p = Object.assign({}, turnPlayer, { runes: turnPlayer.runes.map(function(r) { return Object.assign({}, r, { exhausted: false }); }), base: turnPlayer.base.map(function(c) { return Object.assign({}, c, { exhausted: false, stunned: false }); }), legend: Object.assign({}, turnPlayer.legend, { exhausted: false }), runeDeck: turnPlayer.runeDeck.slice(), mainDeck: turnPlayer.mainDeck.slice(), hand: turnPlayer.hand.slice() });
       var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu, i) { return i === turnIdx ? pu.map(function(u) { return Object.assign({}, u, { exhausted: false, stunned: false, tempMight: 0 }); }) : pu.slice(); }) }); });
+      // The Arena's Greatest: +1 point on each player's first beginning phase
+      if (autoMode && !_arenaFirstTurnRef.current[turnIdx] && bfs.some(function(b) { return b.name === "The Arena's Greatest"; })) {
+        _arenaFirstTurnRef.current[turnIdx] = true;
+        p.score = (p.score || 0) + 1;
+        aL(pName(turnIdx) + " gains 1 point (The Arena's Greatest — first beginning phase)");
+        showAutoBanner("AUTO · The Arena's Greatest — +1 point to " + pName(turnIdx));
+      }
       // Begin: score
       var _isDoublesGame = lobbySettings && lobbySettings.mode === "Doubles";
       var _myTeammateIdx = -1;
@@ -3584,6 +3621,16 @@ function RiftboundGame() {
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.map(function(u) { return Object.assign({}, u, { tempMight: 0, damage: 0, _buffSources: [], _damageSources: [] }); }); }) }); });
     var p2 = Object.assign({}, meP, { base: meP.base.map(function(c) { return Object.assign({}, c, { tempMight: 0, damage: 0, _buffSources: [], _damageSources: [] }); }) });
     var np = ps.slice(); np[meIdx] = p2;
+    // Dark Child - Starter: ready up to 2 runes at end of turn
+    if (autoMode && meP.legend && meP.legend.name === "Dark Child - Starter") {
+      var _dcEx = p2.runes.filter(function(r) { return r.exhausted; });
+      if (_dcEx.length > 0) {
+        var _dcN = Math.min(2, _dcEx.length); var _dcR = 0;
+        p2.runes = p2.runes.map(function(r) { if (r.exhausted && _dcR < _dcN) { _dcR++; return Object.assign({}, r, { exhausted: false }); } return r; });
+        np[meIdx] = p2;
+        setTimeout(function() { showAutoBanner("AUTO · Dark Child — " + _dcN + " rune" + (_dcN === 1 ? "" : "s") + " readied at end of turn"); }, 300);
+      }
+    }
     // Send showcase cards to bin before clearing
     if (showcaseCard || showcaseHistory.length > 0) {
       var allShowcaseCards = [];
@@ -3663,7 +3710,7 @@ function RiftboundGame() {
     for (var bk = 0; bk < nb.length; bk++) {
       if (!nb[bk].units[idx]) continue;
       var ui = nb[bk].units[idx].findIndex(function(u) { return u.uid === cardUid; });
-      if (ui >= 0) { var unit = nb[bk].units[idx].splice(ui, 1)[0]; p.base.push(Object.assign({}, unit, { exhausted: true })); aL(pName(idx) + " returns " + cName(unit) + " to base"); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); return; }
+      if (ui >= 0) { var unit = nb[bk].units[idx].splice(ui, 1)[0]; p.base.push(Object.assign({}, unit, { exhausted: true })); aL(pName(idx) + " returns " + cName(unit) + " to base"); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); fireOnMoveToBaseEffect(unit); return; }
     }
     // Check bin
     var ti = p.trash.findIndex(function(c) { return c.uid === cardUid; });
@@ -3928,6 +3975,19 @@ function RiftboundGame() {
     var cleanPs = (npPs || ps).map(function(p) { if (!p) return p; return Object.assign({}, p, { hand: p.hand || [], base: (p.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: p.trash || [], runes: p.runes || [], runeDeck: p.runeDeck || [], mainDeck: p.mainDeck || [], battlefields: p.battlefields || [] }); });
     var cleanBfs = (npBfs || bfs).map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
     fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPs, bfs: cleanBfs, turn: turn, act: act, screen: screen, log: log.slice(-30), sd: sd, ver: _lastSyncVersion.current, by: myUid })));
+  }
+  function fireOnMoveToBaseEffect(unit) {
+    if (!autoMode) return;
+    var eff = CARD_EFFECTS[unit && unit.name];
+    if (!eff || !eff.onMoveToBase) return;
+    var ctx = {
+      card: unit, myActIdx: myActIdx,
+      banner: function(text) { showAutoBanner("AUTO · " + text); },
+      flash: function(uid2) { addAnim(uid2, "flash", 800); },
+      draw: function(n) { drawCards(n); },
+      prompt: function(p2) { if (p2 && p2.validUids) p2 = Object.assign({}, p2, { validUids: p2.validUids.filter(function(uid) { return !isEnemyDeflect(uid); }) }); _autoSelRef.current = []; setAutoPrompt(p2); }
+    };
+    try { eff.onMoveToBase(ctx); } catch(e) { console.error("onMoveToBase error for " + unit.name + ":", e); }
   }
   function fireOnTapEffect(card, wasExhausted) {
     if (!autoMode) return;
@@ -4465,6 +4525,14 @@ function RiftboundGame() {
           <button onClick={function() { if (autoPrompt.yesEffect === "channelRune") { setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p) return prev; var runes = p.runes.slice(); var ri = runes.findIndex(function(r) { return !r.exhausted; }); if (ri < 0) return prev; runes[ri] = Object.assign({}, runes[ri], { exhausted: true }); var np = prev.slice(); np[i] = Object.assign({}, p, { runes: runes }); return np; }); showAutoBanner("AUTO · " + autoPrompt.sourceName + " — channeled 1 rune"); } if (autoPrompt.yesEffect === "recycleTopCard") { setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p || !(p.mainDeck||[]).length) return prev; var deck = p.mainDeck.slice(); var top = deck.pop(); deck = shuffle(deck.concat([top])); var np = prev.slice(); np[i] = Object.assign({}, p, { mainDeck: deck }); return np; }); showAutoBanner("AUTO · " + autoPrompt.sourceName + " — top card recycled"); } setAutoPrompt(null); }} style={{ padding: "5px 16px", borderRadius: 5, border: "1.5px solid #4ADE80", background: "rgba(74,222,128,0.15)", color: "#4ADE80", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Spectral,serif" }}>Yes</button>
           <button onClick={function() { setAutoPrompt(null); }} style={{ padding: "5px 16px", borderRadius: 5, border: "1px solid #555", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif" }}>No</button>
         </div>
+      </div>}
+      {autoPrompt && autoPrompt.kind === "pickLocation" && <div style={{ position: "fixed", top: 60, left: "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #FFD70088", boxShadow: "0 8px 32px #000c, 0 0 24px #FFD70022", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 240, pointerEvents: "auto" }}>
+        <div style={{ fontSize: 11, color: "#FFD70099", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
+        <div style={{ fontSize: 14, color: "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{autoPrompt.question}</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 5, width: "100%" }}>
+          {autoPrompt.locations.map(function(loc) { return <button key={loc.key} onClick={function() { if (loc.bi != null) moveUnit(autoPrompt.cardUid, loc.bi); var next = autoPrompt.thenPrompt; setAutoPrompt(null); if (next) setTimeout(function() { _autoSelRef.current = []; setAutoPrompt(next); }, 150); }} style={{ padding: "6px 12px", borderRadius: 5, border: "1.5px solid #FFD70066", background: "rgba(255,215,0,0.08)", color: "#FFD700", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif", textAlign: "left" }}>{loc.label}</button>; })}
+        </div>
+        <button onClick={function() { var next = autoPrompt.thenPrompt; setAutoPrompt(null); if (next) setTimeout(function() { _autoSelRef.current = []; setAutoPrompt(next); }, 150); }} style={{ padding: "5px 16px", borderRadius: 5, border: "1px solid #555", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif" }}>Skip</button>
       </div>}
 
       {screen === "go" && (function() {
