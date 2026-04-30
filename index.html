@@ -742,7 +742,18 @@ var CARD_EFFECTS = {
       ctx.flash(ctx.card.uid);
       var friendlyUids = ctx.friendlyUnitUids();
       if (friendlyUids.length === 0) { ctx.banner("Stand United — no friendly units"); return; }
-      ctx.applyTempMightToAllFriendly(1, "Stand United");
+      // +1 might to any friendly that is already buffed (counter > 0) right now.
+      var idx = ctx.myActIdx;
+      var alreadyBuffed = [];
+      var meP = ps[idx];
+      if (meP) (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && c.counter > 0) alreadyBuffed.push(c.uid); });
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if (u.counter > 0) alreadyBuffed.push(u.uid); }); });
+      if (alreadyBuffed.length > 0) {
+        ctx.applyTempMightToUids(alreadyBuffed, 1, "Stand United");
+        ctx.banner("Stand United — +1 might to " + alreadyBuffed.length + " buffed unit" + (alreadyBuffed.length === 1 ? "" : "s"));
+      }
+      // Watcher: any friendly buffed later this turn also gets +1 might.
+      ctx.addWatcher({ kind: "friendlyBuffedGetsExtraMight", source: ctx.card.uid, sourceName: "Stand United" });
       ctx.prompt({ kind: "pickFriendlyUnits", n: 1, sourceName: "Stand United", sourceUid: ctx.card.uid, effect: "addCounter", amount: 1 });
     }
   },
@@ -3194,7 +3205,10 @@ function RiftboundGame() {
     } else if (p.effect === "addCounter") {
       // Persistent buff token (the green +N badge), e.g. Pit Rookie's "buff" mechanic.
       uids.forEach(function(u2) { addCounter(u2, p.amount || 1); addAnim(u2, "flash", 800); });
-      showAutoBanner("AUTO · " + p.sourceName + " — buff token (+" + (p.amount || 1) + ") to " + uids.length + " unit" + (uids.length === 1 ? "" : "s"));
+      // Stand United watcher: units freshly buffed this turn also gain +1 might.
+      var suWatcher = autoWatchers.find(function(w) { return w.kind === "friendlyBuffedGetsExtraMight"; });
+      if (suWatcher) applyTempMightToUids(uids, 1, suWatcher.sourceName);
+      showAutoBanner("AUTO · " + p.sourceName + " — buff token (+" + (p.amount || 1) + ") to " + uids.length + " unit" + (uids.length === 1 ? "" : "s") + (suWatcher ? " (+1 might via " + suWatcher.sourceName + ")" : ""));
       if (p.andDraw) drawCards(p.andDraw);
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
     } else if (p.effect === "kill") {
