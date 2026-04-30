@@ -992,7 +992,8 @@ var CARD_EFFECTS = {
     onCast: function(ctx) {
       ctx.flash(ctx.card.uid);
       ctx.spawnInBase("Mech", 1);
-      ctx.banner("Production Surge — Mech (3 might) token spawned in base");
+      ctx.draw(1);
+      ctx.banner("Production Surge — Mech (3 might) token spawned in base; drew 1");
     }
   },
   "Mobilize": {
@@ -1016,14 +1017,18 @@ var CARD_EFFECTS = {
       ctx.flash(ctx.card.uid);
       var friendlyUids = ctx.friendlyUnitUids();
       if (!friendlyUids.length) { ctx.banner("En Garde — no friendly units"); return; }
-      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "En Garde", sourceUid: ctx.card.uid, effect: "tempMight", amount: 1 });
+      // "Alone" = the only unit you control at that location (base or a particular BF).
+      // We mark a watcher so the prompt resolution can apply +1 more if the chosen unit is alone there.
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "En Garde", sourceUid: ctx.card.uid, effect: "tempMight", amount: 1, alonebonus: 1 });
     }
   },
   "Grand Strategem": {
     onCast: function(ctx) {
       ctx.flash(ctx.card.uid);
       var n = ctx.applyTempMightToAllFriendly(5, "Grand Strategem");
-      ctx.banner("Grand Strategem — +5 might to " + n + " friendly unit" + (n === 1 ? "" : "s") + " this turn");
+      // Watcher: any friendly unit played LATER this turn also gets +5 might (cleared at end of turn).
+      ctx.addWatcher({ kind: "friendlyEntersGetsTempMight", source: ctx.card.uid, sourceName: "Grand Strategem", amount: 5 });
+      ctx.banner("Grand Strategem — +5 might to " + n + " friendly unit" + (n === 1 ? "" : "s") + " this turn (incl. later plays)");
     }
   },
 
@@ -2403,8 +2408,8 @@ function RiftboundGame() {
                     var name = isCustom ? registerCustomDeck(item) : item;
                     var data = isCustom ? item : DECKS[item];
                     var s = myDeck === name;
-                    var lgImg = CI[data.legend] ? imgSrc(CI[data.legend]) : "";
-                    var chImg = CI[data.champ] ? imgSrc(CI[data.champ]) : "";
+                    var lgImg = CI[data.legend] ? imgSrc(CI[data.legend]) : (PA[data.legend] ? PA_CDN + PA[data.legend] + ".webp" : "");
+                    var chImg = CI[data.champ] ? imgSrc(CI[data.champ]) : (PA[data.champ] ? PA_CDN + PA[data.champ] + ".webp" : "");
                     var dn = isCustom ? (data.name || "Untitled") : (item.indexOf(" (") > 0 ? item.substring(0, item.indexOf(" (")) : item);
                     var uniqueR = []; (data.runes || []).forEach(function(r) { if (uniqueR.indexOf(r) < 0) uniqueR.push(r); });
                     var btnAccent = isCustom ? "#8B5CF6" : accent;
@@ -2939,6 +2944,15 @@ function RiftboundGame() {
     var eff = CARD_EFFECTS[card.name];
     if (eff && eff.entersReady) return true;
     if (autoWatchers.some(function(w) { return w.kind === "ownUnitEntersReady"; })) return true;
+    // Magma Wurm aura: while Magma Wurm is in play (yours), other friendly units enter ready.
+    if (card && card.name !== "Magma Wurm" && (card.type === "Unit" || card.type === "Champion")) {
+      var idx = myActIdx; var meP = ps[idx];
+      if (meP) {
+        var inBase = (meP.base || []).some(function(c) { return c.name === "Magma Wurm"; });
+        var inBfs = bfs.some(function(b) { return ((b && b.units && b.units[idx]) || []).some(function(u) { return u.name === "Magma Wurm"; }); });
+        if (inBase || inBfs) return true;
+      }
+    }
     return false;
   }
   // --- Auto-mode helper functions (used inside CARD_EFFECTS via ctx) ---
@@ -3034,7 +3048,28 @@ function RiftboundGame() {
         addAnim(w.source, "flash", 800);
         showAutoBanner("AUTO · " + w.sourceName + " — " + (card.name || "unit") + " enters ready");
       }
+      // Grand Strategem watcher — buff friendly units played AFTER the spell this turn.
+      if (w.kind === "friendlyEntersGetsTempMight" && (card.type === "Unit" || card.type === "Champion")) {
+        applyTempMightToUids([card.uid], w.amount, w.sourceName);
+        addAnim(w.source, "flash", 800);
+        showAutoBanner("AUTO · " + w.sourceName + " — +" + w.amount + " might to " + (card.name || "unit") + " (later play)");
+      }
     });
+    // Mech-Vision aura: if you control Forecaster, your Mechs have [Vision] (peek + recycle prompt).
+    if (card && (card.keywords || []).indexOf("Mech") >= 0 && card.name !== "Forecaster") {
+      var _idx = myActIdx; var _meP = ps[_idx];
+      var hasForecaster = _meP && (
+        (_meP.base || []).some(function(c) { return c.name === "Forecaster"; }) ||
+        bfs.some(function(b) { return ((b && b.units && b.units[_idx]) || []).some(function(u) { return u.name === "Forecaster"; }); })
+      );
+      if (hasForecaster) {
+        var _deck = (_meP && _meP.mainDeck) || [];
+        if (_deck.length) {
+          var _top = _deck[_deck.length - 1];
+          setAutoPrompt({ kind: "confirmAction", sourceName: "Forecaster (Mech [Vision])", question: "[Vision] Top card: " + _top.name + " — recycle it?", yesEffect: "recycleTopCard" });
+        }
+      }
+    }
     if (eff && eff.onPlay) {
       var ctx = makeAutoCtx(card, where, bi);
       try { eff.onPlay(ctx); } catch(e) { console.error("CARD_EFFECTS onPlay error for " + card.name + ":", e); }
@@ -3469,6 +3504,25 @@ function RiftboundGame() {
     if (p.effect === "tempMight") {
       applyTempMightToUids(uids, p.amount, p.sourceName);
       var amtStr = p.amount >= 0 ? "+" + p.amount : "" + p.amount;
+      // En Garde "alone" bonus: +alonebonus more if the chosen unit is the only friendly unit at its location (base or its BF).
+      var aloneExtra = 0;
+      if (p.alonebonus && uids.length === 1) {
+        var _ai = myActIdx; var _u = uids[0];
+        var _meP = ps[_ai]; var atBase = _meP && (_meP.base || []).some(function(c) { return c.uid === _u; });
+        if (atBase) {
+          var baseUnits = (_meP.base || []).filter(function(c) { return c.type === "Unit" || c.type === "Champion"; });
+          if (baseUnits.length === 1) aloneExtra = p.alonebonus;
+        } else {
+          for (var _bi = 0; _bi < bfs.length; _bi++) {
+            var _bUnits = (bfs[_bi].units && bfs[_bi].units[_ai]) || [];
+            if (_bUnits.some(function(u) { return u.uid === _u; }) && _bUnits.length === 1) { aloneExtra = p.alonebonus; break; }
+          }
+        }
+        if (aloneExtra) {
+          applyTempMightToUids(uids, aloneExtra, p.sourceName + " (alone)");
+          showAutoBanner("AUTO · " + p.sourceName + " — alone bonus +" + aloneExtra + " might");
+        }
+      }
       showAutoBanner("AUTO · " + p.sourceName + " — " + amtStr + " might to " + uids.length + " unit" + (uids.length === 1 ? "" : "s"));
       if (p.andDraw) drawCards(p.andDraw);
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
