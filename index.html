@@ -769,6 +769,44 @@ var CARD_EFFECTS = {
     }
   },
 
+  // ============ Batch 6: Lux precon completion ============
+
+  // --- Passives ---
+  "Eager Apprentice":  { passive: "Energy reduction at BF — spells cost 1 less (min 1) while here (manual)" },
+  "Lux, Crownguard":   { passive: "Activated: exhaust for 2 energy usable on spells (manual)" },
+  "Mega-Mech":         { passive: "Vanilla 7/8 — no ability" },
+
+  // --- Spells ---
+  "Singularity": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+      if (bfUids.length === 0) { ctx.banner("Singularity — no units at battlefields"); return; }
+      var n = Math.min(2, bfUids.length);
+      ctx.prompt({ kind: "pickAnyUnit", n: n, validUids: bfUids, sourceName: "Singularity", sourceUid: ctx.card.uid, effect: "damage", amount: 6 });
+    }
+  },
+
+  // --- Legend ---
+  "Lady of Luminosity - Starter": {
+    onSpellCast: function(ctx) {
+      var cost = (ctx.spell && ctx.spell.energy) || 0;
+      if (cost < 5) return;
+      ctx.flash(ctx.unit.uid);
+      ctx.draw(1);
+      ctx.banner("Lady of Luminosity — drew 1 (spell cost " + cost + ")");
+    }
+  },
+
+  // --- Battlefields ---
+  "Startipped Peak": {
+    onHold: function(ctx) {
+      ctx.banner("Startipped Peak — may channel 1 rune exhausted (manual)");
+    }
+  },
+  "Ravenbloom Conservatory": { passive: "On-defend reveal: if top card is a spell draw it, else recycle (manual during showdowns)" },
+
   // --- Units ---
   "Maddened Marauder": {
     onPlay: function(ctx) {
@@ -3177,6 +3215,7 @@ function RiftboundGame() {
     var idx = myActIdx; var meP = ps[idx]; if (!meP) return;
     var allies = (meP.base || []).filter(function(c) { return c && (c.type === "Unit" || c.type === "Champion"); }).slice();
     bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { allies.push(u); }); });
+    if (meP.legend) allies.push(meP.legend);
     allies.forEach(function(u) {
       var uEff = CARD_EFFECTS[u.name];
       if (!uEff || !uEff.onSpellCast) return;
@@ -3184,6 +3223,7 @@ function RiftboundGame() {
         unit: u, spell: spellCard,
         flash: function(uid2) { addAnim(uid2, "flash", 800); },
         banner: function(text) { showAutoBanner("AUTO · " + text); },
+        draw: function(n) { drawCards(n); },
         applyTempMightToUids: function(uids, amount, source) { applyTempMightToUids(uids, amount, source || u.name); }
       };
       try { uEff.onSpellCast(ctx); } catch(e) { console.error("CARD_EFFECTS onSpellCast error for " + u.name + ":", e); }
