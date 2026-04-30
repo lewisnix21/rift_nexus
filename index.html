@@ -347,7 +347,7 @@ var CARD_EFFECTS = {
   },
 
   // --- Battlefields ---
-  "Trifarian War Camp": { passive: "Aura: +1 might to all units here (auto)" },
+  "Trifarian War Camp": { _automatedElsewhere: "Units here +1 might — fires from computeAuraSources" },
   "The Grand Plaza": {
     onHold: function(ctx) {
       var unitCount = ctx.friendlyUnitsHere().length;
@@ -672,7 +672,12 @@ var CARD_EFFECTS = {
   // ============ Batch 5: 10 precon-deck cards ============
 
   // --- Passives ---
-  "Stalwart Poro": { passive: "Shield — +1 might while defending (auto via parseKeywordBonus)" },
+  "Stalwart Poro": {
+    onDefend: function(ctx) {
+      applyTempMightToUids([ctx.unit.uid], 1, "Stalwart Poro [Shield]");
+      ctx.banner("Stalwart Poro [Shield] — +1 might this combat");
+    }
+  },
   "Pouty Poro":    { passive: "Deflect — filtered from all auto-mode targeted prompts (auto)" },
 
   // --- Spells ---
@@ -941,7 +946,7 @@ var CARD_EFFECTS = {
       ctx.prompt({ kind: "confirmAction", sourceName: "Stormclaw Ursine", question: "Channel 1 rune exhausted?", yesEffect: "channelRune" });
     }
   },
-  "Mountain Drake":      { passive: "Vanilla unit — no ability" },
+  "Mountain Drake":      { _vanilla: "Vanilla unit — no ability" },
   "Chemtech Enforcer": {
     onPlay: function(ctx) {
       ctx.flash(ctx.card.uid);
@@ -985,7 +990,7 @@ var CARD_EFFECTS = {
       ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: mechUids, sourceName: "Bubble Bot", sourceUid: ctx.card.uid, effect: "ready" });
     }
   },
-  "Forecaster":          { passive: "Your Mechs have [Vision] (automated in fireUnitPlayedEffects)" },
+  "Forecaster":          { _automatedElsewhere: "Your Mechs have [Vision] — fires from fireUnitPlayedEffects when a Mech is played" },
   "Royal Guard": {
     onPlay: function(ctx) {
       ctx.flash(ctx.card.uid);
@@ -993,12 +998,17 @@ var CARD_EFFECTS = {
       ctx.banner("Royal Guard — Sand Soldier token spawned " + (ctx.where === "battlefield" ? "at " + (ctx.bfName || "battlefield") : "in base"));
     }
   },
-  "Zephyr Sage":         { passive: "[Shield] — +1 might while defending" },
-  "Playful Phantom":     { passive: "Vanilla unit — no ability" },
-  "Wizened Elder":       { passive: "+1 might while buffed (counter > 0)" },
-  "Magma Wurm":          { passive: "Other friendly units enter ready (automated in shouldEnterReady)" },
-  "Wraith of Echoes":    { passive: "First friendly unit death each turn — draw 1 (automated in dealDamageToUid)" },
-  "Bilgewater Bully":    { passive: "[Ganking] while buffed (counter > 0)" },
+  "Zephyr Sage": {
+    onDefend: function(ctx) {
+      applyTempMightToUids([ctx.unit.uid], 1, "Zephyr Sage [Shield]");
+      ctx.banner("Zephyr Sage [Shield] — +1 might this combat");
+    }
+  },
+  "Playful Phantom":     { _vanilla: "Vanilla unit — no ability" },
+  "Wizened Elder":       { _automatedElsewhere: "While buffed (counter > 0), +1 might via aura — fires from computeAuraSources" },
+  "Magma Wurm":          { _automatedElsewhere: "Other friendly units enter ready — fires from shouldEnterReady" },
+  "Wraith of Echoes":    { _automatedElsewhere: "First friendly unit death each turn → draw 1 — fires from dealDamageToUid kill path" },
+  "Bilgewater Bully":    { _automatedElsewhere: "[Ganking] while buffed — green glow on Card component when counter > 0 at a BF" },
   "Heimerdinger, Inventor": {
     onTap: function(ctx) {
       if (ctx.wasExhausted) return; // only fire on ready → tapped
@@ -1068,7 +1078,7 @@ var CARD_EFFECTS = {
   },
 
   // --- Legends ---
-  "Loose Cannon":        { passive: "Beginning phase: draw 1 if hand <= 1 (automated in doStartTurn)" },
+  "Loose Cannon":        { _automatedElsewhere: "Beginning phase: draw 1 if hand <= 1 — fires from doStartTurn" },
 
   // ============ Batch 9: 20 more cards ============
 
@@ -1137,7 +1147,17 @@ var CARD_EFFECTS = {
       }
     }
   },
-  "Brazen Buccaneer": { passive: "Optional: discard 1 to reduce cost by 2 (manual; cost is computed pre-play)" },
+  "Brazen Buccaneer": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      // The cost reduction must be paid before resolving, so by the time we get here we can only
+      // offer to mirror it: prompt to discard one if the user paid the higher cost out of habit.
+      var meP = ps[ctx.myActIdx]; var hand = (meP && meP.hand || []).filter(function(c) { return c.uid !== ctx.card.uid; });
+      if (!hand.length) { ctx.banner("Brazen Buccaneer — no cards to discard for retroactive cost reduction"); return; }
+      ctx.prompt({ kind: "pickFromHand", n: 1, label: "card", validUids: hand.map(function(c) { return c.uid; }), cardsSnap: hand, sourceName: "Brazen Buccaneer (paid cost reduction)", sourceUid: ctx.card.uid, effect: "discard" });
+      ctx.banner("Brazen Buccaneer — pick a card to discard (for retroactive -2 cost note); refund energy manually if needed");
+    }
+  },
   "Master Yi, Meditative": {
     onAttack: function(ctx) {
       var xp = _xpRef.current[ctx.ownerIdx] || 0;
@@ -1225,7 +1245,15 @@ var CARD_EFFECTS = {
       ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: equippedUids, sourceName: "Strike Down (pick equipped)", sourceUid: ctx.card.uid, effect: "strikeDownPickEnemy" });
     }
   },
-  "Highlander":     { passive: "[Reaction] Choose a friendly unit. Next time it would die this turn, heal+exhaust+recall to base instead (manual — needs death-interception watcher)" },
+  "Highlander": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var friendlyUids = ctx.friendlyUnitUids();
+      if (!friendlyUids.length) { ctx.banner("Highlander — no friendly units to shield"); return; }
+      // Mark the chosen unit with a "highlanderShield" watcher; the dealDamageToUid kill path checks this.
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Highlander", sourceUid: ctx.card.uid, effect: "highlanderShield" });
+    }
+  },
   "Frigid Touch": {
     onCast: function(ctx) {
       ctx.flash(ctx.card.uid);
@@ -1278,6 +1306,264 @@ var CARD_EFFECTS = {
       if (!ownBf.length) { showAutoBanner("AUTO · Reaver's Row — no friendly BF units to return"); return; }
       _autoSelRef.current = [];
       setAutoPrompt({ kind: "pickFriendlyUnits", n: 1, validUids: ownBf, sourceName: "Reaver's Row", effect: "returnToBase" });
+    }
+  },
+
+  // ============ Batch 10: Finish Viktor / Master Yi / Jinx / Lee Sin / Rumble decks ============
+
+  // --- Vanilla / keyword-only ---
+  "Pakaa Cub":           { _vanilla: "[Hidden] keyword — face-down play handled by hide-card mechanic, no extra automation" },
+  "Blazing Scorcher":    { _vanilla: "[Accelerate] — pay 1E + Fury to enter ready, handled by player at play time" },
+  "Long Sword":          { _vanilla: "[Quick-Draw] / [Equip] Fury — gear played as Reaction; no auto trigger" },
+  "Mistfall":            { _vanilla: "When you buff a friendly unit, may pay [Body] + exhaust to ready it (manual; conditional spend)" },
+  "Rhasa the Sunderer":  { _vanilla: "Cost reduction by trash count — applied at play time by cost calc, not on-play" },
+  "Viktor, Innovator":   { _vanilla: "When you play a card on opponent's turn → Recruit token (rare cross-turn flow; manual)" },
+
+  // --- Units ---
+  "Jinx, Demolitionist": {
+    onAttack: function(ctx) {
+      applyTempMightToUids([ctx.unit.uid], 2, "Jinx, Demolitionist [Assault 2]");
+      ctx.banner("Jinx, Demolitionist [Assault 2] — +2 might this combat");
+    }
+  },
+  "Lee Sin, Centered":   { _automatedElsewhere: "Other buffed friendly units at my BF have +1 might — fires from computeAuraSources" },
+  "Rumble, Scrapper":    {
+    onHold: function(ctx) {
+      // "When I hold, play a 3 might Mech unit token to your base."
+      // (Mech +1 might aura is handled by computeAuraSources.)
+      spawnTokensInBase("Mech", 1);
+      ctx.banner("Rumble, Scrapper — Mech token spawned in base (on hold)");
+    }
+  },
+  "Rumble, Hotheaded": {
+    onAttack: function(ctx) {
+      // Your Mechs each have [Assault] (+1 might attacker). Apply +1 to all friendly Mech attackers at this BF.
+      var allies = (ctx.bf && ctx.bf.units && ctx.bf.units[ctx.ownerIdx]) || [];
+      var mechUids = allies.filter(function(u) { return (u.keywords || []).indexOf("Mech") >= 0; }).map(function(u) { return u.uid; });
+      if (!mechUids.length) return;
+      applyTempMightToUids(mechUids, 1, "Rumble, Hotheaded [Assault] (Mechs)");
+      ctx.banner("Rumble, Hotheaded — +1 might to " + mechUids.length + " Mech attacker" + (mechUids.length === 1 ? "" : "s"));
+    },
+    onConquer: function(ctx) {
+      // "When I conquer, you may recycle another friendly unit to play a Mech for free." (manual on the recycle/play step)
+      ctx.banner("Rumble, Hotheaded — on conquer, may recycle a unit to play a Mech for free (manual)");
+    }
+  },
+  "Vi, Destructive": {
+    onTap: function(ctx) {
+      if (ctx.wasExhausted) return;
+      var meP = ps[ctx.myActIdx];
+      var trashUnits = (meP && meP.trash || []).filter(function(c) { return c.type === "Unit" || c.type === "Champion"; });
+      if (!trashUnits.length) { ctx.banner("Vi, Destructive — no units in trash to recycle"); return; }
+      ctx.prompt({ kind: "pickFromTrash", n: 1, label: "unit to recycle", validUids: trashUnits.map(function(c) { return c.uid; }), cardsSnap: trashUnits, sourceName: "Vi, Destructive", sourceUid: ctx.card.uid, effect: "recycleAndBuff" });
+    }
+  },
+  "Jeweled Colossus": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.myActIdx]; var deck = (meP && meP.mainDeck) || [];
+      if (!deck.length) { ctx.banner("Jeweled Colossus [Vision] — deck empty"); return; }
+      var top = deck[deck.length - 1];
+      ctx.prompt({ kind: "confirmAction", sourceName: "Jeweled Colossus", question: "[Vision] Top card: " + top.name + " — recycle it?", yesEffect: "recycleTopCard" });
+    },
+    onDefend: function(ctx) {
+      applyTempMightToUids([ctx.unit.uid], 1, "Jeweled Colossus [Shield]");
+      ctx.banner("Jeweled Colossus [Shield] — +1 might this combat");
+    }
+  },
+  "Undercover Agent": {
+    onDeath: function(ctx) {
+      var meP = ps[ctx.myActIdx]; var hand = (meP && meP.hand || []);
+      if (!hand.length) { ctx.draw(2); ctx.banner("Undercover Agent [Deathknell] — no cards to discard, drew 2"); return; }
+      var disc = Math.min(2, hand.length);
+      ctx.prompt({ kind: "pickFromHand", n: disc, label: "card", validUids: hand.map(function(c) { return c.uid; }), cardsSnap: hand, sourceName: "Undercover Agent [Deathknell]", effect: "discard", andDraw: 2 });
+    }
+  },
+  "Ferrous Forerunner": {
+    onDeath: function(ctx) {
+      spawnTokensInBase("Mech", 2);
+      ctx.banner("Ferrous Forerunner [Deathknell] — 2 Mech tokens spawned in base");
+    }
+  },
+  "Master Yi, Tempered": {
+    onConquer: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 2;
+      ctx.banner("Master Yi, Tempered [Hunt 2] — gained 2 XP (now " + _xpRef.current[ctx.player] + ")");
+    },
+    onHold: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 2;
+      ctx.banner("Master Yi, Tempered [Hunt 2] — gained 2 XP (now " + _xpRef.current[ctx.player] + ")");
+    }
+  },
+  "Gem Jammer": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var friendlyUids = ctx.friendlyUnitUids(ctx.card.uid);
+      if (!friendlyUids.length) { ctx.banner("Gem Jammer — no other friendly units to give [Ganking]"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Gem Jammer ([Ganking] this turn)", sourceUid: ctx.card.uid, effect: "grantGanking" });
+    }
+  },
+  "Breakneck Mech":      { _automatedElsewhere: "Your Mechs have [Deflect] and [Ganking] — keyword-driven; Ganking glow already on Mech BF units" },
+  "Udyr, Wildman": {
+    onTap: function(ctx) {
+      if (ctx.wasExhausted) return;
+      // "Spend my buff: choose one of three modes." Auto: damage 2 to enemy (most-impactful default).
+      if ((ctx.card.counter || 0) <= 0) { ctx.banner("Udyr, Wildman — needs a buff to spend"); return; }
+      var enemyUids = [];
+      bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi === ctx.myActIdx) return; (pu || []).forEach(function(u) { enemyUids.push(u.uid); }); }); });
+      if (!enemyUids.length) { ctx.banner("Udyr, Wildman — no enemy BF units to damage"); return; }
+      addCounter(ctx.card.uid, -1);
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: enemyUids, sourceName: "Udyr, Wildman (deal 2)", sourceUid: ctx.card.uid, effect: "damage", amount: 2 });
+    }
+  },
+
+  // --- Spells ---
+  "Charm": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx;
+      var enemyBfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi === idx) return; (pu || []).forEach(function(u) { enemyBfUids.push(u.uid); }); }); });
+      if (!enemyBfUids.length) { ctx.banner("Charm — no enemy BF units to move"); return; }
+      // First pick the enemy unit, then via a watcher we'll route to a base/BF picker.
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: enemyBfUids, sourceName: "Charm (move enemy to their base)", sourceUid: ctx.card.uid, effect: "returnToBase" });
+    }
+  },
+  "Challenge": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx;
+      var friendlyUids = ctx.friendlyUnitUids();
+      if (!friendlyUids.length) { ctx.banner("Challenge — no friendly units"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Challenge (pick yours)", sourceUid: ctx.card.uid, effect: "challengePickEnemy" });
+    }
+  },
+  "Gentlemen's Duel": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var friendlyUids = ctx.friendlyUnitUids();
+      if (!friendlyUids.length) { ctx.banner("Gentlemen's Duel — no friendly units"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Gentlemen's Duel (+3 might → duel)", sourceUid: ctx.card.uid, effect: "duelPickEnemy" });
+    }
+  },
+  "Meditation": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx; var meP = ps[idx];
+      // Find a friendly exhausted unit to ready (if you exhausted one as the additional cost, ready 2; otherwise ready 1).
+      var exhUids = [];
+      if (meP) (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && c.exhausted) exhUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if (u.exhausted) exhUids.push(u.uid); }); });
+      if (!exhUids.length) { ctx.banner("Meditation — no exhausted friendly units to ready"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: exhUids, sourceName: "Meditation", sourceUid: ctx.card.uid, effect: "ready" });
+    }
+  },
+  "Fight or Flight": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx;
+      var bfFriendlyUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; ((b.units[idx]) || []).forEach(function(u) { bfFriendlyUids.push(u.uid); }); });
+      if (!bfFriendlyUids.length) { ctx.banner("Fight or Flight — no friendly BF units"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: bfFriendlyUids, sourceName: "Fight or Flight", sourceUid: ctx.card.uid, effect: "returnToBase" });
+    }
+  },
+  "Fading Memories": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx;
+      var bfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+      if (!bfUids.length) { ctx.banner("Fading Memories — no BF units"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Fading Memories ([Temporary])", sourceUid: ctx.card.uid, effect: "markTemporary" });
+    }
+  },
+  "Danger Zone": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+      if (!bfUids.length) { ctx.banner("Danger Zone — no BF units"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Danger Zone", sourceUid: ctx.card.uid, effect: "damage", amount: 2 });
+    }
+  },
+
+  // --- Gear ---
+  "Assembly Rig": {
+    onTap: function(ctx) {
+      if (ctx.wasExhausted) return;
+      spawnTokensInBase("Mech", 1);
+      ctx.banner("Assembly Rig — Mech token spawned (cost: 1E + Fury + recycle a unit, manual)");
+    }
+  },
+  "Orb of Regret": {
+    onTap: function(ctx) {
+      if (ctx.wasExhausted) return;
+      var bfUids = [];
+      bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+      var meP = ps[ctx.myActIdx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") bfUids.push(c.uid); });
+      if (!bfUids.length) { ctx.banner("Orb of Regret — no units"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Orb of Regret", sourceUid: ctx.card.uid, effect: "tempMight", amount: -1 });
+    }
+  },
+  "Mask of Foresight": {
+    // "When a friendly unit attacks or defends alone, give it +1 might this turn."
+    // Implemented as an aura watcher: when a friendly unit is alone at combat, +1 might (we hook via onAttack on the unit if they're alone).
+    // Since this is gear-driven, we mirror Wielder of Water's pattern but tied to the gear's existence.
+    _automatedElsewhere: "Combat-time +1 might to lone friendly attacker/defender — fires via Mask of Foresight watcher in fireShowdownStartEffects"
+  },
+  "Mushroom Pouch":      { _automatedElsewhere: "Beginning phase: draw 1 if you control a facedown card at a BF — fires from doStartTurn" },
+
+  // --- Battlefields ---
+  "Hallowed Tomb": {
+    onHold: function(ctx) {
+      var meP = ps[ctx.player];
+      if (!meP || meP.champion || !meP.championPlayed) { ctx.banner("Hallowed Tomb — Champion Zone not empty"); return; }
+      var champInTrash = (meP.trash || []).find(function(c) { return c.uid && c.name && c.energy === 0 && (c.kw || c.keywords || []).length > 0; });
+      // We don't store "Chosen Champion" reference, so just prompt the user to pick from trash if anything looks like a champion.
+      var trashCards = (meP.trash || []).filter(function(c) { return c.type === "Unit" || c.type === "Champion"; });
+      if (!trashCards.length) { ctx.banner("Hallowed Tomb — no eligible champion in trash"); return; }
+      ctx.prompt({ kind: "pickFromTrash", n: 1, label: "champion to revive", validUids: trashCards.map(function(c) { return c.uid; }), cardsSnap: trashCards, sourceName: "Hallowed Tomb", effect: "reviveChampion" });
+    }
+  },
+
+  // --- Legends ---
+  "Herald of the Arcane": {
+    onTap: function(ctx) {
+      if (ctx.wasExhausted) return;
+      // "1E + Exhaust: play a 1 Might Recruit unit token." We pick the Mind/Order Recruit token.
+      spawnTokensInBase("Recruit (Automata)", 1);
+      ctx.banner("Herald of the Arcane — Recruit token spawned (cost 1E manual)");
+    }
+  },
+  "Blind Monk": {
+    onTap: function(ctx) {
+      if (ctx.wasExhausted) return;
+      // "1E + Exhaust: buff a friendly unit." → +1 buff counter to chosen friendly.
+      var idx = ctx.myActIdx; var friendlyUids = friendlyUnitUids();
+      if (!friendlyUids.length) { ctx.banner("Blind Monk — no friendly units"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Blind Monk (cost 1E manual)", sourceUid: ctx.card.uid, effect: "addCounter", amount: 1 });
+    }
+  },
+  "Rumble, Mechanized Menace": {
+    onDefend: function(ctx) {
+      // Your Mechs have Shield (+1 might while defenders).
+      var allies = (ctx.bf && ctx.bf.units && ctx.bf.units[ctx.ownerIdx]) || [];
+      var mechUids = allies.filter(function(u) { return (u.keywords || []).indexOf("Mech") >= 0; }).map(function(u) { return u.uid; });
+      if (!mechUids.length) return;
+      applyTempMightToUids(mechUids, 1, "Rumble, Mechanized Menace [Shield] (Mechs)");
+      ctx.banner("Rumble, Mechanized Menace — +1 might to " + mechUids.length + " Mech defender" + (mechUids.length === 1 ? "" : "s"));
+    }
+  },
+  "Wuju Bladesman - Starter": {
+    onDefend: function(ctx) {
+      // While a friendly unit defends alone, it gets +2 might.
+      var allies = (ctx.bf && ctx.bf.units && ctx.bf.units[ctx.ownerIdx]) || [];
+      if (allies.length === 1) {
+        applyTempMightToUids([ctx.unit.uid], 2, "Wuju Bladesman - Starter (alone defender)");
+        ctx.banner("Wuju Bladesman — friendly defending alone, +2 might this combat");
+      }
     }
   }
 };
@@ -1349,8 +1635,9 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
   var shadow = (selected || zoomed) ? "0 0 20px #FFD70055" : inHand ? "0 4px 16px #000b" : "0 2px 8px #00000055";
   var isUnit = card.type === "Unit" || card.type === "Champion";
   // Ganking glow: green border halo on units at a battlefield with the [Ganking] keyword.
+  // Bilgewater Bully gains [Ganking] while buffed (counter > 0), so include that conditional path.
   var _isAtBf = !!(dragData && dragData.indexOf("bf:") === 0);
-  var _hasGanking = isUnit && (card.keywords || []).indexOf("Ganking") >= 0;
+  var _hasGanking = isUnit && ((card.keywords || []).indexOf("Ganking") >= 0 || (card.name === "Bilgewater Bully" && (card.counter || 0) > 0));
   var gankingGlow = _isAtBf && _hasGanking && !zoomed && !gearDragOver && !selected;
   var gearCount = (card.gear && small) ? card.gear.length : 0;
   var gearExtra = gearCount > 0 ? Math.round(w * 0.3) * gearCount : 0;
@@ -3480,6 +3767,29 @@ function RiftboundGame() {
     var newDmg = (found.unit.damage || 0) + amount;
     var maxHP = (found.unit.might || 0) + (found.unit.tempMight || 0) + (found.unit._aura || 0);
     if (newDmg >= maxHP) {
+      // Highlander shield: heal + exhaust + recall to base instead of dying. One-shot consumption.
+      if (autoMode && found.unit._highlanderShield) {
+        var hu = found.unit; var hbi = found.bi; var hpi = found.pi;
+        setBfs(function(prev) {
+          var nb = prev.slice();
+          nb[hbi] = Object.assign({}, prev[hbi], { units: prev[hbi].units.map(function(pu, pii) {
+            if (pii !== hpi) return pu; var nu = pu.slice();
+            var ix = nu.findIndex(function(u) { return u.uid === victimUid; });
+            if (ix >= 0) nu.splice(ix, 1);
+            return nu;
+          }) });
+          return nb;
+        });
+        setPs(function(prev) {
+          var np = prev.slice(); var pp = prev[hpi]; if (!pp) return prev;
+          var clean = Object.assign({}, hu, { exhausted: true, damage: 0, tempMight: 0, _aura: 0, _highlanderShield: false, _buffSources: [], _damageSources: [] });
+          np[hpi] = Object.assign({}, pp, { base: (pp.base || []).concat([clean]) });
+          addAnim(hu.uid, "flash", 800);
+          return np;
+        });
+        showAutoBanner("AUTO · Highlander — " + hu.name + " healed, exhausted, recalled to base");
+        return;
+      }
       // Kill: trigger fizzle anim first, defer state mutation so the animation has time to play.
       addAnim(victimUid, "fizzle", 700);
       var snap = found;
@@ -3620,11 +3930,47 @@ function RiftboundGame() {
         Object.keys(byNS).forEach(function(k) { applyTempMightToUids(byNS[k], parseInt(k, 10), "[Shield]"); });
         showAutoBanner("AUTO · Shield — " + shieldBuffs.length + " defender" + (shieldBuffs.length === 1 ? "" : "s") + " buffed");
       }
+      // Mask of Foresight aura: when a friendly unit attacks/defends ALONE on its side, give it +1 might this turn.
+      // Owner = controller of Mask of Foresight (in their base or BF).
+      function _hasMaskOfForesight(pIdx) {
+        var pp = ps[pIdx];
+        if (pp) {
+          if ((pp.base || []).some(function(c) { return c.name === "Mask of Foresight"; })) return true;
+          var anyAttachedToOwn = bfs.some(function(b2) { return ((b2.units && b2.units[pIdx]) || []).some(function(u) { return (u.gear || []).some(function(g) { return g.name === "Mask of Foresight"; }); }); });
+          if (anyAttachedToOwn) return true;
+        }
+        return false;
+      }
+      // Attacker side
+      var atkUnits = bf.units[atkIdx] || [];
+      if (atkUnits.length === 1 && _hasMaskOfForesight(atkIdx)) {
+        applyTempMightToUids([atkUnits[0].uid], 1, "Mask of Foresight (alone attacker)");
+        showAutoBanner("AUTO · Mask of Foresight — alone attacker, +1 might");
+      }
+      // Defender sides
+      for (var pim = 0; pim < bf.units.length; pim++) {
+        if (pim === atkIdx) continue;
+        var dUnits = bf.units[pim] || [];
+        if (dUnits.length === 1 && _hasMaskOfForesight(pim)) {
+          applyTempMightToUids([dUnits[0].uid], 1, "Mask of Foresight (alone defender)");
+          showAutoBanner("AUTO · Mask of Foresight — alone defender, +1 might");
+        }
+      }
       // Fire onAttack for the deploying unit
       if (deployedCard && CARD_EFFECTS[deployedCard.name] && CARD_EFFECTS[deployedCard.name].onAttack) {
         var ctx = makeShowdownCtx(deployedCard, bf, atkIdx, bfIdx);
         try { CARD_EFFECTS[deployedCard.name].onAttack(ctx); } catch(e) { console.error("onAttack error for " + deployedCard.name + ":", e); }
       }
+      // Fire onAttack for ALL attackers (not just the deploying one) — needed for cards like Wielder of Water,
+      // Raging Soul, Jinx Demolitionist that gain bonuses from being attackers regardless of who deployed.
+      (bf.units[atkIdx] || []).forEach(function(u) {
+        if (deployedCard && u.uid === deployedCard.uid) return; // already fired above
+        var aEff = CARD_EFFECTS[u.name];
+        if (aEff && aEff.onAttack) {
+          var ctxA = makeShowdownCtx(u, bf, atkIdx, bfIdx);
+          try { aEff.onAttack(ctxA); } catch(e) { console.error("onAttack error for " + u.name + ":", e); }
+        }
+      });
       // Fire onDefend for every defender at the battlefield (showdown is starting from their POV).
       for (var pid = 0; pid < bf.units.length; pid++) {
         if (pid === atkIdx) continue;
@@ -3681,6 +4027,15 @@ function RiftboundGame() {
     if (playerIdx !== myActIdx) return;
     var bfEff = CARD_EFFECTS[bf.name];
     if (bfEff && bfEff.onHold) { try { bfEff.onHold(makeConquerCtx(playerIdx, bfIdx, bf)); } catch(e) { console.error("onHold error:", e); } }
+    // Unit-level "When I hold" triggers (e.g. Rumble Scrapper, Master Yi Honed).
+    (bf.units[playerIdx] || []).forEach(function(u) {
+      var uEff = CARD_EFFECTS[u.name];
+      if (uEff && uEff.onHold) {
+        var ctx = makeConquerCtx(playerIdx, bfIdx, bf);
+        ctx.unit = u; ctx.card = u;
+        try { uEff.onHold(ctx); } catch(e) { console.error("unit onHold error for " + u.name + ":", e); }
+      }
+    });
   }
   // --- Aura system: recompute static aura bonuses (Garen Commander, Trifarian War Camp).
   // Stored in unit._aura (sum) and unit._auraSources (per-source breakdown for hover tooltips).
@@ -3690,17 +4045,35 @@ function RiftboundGame() {
     // location is { kind: "battlefield", bf, pidx } or { kind: "base", baseUnits, locName }
     var sources = [];
     if (!unit) return sources;
+    var isMech = (unit.keywords || []).indexOf("Mech") >= 0;
     if (location.kind === "battlefield") {
       var bf = location.bf;
       if (bf && bf.name === "Trifarian War Camp") sources.push({ source: "Trifarian War Camp", amount: 1 });
       if (bf && (bf.units[location.pidx] || []).some(function(o) { return o.name === "Garen, Commander" && o.uid !== unit.uid; })) {
         sources.push({ source: "Garen, Commander @ " + bf.name, amount: 1 });
       }
+      // Rumble, Scrapper: friendly Mechs (incl. self) at any BF +1 might.
+      if (isMech && bf) {
+        var hasScrapper = (bf.units[location.pidx] || []).some(function(o) { return o.name === "Rumble, Scrapper"; });
+        if (hasScrapper) sources.push({ source: "Rumble, Scrapper", amount: 1 });
+      }
+      // Lee Sin, Centered: other buffed friendly units at his BF get +1 might.
+      if (bf && unit.uid && (unit.counter || 0) > 0) {
+        var hasLeeSin = (bf.units[location.pidx] || []).some(function(o) { return o.name === "Lee Sin, Centered" && o.uid !== unit.uid; });
+        if (hasLeeSin) sources.push({ source: "Lee Sin, Centered (buffed)", amount: 1 });
+      }
     } else if (location.kind === "base") {
       if (location.baseUnits.some(function(o) { return o.name === "Garen, Commander" && o.uid !== unit.uid; })) {
         sources.push({ source: "Garen, Commander @ Base", amount: 1 });
       }
+      // Rumble, Scrapper at base also auras Mech mates in base.
+      if (isMech) {
+        var hasScrapperBase = location.baseUnits.some(function(o) { return o.name === "Rumble, Scrapper" && o.uid !== unit.uid; });
+        if (hasScrapperBase) sources.push({ source: "Rumble, Scrapper", amount: 1 });
+      }
     }
+    // Self-buff auras (location-independent).
+    if (unit.name === "Wizened Elder" && (unit.counter || 0) > 0) sources.push({ source: "Wizened Elder (buffed)", amount: 1 });
     return sources;
   }
   function _auraEqual(a, b) {
@@ -4018,6 +4391,114 @@ function RiftboundGame() {
         showAutoBanner("AUTO · Heimerdinger — borrowed exhaust ability of " + found.name);
         if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
       });
+    } else if (p.effect === "recycleAndBuff") {
+      // Vi, Destructive: recycle a unit from trash → +1 might to Vi this turn.
+      var idxV = myActIdx;
+      uids.forEach(function(u2) {
+        setPs(function(prev) {
+          var pp = prev[idxV]; if (!pp) return prev;
+          var trash = (pp.trash || []).slice();
+          var ti = trash.findIndex(function(c) { return c.uid === u2; });
+          if (ti < 0) return prev;
+          var card = trash.splice(ti, 1)[0];
+          var deck = shuffle((pp.mainDeck || []).concat([Object.assign({}, card, { exhausted: false, gear: [] })]));
+          var np = prev.slice(); np[idxV] = Object.assign({}, pp, { trash: trash, mainDeck: deck });
+          return np;
+        });
+      });
+      if (p.sourceUid) applyTempMightToUids([p.sourceUid], 1, "Vi, Destructive (recycled)");
+      showAutoBanner("AUTO · Vi, Destructive — recycled, +1 might this turn");
+      if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+    } else if (p.effect === "grantGanking") {
+      // Gem Jammer: give a unit [Ganking] this turn. Mark via _gankingThisTurn flag.
+      setBfs(function(prev) { return prev.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.map(function(u) { return uids.indexOf(u.uid) >= 0 ? Object.assign({}, u, { keywords: ((u.keywords || []).indexOf("Ganking") < 0 ? (u.keywords || []).concat(["Ganking"]) : u.keywords), _gankingThisTurn: true }) : u; }); }) }); });
+      });
+      setPs(function(prev) {
+        var idx = myActIdx; var pp = prev[idx]; if (!pp) return prev;
+        var newBase = (pp.base || []).map(function(c) { return uids.indexOf(c.uid) >= 0 ? Object.assign({}, c, { keywords: ((c.keywords || []).indexOf("Ganking") < 0 ? (c.keywords || []).concat(["Ganking"]) : c.keywords), _gankingThisTurn: true }) : c; });
+        var np = prev.slice(); np[idx] = Object.assign({}, pp, { base: newBase }); return np;
+      });
+      uids.forEach(function(u2) { addAnim(u2, "flash", 800); });
+      showAutoBanner("AUTO · Gem Jammer — granted [Ganking] this turn");
+      if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+    } else if (p.effect === "challengePickEnemy") {
+      // Step 2 of Challenge: stash chosen friendly, prompt for enemy → mutual damage.
+      var fUid = uids[0]; var fFound = null; var idxC = myActIdx;
+      var meCP = ps[idxC];
+      if (meCP) (meCP.base || []).forEach(function(c) { if (c.uid === fUid) fFound = c; });
+      if (!fFound) bfs.forEach(function(b) { ((b.units && b.units[idxC]) || []).forEach(function(u) { if (u.uid === fUid) fFound = u; }); });
+      if (!fFound) { setAutoPrompt(null); _autoSelRef.current = []; return; }
+      var enemyUidsC = [];
+      bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi === idxC) return; (pu || []).forEach(function(u) { enemyUidsC.push(u.uid); }); }); });
+      if (!enemyUidsC.length) { showAutoBanner("AUTO · Challenge — no enemy units"); setAutoPrompt(null); _autoSelRef.current = []; return; }
+      var fMight = (fFound.might || 0) + (fFound.tempMight || 0) + (fFound._aura || 0);
+      // Deal damage to friendly equal to its own might (mutual). We delay this so the user can resolve enemy pick first.
+      setTimeout(function() {
+        _autoSelRef.current = [];
+        setAutoPrompt({ kind: "pickAnyUnit", n: 1, validUids: enemyUidsC, sourceName: "Challenge (mutual " + fFound.name + " " + fMight + " might)", sourceUid: p.sourceUid, effect: "challengeResolve", _challengeFriendlyUid: fUid, _challengeFriendlyMight: fMight });
+      }, 150);
+      return;
+    } else if (p.effect === "challengeResolve") {
+      // Step 3: actually deal damage both ways.
+      var enemyUid = uids[0]; var fUidR = p._challengeFriendlyUid; var fMightR = p._challengeFriendlyMight || 0;
+      var found = null;
+      bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { if (u.uid === enemyUid) found = u; }); }); });
+      var eMight = found ? ((found.might || 0) + (found.tempMight || 0) + (found._aura || 0)) : 0;
+      dealDamageToUid(enemyUid, fMightR, "Challenge");
+      dealDamageToUid(fUidR, eMight, "Challenge (return)");
+      showAutoBanner("AUTO · Challenge — mutual " + fMightR + " ↔ " + eMight + " damage");
+      if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+    } else if (p.effect === "duelPickEnemy") {
+      // Gentlemen's Duel: +3 might to chosen friendly, then duel-style mutual damage with chosen enemy.
+      var fUid2 = uids[0];
+      applyTempMightToUids([fUid2], 3, "Gentlemen's Duel");
+      var idxD = myActIdx;
+      var meDP = ps[idxD]; var fFound2 = null;
+      if (meDP) (meDP.base || []).forEach(function(c) { if (c.uid === fUid2) fFound2 = c; });
+      if (!fFound2) bfs.forEach(function(b) { ((b.units && b.units[idxD]) || []).forEach(function(u) { if (u.uid === fUid2) fFound2 = u; }); });
+      var fMight2 = fFound2 ? ((fFound2.might || 0) + (fFound2.tempMight || 0) + (fFound2._aura || 0) + 3) : 3;
+      var enemyUidsD = [];
+      bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi === idxD) return; (pu || []).forEach(function(u) { enemyUidsD.push(u.uid); }); }); });
+      if (!enemyUidsD.length) { showAutoBanner("AUTO · Gentlemen's Duel — +3 might (no enemy to duel)"); setAutoPrompt(null); _autoSelRef.current = []; return; }
+      setTimeout(function() {
+        _autoSelRef.current = [];
+        setAutoPrompt({ kind: "pickAnyUnit", n: 1, validUids: enemyUidsD, sourceName: "Gentlemen's Duel (duel " + fMight2 + " might)", sourceUid: p.sourceUid, effect: "challengeResolve", _challengeFriendlyUid: fUid2, _challengeFriendlyMight: fMight2 });
+      }, 150);
+      return;
+    } else if (p.effect === "markTemporary") {
+      // Fading Memories: mark unit as Temporary (kill at start of controller's beginning phase).
+      setBfs(function(prev) { return prev.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.map(function(u) { return uids.indexOf(u.uid) >= 0 ? Object.assign({}, u, { _temporary: true }) : u; }); }) }); }); });
+      uids.forEach(function(u2) { addAnim(u2, "flash", 800); });
+      showAutoBanner("AUTO · Fading Memories — [Temporary] applied (will die at start of next beginning)");
+      if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+    } else if (p.effect === "reviveChampion") {
+      // Hallowed Tomb: bring chosen unit from trash back to Champion Zone.
+      var idxR = myActIdx;
+      uids.forEach(function(u2) {
+        setPs(function(prev) {
+          var pp = prev[idxR]; if (!pp) return prev;
+          var trash = (pp.trash || []).slice();
+          var ti = trash.findIndex(function(c) { return c.uid === u2; });
+          if (ti < 0) return prev;
+          var champ = trash.splice(ti, 1)[0];
+          var np = prev.slice(); np[idxR] = Object.assign({}, pp, { trash: trash, champion: Object.assign({}, champ, { exhausted: false, damage: 0, tempMight: 0, gear: [] }), championPlayed: false });
+          addAnim(champ.uid, "draw");
+          return np;
+        });
+      });
+      showAutoBanner("AUTO · Hallowed Tomb — Champion returned to Champion Zone");
+      if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+    } else if (p.effect === "highlanderShield") {
+      // Mark chosen unit with _highlanderShield flag; consumed by dealDamageToUid kill path.
+      setBfs(function(prev) { return prev.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.map(function(u) { return uids.indexOf(u.uid) >= 0 ? Object.assign({}, u, { _highlanderShield: true }) : u; }); }) }); }); });
+      setPs(function(prev) {
+        var idx = myActIdx; var pp = prev[idx]; if (!pp) return prev;
+        var newBase = (pp.base || []).map(function(c) { return uids.indexOf(c.uid) >= 0 ? Object.assign({}, c, { _highlanderShield: true }) : c; });
+        var np = prev.slice(); np[idx] = Object.assign({}, pp, { base: newBase }); return np;
+      });
+      uids.forEach(function(u2) { addAnim(u2, "flash", 800); });
+      showAutoBanner("AUTO · Highlander — shield applied (next would-die: heal+exhaust+recall)");
+      if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
     }
     setAutoPrompt(null);
     _autoSelRef.current = [];
@@ -4074,6 +4555,28 @@ function RiftboundGame() {
         p.score = (p.score || 0) + 1;
         aL(pName(turnIdx) + " gains 1 point (The Arena's Greatest — first beginning phase)");
         showAutoBanner("AUTO · The Arena's Greatest — +1 point to " + pName(turnIdx));
+      }
+      // Fading Memories — kill any [Temporary] units at the start of their controller's Beginning Phase.
+      if (autoMode) {
+        var _tempVictims = [];
+        bfs.forEach(function(b) { ((b.units && b.units[turnIdx]) || []).forEach(function(u) { if (u._temporary) _tempVictims.push(u.uid); }); });
+        if (_tempVictims.length) {
+          _tempVictims.forEach(function(u2) { dealDamageToUid(u2, 9999, "Fading Memories ([Temporary])"); });
+          showAutoBanner("AUTO · Fading Memories — killed " + _tempVictims.length + " [Temporary] unit" + (_tempVictims.length === 1 ? "" : "s"));
+        }
+      }
+      // Mushroom Pouch — if you control a facedown card at any BF, draw 1.
+      if (autoMode) {
+        var hasFacedown = bfs.some(function(b) { return ((b.units && b.units[turnIdx]) || []).some(function(u) { return u.hidden; }); });
+        var hasMushroom = (p.base || []).some(function(c) { return c.name === "Mushroom Pouch"; }) ||
+          bfs.some(function(b) { return ((b.units && b.units[turnIdx]) || []).some(function(u) { return u.name === "Mushroom Pouch"; }); });
+        if (hasMushroom && hasFacedown && (p.mainDeck || []).length > 0) {
+          var _mpCard = p.mainDeck.shift();
+          p.hand = (p.hand || []).concat([_mpCard]);
+          addAnim(_mpCard.uid, "draw");
+          aL(pName(turnIdx) + " draws 1 (Mushroom Pouch — facedown card at BF)");
+          showAutoBanner("AUTO · Mushroom Pouch — drew 1 (facedown card at BF)");
+        }
       }
       // Obelisk of Power: at start of each player's first beginning, that player channels 1 rune
       if (autoMode && !_obeliskFiredRef.current[turnIdx] && bfs.some(function(b) { return b.name === "Obelisk of Power"; }) && (p.runeDeck || []).length > 0 && (p.runes || []).length < 12) {
