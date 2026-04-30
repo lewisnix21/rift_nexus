@@ -667,6 +667,106 @@ var CARD_EFFECTS = {
       ctx.applyTempMightToUids([ctx.unit.uid], 3, "Lux, Illuminated");
       ctx.banner("Lux, Illuminated — +3 might (spell cost " + cost + ")");
     }
+  },
+
+  // ============ Batch 5: 10 precon-deck cards ============
+
+  // --- Passives ---
+  "Stalwart Poro": { passive: "Shield — +1 might while defending (auto via parseKeywordBonus)" },
+  "Pouty Poro":    { passive: "Deflect — opponents pay extra rune to target (manual)" },
+
+  // --- Spells ---
+  "Consult the Past": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.draw(2);
+      ctx.banner("Consult the Past — drew 2");
+    }
+  },
+
+  "Sprite Call": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.spawnInBaseReady("Sprite", 1);
+      ctx.banner("Sprite Call — Sprite token (3 might, Temporary) to base ready");
+    }
+  },
+
+  "Firestorm": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx;
+      var enemyUids = [];
+      ctx.bfs.forEach(function(b) {
+        if (!b || !b.units) return;
+        b.units.forEach(function(pu, pi) {
+          if (pi === idx) return;
+          (pu || []).forEach(function(u) { enemyUids.push(u.uid); });
+        });
+      });
+      if (enemyUids.length === 0) { ctx.banner("Firestorm — no enemy units at battlefields"); return; }
+      enemyUids.forEach(function(uid2) { ctx.dealDamage(uid2, 3, "Firestorm"); });
+      ctx.banner("Firestorm — 3 dmg to " + enemyUids.length + " enemy unit" + (enemyUids.length === 1 ? "" : "s") + " at battlefields");
+    }
+  },
+
+  "Gust": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfUids = [];
+      ctx.bfs.forEach(function(b) {
+        if (!b || !b.units) return;
+        b.units.forEach(function(pu) {
+          (pu || []).forEach(function(u) {
+            if ((u.might || 0) + (u.tempMight || 0) + (u._aura || 0) <= 3) bfUids.push(u.uid);
+          });
+        });
+      });
+      if (bfUids.length === 0) { ctx.banner("Gust — no BF units with 3 or less might to bounce"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Gust", sourceUid: ctx.card.uid, effect: "bounceToHand" });
+    }
+  },
+
+  "Hidden Blade": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+      if (bfUids.length === 0) { ctx.banner("Hidden Blade — no units at battlefields"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Hidden Blade", sourceUid: ctx.card.uid, effect: "kill", andDraw: 2 });
+    }
+  },
+
+  "Stand United": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var friendlyUids = ctx.friendlyUnitUids();
+      if (friendlyUids.length === 0) { ctx.banner("Stand United — no friendly units"); return; }
+      ctx.applyTempMightToAllFriendly(1, "Stand United");
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, sourceName: "Stand United", sourceUid: ctx.card.uid, effect: "addCounter", amount: 1 });
+    }
+  },
+
+  "Wages of Pain": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.spawnInBase("Gold", 1);
+      var bfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+      if (bfUids.length === 0) { ctx.banner("Wages of Pain — Gold token to base, no BF units to deal 3 to"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Wages of Pain", sourceUid: ctx.card.uid, effect: "damage", amount: 3 });
+    }
+  },
+
+  // --- Units ---
+  "Maddened Marauder": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+      if (bfUids.length === 0) { ctx.banner("Maddened Marauder — no BF units to return to base"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Maddened Marauder", sourceUid: ctx.card.uid, effect: "returnToBase" });
+    }
   }
 };
 </script>
@@ -2604,11 +2704,12 @@ function RiftboundGame() {
       return np;
     });
   }
-  function spawnTokensInBase(tokenName, count) {
+  function spawnTokensInBase(tokenName, count, opts) {
     setPs(function(prev) {
       var idx = myActIdx; var p = prev[idx]; if (!p) return prev;
       var base = (p.base || []).slice();
-      for (var i = 0; i < count; i++) { var tk = mkToken(tokenName); if (tk) { base.push(Object.assign({}, tk, { exhausted: true, counter: 1 })); addAnim(tk.uid, "draw"); } }
+      var exh = !(opts && opts.ready);
+      for (var i = 0; i < count; i++) { var tk = mkToken(tokenName); if (tk) { base.push(Object.assign({}, tk, { exhausted: exh, counter: 1 })); addAnim(tk.uid, "draw"); } }
       var np = prev.slice(); np[idx] = Object.assign({}, p, { base: base });
       return np;
     });
@@ -2701,6 +2802,7 @@ function RiftboundGame() {
       prompt: function(p2) { _autoSelRef.current = []; setAutoPrompt(p2); },
       draw: function(n) { drawCards(n); },
       spawnInBase: function(tokenName, count) { spawnTokensInBase(tokenName, count || 1); },
+      spawnInBaseReady: function(tokenName, count) { spawnTokensInBase(tokenName, count || 1, { ready: true }); },
       spawnInBattlefield: function(tokenName, count, bi2) { spawnTokensInBattlefield(tokenName, count || 1, (bi2 != null) ? bi2 : bi); },
       spawnHere: function(tokenName, count) { spawnHere(tokenName, count || 1, where, bi); },
       countFriendlyUnits: function(excludeUid) { return countFriendlyUnits(excludeUid); },
@@ -3123,6 +3225,67 @@ function RiftboundGame() {
         });
       });
       showAutoBanner("AUTO · " + p.sourceName + " — returned " + (uids.length === 1 ? pickedName : (uids.length + " cards")) + " from bin");
+      if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+    } else if (p.effect === "returnToBase") {
+      // Move a BF unit back to its owner's base (exhausted). E.g. Maddened Marauder, Fight or Flight.
+      uids.forEach(function(u2) {
+        var foundUnit = null, foundBi = -1, foundPi = -1, foundIx = -1;
+        for (var bi2 = 0; bi2 < bfs.length; bi2++) {
+          var b = bfs[bi2];
+          for (var pi = 0; pi < b.units.length; pi++) {
+            var ix = (b.units[pi] || []).findIndex(function(u) { return u.uid === u2; });
+            if (ix >= 0) { foundUnit = b.units[pi][ix]; foundBi = bi2; foundPi = pi; foundIx = ix; break; }
+          }
+          if (foundUnit) break;
+        }
+        if (!foundUnit) return;
+        var _bi = foundBi, _pi = foundPi, _ix = foundIx, _u = foundUnit;
+        setBfs(function(prev) {
+          var nb = prev.slice();
+          nb[_bi] = Object.assign({}, prev[_bi], { units: prev[_bi].units.map(function(pu, pii) {
+            if (pii !== _pi) return pu; var nu = pu.slice(); nu.splice(_ix, 1); return nu;
+          }) });
+          return nb;
+        });
+        setPs(function(prev) {
+          var np = prev.slice(); var pp = prev[_pi]; if (!pp) return prev;
+          np[_pi] = Object.assign({}, pp, { base: (pp.base || []).concat([Object.assign({}, _u, { exhausted: true })]) });
+          addAnim(_u.uid, "flash", 800);
+          return np;
+        });
+      });
+      showAutoBanner("AUTO · " + p.sourceName + " — " + uids.length + " unit" + (uids.length === 1 ? "" : "s") + " returned to base");
+      if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+    } else if (p.effect === "bounceToHand") {
+      // Return a BF unit to its owner's hand (clean state). E.g. Gust.
+      uids.forEach(function(u2) {
+        var foundUnit = null, foundBi = -1, foundPi = -1, foundIx = -1;
+        for (var bi2 = 0; bi2 < bfs.length; bi2++) {
+          var b = bfs[bi2];
+          for (var pi = 0; pi < b.units.length; pi++) {
+            var ix = (b.units[pi] || []).findIndex(function(u) { return u.uid === u2; });
+            if (ix >= 0) { foundUnit = b.units[pi][ix]; foundBi = bi2; foundPi = pi; foundIx = ix; break; }
+          }
+          if (foundUnit) break;
+        }
+        if (!foundUnit) return;
+        var _bi = foundBi, _pi = foundPi, _ix = foundIx, _u = foundUnit;
+        setBfs(function(prev) {
+          var nb = prev.slice();
+          nb[_bi] = Object.assign({}, prev[_bi], { units: prev[_bi].units.map(function(pu, pii) {
+            if (pii !== _pi) return pu; var nu = pu.slice(); nu.splice(_ix, 1); return nu;
+          }) });
+          return nb;
+        });
+        setPs(function(prev) {
+          var np = prev.slice(); var pp = prev[_pi]; if (!pp) return prev;
+          var clean = Object.assign({}, _u, { exhausted: false, damage: 0, tempMight: 0, _aura: 0, _buffSources: [], _auraSources: [], _damageSources: [] });
+          np[_pi] = Object.assign({}, pp, { hand: (pp.hand || []).concat([clean]) });
+          addAnim(_u.uid, "draw");
+          return np;
+        });
+      });
+      showAutoBanner("AUTO · " + p.sourceName + " — bounced " + uids.length + " unit" + (uids.length === 1 ? "" : "s") + " to hand");
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
     }
     setAutoPrompt(null);
