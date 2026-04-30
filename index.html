@@ -927,7 +927,108 @@ var CARD_EFFECTS = {
 
   // --- Battlefields ---
   "The Arena's Greatest": { passive: "First beginning phase: each player +1 point (automated in doStartTurn)" },
-  "Windswept Hillock":    { passive: "Units here have [Ganking] — can move BF to BF" }
+  "Windswept Hillock":    { passive: "Units here have [Ganking] — can move BF to BF" },
+
+  // ============ Batch 8: 20 cards across multiple precon decks ============
+
+  // --- Units ---
+  "Stormclaw Ursine": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.myActIdx];
+      var hasReady = meP && (meP.runes || []).some(function(r) { return !r.exhausted; });
+      if (!hasReady) { ctx.banner("Stormclaw Ursine — no ready runes to channel"); return; }
+      ctx.prompt({ kind: "confirmAction", sourceName: "Stormclaw Ursine", question: "Channel 1 rune exhausted?", yesEffect: "channelRune" });
+    }
+  },
+  "Mountain Drake":      { passive: "Vanilla unit — no ability" },
+  "Chemtech Enforcer": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.myActIdx]; var hand = (meP && meP.hand || []).filter(function(c) { return c.uid !== ctx.card.uid; });
+      if (!hand.length) { ctx.banner("Chemtech Enforcer — [Assault 2]; no cards to discard"); return; }
+      ctx.prompt({ kind: "pickFromHand", n: 1, label: "card", validUids: hand.map(function(c) { return c.uid; }), cardsSnap: hand, sourceName: "Chemtech Enforcer", sourceUid: ctx.card.uid, effect: "discard" });
+    }
+  },
+  "Soaring Scout":       { passive: "[Deathknell] — channel 1 rune exhausted on death (manual)" },
+  "Cruel Patron": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var friendlyUids = ctx.friendlyUnitUids(ctx.card.uid);
+      if (!friendlyUids.length) { ctx.banner("Cruel Patron — kill cost: no other friendly units"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Cruel Patron (kill cost)", sourceUid: ctx.card.uid, effect: "kill" });
+    }
+  },
+  "Bubble Bot": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx;
+      var mechUids = [];
+      var meP = ps[idx];
+      if (meP) (meP.base || []).forEach(function(c) { if ((c.keywords || []).indexOf("Mech") >= 0 && c.uid !== ctx.card.uid && c.exhausted) mechUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if ((u.keywords || []).indexOf("Mech") >= 0 && u.uid !== ctx.card.uid && u.exhausted) mechUids.push(u.uid); }); });
+      if (!mechUids.length) { ctx.banner("Bubble Bot — no other exhausted Mechs to ready"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: mechUids, sourceName: "Bubble Bot", sourceUid: ctx.card.uid, effect: "ready" });
+    }
+  },
+  "Forecaster":          { passive: "Your Mechs have [Vision] — manual when triggered" },
+  "Royal Guard": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.spawnHere("Sand Soldier", 1);
+      ctx.banner("Royal Guard — Sand Soldier token spawned " + (ctx.where === "battlefield" ? "at " + (ctx.bfName || "battlefield") : "in base"));
+    }
+  },
+  "Zephyr Sage":         { passive: "[Shield] — +1 might while defending" },
+  "Playful Phantom":     { passive: "Vanilla unit — no ability" },
+  "Wizened Elder":       { passive: "+1 might while buffed (counter > 0)" },
+  "Magma Wurm":          { passive: "Other friendly units enter ready (aura — manual)" },
+  "Wraith of Echoes":    { passive: "First friendly unit death each turn — draw 1 (manual)" },
+  "Bilgewater Bully":    { passive: "[Ganking] while buffed (counter > 0)" },
+  "Heimerdinger, Inventor": { passive: "Has all exhaust abilities of friendly legends/units/gear (manual)" },
+
+  // --- Spells ---
+  "Production Surge": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.spawnInBase("Mech", 1);
+      ctx.banner("Production Surge — Mech (3 might) token spawned in base");
+    }
+  },
+  "Mobilize": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx;
+      var meP = ps[idx];
+      var runes = (meP && meP.runes) || [];
+      var ri = runes.findIndex(function(r) { return !r.exhausted; });
+      if (ri < 0) { ctx.draw(1); ctx.banner("Mobilize — no ready runes; drew 1"); return; }
+      setPs(function(prev) {
+        var p = prev[idx]; if (!p) return prev;
+        var rs = p.runes.slice(); rs[ri] = Object.assign({}, rs[ri], { exhausted: true });
+        var np = prev.slice(); np[idx] = Object.assign({}, p, { runes: rs }); return np;
+      });
+      ctx.banner("Mobilize — channeled 1 rune exhausted");
+    }
+  },
+  "En Garde": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var friendlyUids = ctx.friendlyUnitUids();
+      if (!friendlyUids.length) { ctx.banner("En Garde — no friendly units"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "En Garde", sourceUid: ctx.card.uid, effect: "tempMight", amount: 1 });
+    }
+  },
+  "Grand Strategem": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var n = ctx.applyTempMightToAllFriendly(5, "Grand Strategem");
+      ctx.banner("Grand Strategem — +5 might to " + n + " friendly unit" + (n === 1 ? "" : "s") + " this turn");
+    }
+  },
+
+  // --- Legends ---
+  "Loose Cannon":        { passive: "Beginning phase: draw 1 if hand <= 1 (automated in doStartTurn)" }
 };
 </script>
 <script type="text/babel">
@@ -3558,6 +3659,14 @@ function RiftboundGame() {
         p.score = (p.score || 0) + 1;
         aL(pName(turnIdx) + " gains 1 point (The Arena's Greatest — first beginning phase)");
         showAutoBanner("AUTO · The Arena's Greatest — +1 point to " + pName(turnIdx));
+      }
+      // Loose Cannon (legend): draw 1 if hand size <= 1 at start of beginning phase
+      if (autoMode && p.legend && p.legend.name === "Loose Cannon" && (p.hand || []).length <= 1 && (p.mainDeck || []).length > 0) {
+        var _lcCard = p.mainDeck.shift();
+        p.hand = (p.hand || []).concat([_lcCard]);
+        addAnim(_lcCard.uid, "draw");
+        aL(pName(turnIdx) + " draws 1 (Loose Cannon — hand was " + ((p.hand.length - 1)) + ")");
+        showAutoBanner("AUTO · Loose Cannon — drew 1 (low hand)");
       }
       // Begin: score
       var _isDoublesGame = lobbySettings && lobbySettings.mode === "Doubles";
