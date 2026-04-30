@@ -950,7 +950,21 @@ var CARD_EFFECTS = {
       ctx.prompt({ kind: "pickFromHand", n: 1, label: "card", validUids: hand.map(function(c) { return c.uid; }), cardsSnap: hand, sourceName: "Chemtech Enforcer", sourceUid: ctx.card.uid, effect: "discard" });
     }
   },
-  "Soaring Scout":       { passive: "[Deathknell] — channel 1 rune exhausted on death (manual)" },
+  "Soaring Scout": {
+    onDeath: function(ctx) {
+      var idx = ctx.myActIdx;
+      var meP = ps[idx];
+      var runes = (meP && meP.runes) || [];
+      var ri = runes.findIndex(function(r) { return !r.exhausted; });
+      if (ri < 0) { ctx.banner("Soaring Scout [Deathknell] — no ready runes to channel"); return; }
+      setPs(function(prev) {
+        var p = prev[idx]; if (!p) return prev;
+        var rs = p.runes.slice(); rs[ri] = Object.assign({}, rs[ri], { exhausted: true });
+        var np = prev.slice(); np[idx] = Object.assign({}, p, { runes: rs }); return np;
+      });
+      ctx.banner("Soaring Scout [Deathknell] — channeled 1 rune exhausted");
+    }
+  },
   "Cruel Patron": {
     onPlay: function(ctx) {
       ctx.flash(ctx.card.uid);
@@ -971,7 +985,7 @@ var CARD_EFFECTS = {
       ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: mechUids, sourceName: "Bubble Bot", sourceUid: ctx.card.uid, effect: "ready" });
     }
   },
-  "Forecaster":          { passive: "Your Mechs have [Vision] — manual when triggered" },
+  "Forecaster":          { passive: "Your Mechs have [Vision] (automated in fireUnitPlayedEffects)" },
   "Royal Guard": {
     onPlay: function(ctx) {
       ctx.flash(ctx.card.uid);
@@ -982,10 +996,31 @@ var CARD_EFFECTS = {
   "Zephyr Sage":         { passive: "[Shield] — +1 might while defending" },
   "Playful Phantom":     { passive: "Vanilla unit — no ability" },
   "Wizened Elder":       { passive: "+1 might while buffed (counter > 0)" },
-  "Magma Wurm":          { passive: "Other friendly units enter ready (aura — manual)" },
-  "Wraith of Echoes":    { passive: "First friendly unit death each turn — draw 1 (manual)" },
+  "Magma Wurm":          { passive: "Other friendly units enter ready (automated in shouldEnterReady)" },
+  "Wraith of Echoes":    { passive: "First friendly unit death each turn — draw 1 (automated in dealDamageToUid)" },
   "Bilgewater Bully":    { passive: "[Ganking] while buffed (counter > 0)" },
-  "Heimerdinger, Inventor": { passive: "Has all exhaust abilities of friendly legends/units/gear (manual)" },
+  "Heimerdinger, Inventor": {
+    onTap: function(ctx) {
+      if (ctx.wasExhausted) return; // only fire on ready → tapped
+      var idx = ctx.myActIdx;
+      var meP = ps[idx];
+      var sources = [];
+      if (meP) {
+        (meP.base || []).forEach(function(c) {
+          if (c.uid !== ctx.card.uid && CARD_EFFECTS[c.name] && CARD_EFFECTS[c.name].onTap) sources.push(c.uid);
+        });
+        if (meP.legend && meP.legend.uid !== ctx.card.uid && CARD_EFFECTS[meP.legend.name] && CARD_EFFECTS[meP.legend.name].onTap) sources.push(meP.legend.uid);
+        if (meP.champion && meP.champion.uid !== ctx.card.uid && CARD_EFFECTS[meP.champion.name] && CARD_EFFECTS[meP.champion.name].onTap) sources.push(meP.champion.uid);
+      }
+      ctx.bfs.forEach(function(b) {
+        ((b && b.units && b.units[idx]) || []).forEach(function(u) {
+          if (u.uid !== ctx.card.uid && CARD_EFFECTS[u.name] && CARD_EFFECTS[u.name].onTap) sources.push(u.uid);
+        });
+      });
+      if (!sources.length) { ctx.banner("Heimerdinger — no friendly cards with exhaust abilities"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: sources, sourceName: "Heimerdinger, Inventor", sourceUid: ctx.card.uid, effect: "fireOnTap" });
+    }
+  },
 
   // --- Spells ---
   "Production Surge": {
@@ -1102,9 +1137,13 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
   var borderColor = selected ? "#FFD700" : ex ? "#DC262688" : (d.c + "55");
   var shadow = (selected || zoomed) ? "0 0 20px #FFD70055" : inHand ? "0 4px 16px #000b" : "0 2px 8px #00000055";
   var isUnit = card.type === "Unit" || card.type === "Champion";
+  // Ganking glow: green border halo on units at a battlefield with the [Ganking] keyword.
+  var _isAtBf = !!(dragData && dragData.indexOf("bf:") === 0);
+  var _hasGanking = isUnit && (card.keywords || []).indexOf("Ganking") >= 0;
+  var gankingGlow = _isAtBf && _hasGanking && !zoomed && !gearDragOver && !selected;
   var gearCount = (card.gear && small) ? card.gear.length : 0;
   var gearExtra = gearCount > 0 ? Math.round(w * 0.3) * gearCount : 0;
-  var wrapS = { width: w, height: h, borderRadius: zoomed ? 10 : small ? 4 : 6, overflow: "visible", flexShrink: 0, position: "relative", border: gearDragOver ? "3px solid #4ADE80" : (zoomed ? 3 : 2) + "px solid " + borderColor, boxShadow: gearDragOver ? "0 0 20px rgba(74,222,128,0.5), 0 0 40px rgba(74,222,128,0.2), inset 0 0 12px rgba(74,222,128,0.1)" : shadow, cursor: onClick ? "pointer" : "default", background: "#0c0c18", transition: "transform 0.15s ease, border 0.15s ease, box-shadow 0.15s ease", transform: ex && !zoomed ? "rotate(30deg)" : "none", filter: ex && !zoomed ? "brightness(0.58)" : "none", marginRight: gearExtra };
+  var wrapS = { width: w, height: h, borderRadius: zoomed ? 10 : small ? 4 : 6, overflow: "visible", flexShrink: 0, position: "relative", border: gearDragOver ? "3px solid #4ADE80" : gankingGlow ? "2.5px solid #4ADE80cc" : (zoomed ? 3 : 2) + "px solid " + borderColor, boxShadow: gearDragOver ? "0 0 20px rgba(74,222,128,0.5), 0 0 40px rgba(74,222,128,0.2), inset 0 0 12px rgba(74,222,128,0.1)" : gankingGlow ? "0 0 14px rgba(74,222,128,0.55), inset 0 0 10px rgba(74,222,128,0.18)" : shadow, cursor: onClick ? "pointer" : "default", background: "#0c0c18", transition: "transform 0.15s ease, border 0.15s ease, box-shadow 0.15s ease", transform: ex && !zoomed ? "rotate(30deg)" : "none", filter: ex && !zoomed ? "brightness(0.58)" : "none", marginRight: gearExtra };
   var hCls = zoomed ? "" : (ex ? "card-tapped" : "card-hover");
   var hEnter = !zoomed ? function(e) { if (_setHoverCard) _setHoverCard(card, e); } : undefined;
   var hLeave = !zoomed ? function() { if (_clearHoverCard) _clearHoverCard(); } : undefined;
@@ -1555,6 +1594,7 @@ function RiftboundGame() {
   var _cardsPlayedThisTurnRef = useRef(0);
   var _extraEnergyRef = useRef(0);
   var _arenaFirstTurnRef = useRef({});
+  var _wraithFiredRef = useRef({});
   var autoMode = !!(lobbySettings && lobbySettings.autoMode);
   var _lobbyList = useState([]), lobbyList = _lobbyList[0], setLobbyList = _lobbyList[1];
   var _lobbyErr = useState(null), lobbyErr = _lobbyErr[0], setLobbyErr = _lobbyErr[1];
@@ -3250,6 +3290,26 @@ function RiftboundGame() {
         });
         // Auras may need to update once the unit is gone (e.g. removing a Garen Commander).
         setTimeout(recalcAuras, 0);
+        // AUTO MODE: fire on-death effects (only for the local player's units).
+        if (autoMode && snap.pi === myActIdx) {
+          var _deadEff = CARD_EFFECTS[snap.unit.name];
+          if (_deadEff && _deadEff.onDeath) {
+            var _deathCtx = makeAutoCtx(snap.unit, "death", null);
+            try { _deadEff.onDeath(_deathCtx); } catch(e) { console.error("onDeath error for " + snap.unit.name + ":", e); }
+          }
+          // Wraith of Echoes: first friendly unit death each turn → owner draws 1.
+          var _meP2 = ps[myActIdx];
+          var _hasWraith = _meP2 && (
+            (_meP2.base || []).some(function(c) { return c.name === "Wraith of Echoes"; }) ||
+            bfs.some(function(b) { return ((b.units && b.units[myActIdx]) || []).some(function(u) { return u.name === "Wraith of Echoes"; }); })
+          );
+          var _wKey = turn + ":" + myActIdx;
+          if (_hasWraith && !_wraithFiredRef.current[_wKey]) {
+            _wraithFiredRef.current[_wKey] = true;
+            drawCards(1);
+            showAutoBanner("AUTO · Wraith of Echoes — first friendly death this turn, drew 1");
+          }
+        }
       }, 700);
     } else {
       // Just apply damage — no animation needed.
@@ -3657,6 +3717,38 @@ function RiftboundGame() {
       });
       showAutoBanner("AUTO · " + p.sourceName + " — bounced " + uids.length + " unit" + (uids.length === 1 ? "" : "s") + " to hand");
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+    } else if (p.effect === "fireOnTap") {
+      // Heimerdinger, Inventor: fire the chosen friendly card's onTap effect (without tapping it).
+      var _idx2 = myActIdx; var _meP2 = ps[_idx2];
+      uids.forEach(function(u2) {
+        var found = null;
+        if (_meP2) {
+          (_meP2.base || []).forEach(function(c) { if (c.uid === u2) found = c; });
+          if (!found && _meP2.legend && _meP2.legend.uid === u2) found = _meP2.legend;
+          if (!found && _meP2.champion && _meP2.champion.uid === u2) found = _meP2.champion;
+        }
+        if (!found) bfs.forEach(function(b) { ((b.units && b.units[_idx2]) || []).forEach(function(u) { if (u.uid === u2) found = u; }); });
+        if (!found) return;
+        var srcEff = CARD_EFFECTS[found.name];
+        if (!srcEff || !srcEff.onTap) return;
+        var heim = null;
+        if (p.sourceUid && _meP2) {
+          (_meP2.base || []).forEach(function(c) { if (c.uid === p.sourceUid) heim = c; });
+          if (!heim) bfs.forEach(function(b) { ((b.units && b.units[_idx2]) || []).forEach(function(u) { if (u.uid === p.sourceUid) heim = u; }); });
+        }
+        var fakeCtx = {
+          card: heim || found,
+          wasExhausted: false,
+          myActIdx: _idx2,
+          bfs: bfs,
+          addEnergy: function(n) { _extraEnergyRef.current += n; },
+          banner: function(text) { showAutoBanner("AUTO · Heimerdinger → " + text); },
+          flash: function(uid2) { addAnim(uid2, "flash", 800); }
+        };
+        try { srcEff.onTap(fakeCtx); } catch(e) { console.error("fireOnTap (Heimerdinger) error for " + found.name + ":", e); }
+        showAutoBanner("AUTO · Heimerdinger — borrowed exhaust ability of " + found.name);
+        if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+      });
     }
     setAutoPrompt(null);
     _autoSelRef.current = [];
