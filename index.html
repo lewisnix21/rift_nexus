@@ -2229,6 +2229,7 @@ function RiftboundGame() {
   var _hostPw = useState(""), hostPw = _hostPw[0], setHostPw = _hostPw[1];
   var _hostAm = useState(false), hostAutoMode = _hostAm[0], setHostAutoMode = _hostAm[1];
   var _aPmt = useState(null), autoPrompt = _aPmt[0], setAutoPrompt = _aPmt[1];
+  var autoPromptRef = useRef(null); useEffect(function() { autoPromptRef.current = autoPrompt; }, [autoPrompt]);
   var _aBnr = useState(null), autoBanner = _aBnr[0], setAutoBanner = _aBnr[1];
   var _aWatch = useState([]), autoWatchers = _aWatch[0], setAutoWatchers = _aWatch[1];
   var _autoSelRef = useRef([]);
@@ -2244,6 +2245,13 @@ function RiftboundGame() {
   var _mightyStateRef = useRef({}); // uid -> { ownerIdx, wasMighty }
   var _lucianConqueredRef = useRef({}); // turn:uid -> true (first-conquer-per-turn ready trigger)
   var _ornnGearRef = useRef({}); // turn:playerIdx -> true (first non-token gear of turn cost reduction)
+  // Auto-mode "Resolve" gate for spells. When a spell is cast, runAutoOnCast is deferred
+  // until both players click Resolve. _resolveDidSomethingRef tracks whether the resolved
+  // effect did anything visible (set to true by ctx methods that mutate state); if false
+  // afterwards, we fizzle and bin the card.
+  var _pendingSpell = useState(null), pendingSpell = _pendingSpell[0], setPendingSpell = _pendingSpell[1];
+  var _resolveAcceptors = useState({}), resolveAcceptors = _resolveAcceptors[0], setResolveAcceptors = _resolveAcceptors[1];
+  var _resolveDidSomethingRef = useRef(false);
   var autoMode = !!(lobbySettings && lobbySettings.autoMode);
   var _lobbyList = useState([]), lobbyList = _lobbyList[0], setLobbyList = _lobbyList[1];
   var _lobbyErr = useState(null), lobbyErr = _lobbyErr[0], setLobbyErr = _lobbyErr[1];
@@ -3806,18 +3814,19 @@ function RiftboundGame() {
       bfName: (bi != null && bfs[bi]) ? bfs[bi].name : null,
       flash: function(uid2) { addAnim(uid2, "flash", 800); },
       banner: function(text) { showAutoBanner("AUTO · " + text); },
-      addWatcher: function(w) { setAutoWatchers(function(prev) { return prev.concat([w]); }); },
+      addWatcher: function(w) { _resolveDidSomethingRef.current = true; setAutoWatchers(function(prev) { return prev.concat([w]); }); },
       prompt: function(p2) {
+        _resolveDidSomethingRef.current = true;
         if (p2 && p2.validUids) {
           p2 = Object.assign({}, p2, { validUids: p2.validUids.filter(function(uid) { return !isEnemyDeflect(uid); }) });
         }
         _autoSelRef.current = []; setAutoPrompt(p2);
       },
-      draw: function(n) { drawCards(n); },
-      spawnInBase: function(tokenName, count) { spawnTokensInBase(tokenName, count || 1); },
-      spawnInBaseReady: function(tokenName, count) { spawnTokensInBase(tokenName, count || 1, { ready: true }); },
-      spawnInBattlefield: function(tokenName, count, bi2) { spawnTokensInBattlefield(tokenName, count || 1, (bi2 != null) ? bi2 : bi); },
-      spawnHere: function(tokenName, count) { spawnHere(tokenName, count || 1, where, bi); },
+      draw: function(n) { _resolveDidSomethingRef.current = true; drawCards(n); },
+      spawnInBase: function(tokenName, count) { _resolveDidSomethingRef.current = true; spawnTokensInBase(tokenName, count || 1); },
+      spawnInBaseReady: function(tokenName, count) { _resolveDidSomethingRef.current = true; spawnTokensInBase(tokenName, count || 1, { ready: true }); },
+      spawnInBattlefield: function(tokenName, count, bi2) { _resolveDidSomethingRef.current = true; spawnTokensInBattlefield(tokenName, count || 1, (bi2 != null) ? bi2 : bi); },
+      spawnHere: function(tokenName, count) { _resolveDidSomethingRef.current = true; spawnHere(tokenName, count || 1, where, bi); },
       countFriendlyUnits: function(excludeUid) { return countFriendlyUnits(excludeUid); },
       friendlyUnitUids: function(excludeUid) { return friendlyUnitUids(excludeUid); },
       totalFriendlyMight: function(excludeUid) {
@@ -3827,9 +3836,9 @@ function RiftboundGame() {
         bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if (u.uid !== excludeUid) sum += (u.might || 0); }); });
         return sum;
       },
-      readyUids: function(uids) { readyUidsAcrossPsAndBfs(uids); },
-      applyTempMightToAllFriendly: function(amount, source) { return applyTempMightToAllFriendly(amount, source || (card && card.name)); },
-      applyTempMightToUids: function(uids, amount, source) { applyTempMightToUids(uids, amount, source || (card && card.name)); },
+      readyUids: function(uids) { _resolveDidSomethingRef.current = true; readyUidsAcrossPsAndBfs(uids); },
+      applyTempMightToAllFriendly: function(amount, source) { _resolveDidSomethingRef.current = true; return applyTempMightToAllFriendly(amount, source || (card && card.name)); },
+      applyTempMightToUids: function(uids, amount, source) { _resolveDidSomethingRef.current = true; applyTempMightToUids(uids, amount, source || (card && card.name)); },
       _buildPlacementLocations: function(locations) {
         // Append battlefields that count as "yours" — strict controller match, plus
         // implicit control: you have units present and no enemy is contesting. The
@@ -5741,12 +5750,41 @@ function RiftboundGame() {
         var handShift = 0;
         if (handHovIdx >= 0 && i !== handHovIdx && total > 3) { handShift = i < handHovIdx ? -15 : 15; }
         var _handAct = (canMoveOwn && !tm && !fc && !c.hidden && playable) ? (c.type === "Spell" ? "Cast" : "Play") : undefined;
-        return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover" + animCls, draggable: isDraggable2, onDragStart: isDraggable2 ? function(e) { e.dataTransfer.setData("text/plain", "hand:" + c.uid); setDragUnit(c); } : undefined, onDragEnd: function() { setDragUnit(null); }, onClick: (canMoveOwn && playable) ? function() { if (tm || fc) return; if (c.type === "Unit" || c.type === "Champion" || c.type === "Gear") { onPlay(c); } else if (c.type === "Spell") { if (showcaseCard && showcaseCard.uid === c.uid) { setShowcaseCard(null); } else { var idx = myActIdx; var _me = ps[idx]; if (_me) { var sp = Object.assign({}, _me, { hand: _me.hand.filter(function(h) { return h.uid !== c.uid; }) }); if (autoMode) { var rcN = (c.rc || []).slice(); var eN = c.energy || 0; var _hasEager = (_me.base || []).some(function(u){return u.name==="Eager Apprentice";})||bfs.some(function(b){return((b.units&&b.units[idx])||[]).some(function(u){return u.name==="Eager Apprentice";});}); if(_hasEager&&eN>1)eN--; var _xEnergy=_extraEnergyRef.current; if(_xEnergy>0){_extraEnergyRef.current=0;eN=Math.max(0,eN-_xEnergy);} var aR = _me.runes.slice(); var recUids = []; rcN.forEach(function(dom) { var f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0; }); if (f) { recUids.push(f.uid); if (eN > 0) eN--; } }); var tapUids = []; if (eN > 0) { var av = aR.filter(function(r) { return !r.exhausted && recUids.indexOf(r.uid) < 0; }); av.slice(0, eN).forEach(function(r) { tapUids.push(r.uid); }); } sp.runes = _me.runes.filter(function(r) { return recUids.indexOf(r.uid) < 0; }).map(function(r) { return tapUids.indexOf(r.uid) >= 0 ? Object.assign({}, r, { exhausted: true }) : r; }); sp.runeDeck = shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); }))); } var np = ps.slice(); np[idx] = sp; setPs(np); pushShowcase(c); aL(pName(idx) + " casts " + cName(c)); runAutoOnCast(c); } } if (sd) markSdActed(); } } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { setHandHovIdx(i); if (!autoMode && _setHoverCard && !c.hidden) _setHoverCard(c, e, true); }, onMouseLeave: function() { setHandCtxUid(null); if (_clearHoverCard) _clearHoverCard(); }, style: { width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: (autoMode && playable) ? "3px solid #3b82f6" : "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + (playable ? "55" : "20")), flexShrink: 0, cursor: isDraggable2 ? "grab" : (autoMode && !playable ? "default" : "pointer"), transform: (autoMode && i === handHovIdx) ? "translateY(-" + Math.round(ah * 0.55) + "px)" : "rotate(" + rot + "deg) translateY(" + ty + "px) translateX(" + handShift + "px)", transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (autoMode ? (total > 7 ? -45 : total > 5 ? -24 : 0) : (total > 7 ? -30 : total > 5 ? -16 : 0)), transition: "transform 0.12s ease, box-shadow 0.2s ease, border 0.15s ease", position: "relative", zIndex: i === handHovIdx ? 998 : i, boxShadow: (autoMode && playable) ? "0 0 22px rgba(59,130,246,1), 0 0 44px rgba(59,130,246,0.65), 0 4px 16px #000a" : "0 4px 16px #000a", opacity: 1 } },
+        return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover" + animCls, draggable: isDraggable2, onDragStart: isDraggable2 ? function(e) { e.dataTransfer.setData("text/plain", "hand:" + c.uid); setDragUnit(c); } : undefined, onDragEnd: function() { setDragUnit(null); }, onClick: (canMoveOwn && playable) ? function() { if (tm || fc) return; if (c.type === "Unit" || c.type === "Champion" || c.type === "Gear") { onPlay(c); } else if (c.type === "Spell") { if (showcaseCard && showcaseCard.uid === c.uid) { setShowcaseCard(null); } else { var idx = myActIdx; var _me = ps[idx]; if (_me) { var sp = Object.assign({}, _me, { hand: _me.hand.filter(function(h) { return h.uid !== c.uid; }) }); if (autoMode) { var rcN = (c.rc || []).slice(); var eN = c.energy || 0; var _hasEager = (_me.base || []).some(function(u){return u.name==="Eager Apprentice";})||bfs.some(function(b){return((b.units&&b.units[idx])||[]).some(function(u){return u.name==="Eager Apprentice";});}); if(_hasEager&&eN>1)eN--; var _xEnergy=_extraEnergyRef.current; if(_xEnergy>0){_extraEnergyRef.current=0;eN=Math.max(0,eN-_xEnergy);} var aR = _me.runes.slice(); var recUids = []; rcN.forEach(function(dom) { var f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0; }); if (f) { recUids.push(f.uid); if (eN > 0) eN--; } }); var tapUids = []; if (eN > 0) { var av = aR.filter(function(r) { return !r.exhausted && recUids.indexOf(r.uid) < 0; }); av.slice(0, eN).forEach(function(r) { tapUids.push(r.uid); }); } sp.runes = _me.runes.filter(function(r) { return recUids.indexOf(r.uid) < 0; }).map(function(r) { return tapUids.indexOf(r.uid) >= 0 ? Object.assign({}, r, { exhausted: true }) : r; }); sp.runeDeck = shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); }))); } var np = ps.slice(); np[idx] = sp; setPs(np); pushShowcase(c); aL(pName(idx) + " casts " + cName(c)); if (autoMode) { setPendingSpell(c); setResolveAcceptors({}); } else { runAutoOnCast(c); } } } if (sd) markSdActed(); } } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { setHandHovIdx(i); if (!autoMode && _setHoverCard && !c.hidden) _setHoverCard(c, e, true); }, onMouseLeave: function() { setHandCtxUid(null); if (_clearHoverCard) _clearHoverCard(); }, style: { width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: (autoMode && playable) ? "3px solid #3b82f6" : "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + (playable ? "55" : "20")), flexShrink: 0, cursor: isDraggable2 ? "grab" : (autoMode && !playable ? "default" : "pointer"), transform: (autoMode && i === handHovIdx) ? "translateY(-" + Math.round(ah * 0.55) + "px)" : "rotate(" + rot + "deg) translateY(" + ty + "px) translateX(" + handShift + "px)", transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (autoMode ? (total > 7 ? -45 : total > 5 ? -24 : 0) : (total > 7 ? -30 : total > 5 ? -16 : 0)), transition: "transform 0.12s ease, box-shadow 0.2s ease, border 0.15s ease", position: "relative", zIndex: i === handHovIdx ? 998 : i, boxShadow: (autoMode && playable) ? "0 0 22px rgba(59,130,246,1), 0 0 44px rgba(59,130,246,0.65), 0 4px 16px #000a" : "0 4px 16px #000a", opacity: 1 } },
           c.hidden ? React.createElement("img", { src: CARD_BACK, style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : (c.img ? React.createElement("img", { src: imgSrc(c.img), style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : React.createElement("div", { style: { width: "100%", height: "100%", background: "linear-gradient(180deg," + (DOM[c.domain] || DOM.Colorless).c + "15,#0a0a18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#666", padding: 4, textAlign: "center" } }, c.name)),
           handCtxUid === c.uid ? React.createElement("button", { onClick: function(e) { e.stopPropagation(); toggleHide(c.uid); setHandCtxUid(null); }, style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 10, padding: "4px 12px", borderRadius: 4, border: "1.5px solid #ffffff40", background: "rgba(20,20,50,0.92)", color: "#ddd", fontSize: 12, cursor: "pointer", fontFamily: "Spectral,serif", fontWeight: 700, boxShadow: "0 4px 12px #000a", whiteSpace: "nowrap" } }, c.hidden ? "Reveal" : "Hide") : null
         );
       })
     );
+  }
+
+  // CARD_EFFECTS lives in a separate <script> block (so its function bodies cannot
+  // close over RiftboundGame's locals). Mirror the names CARD_EFFECTS handlers use
+  // onto window before each render so free-variable lookups resolve to the latest
+  // committed React state and helpers.
+  if (typeof window !== "undefined") {
+    window.ps = ps; window.bfs = bfs; window.turn = turn; window.myActIdx = myActIdx; window.sd = sd;
+    window.lobbySettings = lobbySettings;
+    window.setPs = setPs; window.setBfs = setBfs; window.setAutoPrompt = setAutoPrompt;
+    window.applyTempMightToUids = applyTempMightToUids;
+    window.applyTempMightToAllFriendly = applyTempMightToAllFriendly;
+    window.addCounter = addCounter;
+    window.dealDamageToUid = dealDamageToUid;
+    window.drawCards = drawCards;
+    window.addAnim = addAnim;
+    window.readyUidsAcrossPsAndBfs = readyUidsAcrossPsAndBfs;
+    window.spawnTokensInBase = spawnTokensInBase;
+    window.spawnTokensInBattlefield = spawnTokensInBattlefield;
+    window.showAutoBanner = showAutoBanner;
+    window.friendlyUnitUids = friendlyUnitUids;
+    window.isEnemyDeflect = isEnemyDeflect;
+    window.aL = aL; window.pName = pName; window.cName = cName;
+    window.markSdActed = markSdActed;
+    window._extraEnergyRef = _extraEnergyRef;
+    window._discardsThisTurnRef = _discardsThisTurnRef;
+    window._xpRef = _xpRef;
+    window._lucianConqueredRef = _lucianConqueredRef;
+    window._autoSelRef = _autoSelRef;
   }
 
   return (
@@ -6347,7 +6385,7 @@ function RiftboundGame() {
             className={sd ? "anim-sd-pulse" : ""}
             onDragOver={function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; if (!dragOverShowcase) setDragOverShowcase(true); }}
             onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverShowcase(false); }}
-            onDrop={function(e) { e.preventDefault(); e.stopPropagation(); setDragOverShowcase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; var card = null; if (myCur) { if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } else if (type === "base") { card = myCur.base.find(function(c) { return c.uid === uid2; }); } else if (type === "bf") { for (var bk = 0; bk < bfs.length; bk++) { var uArr = bfs[bk].units[myActIdx]; if (!uArr) continue; var found = uArr.find(function(u) { return u.uid === uid2; }); if (found) { card = found; break; } } } else if (type === "bin") { card = (myCur.trash || []).find(function(c) { return c.uid === uid2; }); } } if (card) { pushShowcase(card); if (card.type === "Spell") runAutoOnCast(card); } }}
+            onDrop={function(e) { e.preventDefault(); e.stopPropagation(); setDragOverShowcase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; var card = null; if (myCur) { if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } else if (type === "base") { card = myCur.base.find(function(c) { return c.uid === uid2; }); } else if (type === "bf") { for (var bk = 0; bk < bfs.length; bk++) { var uArr = bfs[bk].units[myActIdx]; if (!uArr) continue; var found = uArr.find(function(u) { return u.uid === uid2; }); if (found) { card = found; break; } } } else if (type === "bin") { card = (myCur.trash || []).find(function(c) { return c.uid === uid2; }); } } if (card) { pushShowcase(card); if (card.type === "Spell") { if (autoMode) { setPendingSpell(card); setResolveAcceptors({}); } else { runAutoOnCast(card); } } } }}
             style={{ flexShrink: 0, height: Math.round(370 * vScale), padding: "6px 4px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", margin: "0 4px", border: sd ? "2px solid #FF6B35" : (dragOverShowcase ? "1.5px solid #ffffff55" : "1.5px solid #ffffff20"), borderTop: sd ? "none" : undefined, borderRadius: sd ? "0 0 6px 6px" : 4, transition: "border 0.15s ease", overflow: "visible", position: "relative", zIndex: scryMode && showcaseCard ? 1250 : undefined }}>
             <div style={{ fontSize: 11, color: "#ffffff44", fontFamily: "Spectral,serif", letterSpacing: 1, marginBottom: 3 }}>SHOWCASE</div>
             {showcaseCard ? (<>
@@ -6437,7 +6475,7 @@ function RiftboundGame() {
       {autoMode && (showcaseCard || dragOverShowcase) && <div className={sd ? "anim-sd-pulse" : ""}
         onDragOver={function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; if (!dragOverShowcase) setDragOverShowcase(true); }}
         onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverShowcase(false); }}
-        onDrop={function(e) { e.preventDefault(); e.stopPropagation(); setDragOverShowcase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; var card = null; if (myCur) { if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } else if (type === "base") { card = myCur.base.find(function(c) { return c.uid === uid2; }); } else if (type === "bf") { for (var bk = 0; bk < bfs.length; bk++) { var uArr = bfs[bk].units[myActIdx]; if (!uArr) continue; var found = uArr.find(function(u) { return u.uid === uid2; }); if (found) { card = found; break; } } } else if (type === "bin") { card = (myCur.trash || []).find(function(c) { return c.uid === uid2; }); } } if (card) { pushShowcase(card); if (card.type === "Spell") runAutoOnCast(card); } }}
+        onDrop={function(e) { e.preventDefault(); e.stopPropagation(); setDragOverShowcase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; var card = null; if (myCur) { if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } else if (type === "base") { card = myCur.base.find(function(c) { return c.uid === uid2; }); } else if (type === "bf") { for (var bk = 0; bk < bfs.length; bk++) { var uArr = bfs[bk].units[myActIdx]; if (!uArr) continue; var found = uArr.find(function(u) { return u.uid === uid2; }); if (found) { card = found; break; } } } else if (type === "bin") { card = (myCur.trash || []).find(function(c) { return c.uid === uid2; }); } } if (card) { pushShowcase(card); if (card.type === "Spell") { if (autoMode) { setPendingSpell(card); setResolveAcceptors({}); } else { runAutoOnCast(card); } } } }}
         style={{ position: "fixed", right: "15%", top: "50%", transform: "translateY(-50%)", padding: "6px 4px", display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "center", overflow: "visible", zIndex: scryMode && showcaseCard ? 1250 : 800, pointerEvents: "auto" }}>
         {showcaseCard ? (function() {
           var scCardW = Math.round(215 * vScale); var scCardH = Math.round(301 * vScale);
@@ -6466,6 +6504,50 @@ function RiftboundGame() {
             </div>
           </div>;
         })() : <div style={{ width: Math.round(215 * vScale), height: Math.round(301 * vScale), border: "2px dashed #FFD70066", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD70088", fontSize: 12, fontFamily: "Spectral,serif", background: "rgba(255,215,0,0.05)" }}>Drop here</div>}
+        {/* Resolve button — appears when a spell is awaiting resolution. Both players (online) or one click (test) confirms before the effect fires. If the effect produces nothing visible, the card auto-fizzles and bins. */}
+        {pendingSpell && showcaseCard && pendingSpell.uid === showcaseCard.uid && (function() {
+          var isOnline = lobbyType === "host" || lobbyType === "join";
+          var meReady = !!resolveAcceptors[myUid];
+          var allUids = isOnline ? Object.keys(lobbyPlayers || {}) : [myUid];
+          var pending = allUids.filter(function(u) { return !resolveAcceptors[u]; });
+          var pendingNames = pending.map(function(u) { var sl = lobbyPlayers && lobbyPlayers[u] && typeof lobbyPlayers[u].slot === "number" ? lobbyPlayers[u].slot : -1; return sl >= 0 ? pName(sl) : (lobbyPlayers && lobbyPlayers[u] && lobbyPlayers[u].name) || "?"; });
+          return <div style={{ marginTop: 10, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, pointerEvents: "auto" }}>
+            <button onClick={function(e) {
+              e.stopPropagation();
+              var newAcc = Object.assign({}, resolveAcceptors); newAcc[myUid] = true; setResolveAcceptors(newAcc);
+              var allReady = isOnline ? allUids.every(function(u) { return newAcc[u]; }) : true;
+              if (allReady) {
+                var spellToResolve = pendingSpell;
+                _resolveDidSomethingRef.current = false;
+                runAutoOnCast(spellToResolve);
+                setPendingSpell(null); setResolveAcceptors({});
+                // Fizzle check: if no autoPrompt was opened and no flag was tripped during onCast, bin the card.
+                setTimeout(function() {
+                  if (_resolveDidSomethingRef.current) return; // something happened
+                  // If onCast opened a prompt, autoPrompt would be set — leave it for the user to resolve.
+                  if (autoPromptRef && autoPromptRef.current) return;
+                  // Otherwise: fizzle. Bin the spell card with a fizzle anim.
+                  addAnim(spellToResolve.uid, "fizzle", 700);
+                  setTimeout(function() {
+                    setPs(function(prev) {
+                      var i = myActIdx; var p = prev[i]; if (!p) return prev;
+                      var trash = (p.trash || []).slice();
+                      // Mark as already binned so we don't double-bin via the showcase bin path.
+                      trash.push(Object.assign({}, spellToResolve, { exhausted: false, gear: [] }));
+                      var np = prev.slice(); np[i] = Object.assign({}, p, { trash: trash }); return np;
+                    });
+                    if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); }
+                    else { setShowcaseCard(null); setShowcaseOwner(null); }
+                    showAutoBanner("AUTO · " + (spellToResolve.name || "Spell") + " — fizzled (no valid effect)");
+                  }, 700);
+                }, 250);
+              }
+            }} disabled={meReady && pending.length > 0} style={{ padding: "8px 26px", borderRadius: 6, border: "2px solid #60a5fa", background: meReady && pending.length > 0 ? "rgba(96,165,250,0.15)" : "linear-gradient(135deg,#3b82f6,#60a5fa)", color: meReady && pending.length > 0 ? "#60a5fa" : "#fff", fontSize: 14, fontWeight: 700, fontFamily: "Spectral,serif", cursor: meReady && pending.length > 0 ? "default" : "pointer", letterSpacing: 1.5, boxShadow: "0 0 16px rgba(96,165,250,0.7)", textTransform: "uppercase" }}>
+              {meReady && pending.length > 0 ? "Waiting…" : "Resolve"}
+            </button>
+            {isOnline && pending.length > 0 && pendingNames.length > 0 && <span style={{ fontSize: 11, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Awaiting: {pendingNames.join(", ")}</span>}
+          </div>;
+        })()}
       </div>}
       {/* AUTO MODE: Floating END TURN button (bottom-right) */}
       {autoMode && screen === "play" && !awakenPhase && (function() {
