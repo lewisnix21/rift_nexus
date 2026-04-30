@@ -834,7 +834,72 @@ var CARD_EFFECTS = {
       if (bfUids.length === 0) { ctx.banner("Maddened Marauder — no BF units to return to base"); return; }
       ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Maddened Marauder", sourceUid: ctx.card.uid, effect: "returnToBase" });
     }
-  }
+  },
+
+  // ============ Batch 7: Annie precon completion ============
+
+  // --- Units ---
+  "Traveling Merchant": {
+    onPlay: function(ctx) {
+      if (ctx.where !== "battlefield") return;
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.myActIdx];
+      var hand = (meP && meP.hand || []).filter(function(c) { return c.uid !== ctx.card.uid; });
+      if (hand.length === 0) { ctx.draw(1); ctx.banner("Traveling Merchant — no cards to discard, drew 1"); return; }
+      ctx.prompt({ kind: "pickFromHand", n: 1, label: "card", validUids: hand.map(function(c) { return c.uid; }), cardsSnap: hand, sourceName: "Traveling Merchant", sourceUid: ctx.card.uid, effect: "discard", andDraw: 1 });
+    }
+  },
+
+  "Mystic Poro": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.myActIdx];
+      var deck = (meP && meP.mainDeck) || [];
+      if (!deck.length) { ctx.banner("Mystic Poro — [Vision] deck empty"); return; }
+      var top = deck[deck.length - 1];
+      ctx.prompt({ kind: "confirmAction", sourceName: "Mystic Poro", question: "[Vision] Top card: " + top.name + " — recycle it?", yesEffect: "recycleTopCard" });
+    }
+  },
+
+  "Sneaky Deckhand": { passive: "Can deploy to any open (uncontested) battlefield" },
+
+  "Annie, Fiery": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.banner("Annie, Fiery — all your damage effects deal +1 while in play (auto-applied)");
+    }
+  },
+
+  "Sai Scout": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.myActIdx];
+      var deck = (meP && meP.mainDeck) || [];
+      if (!deck.length) { ctx.banner("Sai Scout — [Vision] deck empty"); return; }
+      var top = deck[deck.length - 1];
+      ctx.prompt({ kind: "confirmAction", sourceName: "Sai Scout", question: "[Vision] Top card: " + top.name + " — recycle it?", yesEffect: "recycleTopCard" });
+    }
+  },
+
+  // --- Spells ---
+  "Flash": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx;
+      var bfFriendlyUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; ((b.units[idx]) || []).forEach(function(u) { bfFriendlyUids.push(u.uid); }); });
+      if (bfFriendlyUids.length === 0) { ctx.banner("Flash — no friendly BF units to move to base"); return; }
+      var n = Math.min(2, bfFriendlyUids.length);
+      ctx.prompt({ kind: "pickFriendlyUnits", n: n, validUids: bfFriendlyUids, sourceName: "Flash", sourceUid: ctx.card.uid, effect: "returnToBase" });
+    }
+  },
+
+  // --- Legend ---
+  "Dark Child - Starter": { passive: "End of turn — ready up to 2 runes (manual)" },
+
+  // --- Battlefields ---
+  "The Arena's Greatest": { passive: "First beginning phase: each player gains 1 point (manual)" },
+  "Windswept Hillock":    { passive: "Units here have [Ganking] — can move BF to BF" }
 };
 </script>
 <script type="text/babel">
@@ -2976,6 +3041,12 @@ function RiftboundGame() {
   }
   function dealDamageToUid(victimUid, amount, source) {
     var dmgSrc = source || "Damage";
+    // Annie, Fiery: +1 bonus damage to all spells/abilities while in play.
+    var _myP = ps[myActIdx];
+    if ((_myP && (_myP.base||[]).some(function(c){return c.name==="Annie, Fiery";})) ||
+        bfs.some(function(b){return((b.units&&b.units[myActIdx])||[]).some(function(u){return u.name==="Annie, Fiery";}); })) {
+      amount += 1;
+    }
     // Look up the victim first so we can decide whether to apply damage in-place or kill+animate.
     var found = null;
     for (var bi2 = 0; bi2 < bfs.length; bi2++) {
@@ -4391,7 +4462,7 @@ function RiftboundGame() {
         <div style={{ fontSize: 11, color: "#FFD70099", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
         <div style={{ fontSize: 14, color: "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{autoPrompt.question}</div>
         <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={function() { if (autoPrompt.yesEffect === "channelRune") { setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p) return prev; var runes = p.runes.slice(); var ri = runes.findIndex(function(r) { return !r.exhausted; }); if (ri < 0) return prev; runes[ri] = Object.assign({}, runes[ri], { exhausted: true }); var np = prev.slice(); np[i] = Object.assign({}, p, { runes: runes }); return np; }); showAutoBanner("AUTO · " + autoPrompt.sourceName + " — channeled 1 rune"); } setAutoPrompt(null); }} style={{ padding: "5px 16px", borderRadius: 5, border: "1.5px solid #4ADE80", background: "rgba(74,222,128,0.15)", color: "#4ADE80", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Spectral,serif" }}>Yes</button>
+          <button onClick={function() { if (autoPrompt.yesEffect === "channelRune") { setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p) return prev; var runes = p.runes.slice(); var ri = runes.findIndex(function(r) { return !r.exhausted; }); if (ri < 0) return prev; runes[ri] = Object.assign({}, runes[ri], { exhausted: true }); var np = prev.slice(); np[i] = Object.assign({}, p, { runes: runes }); return np; }); showAutoBanner("AUTO · " + autoPrompt.sourceName + " — channeled 1 rune"); } if (autoPrompt.yesEffect === "recycleTopCard") { setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p || !(p.mainDeck||[]).length) return prev; var deck = p.mainDeck.slice(); var top = deck.pop(); deck = shuffle(deck.concat([top])); var np = prev.slice(); np[i] = Object.assign({}, p, { mainDeck: deck }); return np; }); showAutoBanner("AUTO · " + autoPrompt.sourceName + " — top card recycled"); } setAutoPrompt(null); }} style={{ padding: "5px 16px", borderRadius: 5, border: "1.5px solid #4ADE80", background: "rgba(74,222,128,0.15)", color: "#4ADE80", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Spectral,serif" }}>Yes</button>
           <button onClick={function() { setAutoPrompt(null); }} style={{ padding: "5px 16px", borderRadius: 5, border: "1px solid #555", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif" }}>No</button>
         </div>
       </div>}
