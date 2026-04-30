@@ -1068,7 +1068,153 @@ var CARD_EFFECTS = {
   },
 
   // --- Legends ---
-  "Loose Cannon":        { passive: "Beginning phase: draw 1 if hand <= 1 (automated in doStartTurn)" }
+  "Loose Cannon":        { passive: "Beginning phase: draw 1 if hand <= 1 (automated in doStartTurn)" },
+
+  // ============ Batch 9: 20 more cards ============
+
+  // --- Units ---
+  "Wildclaw Shaman": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      // "Spend a buff to buff me and ready me. (If I don't have a buff, I get a +1 might buff.)"
+      // Auto interpretation: if I have no buff counter yet, just give me +1 counter (no spend, no extra ready since I just entered).
+      // If I already have a buff counter (e.g. via aura), spend 1 → buff (+1 counter) and ready (already ready since I just played).
+      addCounter(ctx.card.uid, 1);
+      ctx.banner("Wildclaw Shaman — gained +1 buff counter");
+    }
+  },
+  "Dangerous Duo": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      if (!ctx.legionMet) { ctx.banner("Dangerous Duo — [Legion] not met (no prior plays this turn)"); return; }
+      var friendlyUids = ctx.friendlyUnitUids();
+      if (!friendlyUids.length) { ctx.banner("Dangerous Duo — no friendly units"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Dangerous Duo [Legion]", sourceUid: ctx.card.uid, effect: "tempMight", amount: 2 });
+    }
+  },
+  "Wielder of Water": { passive: "While attacking or defending alone, +2 might (manual)" },
+  "Flame Chompers":   { passive: "When discarded, may pay [Fury] to play me (manual)" },
+  "Raging Soul":      { passive: "If you've discarded a card this turn, has [Assault] and [Ganking] (manual)" },
+  "Brazen Buccaneer": { passive: "Optional: discard 1 to reduce cost by 2 (manual)" },
+  "Master Yi, Meditative": { passive: "When attacking, +1 might per XP (XP system manual)" },
+  "Master Yi, Honed":      { passive: "[Hunt 1] — gain 1 XP on conquer/hold (manual)" },
+
+  // --- Spells ---
+  "Scrapheap": {
+    // Gear: when this is played, discarded, or killed, draw 1. We hook via onPlay (drawn on discard/death is manual).
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.draw(1);
+      ctx.banner("Scrapheap — drew 1 (also draws on discard/kill — manual)");
+    }
+  },
+  "Cull the Weak": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var friendlyUids = ctx.friendlyUnitUids();
+      if (!friendlyUids.length) { ctx.banner("Cull the Weak — no friendly units to kill"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Cull the Weak (your kill)", sourceUid: ctx.card.uid, effect: "kill" });
+      ctx.banner("Cull the Weak — pick yours; opponent picks theirs (manual)");
+    }
+  },
+  "Show of Strength": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx; var meP = ps[idx];
+      var n = 0;
+      function _isMighty(c) { return ((c.might || 0) + (c.tempMight || 0) + (c._aura || 0)) >= 5; }
+      if (meP) (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && _isMighty(c)) n++; });
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if (_isMighty(u)) n++; }); });
+      if (n <= 0) { ctx.banner("Show of Strength — no [Mighty] units"); return; }
+      ctx.draw(n);
+      ctx.banner("Show of Strength — drew " + n + " (one per Mighty unit)");
+    }
+  },
+  "Smoke Screen": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var anyUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { anyUids.push(u.uid); }); }); });
+      var idx = ctx.myActIdx; var meP = ps[idx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") anyUids.push(c.uid); });
+      if (!anyUids.length) { ctx.banner("Smoke Screen — no units"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: anyUids, sourceName: "Smoke Screen", sourceUid: ctx.card.uid, effect: "tempMight", amount: -4 });
+    }
+  },
+  "Get Excited!": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.myActIdx]; var hand = (meP && meP.hand || []).filter(function(c) { return c.uid !== ctx.card.uid; });
+      if (!hand.length) { ctx.banner("Get Excited! — no cards to discard"); return; }
+      // Two-step: first pick a card to discard, then pick a target. We do the discard first; the resolution
+      // banner will state the energy cost so the user can manually deal that as damage to a BF unit.
+      ctx.prompt({ kind: "pickFromHand", n: 1, label: "card to discard", validUids: hand.map(function(c) { return c.uid; }), cardsSnap: hand, sourceName: "Get Excited!", sourceUid: ctx.card.uid, effect: "discard" });
+      ctx.banner("Get Excited! — after discard, deal that card's energy as damage to a BF unit (manual)");
+    }
+  },
+  "Strike Down": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx; var meP = ps[idx];
+      var equipped = [];
+      if (meP) (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && (c.gear || []).length > 0) equipped.push(c); });
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if ((u.gear || []).length > 0) equipped.push(u); }); });
+      if (!equipped.length) { ctx.banner("Strike Down — no equipped friendly units"); return; }
+      // Use the first equipped unit's might to deal damage to a chosen enemy BF unit.
+      var chosen = equipped[0];
+      var dmg = (chosen.might || 0) + (chosen.tempMight || 0) + (chosen._aura || 0);
+      var enemyUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi === idx) return; (pu || []).forEach(function(u) { enemyUids.push(u.uid); }); }); });
+      if (!enemyUids.length) { ctx.banner("Strike Down — no enemy units to target"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: enemyUids, sourceName: "Strike Down (" + chosen.name + " " + dmg + " might)", sourceUid: ctx.card.uid, effect: "damage", amount: dmg });
+      ctx.banner("Strike Down — using " + chosen.name + " (" + dmg + " might); detach a gear from it manually");
+    }
+  },
+  "Highlander":     { passive: "[Reaction] Next attack/defend, +N might (manual — count cards in trash)" },
+  "Frigid Touch":   { passive: "[Reaction] [Repeat] 2 — stun an enemy unit (manual; stun key not auto-applied)" },
+
+  // --- Battlefields ---
+  "Targon's Peak": {
+    onConquer: function(ctx) {
+      ctx.addWatcher({ kind: "readyRunesAtEndOfTurn", amount: 2, sourceName: "Targon's Peak" });
+      ctx.banner("Targon's Peak — will ready up to 2 runes at end of this turn");
+    }
+  },
+  "Monastery of Hirana": {
+    onConquer: function(ctx) {
+      ctx.prompt({ kind: "confirmAction", sourceName: "Monastery of Hirana", question: "Spend a buff to draw 1?", yesEffect: "drawOne" });
+    }
+  },
+  "Sigil of the Storm": {
+    onConquer: function(ctx) {
+      // Auto-recycle one of your runes (any rune — pick the first).
+      var idx = ctx.myActIdx;
+      setPs(function(prev) {
+        var p = prev[idx]; if (!p || !(p.runes || []).length) return prev;
+        var runes = p.runes.slice(); var rune = runes.shift();
+        var rd = (p.runeDeck || []).slice(); rd.push(Object.assign({}, rune, { exhausted: false })); rd = shuffle(rd);
+        var np = prev.slice(); np[idx] = Object.assign({}, p, { runes: runes, runeDeck: rd }); return np;
+      });
+      ctx.banner("Sigil of the Storm — recycled 1 rune");
+    }
+  },
+  "Treasure Hoard": {
+    onConquer: function(ctx) {
+      ctx.prompt({ kind: "confirmAction", sourceName: "Treasure Hoard", question: "Pay 1 energy to play a Gold gear token exhausted?", yesEffect: "spawnGold" });
+    }
+  },
+  "Reaver's Row": {
+    onDefend: function(ctx) {
+      // "When you defend here, you may move a friendly unit here to base."
+      // Provide a prompt with friendly BF units (across all your BFs).
+      var idx = ctx.myActIdx;
+      // ctx for BF onDefend may not include bfs; fall back to outer bfs.
+      var ownBf = []; bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { ownBf.push(u.uid); }); });
+      if (!ownBf.length) { showAutoBanner("AUTO · Reaver's Row — no friendly BF units to return"); return; }
+      _autoSelRef.current = [];
+      setAutoPrompt({ kind: "pickFriendlyUnits", n: 1, validUids: ownBf, sourceName: "Reaver's Row", effect: "returnToBase" });
+    }
+  }
 };
 </script>
 <script type="text/babel">
@@ -1595,6 +1741,7 @@ function RiftboundGame() {
   var _extraEnergyRef = useRef(0);
   var _arenaFirstTurnRef = useRef({});
   var _wraithFiredRef = useRef({});
+  var _obeliskFiredRef = useRef({});
   var autoMode = !!(lobbySettings && lobbySettings.autoMode);
   var _lobbyList = useState([]), lobbyList = _lobbyList[0], setLobbyList = _lobbyList[1];
   var _lobbyErr = useState(null), lobbyErr = _lobbyErr[0], setLobbyErr = _lobbyErr[1];
@@ -3806,6 +3953,15 @@ function RiftboundGame() {
         aL(pName(turnIdx) + " gains 1 point (The Arena's Greatest — first beginning phase)");
         showAutoBanner("AUTO · The Arena's Greatest — +1 point to " + pName(turnIdx));
       }
+      // Obelisk of Power: at start of each player's first beginning, that player channels 1 rune
+      if (autoMode && !_obeliskFiredRef.current[turnIdx] && bfs.some(function(b) { return b.name === "Obelisk of Power"; }) && (p.runeDeck || []).length > 0 && (p.runes || []).length < 12) {
+        _obeliskFiredRef.current[turnIdx] = true;
+        var _obR = p.runeDeck.shift();
+        p.runes = (p.runes || []).concat([_obR]);
+        addAnim(_obR.uid, "draw");
+        aL(pName(turnIdx) + " channels 1 rune (Obelisk of Power — first beginning phase)");
+        showAutoBanner("AUTO · Obelisk of Power — " + pName(turnIdx) + " channeled 1 rune");
+      }
       // Loose Cannon (legend): draw 1 if hand size <= 1 at start of beginning phase
       if (autoMode && p.legend && p.legend.name === "Loose Cannon" && (p.hand || []).length <= 1 && (p.mainDeck || []).length > 0) {
         var _lcCard = p.mainDeck.shift();
@@ -3885,6 +4041,21 @@ function RiftboundGame() {
         np[meIdx] = p2;
         setTimeout(function() { showAutoBanner("AUTO · Dark Child — " + _dcN + " rune" + (_dcN === 1 ? "" : "s") + " readied at end of turn"); }, 300);
       }
+    }
+    // End-of-turn watchers (e.g. Targon's Peak: ready up to 2 runes at end of this turn)
+    if (autoMode) {
+      autoWatchers.forEach(function(w) {
+        if (w.kind === "readyRunesAtEndOfTurn") {
+          var amt = w.amount || 2;
+          var ex2 = p2.runes.filter(function(r) { return r.exhausted; });
+          if (ex2.length > 0) {
+            var n2 = Math.min(amt, ex2.length); var r2 = 0;
+            p2.runes = p2.runes.map(function(r) { if (r.exhausted && r2 < n2) { r2++; return Object.assign({}, r, { exhausted: false }); } return r; });
+            np[meIdx] = p2;
+            setTimeout(function() { showAutoBanner("AUTO · " + w.sourceName + " — " + n2 + " rune" + (n2 === 1 ? "" : "s") + " readied at end of turn"); }, 320);
+          }
+        }
+      });
     }
     // Send showcase cards to bin before clearing
     if (showcaseCard || showcaseHistory.length > 0) {
@@ -4785,7 +4956,7 @@ function RiftboundGame() {
         <div style={{ fontSize: 11, color: "#FFD70099", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
         <div style={{ fontSize: 14, color: "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{autoPrompt.question}</div>
         <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={function() { if (autoPrompt.yesEffect === "channelRune") { setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p) return prev; var runes = p.runes.slice(); var ri = runes.findIndex(function(r) { return !r.exhausted; }); if (ri < 0) return prev; runes[ri] = Object.assign({}, runes[ri], { exhausted: true }); var np = prev.slice(); np[i] = Object.assign({}, p, { runes: runes }); return np; }); showAutoBanner("AUTO · " + autoPrompt.sourceName + " — channeled 1 rune"); } if (autoPrompt.yesEffect === "recycleTopCard") { setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p || !(p.mainDeck||[]).length) return prev; var deck = p.mainDeck.slice(); var top = deck.pop(); deck = shuffle(deck.concat([top])); var np = prev.slice(); np[i] = Object.assign({}, p, { mainDeck: deck }); return np; }); showAutoBanner("AUTO · " + autoPrompt.sourceName + " — top card recycled"); } setAutoPrompt(null); }} style={{ padding: "5px 16px", borderRadius: 5, border: "1.5px solid #4ADE80", background: "rgba(74,222,128,0.15)", color: "#4ADE80", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Spectral,serif" }}>Yes</button>
+          <button onClick={function() { if (autoPrompt.yesEffect === "channelRune") { setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p) return prev; var runes = p.runes.slice(); var ri = runes.findIndex(function(r) { return !r.exhausted; }); if (ri < 0) return prev; runes[ri] = Object.assign({}, runes[ri], { exhausted: true }); var np = prev.slice(); np[i] = Object.assign({}, p, { runes: runes }); return np; }); showAutoBanner("AUTO · " + autoPrompt.sourceName + " — channeled 1 rune"); } if (autoPrompt.yesEffect === "recycleTopCard") { setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p || !(p.mainDeck||[]).length) return prev; var deck = p.mainDeck.slice(); var top = deck.pop(); deck = shuffle(deck.concat([top])); var np = prev.slice(); np[i] = Object.assign({}, p, { mainDeck: deck }); return np; }); showAutoBanner("AUTO · " + autoPrompt.sourceName + " — top card recycled"); } if (autoPrompt.yesEffect === "drawOne") { drawCards(1); showAutoBanner("AUTO · " + autoPrompt.sourceName + " — drew 1"); } if (autoPrompt.yesEffect === "spawnGold") { spawnTokensInBase("Gold", 1); showAutoBanner("AUTO · " + autoPrompt.sourceName + " — Gold gear token spawned (exhausted)"); } setAutoPrompt(null); }} style={{ padding: "5px 16px", borderRadius: 5, border: "1.5px solid #4ADE80", background: "rgba(74,222,128,0.15)", color: "#4ADE80", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Spectral,serif" }}>Yes</button>
           <button onClick={function() { setAutoPrompt(null); }} style={{ padding: "5px 16px", borderRadius: 5, border: "1px solid #555", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif" }}>No</button>
         </div>
       </div>}
