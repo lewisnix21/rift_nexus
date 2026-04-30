@@ -1783,7 +1783,7 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
         {card.stunned && <div style={{ position: "absolute", inset: 0, background: "#000a", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 4 }}><span style={{ color: "#FFD700", fontSize: zoomed ? 18 : 10, fontWeight: 800, background: "#000c", padding: "2px 8px", borderRadius: 6, border: "1px solid #FFD70066" }}>STUNNED</span></div>}
         {card.counter2 !== 0 && card.counter2 !== undefined && card.type !== "Gear" && <div style={{ position: "absolute", top: -8, right: -8, background: "#854d0e", color: "#FACC15", borderRadius: 10, minWidth: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, boxShadow: "0 2px 6px #000a", zIndex: 5, padding: "0 3px" }}>{card.counter2 > 0 ? "+" : ""}{card.counter2}</div>}
         {card.counter !== 0 && card.counter !== undefined && card.type !== "Gear" && <div style={{ position: "absolute", top: -8, right: (card.counter2 ? 18 : -8), background: "#166534", color: "#4ADE80", borderRadius: 10, minWidth: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, boxShadow: "0 2px 6px #000a", zIndex: 5, padding: "0 3px" }}>{card.counter > 0 ? "+" : ""}{card.counter}</div>}
-        {isHov && small && !zoomed && <>
+        {!window.autoMode && isHov && small && !zoomed && <>
           {onBin && <button onClick={function(e) { e.stopPropagation(); onBin(card.uid); }} style={{ position: "absolute", bottom: -8, left: -8, width: 22, height: 22, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.75)", color: "#ffaaaa", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 6 }}>🗑</button>}
           {onPlus && card.type !== "Gear" && <button onClick={function(e) { e.stopPropagation(); onPlus(card.uid); }} style={{ position: "absolute", top: "15%", right: -12, width: 22, height: 22, borderRadius: "50%", border: "1.5px solid #16653488", background: "#166534", color: "#4ADE80", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 6 }}>+</button>}
           {onMinus && card.type !== "Gear" && <button onClick={function(e) { e.stopPropagation(); onMinus(card.uid); }} style={{ position: "absolute", top: "33%", right: -12, width: 22, height: 22, borderRadius: "50%", border: "1.5px solid #16653488", background: "#166534", color: "#4ADE80", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 6 }}>−</button>}
@@ -2252,6 +2252,11 @@ function RiftboundGame() {
   var _pendingSpell = useState(null), pendingSpell = _pendingSpell[0], setPendingSpell = _pendingSpell[1];
   var _resolveAcceptors = useState({}), resolveAcceptors = _resolveAcceptors[0], setResolveAcceptors = _resolveAcceptors[1];
   var _resolveDidSomethingRef = useRef(false);
+  // Click-to-attach: in auto-mode, clicking a base card "picks it up". Both BFs glow gold; clicking a BF deploys.
+  var _baseCardSelected = useState(null), baseCardSelected = _baseCardSelected[0], setBaseCardSelected = _baseCardSelected[1];
+  // Conquer-by-resolve: when a unit moves from base to an unconquered BF, both players must click Resolve to commit the conquer + 1 point.
+  var _pendingConquer = useState(null), pendingConquer = _pendingConquer[0], setPendingConquer = _pendingConquer[1];
+  var _conquerAcceptors = useState({}), conquerAcceptors = _conquerAcceptors[0], setConquerAcceptors = _conquerAcceptors[1];
   var autoMode = !!(lobbySettings && lobbySettings.autoMode);
   var _lobbyList = useState([]), lobbyList = _lobbyList[0], setLobbyList = _lobbyList[1];
   var _lobbyErr = useState(null), lobbyErr = _lobbyErr[0], setLobbyErr = _lobbyErr[1];
@@ -4994,7 +4999,10 @@ function RiftboundGame() {
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
     // Check base
     var bidx = p.base.findIndex(function(c) { return c.uid === cardUid; });
-    if (bidx >= 0) { var card = Object.assign({}, p.base[bidx], { exhausted: false, gear: (p.base[bidx].gear || []).slice() }); p.base.splice(bidx, 1); stripGearToBin(card, p); p.hand.push(Object.assign({}, card, { gear: [] })); aL(pName(idx2) + " returns " + cName(card) + " to hand"); var np = ps.slice(); np[idx2] = p; setPs(np); return; }
+    if (bidx >= 0) {
+      if (autoMode) return; // base → hand is blocked in auto-mode
+      var card = Object.assign({}, p.base[bidx], { exhausted: false, gear: (p.base[bidx].gear || []).slice() }); p.base.splice(bidx, 1); stripGearToBin(card, p); p.hand.push(Object.assign({}, card, { gear: [] })); aL(pName(idx2) + " returns " + cName(card) + " to hand"); var np = ps.slice(); np[idx2] = p; setPs(np); return;
+    }
     // Check battlefields
     for (var bk = 0; bk < nb.length; bk++) { if (!nb[bk].units[idx2]) continue; var ui = nb[bk].units[idx2].findIndex(function(u) { return u.uid === cardUid; }); if (ui >= 0) { var card = Object.assign({}, nb[bk].units[idx2][ui], { exhausted: false, gear: (nb[bk].units[idx2][ui].gear || []).slice() }); nb[bk].units[idx2].splice(ui, 1); stripGearToBin(card, p); p.hand.push(Object.assign({}, card, { gear: [] })); aL(pName(idx2) + " returns " + cName(card) + " to hand"); var np = ps.slice(); np[idx2] = p; setPs(np); setBfs(nb); return; } }
     // Check bin
@@ -5553,6 +5561,16 @@ function RiftboundGame() {
     aL(pName(idx) + " moves " + cName(unit) + " to " + nb[bi].name);
     var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); setSel(null);
     setTimeout(recalcAuras, 0);
+    // Auto-mode: if the BF is unconquered (no controller, no enemy presence), defer to a player-resolved conquer.
+    // Otherwise fall through to the existing showdown trigger.
+    var _bfHere = nb[bi];
+    var _defPresentAuto = false; for (var _ja = 0; _ja < pc; _ja++) { if (_ja !== idx && _bfHere.units[_ja] && _bfHere.units[_ja].length > 0) _defPresentAuto = true; }
+    if (autoMode && !sd && _bfHere.controller == null && !_defPresentAuto) {
+      setPendingConquer({ bi: bi, playerIdx: idx, unitName: unit.name, bfName: _bfHere.name });
+      setConquerAcceptors({});
+      showAutoBanner("AUTO · Awaiting Resolve to claim " + _bfHere.name);
+      return;
+    }
     if (!sd) {
       aL("SHOWDOWN at " + nb[bi].name + "!");
       var _defPresent2 = false; for (var _j2 = 0; _j2 < pc; _j2++) { if (_j2 !== idx && nb[bi].units[_j2] && nb[bi].units[_j2].length > 0) _defPresent2 = true; }
@@ -5764,6 +5782,7 @@ function RiftboundGame() {
   // committed React state and helpers.
   if (typeof window !== "undefined") {
     window.ps = ps; window.bfs = bfs; window.turn = turn; window.myActIdx = myActIdx; window.sd = sd;
+    window.autoMode = autoMode;
     window.lobbySettings = lobbySettings;
     window.setPs = setPs; window.setBfs = setBfs; window.setAutoPrompt = setAutoPrompt;
     window.applyTempMightToUids = applyTempMightToUids;
@@ -6231,12 +6250,14 @@ function RiftboundGame() {
               var isLandscape = bfImg.indexOf("1038x744") > -1 || bfImg.indexOf("1039x744") > -1 || bfImg.indexOf("OGN-284") > -1 || bfImg.indexOf("OGN-281") > -1 || bfImg.indexOf("OGN-290") > -1;
               var isBfOver = dragOverBf === bi && (!dragUnit || dragUnit.type === "Unit" || dragUnit.type === "Champion");
               var isSdBf = sd && sd.bfIdx === bi;
+              // Auto-mode: when a base card is "picked up" (click-to-attach), every BF zone glows gold and is clickable to deploy.
+              var isAutoBfTarget = autoMode && !!baseCardSelected;
               return <div key={"my-" + bf.uid}
                 className={isSdBf ? "anim-sd-pulse" : ""}
-                onClick={undefined}
+                onClick={isAutoBfTarget ? function(e) { e.stopPropagation(); var u = baseCardSelected; setBaseCardSelected(null); moveUnit(u, bi); } : undefined}
                 onDragOver={canMoveOwn ? function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; if (dragOverBf !== bi) setDragOverBf(bi); } : undefined}
                 onDrop={canMoveOwn ? function(e) { e.preventDefault(); setDragOverBf(-1); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts.length > 1 ? parts[1] : parts[0]; if (type === "hand") { var card = myCur.hand.find(function(c) { return c.uid === uid2; }); if (card && (card.type === "Unit" || card.type === "Champion")) playToBattlefield(card, bi); } else if (type === "champ") { if (myCur.champion && myCur.champion.uid === uid2 && !myCur.championPlayed) playToBattlefield(myCur.champion, bi); } else if (type === "gear") { /* ignore gear on battlefield */ } else { moveUnit(uid2, bi); } setDragUnit(null); } : undefined}
-                style={{ flex: 1, background: isBfOver ? "rgba(255,215,0,0.1)" : "rgba(255,215,0,0.015)", borderRadius: 8, border: isSdBf ? "2px solid #FF6B35" : ("2px solid " + (isBfOver ? "#FFD700" : "#FFD70020")), boxShadow: isBfOver ? "0 0 16px rgba(255,215,0,0.3)" : undefined, display: "flex", alignItems: "center", justifyContent: "center", overflow: "visible", position: "relative", cursor: "default", outline: "none", transition: "background 0.15s ease" }}>
+                style={{ flex: 1, background: (isBfOver || isAutoBfTarget) ? "rgba(255,215,0,0.13)" : "rgba(255,215,0,0.015)", borderRadius: 8, border: isSdBf ? "2px solid #FF6B35" : ("2.5px solid " + ((isBfOver || isAutoBfTarget) ? "#FFD700" : "#FFD70020")), boxShadow: (isBfOver || isAutoBfTarget) ? "0 0 22px rgba(255,215,0,0.55), inset 0 0 18px rgba(255,215,0,0.12)" : undefined, display: "flex", alignItems: "center", justifyContent: "center", overflow: "visible", position: "relative", cursor: isAutoBfTarget ? "pointer" : "default", outline: "none", transition: "background 0.15s ease, box-shadow 0.15s ease, border 0.15s ease" }}>
                 {/* BF card - fixed centre */}
                 <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 1 }}>
                   {/* Enemy units — to the right of BF card, bottom aligned with BF bottom (top-right from your POV) */}
@@ -6288,7 +6309,7 @@ function RiftboundGame() {
               style={{ display: "flex", flexDirection: "row", gap: 3, padding: "3px 4px", borderRadius: 6, border: dragOverBase ? "2px solid #FFD700" : "1.5px solid #FFD70055", background: dragOverBase ? "rgba(255,215,0,0.08)" : "transparent", boxShadow: dragOverBase ? "0 0 16px rgba(255,215,0,0.3), inset 0 0 16px rgba(255,215,0,0.05)" : "none", alignItems: "center", flexWrap: "nowrap", flex: 9, height: HAND_H + Math.round(70 * vScale), minHeight: HAND_H + Math.round(70 * vScale), maxHeight: HAND_H + Math.round(70 * vScale), overflow: "hidden", transition: "border 0.15s ease, background 0.15s ease, box-shadow 0.15s ease", position: "relative" }}>
               <div style={{ fontSize: 13, color: "#FFD70077", fontFamily: "Spectral,serif", letterSpacing: 1 }}>BASE</div>
               {myCur.base.map(function(u) {
-                return <Card key={u.uid} card={u} small isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow ? "base:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} selected={(sel && sel.uid === u.uid) || !!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} onClick={function() { if (autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0))) { toggleAutoSel(u.uid); return; } if (tm) { resTarget(u, myActIdx, null); } else { toggleTap(u.uid); } }} actionLabel={autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0)) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (tm ? "Target" : (u.exhausted ? "Untap" : "Tap"))} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} />;
+                return <Card key={u.uid} card={u} small isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow ? "base:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} selected={(sel && sel.uid === u.uid) || !!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0) || (autoMode && baseCardSelected === u.uid)} onClick={function() { if (autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0))) { toggleAutoSel(u.uid); return; } if (tm) { resTarget(u, myActIdx, null); return; } if (autoMode) { setBaseCardSelected(baseCardSelected === u.uid ? null : u.uid); return; } toggleTap(u.uid); }} actionLabel={autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0)) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (tm ? "Target" : (autoMode ? "Battlefield" : (u.exhausted ? "Untap" : "Tap")))} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} />;
               })}
             </div>
           </div>
@@ -6307,7 +6328,7 @@ function RiftboundGame() {
             </div>
             <div style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", display: "flex", gap: 3, alignItems: "flex-start", padding: "4px 2px", zIndex: 2 }}>
               {/* Bin pile */}
-              <div onClick={function() { if (myCur.trash && myCur.trash.length > 0) setShowBin(!showBin); }} onDragOver={function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }} onDragEnter={function(e) { e.preventDefault(); setDragOverBin(true); }} onDragLeave={function() { setDragOverBin(false); }} onDrop={function(e) { e.preventDefault(); setDragOverBin(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var uid2 = parts.length > 1 ? parts[1] : parts[0]; sendToBin(uid2); }} style={{ cursor: myCur.trash && myCur.trash.length > 0 ? "pointer" : "default", borderRadius: 6, outline: dragOverBin ? "2px solid #ff6666" : "none", outlineOffset: -2, boxShadow: dragOverBin ? "0 0 16px rgba(255,100,100,0.3), inset 0 0 12px rgba(255,100,100,0.05)" : "none", transition: "outline 0.15s ease, box-shadow 0.15s ease" }}><BinPile trash={myCur.trash} /></div>
+              <div onClick={function() { if (myCur.trash && myCur.trash.length > 0) setShowBin(!showBin); }} onDragOver={autoMode ? undefined : function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }} onDragEnter={autoMode ? undefined : function(e) { e.preventDefault(); setDragOverBin(true); }} onDragLeave={autoMode ? undefined : function() { setDragOverBin(false); }} onDrop={autoMode ? undefined : function(e) { e.preventDefault(); setDragOverBin(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var uid2 = parts.length > 1 ? parts[1] : parts[0]; sendToBin(uid2); }} style={{ cursor: myCur.trash && myCur.trash.length > 0 ? "pointer" : "default", borderRadius: 6, outline: dragOverBin ? "2px solid #ff6666" : "none", outlineOffset: -2, boxShadow: dragOverBin ? "0 0 16px rgba(255,100,100,0.3), inset 0 0 12px rgba(255,100,100,0.05)" : "none", transition: "outline 0.15s ease, box-shadow 0.15s ease" }}><BinPile trash={myCur.trash} /></div>
             </div>
           </div>
           </div>{/* end PLAYER ZONE wrapper */}
@@ -6549,8 +6570,34 @@ function RiftboundGame() {
           </div>;
         })()}
       </div>}
-      {/* AUTO MODE: Floating END TURN button (bottom-right) */}
-      {autoMode && screen === "play" && !awakenPhase && (function() {
+      {/* AUTO MODE: Floating Conquer-Resolve button (bottom-right) — appears when a unit was deployed to an unconquered BF */}
+      {autoMode && pendingConquer && (function() {
+        var isOnline = lobbyType === "host" || lobbyType === "join";
+        var meReady = !!conquerAcceptors[myUid];
+        var allUids = isOnline ? Object.keys(lobbyPlayers || {}) : [myUid];
+        var pending = allUids.filter(function(u) { return !conquerAcceptors[u]; });
+        var pendingNames = pending.map(function(u) { var sl = lobbyPlayers && lobbyPlayers[u] && typeof lobbyPlayers[u].slot === "number" ? lobbyPlayers[u].slot : -1; return sl >= 0 ? pName(sl) : (lobbyPlayers && lobbyPlayers[u] && lobbyPlayers[u].name) || "?"; });
+        return <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+          <button onClick={function(e) {
+            e.stopPropagation();
+            var newAcc = Object.assign({}, conquerAcceptors); newAcc[myUid] = true; setConquerAcceptors(newAcc);
+            var allReady = isOnline ? allUids.every(function(u) { return newAcc[u]; }) : true;
+            if (allReady) {
+              var pc2 = pendingConquer;
+              setBfs(function(prev) { var nb2 = prev.slice(); nb2[pc2.bi] = Object.assign({}, prev[pc2.bi], { controller: pc2.playerIdx }); return nb2; });
+              setPs(function(prev) { var np2 = prev.slice(); var pp = prev[pc2.playerIdx]; if (!pp) return prev; np2[pc2.playerIdx] = Object.assign({}, pp, { score: (pp.score || 0) + 1 }); return np2; });
+              showAutoBanner("AUTO · " + pName(pc2.playerIdx) + " conquered " + pc2.bfName + " — +1 point");
+              aL(pName(pc2.playerIdx) + " conquers " + pc2.bfName + " (+1 point)");
+              setPendingConquer(null); setConquerAcceptors({});
+            }
+          }} disabled={meReady && pending.length > 0} style={{ padding: "12px 28px", borderRadius: 8, border: "2px solid #60a5fa", background: meReady && pending.length > 0 ? "rgba(96,165,250,0.15)" : "linear-gradient(135deg,#3b82f6,#60a5fa)", color: meReady && pending.length > 0 ? "#60a5fa" : "#fff", fontSize: 15, fontWeight: 700, fontFamily: "Spectral,serif", cursor: meReady && pending.length > 0 ? "default" : "pointer", letterSpacing: 1.5, boxShadow: "0 4px 16px #000c, 0 0 22px rgba(96,165,250,0.6)", textTransform: "uppercase" }}>
+            {meReady && pending.length > 0 ? "Waiting…" : "Conquer (Resolve)"}
+          </button>
+          {isOnline && pending.length > 0 && pendingNames.length > 0 && <span style={{ fontSize: 11, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Awaiting: {pendingNames.join(", ")}</span>}
+        </div>;
+      })()}
+      {/* AUTO MODE: Floating END TURN button (bottom-right) — only when no showdown and no pending spell-resolve chain */}
+      {autoMode && screen === "play" && !awakenPhase && !sd && !pendingSpell && !pendingConquer && (function() {
         var isOnlineGame = lobbyType === "host" || lobbyType === "join";
         if (isOnlineGame) { if (_gamePhaseRef.current !== "playing") return null; if (act !== mySlot) return null; }
         return <button onClick={endTurn} style={{ position: "fixed", bottom: 24, right: 24, padding: "12px 28px", borderRadius: 8, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70060,#FF8C0030)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif", zIndex: 950, boxShadow: "0 4px 16px #000c, 0 0 24px rgba(255,215,0,0.2)", letterSpacing: 1 }}>END TURN</button>;
