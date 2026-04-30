@@ -777,7 +777,7 @@ var CARD_EFFECTS = {
   // ============ Batch 6: Lux precon completion ============
 
   // --- Passives ---
-  "Eager Apprentice":  {},
+  "Eager Apprentice":  { _automatedElsewhere: "Reduces spell energy cost by 1 — fires from auto-rune cost calc in deploy/play paths" },
   "Lux, Crownguard": {
     onTap: function(ctx) {
       if (ctx.wasExhausted) return;
@@ -1313,6 +1313,7 @@ var CARD_EFFECTS = {
 
   // --- Vanilla / keyword-only ---
   "Pakaa Cub":           { _vanilla: "[Hidden] keyword — face-down play handled by hide-card mechanic, no extra automation" },
+  "Obelisk of Power":    { _automatedElsewhere: "Each player's first beginning — channel 1 rune (fires from doStartTurn)" },
   "Blazing Scorcher":    { _vanilla: "[Accelerate] — pay 1E + Fury to enter ready, handled by player at play time" },
   "Long Sword":          { _vanilla: "[Quick-Draw] / [Equip] Fury — gear played as Reaction; no auto trigger" },
   "Mistfall":            { _vanilla: "When you buff a friendly unit, may pay [Body] + exhaust to ready it (manual; conditional spend)" },
