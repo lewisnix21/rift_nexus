@@ -673,7 +673,7 @@ var CARD_EFFECTS = {
 
   // --- Passives ---
   "Stalwart Poro": { passive: "Shield — +1 might while defending (auto via parseKeywordBonus)" },
-  "Pouty Poro":    { passive: "Deflect — opponents pay extra rune to target (manual)" },
+  "Pouty Poro":    { passive: "Deflect — filtered from all auto-mode targeted prompts (auto)" },
 
   // --- Spells ---
   "Consult the Past": {
@@ -2790,6 +2790,27 @@ function RiftboundGame() {
       return prev.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.map(function(u) { return uids.indexOf(u.uid) >= 0 ? _bump(u) : u; }); }) }); });
     });
   }
+  function isEnemyDeflect(uid) {
+    var idx = myActIdx;
+    for (var bi2 = 0; bi2 < bfs.length; bi2++) {
+      var b = bfs[bi2];
+      for (var pi = 0; pi < b.units.length; pi++) {
+        var ix = (b.units[pi] || []).findIndex(function(u) { return u.uid === uid; });
+        if (ix >= 0) {
+          if (pi === idx) return false;
+          var kw = (b.units[pi][ix].keywords || []);
+          return kw.indexOf("Deflect") >= 0;
+        }
+      }
+    }
+    for (var pi2 = 0; pi2 < ps.length; pi2++) {
+      if (pi2 === idx) continue;
+      var base2 = (ps[pi2] && ps[pi2].base) || [];
+      var bIdx = base2.findIndex(function(c) { return c.uid === uid; });
+      if (bIdx >= 0) return (base2[bIdx].keywords || []).indexOf("Deflect") >= 0;
+    }
+    return false;
+  }
   function makeAutoCtx(card, where, bi) {
     return {
       card: card,
@@ -2799,7 +2820,12 @@ function RiftboundGame() {
       flash: function(uid2) { addAnim(uid2, "flash", 800); },
       banner: function(text) { showAutoBanner("AUTO · " + text); },
       addWatcher: function(w) { setAutoWatchers(function(prev) { return prev.concat([w]); }); },
-      prompt: function(p2) { _autoSelRef.current = []; setAutoPrompt(p2); },
+      prompt: function(p2) {
+        if (p2 && p2.validUids) {
+          p2 = Object.assign({}, p2, { validUids: p2.validUids.filter(function(uid) { return !isEnemyDeflect(uid); }) });
+        }
+        _autoSelRef.current = []; setAutoPrompt(p2);
+      },
       draw: function(n) { drawCards(n); },
       spawnInBase: function(tokenName, count) { spawnTokensInBase(tokenName, count || 1); },
       spawnInBaseReady: function(tokenName, count) { spawnTokensInBase(tokenName, count || 1, { ready: true }); },
