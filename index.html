@@ -4018,13 +4018,21 @@ function RiftboundGame() {
     if (ri >= 0) { p.runes = p.runes.slice(); p.runes[ri] = Object.assign({}, p.runes[ri], { exhausted: !p.runes[ri].exhausted }); var np = ps.slice(); np[idx] = p; setPs(np); _syncLive(np, null); return; }
     // Check base
     var bi2 = p.base.findIndex(function(c) { return c.uid === cardUid; });
-    if (bi2 >= 0) { var _wasExBase = p.base[bi2].exhausted; p.base = p.base.slice(); p.base[bi2] = Object.assign({}, p.base[bi2], { exhausted: !p.base[bi2].exhausted }); var np = ps.slice(); np[idx] = p; setPs(np); _syncLive(np, null); fireOnTapEffect(p.base[bi2], _wasExBase); return; }
+    if (bi2 >= 0) {
+      var _baseCard = p.base[bi2];
+      if (autoMode && !(CARD_EFFECTS[_baseCard.name] && CARD_EFFECTS[_baseCard.name].onTap)) return;
+      var _wasExBase = _baseCard.exhausted; p.base = p.base.slice(); p.base[bi2] = Object.assign({}, _baseCard, { exhausted: !_baseCard.exhausted }); var np = ps.slice(); np[idx] = p; setPs(np); _syncLive(np, null); fireOnTapEffect(p.base[bi2], _wasExBase); return;
+    }
     // Check battlefield units
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
     for (var bk = 0; bk < nb.length; bk++) {
       if (!nb[bk].units[idx]) continue;
       var ui = nb[bk].units[idx].findIndex(function(u) { return u.uid === cardUid; });
-      if (ui >= 0) { var _wasExBf = nb[bk].units[idx][ui].exhausted; nb[bk].units[idx][ui] = Object.assign({}, nb[bk].units[idx][ui], { exhausted: !nb[bk].units[idx][ui].exhausted }); setBfs(nb); _syncLive(null, nb); fireOnTapEffect(nb[bk].units[idx][ui], _wasExBf); return; }
+      if (ui >= 0) {
+        var _bfCard = nb[bk].units[idx][ui];
+        if (autoMode && !(CARD_EFFECTS[_bfCard.name] && CARD_EFFECTS[_bfCard.name].onTap)) return;
+        var _wasExBf = _bfCard.exhausted; nb[bk].units[idx][ui] = Object.assign({}, _bfCard, { exhausted: !_bfCard.exhausted }); setBfs(nb); _syncLive(null, nb); fireOnTapEffect(nb[bk].units[idx][ui], _wasExBf); return;
+      }
     }
   }
 
