@@ -5255,7 +5255,10 @@ function RiftboundGame() {
     if (p.legend && p.legend.uid === cardUid) { p.legend = Object.assign({}, p.legend, { exhausted: !p.legend.exhausted }); var np = ps.slice(); np[idx] = p; setPs(np); _syncLive(np, null); return; }
     // Check runes
     var ri = p.runes.findIndex(function(r) { return r.uid === cardUid; });
-    if (ri >= 0) { p.runes = p.runes.slice(); p.runes[ri] = Object.assign({}, p.runes[ri], { exhausted: !p.runes[ri].exhausted }); var np = ps.slice(); np[idx] = p; setPs(np); _syncLive(np, null); return; }
+    if (ri >= 0) {
+      if (autoMode) return; // runes are managed automatically in auto-mode (no manual tap/untap)
+      p.runes = p.runes.slice(); p.runes[ri] = Object.assign({}, p.runes[ri], { exhausted: !p.runes[ri].exhausted }); var np = ps.slice(); np[idx] = p; setPs(np); _syncLive(np, null); return;
+    }
     // Check base
     var bi2 = p.base.findIndex(function(c) { return c.uid === cardUid; });
     if (bi2 >= 0) {
@@ -5277,6 +5280,7 @@ function RiftboundGame() {
   }
 
   function recycleRune(runeUid) {
+    if (autoMode) return; // runes are managed automatically in auto-mode (no manual recycle)
     var idx = myActIdx;
     var _me = ps[idx]; if (!_me) return;
     if (sd) markSdActed();
@@ -5660,7 +5664,35 @@ function RiftboundGame() {
   var HAND_W = Math.round(100 * vScale), HAND_H = Math.round(140 * vScale);
   var LEGEND_W = Math.round(100 * vScale), LEGEND_H = Math.round(140 * vScale);
   var BF_W = Math.round(HAND_W * 1.5), BF_H = Math.round(HAND_H * 1.5);
-  var canPlayCard = function(c) { return true; };
+  // canPlayCard: in auto-mode, returns false when the player can't pay the rune cost
+  // (so the card becomes uninteractable and we can paint a blue glow on affordable cards).
+  // Outside auto-mode, the player handles cost themselves so we always allow play.
+  var canPlayCard = function(c) {
+    if (!autoMode || !c) return true;
+    var meP = ps[myActIdx]; if (!meP) return true;
+    var rcNeeded = (c.rc || []).slice();
+    var energyNeeded = c.energy || 0;
+    if (c.type === "Spell") {
+      var hasEager = (meP.base || []).some(function(u) { return u.name === "Eager Apprentice"; }) ||
+        bfs.some(function(b) { return ((b.units && b.units[myActIdx]) || []).some(function(u) { return u.name === "Eager Apprentice"; }); });
+      if (hasEager && energyNeeded > 1) energyNeeded--;
+      var xEnergy = _extraEnergyRef.current || 0;
+      if (xEnergy > 0) energyNeeded = Math.max(0, energyNeeded - xEnergy);
+    }
+    var allRunes = (meP.runes || []).slice();
+    var recycleUids = [];
+    rcNeeded.forEach(function(dom) {
+      var f = allRunes.find(function(r) { return r.domain === dom && recycleUids.indexOf(r.uid) < 0 && r.exhausted; });
+      if (!f) f = allRunes.find(function(r) { return r.domain === dom && recycleUids.indexOf(r.uid) < 0; });
+      if (f) { recycleUids.push(f.uid); if (energyNeeded > 0) energyNeeded--; }
+    });
+    if (recycleUids.length < rcNeeded.length) return false;
+    if (energyNeeded > 0) {
+      var avail = allRunes.filter(function(r) { return !r.exhausted && recycleUids.indexOf(r.uid) < 0; });
+      if (avail.length < energyNeeded) return false;
+    }
+    return true;
+  };
   var hasAnim = function(id) { return anims.some(function(a) { return a.id === id; }); };
   var getAnimType = function(id) { var a = anims.find(function(a) { return a.id === id; }); return a ? a.type : null; };
 
@@ -5707,7 +5739,7 @@ function RiftboundGame() {
         var handShift = 0;
         if (handHovIdx >= 0 && i !== handHovIdx && total > 3) { handShift = i < handHovIdx ? -15 : 15; }
         var _handAct = (canMoveOwn && !tm && !fc && !c.hidden) ? (c.type === "Spell" ? "Cast" : "Play") : undefined;
-        return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover" + animCls, draggable: isDraggable2, onDragStart: isDraggable2 ? function(e) { e.dataTransfer.setData("text/plain", "hand:" + c.uid); setDragUnit(c); } : undefined, onDragEnd: function() { setDragUnit(null); }, onClick: canMoveOwn ? function() { if (tm || fc) return; if (c.type === "Unit" || c.type === "Champion" || c.type === "Gear") { onPlay(c); } else if (c.type === "Spell") { if (showcaseCard && showcaseCard.uid === c.uid) { setShowcaseCard(null); } else { var idx = myActIdx; var _me = ps[idx]; if (_me) { var sp = Object.assign({}, _me, { hand: _me.hand.filter(function(h) { return h.uid !== c.uid; }) }); if (autoMode) { var rcN = (c.rc || []).slice(); var eN = c.energy || 0; var _hasEager = (_me.base || []).some(function(u){return u.name==="Eager Apprentice";})||bfs.some(function(b){return((b.units&&b.units[idx])||[]).some(function(u){return u.name==="Eager Apprentice";});}); if(_hasEager&&eN>1)eN--; var _xEnergy=_extraEnergyRef.current; if(_xEnergy>0){_extraEnergyRef.current=0;eN=Math.max(0,eN-_xEnergy);} var aR = _me.runes.slice(); var recUids = []; rcN.forEach(function(dom) { var f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0; }); if (f) { recUids.push(f.uid); if (eN > 0) eN--; } }); var tapUids = []; if (eN > 0) { var av = aR.filter(function(r) { return !r.exhausted && recUids.indexOf(r.uid) < 0; }); av.slice(0, eN).forEach(function(r) { tapUids.push(r.uid); }); } sp.runes = _me.runes.filter(function(r) { return recUids.indexOf(r.uid) < 0; }).map(function(r) { return tapUids.indexOf(r.uid) >= 0 ? Object.assign({}, r, { exhausted: true }) : r; }); sp.runeDeck = shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); }))); } var np = ps.slice(); np[idx] = sp; setPs(np); pushShowcase(c); aL(pName(idx) + " casts " + cName(c)); runAutoOnCast(c); } } if (sd) markSdActed(); } } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { setHandHovIdx(i); if (_setHoverCard && !c.hidden) _setHoverCard(c, e, true); }, onMouseLeave: function() { setHandCtxUid(null); if (_clearHoverCard) _clearHoverCard(); }, style: { width: HAND_W, height: HAND_H, borderRadius: 6, overflow: "hidden", border: "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + (playable ? "55" : "20")), flexShrink: 0, cursor: isDraggable2 ? "grab" : "pointer", transform: "rotate(" + rot + "deg) translateY(" + ty + "px) translateX(" + handShift + "px)", transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -30 : total > 5 ? -16 : 0), transition: "transform 0.075s ease", position: "relative", zIndex: i === handHovIdx ? 998 : i, boxShadow: "0 4px 16px #000a", opacity: 1 } },
+        return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover" + animCls, draggable: isDraggable2, onDragStart: isDraggable2 ? function(e) { e.dataTransfer.setData("text/plain", "hand:" + c.uid); setDragUnit(c); } : undefined, onDragEnd: function() { setDragUnit(null); }, onClick: (canMoveOwn && playable) ? function() { if (tm || fc) return; if (c.type === "Unit" || c.type === "Champion" || c.type === "Gear") { onPlay(c); } else if (c.type === "Spell") { if (showcaseCard && showcaseCard.uid === c.uid) { setShowcaseCard(null); } else { var idx = myActIdx; var _me = ps[idx]; if (_me) { var sp = Object.assign({}, _me, { hand: _me.hand.filter(function(h) { return h.uid !== c.uid; }) }); if (autoMode) { var rcN = (c.rc || []).slice(); var eN = c.energy || 0; var _hasEager = (_me.base || []).some(function(u){return u.name==="Eager Apprentice";})||bfs.some(function(b){return((b.units&&b.units[idx])||[]).some(function(u){return u.name==="Eager Apprentice";});}); if(_hasEager&&eN>1)eN--; var _xEnergy=_extraEnergyRef.current; if(_xEnergy>0){_extraEnergyRef.current=0;eN=Math.max(0,eN-_xEnergy);} var aR = _me.runes.slice(); var recUids = []; rcN.forEach(function(dom) { var f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0; }); if (f) { recUids.push(f.uid); if (eN > 0) eN--; } }); var tapUids = []; if (eN > 0) { var av = aR.filter(function(r) { return !r.exhausted && recUids.indexOf(r.uid) < 0; }); av.slice(0, eN).forEach(function(r) { tapUids.push(r.uid); }); } sp.runes = _me.runes.filter(function(r) { return recUids.indexOf(r.uid) < 0; }).map(function(r) { return tapUids.indexOf(r.uid) >= 0 ? Object.assign({}, r, { exhausted: true }) : r; }); sp.runeDeck = shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); }))); } var np = ps.slice(); np[idx] = sp; setPs(np); pushShowcase(c); aL(pName(idx) + " casts " + cName(c)); runAutoOnCast(c); } } if (sd) markSdActed(); } } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { setHandHovIdx(i); if (_setHoverCard && !c.hidden) _setHoverCard(c, e, true); }, onMouseLeave: function() { setHandCtxUid(null); if (_clearHoverCard) _clearHoverCard(); }, style: { width: HAND_W, height: HAND_H, borderRadius: 6, overflow: "hidden", border: "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + (playable ? "55" : "20")), flexShrink: 0, cursor: isDraggable2 ? "grab" : (autoMode && !playable ? "default" : "pointer"), transform: "rotate(" + rot + "deg) translateY(" + ty + "px) translateX(" + handShift + "px)", transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -30 : total > 5 ? -16 : 0), transition: "transform 0.075s ease, box-shadow 0.2s ease", position: "relative", zIndex: i === handHovIdx ? 998 : i, boxShadow: (autoMode && playable) ? "0 0 14px rgba(59,130,246,0.75), 0 0 28px rgba(59,130,246,0.4), 0 4px 16px #000a" : "0 4px 16px #000a", opacity: (autoMode && !playable) ? 0.55 : 1 } },
           c.hidden ? React.createElement("img", { src: CARD_BACK, style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : (c.img ? React.createElement("img", { src: imgSrc(c.img), style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : React.createElement("div", { style: { width: "100%", height: "100%", background: "linear-gradient(180deg," + (DOM[c.domain] || DOM.Colorless).c + "15,#0a0a18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#666", padding: 4, textAlign: "center" } }, c.name)),
           handCtxUid === c.uid ? React.createElement("button", { onClick: function(e) { e.stopPropagation(); toggleHide(c.uid); setHandCtxUid(null); }, style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 10, padding: "4px 12px", borderRadius: 4, border: "1.5px solid #ffffff40", background: "rgba(20,20,50,0.92)", color: "#ddd", fontSize: 12, cursor: "pointer", fontFamily: "Spectral,serif", fontWeight: 700, boxShadow: "0 4px 12px #000a", whiteSpace: "nowrap" } }, c.hidden ? "Reveal" : "Hide") : null
         );
@@ -6399,7 +6431,7 @@ function RiftboundGame() {
         onDragOver={function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; if (!dragOverShowcase) setDragOverShowcase(true); }}
         onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverShowcase(false); }}
         onDrop={function(e) { e.preventDefault(); e.stopPropagation(); setDragOverShowcase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; var card = null; if (myCur) { if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } else if (type === "base") { card = myCur.base.find(function(c) { return c.uid === uid2; }); } else if (type === "bf") { for (var bk = 0; bk < bfs.length; bk++) { var uArr = bfs[bk].units[myActIdx]; if (!uArr) continue; var found = uArr.find(function(u) { return u.uid === uid2; }); if (found) { card = found; break; } } } else if (type === "bin") { card = (myCur.trash || []).find(function(c) { return c.uid === uid2; }); } } if (card) { pushShowcase(card); if (card.type === "Spell") runAutoOnCast(card); } }}
-        style={{ position: "fixed", right: 12, top: "12%", padding: "6px 4px", display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "flex-start", overflow: "visible", zIndex: scryMode && showcaseCard ? 1250 : 800, pointerEvents: "auto" }}>
+        style={{ position: "fixed", right: "15%", top: "50%", transform: "translateY(-50%)", padding: "6px 4px", display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "center", overflow: "visible", zIndex: scryMode && showcaseCard ? 1250 : 800, pointerEvents: "auto" }}>
         {showcaseCard ? (function() {
           var scCardW = Math.round(215 * vScale); var scCardH = Math.round(301 * vScale);
           var scPeek = Math.round(scCardW * 0.3);
