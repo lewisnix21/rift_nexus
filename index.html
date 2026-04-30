@@ -298,14 +298,6 @@ var CARD_EFFECTS = {
     }
   },
 
-  // --- Vanilla / passive-keyword units (no ETB; combat-time keywords like [Assault]/[Shield]
-  //     would need an on-attack/on-defend hook which isn't wired yet). Registered so the engine
-  //     knows the card is intentionally inert for auto-mode. ---
-  "Daring Poro":        { passive: "Assault — +1 might while attacking (manual)" },
-  "Vanguard Sergeant":  { passive: "Vanilla 4/4 (no ability)" },
-  "Petty Officer":      { passive: "Assault — +1 might while attacking (manual)" },
-  "Garen, Rugged":      { passive: "Assault 2 / Shield 2 — +2 might attacking or defending (manual)" },
-
   // --- On-attack triggered abilities ---
   "Crackshot Corsair": {
     onAttack: function(ctx) {
@@ -326,14 +318,14 @@ var CARD_EFFECTS = {
   },
 
   // --- Aura units (handled by recalcAuras / computeAuraForUnit; no per-card hook needed) ---
-  "Garen, Commander": { passive: "Aura: +1 might to other friendly units at this BF (auto)" },
+  "Garen, Commander": { _automatedElsewhere: "Aura: other friendly units +1 might at this BF / base — fires from computeAuraSources" },
 
   // --- Vanilla / passive-keyword units (Assault/Shield handled generically by parseKeywordBonus
   //     in fireShowdownStartEffects). Registered so the engine knows the card is recognized. ---
-  "Daring Poro":        { passive: "Assault — auto-buffed at showdown start" },
-  "Vanguard Sergeant":  { passive: "Vanilla 4/4 (no ability)" },
-  "Petty Officer":      { passive: "Assault — auto-buffed at showdown start" },
-  "Garen, Rugged":      { passive: "Assault 2 / Shield 2 — auto-buffed at showdown start" },
+  "Daring Poro":        { _automatedElsewhere: "[Assault] +1 might while attacker — fires from parseKeywordBonus in fireShowdownStartEffects" },
+  "Vanguard Sergeant":  { _vanilla: "Vanilla 4/4 — no ability" },
+  "Petty Officer":      { _automatedElsewhere: "[Assault] +1 might while attacker — fires from parseKeywordBonus in fireShowdownStartEffects" },
+  "Garen, Rugged":      { _automatedElsewhere: "[Assault 2] [Shield 2] +2 might attacking/defending — fires from parseKeywordBonus in fireShowdownStartEffects" },
 
   // --- Legend ---
   "Might of Demacia - Starter": {
@@ -678,7 +670,7 @@ var CARD_EFFECTS = {
       ctx.banner("Stalwart Poro [Shield] — +1 might this combat");
     }
   },
-  "Pouty Poro":    { passive: "Deflect — filtered from all auto-mode targeted prompts (auto)" },
+  "Pouty Poro":    { _automatedElsewhere: "[Deflect] — filtered out of all targeted prompts via isEnemyDeflect in makeAutoCtx.prompt" },
 
   // --- Spells ---
   "Consult the Past": {
@@ -785,7 +777,7 @@ var CARD_EFFECTS = {
       ctx.banner("Lux, Crownguard — +2 energy banked for next spell");
     }
   },
-  "Mega-Mech":         { passive: "Vanilla 7/8 — no ability" },
+  "Mega-Mech":         { _vanilla: "Vanilla 7/8 — no ability" },
 
   // --- Spells ---
   "Singularity": {
@@ -928,11 +920,11 @@ var CARD_EFFECTS = {
   },
 
   // --- Legend ---
-  "Dark Child - Starter": { passive: "End of turn — ready up to 2 runes (automated in endTurn)" },
+  "Dark Child - Starter": { _automatedElsewhere: "End of your turn — ready up to 2 runes — fires from endTurn" },
 
   // --- Battlefields ---
-  "The Arena's Greatest": { passive: "First beginning phase: each player +1 point (automated in doStartTurn)" },
-  "Windswept Hillock":    { passive: "Units here have [Ganking] — can move BF to BF" },
+  "The Arena's Greatest": { _automatedElsewhere: "Each player's first beginning — +1 point — fires from doStartTurn" },
+  "Windswept Hillock":    { _automatedElsewhere: "Grants [Ganking] to units here — handled by Ganking glow + base→BF→BF moves" },
 
   // ============ Batch 8: 20 cards across multiple precon decks ============
 
