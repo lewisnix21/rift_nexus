@@ -1076,11 +1076,19 @@ var CARD_EFFECTS = {
   "Wildclaw Shaman": {
     onPlay: function(ctx) {
       ctx.flash(ctx.card.uid);
-      // "Spend a buff to buff me and ready me. (If I don't have a buff, I get a +1 might buff.)"
-      // Auto interpretation: if I have no buff counter yet, just give me +1 counter (no spend, no extra ready since I just entered).
-      // If I already have a buff counter (e.g. via aura), spend 1 → buff (+1 counter) and ready (already ready since I just played).
-      addCounter(ctx.card.uid, 1);
-      ctx.banner("Wildclaw Shaman — gained +1 buff counter");
+      // "When you play me, you may spend a buff to buff me and ready me. (If I don't have a buff, I get a +1 might buff.)"
+      // Find any friendly unit with a buff counter > 0 to spend from.
+      var idx = ctx.myActIdx;
+      var meP = ps[idx];
+      var buffedUids = [];
+      if (meP) (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && (c.counter || 0) > 0 && c.uid !== ctx.card.uid) buffedUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if ((u.counter || 0) > 0 && u.uid !== ctx.card.uid) buffedUids.push(u.uid); }); });
+      if (!buffedUids.length) {
+        addCounter(ctx.card.uid, 1);
+        ctx.banner("Wildclaw Shaman — no friendly buffs to spend; gained +1 buff");
+        return;
+      }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: buffedUids, sourceName: "Wildclaw Shaman (spend buff?)", sourceUid: ctx.card.uid, effect: "wildclawSpendBuff" });
     }
   },
   "Dangerous Duo": {
@@ -1092,29 +1100,82 @@ var CARD_EFFECTS = {
       ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Dangerous Duo [Legion]", sourceUid: ctx.card.uid, effect: "tempMight", amount: 2 });
     }
   },
-  "Wielder of Water": { passive: "While attacking or defending alone, +2 might (manual)" },
-  "Flame Chompers":   { passive: "When discarded, may pay [Fury] to play me (manual)" },
-  "Raging Soul":      { passive: "If you've discarded a card this turn, has [Assault] and [Ganking] (manual)" },
-  "Brazen Buccaneer": { passive: "Optional: discard 1 to reduce cost by 2 (manual)" },
-  "Master Yi, Meditative": { passive: "When attacking, +1 might per XP (XP system manual)" },
-  "Master Yi, Honed":      { passive: "[Hunt 1] — gain 1 XP on conquer/hold (manual)" },
+  "Wielder of Water": {
+    onAttack: function(ctx) {
+      // +2 might while attacking alone (only my unit on my side at this BF).
+      var allies = (ctx.bf && ctx.bf.units && ctx.bf.units[ctx.ownerIdx]) || [];
+      if (allies.length === 1) {
+        applyTempMightToUids([ctx.unit.uid], 2, "Wielder of Water (alone)");
+        ctx.banner("Wielder of Water — alone, +2 might this combat");
+      }
+    },
+    onDefend: function(ctx) {
+      var allies = (ctx.bf && ctx.bf.units && ctx.bf.units[ctx.ownerIdx]) || [];
+      if (allies.length === 1) {
+        applyTempMightToUids([ctx.unit.uid], 2, "Wielder of Water (alone)");
+        ctx.banner("Wielder of Water — alone, +2 might this combat");
+      }
+    }
+  },
+  "Flame Chompers": {
+    onDiscard: function(ctx) {
+      // "When you discard me, you may pay [Fury] to play me."
+      // Auto-prompt: confirm to channel a Fury rune to recover the card to hand (since "play me" needs a target).
+      // We give the user the chance to reclaim it; full play-from-trash flow is manual.
+      var meP = ps[ctx.myActIdx];
+      var hasFuryReady = meP && (meP.runes || []).some(function(r) { return r.domain === "Fury" && !r.exhausted; });
+      if (!hasFuryReady) { ctx.banner("Flame Chompers — discarded; no ready Fury rune to recover"); return; }
+      ctx.prompt({ kind: "confirmAction", sourceName: "Flame Chompers", question: "Pay [Fury] to play me from trash? (returns to hand for manual play)", yesEffect: "flameChompersRecover", _flameUid: ctx.card.uid });
+    }
+  },
+  "Raging Soul": {
+    onAttack: function(ctx) {
+      // [Assault] (+1 might while attacker) + [Ganking] when you've discarded a card this turn.
+      if ((_discardsThisTurnRef.current[ctx.ownerIdx] || 0) > 0) {
+        applyTempMightToUids([ctx.unit.uid], 1, "Raging Soul ([Assault] from discard)");
+        ctx.banner("Raging Soul — discarded this turn, +1 might [Assault]");
+      }
+    }
+  },
+  "Brazen Buccaneer": { passive: "Optional: discard 1 to reduce cost by 2 (manual; cost is computed pre-play)" },
+  "Master Yi, Meditative": {
+    onAttack: function(ctx) {
+      var xp = _xpRef.current[ctx.ownerIdx] || 0;
+      if (xp <= 0) return;
+      applyTempMightToUids([ctx.unit.uid], xp, "Master Yi, Meditative (XP)");
+      ctx.banner("Master Yi, Meditative — +" + xp + " might this combat (XP)");
+    }
+  },
+  "Master Yi, Honed": {
+    onConquer: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 1;
+      ctx.banner("Master Yi, Honed [Hunt 1] — gained 1 XP (now " + _xpRef.current[ctx.player] + ")");
+    },
+    onHold: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 1;
+      ctx.banner("Master Yi, Honed [Hunt 1] — gained 1 XP (now " + _xpRef.current[ctx.player] + ")");
+    }
+  },
 
   // --- Spells ---
   "Scrapheap": {
-    // Gear: when this is played, discarded, or killed, draw 1. We hook via onPlay (drawn on discard/death is manual).
-    onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      ctx.draw(1);
-      ctx.banner("Scrapheap — drew 1 (also draws on discard/kill — manual)");
-    }
+    // Gear: when this is played, discarded, or killed, draw 1.
+    onPlay: function(ctx) { ctx.flash(ctx.card.uid); ctx.draw(1); ctx.banner("Scrapheap — drew 1 (played)"); },
+    onDiscard: function(ctx) { ctx.draw(1); ctx.banner("Scrapheap — drew 1 (discarded)"); },
+    onDeath: function(ctx) { ctx.draw(1); ctx.banner("Scrapheap — drew 1 (killed)"); }
   },
   "Cull the Weak": {
     onCast: function(ctx) {
       ctx.flash(ctx.card.uid);
       var friendlyUids = ctx.friendlyUnitUids();
-      if (!friendlyUids.length) { ctx.banner("Cull the Weak — no friendly units to kill"); return; }
-      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Cull the Weak (your kill)", sourceUid: ctx.card.uid, effect: "kill" });
-      ctx.banner("Cull the Weak — pick yours; opponent picks theirs (manual)");
+      if (!friendlyUids.length) {
+        // No friendly units — still try to auto-kill an enemy.
+        ctx.banner("Cull the Weak — no friendly units; auto-killing one enemy unit");
+        ctx.prompt({ kind: "pickAnyUnit", n: 0, validUids: [], sourceName: "Cull the Weak (no friendly)", sourceUid: ctx.card.uid, effect: "kill", andEnemyKill: true });
+        return;
+      }
+      // Picking your kill triggers the andEnemyKill flag which auto-kills enemy lowest-might.
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Cull the Weak", sourceUid: ctx.card.uid, effect: "kill", andEnemyKill: true });
     }
   },
   "Show of Strength": {
@@ -1156,22 +1217,26 @@ var CARD_EFFECTS = {
     onCast: function(ctx) {
       ctx.flash(ctx.card.uid);
       var idx = ctx.myActIdx; var meP = ps[idx];
-      var equipped = [];
-      if (meP) (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && (c.gear || []).length > 0) equipped.push(c); });
-      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if ((u.gear || []).length > 0) equipped.push(u); }); });
-      if (!equipped.length) { ctx.banner("Strike Down — no equipped friendly units"); return; }
-      // Use the first equipped unit's might to deal damage to a chosen enemy BF unit.
-      var chosen = equipped[0];
-      var dmg = (chosen.might || 0) + (chosen.tempMight || 0) + (chosen._aura || 0);
-      var enemyUids = [];
-      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi === idx) return; (pu || []).forEach(function(u) { enemyUids.push(u.uid); }); }); });
-      if (!enemyUids.length) { ctx.banner("Strike Down — no enemy units to target"); return; }
-      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: enemyUids, sourceName: "Strike Down (" + chosen.name + " " + dmg + " might)", sourceUid: ctx.card.uid, effect: "damage", amount: dmg });
-      ctx.banner("Strike Down — using " + chosen.name + " (" + dmg + " might); detach a gear from it manually");
+      var equippedUids = [];
+      if (meP) (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && (c.gear || []).length > 0) equippedUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if ((u.gear || []).length > 0) equippedUids.push(u.uid); }); });
+      if (!equippedUids.length) { ctx.banner("Strike Down — no equipped friendly units"); return; }
+      // Two-step: first prompt picks a friendly equipped unit; resolution opens the enemy-target prompt with damage = chosen unit's might.
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: equippedUids, sourceName: "Strike Down (pick equipped)", sourceUid: ctx.card.uid, effect: "strikeDownPickEnemy" });
     }
   },
-  "Highlander":     { passive: "[Reaction] Next attack/defend, +N might (manual — count cards in trash)" },
-  "Frigid Touch":   { passive: "[Reaction] [Repeat] 2 — stun an enemy unit (manual; stun key not auto-applied)" },
+  "Highlander":     { passive: "[Reaction] Choose a friendly unit. Next time it would die this turn, heal+exhaust+recall to base instead (manual — needs death-interception watcher)" },
+  "Frigid Touch": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var anyUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { anyUids.push(u.uid); }); }); });
+      var idx = ctx.myActIdx; var meP = ps[idx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") anyUids.push(c.uid); });
+      if (!anyUids.length) { ctx.banner("Frigid Touch — no units"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: anyUids, sourceName: "Frigid Touch", sourceUid: ctx.card.uid, effect: "tempMight", amount: -2 });
+    }
+  },
 
   // --- Battlefields ---
   "Targon's Peak": {
@@ -1742,6 +1807,8 @@ function RiftboundGame() {
   var _arenaFirstTurnRef = useRef({});
   var _wraithFiredRef = useRef({});
   var _obeliskFiredRef = useRef({});
+  var _xpRef = useRef({});
+  var _discardsThisTurnRef = useRef({});
   var autoMode = !!(lobbySettings && lobbySettings.autoMode);
   var _lobbyList = useState([]), lobbyList = _lobbyList[0], setLobbyList = _lobbyList[1];
   var _lobbyErr = useState(null), lobbyErr = _lobbyErr[0], setLobbyErr = _lobbyErr[1];
@@ -3751,21 +3818,76 @@ function RiftboundGame() {
       // "Kill a unit" — deal absurd damage so dealDamageToUid's lethal check triggers the fizzle anim.
       uids.forEach(function(u2) { dealDamageToUid(u2, 9999, p.sourceName); });
       showAutoBanner("AUTO · " + p.sourceName + " — killed " + uids.length + " unit" + (uids.length === 1 ? "" : "s"));
+      // Cull the Weak: also auto-kill the enemy's lowest-might BF unit.
+      if (p.andEnemyKill) {
+        var enemyVictim = null; var lowest = Infinity;
+        bfs.forEach(function(b) {
+          if (!b || !b.units) return;
+          b.units.forEach(function(pu, pi) {
+            if (pi === myActIdx) return;
+            (pu || []).forEach(function(u) {
+              var m = (u.might || 0) + (u.tempMight || 0) + (u._aura || 0);
+              if (m < lowest) { lowest = m; enemyVictim = u; }
+            });
+          });
+        });
+        if (enemyVictim) {
+          dealDamageToUid(enemyVictim.uid, 9999, p.sourceName + " (enemy)");
+          setTimeout(function() { showAutoBanner("AUTO · " + p.sourceName + " — also killed enemy " + enemyVictim.name + " (lowest might)"); }, 200);
+        }
+      }
       if (p.andDraw) drawCards(p.andDraw);
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+    } else if (p.effect === "stun") {
+      // Set stunned flag on chosen units. (Used by Frigid Touch and similar.)
+      setBfs(function(prev) {
+        return prev.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.map(function(u) { return uids.indexOf(u.uid) >= 0 ? Object.assign({}, u, { stunned: true }) : u; }); }) }); });
+      });
+      uids.forEach(function(u2) { addAnim(u2, "flash", 800); });
+      showAutoBanner("AUTO · " + p.sourceName + " — stunned " + uids.length + " unit" + (uids.length === 1 ? "" : "s"));
+      if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+    } else if (p.effect === "wildclawSpendBuff") {
+      // Wildclaw Shaman: remove 1 buff counter from chosen unit; +1 buff to Wildclaw and ready it.
+      uids.forEach(function(u2) { addCounter(u2, -1); });
+      if (p.sourceUid) {
+        addCounter(p.sourceUid, 1);
+        readyUidsAcrossPsAndBfs([p.sourceUid]);
+        addAnim(p.sourceUid, "flash", 800);
+      }
+      showAutoBanner("AUTO · Wildclaw Shaman — spent buff, gained +1 buff & readied");
+    } else if (p.effect === "strikeDownPickEnemy") {
+      // Strike Down step 1: friendly equipped unit chosen → open enemy target prompt with damage = chosen's might.
+      var friendlyUid = uids[0];
+      var foundFriendly = null;
+      var idx = myActIdx; var meP = ps[idx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.uid === friendlyUid) foundFriendly = c; });
+      if (!foundFriendly) bfs.forEach(function(b) { ((b.units && b.units[idx]) || []).forEach(function(u) { if (u.uid === friendlyUid) foundFriendly = u; }); });
+      if (!foundFriendly) { setAutoPrompt(null); _autoSelRef.current = []; return; }
+      var dmg = (foundFriendly.might || 0) + (foundFriendly.tempMight || 0) + (foundFriendly._aura || 0);
+      var enemyUids2 = [];
+      bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi === idx) return; (pu || []).forEach(function(u) { enemyUids2.push(u.uid); }); }); });
+      if (!enemyUids2.length) { showAutoBanner("AUTO · Strike Down — no enemy units to target"); setAutoPrompt(null); _autoSelRef.current = []; return; }
+      setTimeout(function() {
+        _autoSelRef.current = [];
+        setAutoPrompt({ kind: "pickAnyUnit", n: 1, validUids: enemyUids2, sourceName: "Strike Down (" + foundFriendly.name + " " + dmg + " might)", sourceUid: p.sourceUid, effect: "damage", amount: dmg });
+      }, 150);
+      return; // skip the autoprompt clearing at the bottom — we set a new one
     } else if (p.effect === "discard") {
       // Move chosen card(s) from local player's hand → trash, then optional andDraw.
       uids.forEach(function(u2) {
+        var discardedCard = null;
         setPs(function(prev) {
           var idx = myActIdx; var pp = prev[idx]; if (!pp) return prev;
           var hand = (pp.hand || []).slice();
           var hi = hand.findIndex(function(c) { return c && c.uid === u2; });
           if (hi < 0) return prev;
           var card = hand.splice(hi, 1)[0];
+          discardedCard = card;
           var trash = ((pp.trash) || []).concat([card]);
           var np = prev.slice(); np[idx] = Object.assign({}, pp, { hand: hand, trash: trash });
           return np;
         });
+        if (discardedCard) fireOnDiscardEffect(discardedCard, "hand");
       });
       showAutoBanner("AUTO · " + p.sourceName + " — discarded " + uids.length + " card" + (uids.length === 1 ? "" : "s"));
       if (p.andDraw) drawCards(p.andDraw);
@@ -4100,6 +4222,7 @@ function RiftboundGame() {
     setPs(np); setBfs(nb); setAct(nx); setTurn(newTurn);
     setSel(null); setTm(null); setFc(null); setTr([]); setSd(null); setArrows([]); setDrawingArrow(null); setShowcaseCard(null); setShowcaseHistory([]); setShowcaseOwner(null); setShowcaseAccepted(false); setShowcaseAcceptors({}); setShowcasePriority(null); setShowcaseActed(false);
     setAutoWatchers([]); setAutoPrompt(null); setAutoBanner(null); _autoSelRef.current = [];
+    if (autoMode) { _discardsThisTurnRef.current[meIdx] = 0; }
     setScreen("wait");
     // Force sync with explicit new values (state updates are async)
     if (roomCode && lobbyType !== "test" && _gamePhaseRef.current === "playing") {
@@ -4246,7 +4369,7 @@ function RiftboundGame() {
     if (bi2 >= 0) { var card = p.base.splice(bi2, 1)[0]; binCard(card, p); var np = ps.slice(); np[idx] = p; setPs(np); return; }
     // Check hand
     var hi = p.hand.findIndex(function(c) { return c.uid === cardUid; });
-    if (hi >= 0) { var card = p.hand.splice(hi, 1)[0]; binCard(card, p); var np = ps.slice(); np[idx] = p; setPs(np); return; }
+    if (hi >= 0) { var card = p.hand.splice(hi, 1)[0]; binCard(card, p); var np = ps.slice(); np[idx] = p; setPs(np); fireOnDiscardEffect(card, "hand"); return; }
     // Check battlefield units
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
     for (var bk = 0; bk < nb.length; bk++) {
@@ -4422,11 +4545,33 @@ function RiftboundGame() {
     var ctx = {
       card: card,
       wasExhausted: wasExhausted,
+      myActIdx: myActIdx,
+      bfs: bfs,
       addEnergy: function(n) { _extraEnergyRef.current += n; },
       banner: function(text) { showAutoBanner("AUTO · " + text); },
       flash: function(uid2) { addAnim(uid2, "flash", 800); }
     };
     try { eff.onTap(ctx); } catch(e) { console.error("onTap error for " + card.name + ":", e); }
+  }
+  function fireOnDiscardEffect(card, fromZone) {
+    // Fire when a card moves from hand → trash. Also tracks discards-this-turn for "have you discarded this turn"
+    // mechanics like Raging Soul / Master Yi's text references.
+    if (!autoMode) return;
+    var idx = myActIdx;
+    _discardsThisTurnRef.current[idx] = (_discardsThisTurnRef.current[idx] || 0) + 1;
+    var eff = CARD_EFFECTS[card && card.name];
+    if (!eff || !eff.onDiscard) return;
+    var ctx = {
+      card: card,
+      fromZone: fromZone || "hand",
+      myActIdx: idx,
+      bfs: bfs,
+      banner: function(text) { showAutoBanner("AUTO · " + text); },
+      flash: function(uid2) { addAnim(uid2, "flash", 800); },
+      draw: function(n) { drawCards(n); },
+      prompt: function(p2) { _autoSelRef.current = []; setAutoPrompt(p2); }
+    };
+    try { eff.onDiscard(ctx); } catch(e) { console.error("onDiscard error for " + card.name + ":", e); }
   }
   function toggleTap(cardUid) {
     if (drawingArrow) return;
@@ -4956,7 +5101,7 @@ function RiftboundGame() {
         <div style={{ fontSize: 11, color: "#FFD70099", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
         <div style={{ fontSize: 14, color: "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{autoPrompt.question}</div>
         <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={function() { if (autoPrompt.yesEffect === "channelRune") { setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p) return prev; var runes = p.runes.slice(); var ri = runes.findIndex(function(r) { return !r.exhausted; }); if (ri < 0) return prev; runes[ri] = Object.assign({}, runes[ri], { exhausted: true }); var np = prev.slice(); np[i] = Object.assign({}, p, { runes: runes }); return np; }); showAutoBanner("AUTO · " + autoPrompt.sourceName + " — channeled 1 rune"); } if (autoPrompt.yesEffect === "recycleTopCard") { setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p || !(p.mainDeck||[]).length) return prev; var deck = p.mainDeck.slice(); var top = deck.pop(); deck = shuffle(deck.concat([top])); var np = prev.slice(); np[i] = Object.assign({}, p, { mainDeck: deck }); return np; }); showAutoBanner("AUTO · " + autoPrompt.sourceName + " — top card recycled"); } if (autoPrompt.yesEffect === "drawOne") { drawCards(1); showAutoBanner("AUTO · " + autoPrompt.sourceName + " — drew 1"); } if (autoPrompt.yesEffect === "spawnGold") { spawnTokensInBase("Gold", 1); showAutoBanner("AUTO · " + autoPrompt.sourceName + " — Gold gear token spawned (exhausted)"); } setAutoPrompt(null); }} style={{ padding: "5px 16px", borderRadius: 5, border: "1.5px solid #4ADE80", background: "rgba(74,222,128,0.15)", color: "#4ADE80", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Spectral,serif" }}>Yes</button>
+          <button onClick={function() { if (autoPrompt.yesEffect === "channelRune") { setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p) return prev; var runes = p.runes.slice(); var ri = runes.findIndex(function(r) { return !r.exhausted; }); if (ri < 0) return prev; runes[ri] = Object.assign({}, runes[ri], { exhausted: true }); var np = prev.slice(); np[i] = Object.assign({}, p, { runes: runes }); return np; }); showAutoBanner("AUTO · " + autoPrompt.sourceName + " — channeled 1 rune"); } if (autoPrompt.yesEffect === "recycleTopCard") { setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p || !(p.mainDeck||[]).length) return prev; var deck = p.mainDeck.slice(); var top = deck.pop(); deck = shuffle(deck.concat([top])); var np = prev.slice(); np[i] = Object.assign({}, p, { mainDeck: deck }); return np; }); showAutoBanner("AUTO · " + autoPrompt.sourceName + " — top card recycled"); } if (autoPrompt.yesEffect === "drawOne") { drawCards(1); showAutoBanner("AUTO · " + autoPrompt.sourceName + " — drew 1"); } if (autoPrompt.yesEffect === "spawnGold") { spawnTokensInBase("Gold", 1); showAutoBanner("AUTO · " + autoPrompt.sourceName + " — Gold gear token spawned (exhausted)"); } if (autoPrompt.yesEffect === "flameChompersRecover") { var _fcUid = autoPrompt._flameUid; setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p) return prev; var trash = (p.trash || []).slice(); var ti = trash.findIndex(function(c) { return c.uid === _fcUid; }); if (ti < 0) return prev; var card = trash.splice(ti, 1)[0]; var runes = p.runes.slice(); var fri = runes.findIndex(function(r) { return r.domain === "Fury" && !r.exhausted; }); if (fri < 0) return prev; runes[fri] = Object.assign({}, runes[fri], { exhausted: true }); var hand = (p.hand || []).concat([card]); addAnim(card.uid, "draw"); var np = prev.slice(); np[i] = Object.assign({}, p, { trash: trash, hand: hand, runes: runes }); return np; }); showAutoBanner("AUTO · Flame Chompers — paid [Fury] and returned to hand for manual play"); } setAutoPrompt(null); }} style={{ padding: "5px 16px", borderRadius: 5, border: "1.5px solid #4ADE80", background: "rgba(74,222,128,0.15)", color: "#4ADE80", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Spectral,serif" }}>Yes</button>
           <button onClick={function() { setAutoPrompt(null); }} style={{ padding: "5px 16px", borderRadius: 5, border: "1px solid #555", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif" }}>No</button>
         </div>
       </div>}
