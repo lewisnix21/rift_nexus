@@ -849,6 +849,12 @@ var CARD_EFFECTS = {
       var meP = ps[ctx.myActIdx]; var hand = (meP && meP.hand || []).filter(function(c) { return c.uid !== ctx.card.uid; });
       if (!hand.length) { ctx.draw(1); ctx.banner("Traveling Merchant — no cards to discard, drew 1"); return; }
       ctx.prompt({ kind: "pickFromHand", n: 1, label: "card", validUids: hand.map(function(c) { return c.uid; }), cardsSnap: hand, sourceName: "Traveling Merchant", sourceUid: ctx.card.uid, effect: "discard", andDraw: 1 });
+    },
+    onMoveToHand: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.myActIdx]; var hand = (meP && meP.hand || []).filter(function(c) { return c.uid !== ctx.card.uid; });
+      if (!hand.length) { ctx.draw(1); ctx.banner("Traveling Merchant — no cards to discard, drew 1"); return; }
+      ctx.prompt({ kind: "pickFromHand", n: 1, label: "card", validUids: hand.map(function(c) { return c.uid; }), cardsSnap: hand, sourceName: "Traveling Merchant", sourceUid: ctx.card.uid, effect: "discard", andDraw: 1 });
     }
   },
 
@@ -915,7 +921,7 @@ var CARD_EFFECTS = {
       ctx.bfs.forEach(function(b) { if (!b || !b.units) return; ((b.units[idx]) || []).forEach(function(u) { bfFriendlyUids.push(u.uid); }); });
       if (bfFriendlyUids.length === 0) { ctx.banner("Flash — no friendly BF units to move to base"); return; }
       var n = Math.min(2, bfFriendlyUids.length);
-      ctx.prompt({ kind: "pickFriendlyUnits", n: n, validUids: bfFriendlyUids, sourceName: "Flash", sourceUid: ctx.card.uid, effect: "returnToBase" });
+      ctx.prompt({ kind: "pickFriendlyUnits", n: n, upTo: true, validUids: bfFriendlyUids, sourceName: "Flash", sourceUid: ctx.card.uid, effect: "returnToBase" });
     }
   },
 
@@ -2270,10 +2276,11 @@ function RiftboundGame() {
     var scTargetX = vw - vw * 0.02 - scCardW / 2;
     var scTargetY = vh * 0.5;
     setEffectAnim({ sourceCard: srcCard, fromX: rect.left + rect.width / 2, fromY: rect.top + rect.height / 2, toX: scTargetX, toY: scTargetY, w: scCardW, h: scCardH, ts: Date.now(), arrived: false, isBfSrc: _isBfSrcShow });
-    var t1 = requestAnimationFrame(function() {
+    // Wait a beat after the card is played before starting the ghost-fly animation.
+    var t1 = setTimeout(function() {
       setEffectAnim(function(prev) { return prev ? Object.assign({}, prev, { arrived: true }) : prev; });
-    });
-    return function() { cancelAnimationFrame(t1); };
+    }, 500);
+    return function() { clearTimeout(t1); };
   }, [autoPrompt && autoPrompt.sourceUid, autoPrompt && autoPrompt.kind]);
   useEffect(function() {
     if (!autoPrompt) {
@@ -2350,7 +2357,7 @@ function RiftboundGame() {
         });
         if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); }
       }, 1700);
-    }, 600);
+    }, 1000);
     return function() { clearTimeout(_spellFizzleAfterPromptTimer.current); };
   }, [autoPrompt, showcaseCard, pendingSpell]);
   var _aBnr = useState(null), autoBanner = _aBnr[0], setAutoBanner = _aBnr[1];
@@ -2620,7 +2627,7 @@ function RiftboundGame() {
         if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); }
         showAutoBanner("AUTO · " + (spellToResolve.name || "Spell") + " — fizzled (no valid effect)");
       }, 1700);
-    }, 250);
+    }, 1000);
   }, [pendingSpell, resolveAcceptors, lobbyPlayers, lobbyType]);
 
   // Chat listener
@@ -2894,8 +2901,14 @@ function RiftboundGame() {
       // Attacker wins - conquer if not already controlled
       if (bf.controller !== sd.atkIdx) {
         var nb2 = bfs.map(function(b) { return Object.assign({}, b); }); nb2[bi].controller = sd.atkIdx;
-        var np2 = ps.slice(); np2[sd.atkIdx] = Object.assign({}, np2[sd.atkIdx], { score: np2[sd.atkIdx].score + 1 });
-        aL(pName(sd.atkIdx) + " conquers " + bf.name + "! (" + np2[sd.atkIdx].score + "/8)");
+        var np2 = ps.slice();
+        var _atkPriorAR = (np2[sd.atkIdx].lastScoredBfs || []).indexOf(bf.uid) >= 0;
+        if (_atkPriorAR) {
+          aL(pName(sd.atkIdx) + " takes " + bf.name + " — already scored from this battlefield this turn, no point");
+        } else {
+          np2[sd.atkIdx] = Object.assign({}, np2[sd.atkIdx], { score: np2[sd.atkIdx].score + 1, lastScoredBfs: (np2[sd.atkIdx].lastScoredBfs || []).concat([bf.uid]) });
+          aL(pName(sd.atkIdx) + " conquers " + bf.name + "! (" + np2[sd.atkIdx].score + "/8)");
+        }
         setBfs(nb2); setPs(np2);
         fireConquerEffects(sd.atkIdx, bi);
         setTimeout(recalcAuras, 0);
@@ -4714,6 +4727,7 @@ function RiftboundGame() {
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
     } else if (p.effect === "returnToHand") {
       var pickedName = "card";
+      var _retToHand = [];
       uids.forEach(function(u2) {
         setPs(function(prev) {
           var idx = myActIdx; var pp = prev[idx]; if (!pp) return prev;
@@ -4722,6 +4736,7 @@ function RiftboundGame() {
           if (ti < 0) return prev;
           var card = trash.splice(ti, 1)[0]; pickedName = card.name || pickedName;
           var hand = (pp.hand || []).slice(); hand.push(card);
+          _retToHand.push(card);
           var np = prev.slice(); np[idx] = Object.assign({}, pp, { trash: trash, hand: hand });
           addAnim(card.uid, "draw");
           return np;
@@ -4729,6 +4744,7 @@ function RiftboundGame() {
       });
       showAutoBanner("AUTO · " + p.sourceName + " — returned " + (uids.length === 1 ? pickedName : (uids.length + " cards")) + " from bin");
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+      _retToHand.forEach(function(c) { fireOnMoveToHandEffect(c); });
     } else if (p.effect === "returnToBase") {
       // Move a BF unit back to its owner's base (exhausted). E.g. Maddened Marauder, Fight or Flight.
       uids.forEach(function(u2) {
@@ -4762,6 +4778,7 @@ function RiftboundGame() {
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
     } else if (p.effect === "bounceToHand") {
       // Return a BF unit to its owner's hand (clean state). E.g. Gust.
+      var _bouncedToHand = [];
       uids.forEach(function(u2) {
         var foundUnit = null, foundBi = -1, foundPi = -1, foundIx = -1;
         for (var bi2 = 0; bi2 < bfs.length; bi2++) {
@@ -4781,9 +4798,10 @@ function RiftboundGame() {
           }) });
           return nb;
         });
+        var clean = Object.assign({}, _u, { exhausted: false, damage: 0, tempMight: 0, _aura: 0, _buffSources: [], _auraSources: [], _damageSources: [] });
+        if (_pi === myActIdx) _bouncedToHand.push(clean);
         setPs(function(prev) {
           var np = prev.slice(); var pp = prev[_pi]; if (!pp) return prev;
-          var clean = Object.assign({}, _u, { exhausted: false, damage: 0, tempMight: 0, _aura: 0, _buffSources: [], _auraSources: [], _damageSources: [] });
           np[_pi] = Object.assign({}, pp, { hand: (pp.hand || []).concat([clean]) });
           addAnim(_u.uid, "draw");
           return np;
@@ -4791,6 +4809,7 @@ function RiftboundGame() {
       });
       showAutoBanner("AUTO · " + p.sourceName + " — bounced " + uids.length + " unit" + (uids.length === 1 ? "" : "s") + " to hand");
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+      _bouncedToHand.forEach(function(c) { fireOnMoveToHandEffect(c); });
     } else if (p.effect === "fireOnTap") {
       // Heimerdinger, Inventor: fire the chosen friendly card's onTap effect (without tapping it).
       var _idx2 = myActIdx; var _meP2 = ps[_idx2];
@@ -5271,13 +5290,13 @@ function RiftboundGame() {
     var bidx = p.base.findIndex(function(c) { return c.uid === cardUid; });
     if (bidx >= 0) {
       if (autoMode) return; // base → hand is blocked in auto-mode
-      var card = Object.assign({}, p.base[bidx], { exhausted: false, gear: (p.base[bidx].gear || []).slice() }); p.base.splice(bidx, 1); stripGearToBin(card, p); p.hand.push(Object.assign({}, card, { gear: [] })); aL(pName(idx2) + " returns " + cName(card) + " to hand"); var np = ps.slice(); np[idx2] = p; setPs(np); return;
+      var card = Object.assign({}, p.base[bidx], { exhausted: false, gear: (p.base[bidx].gear || []).slice() }); p.base.splice(bidx, 1); stripGearToBin(card, p); var handCard = Object.assign({}, card, { gear: [] }); p.hand.push(handCard); aL(pName(idx2) + " returns " + cName(card) + " to hand"); var np = ps.slice(); np[idx2] = p; setPs(np); fireOnMoveToHandEffect(handCard); return;
     }
     // Check battlefields
-    for (var bk = 0; bk < nb.length; bk++) { if (!nb[bk].units[idx2]) continue; var ui = nb[bk].units[idx2].findIndex(function(u) { return u.uid === cardUid; }); if (ui >= 0) { var card = Object.assign({}, nb[bk].units[idx2][ui], { exhausted: false, gear: (nb[bk].units[idx2][ui].gear || []).slice() }); nb[bk].units[idx2].splice(ui, 1); stripGearToBin(card, p); p.hand.push(Object.assign({}, card, { gear: [] })); aL(pName(idx2) + " returns " + cName(card) + " to hand"); var np = ps.slice(); np[idx2] = p; setPs(np); setBfs(nb); return; } }
+    for (var bk = 0; bk < nb.length; bk++) { if (!nb[bk].units[idx2]) continue; var ui = nb[bk].units[idx2].findIndex(function(u) { return u.uid === cardUid; }); if (ui >= 0) { var card = Object.assign({}, nb[bk].units[idx2][ui], { exhausted: false, gear: (nb[bk].units[idx2][ui].gear || []).slice() }); nb[bk].units[idx2].splice(ui, 1); stripGearToBin(card, p); var handCard2 = Object.assign({}, card, { gear: [] }); p.hand.push(handCard2); aL(pName(idx2) + " returns " + cName(card) + " to hand"); var np = ps.slice(); np[idx2] = p; setPs(np); setBfs(nb); fireOnMoveToHandEffect(handCard2); return; } }
     // Check bin
     var ti = p.trash.findIndex(function(c) { return c.uid === cardUid; });
-    if (ti >= 0) { var card = Object.assign({}, p.trash[ti], { exhausted: false }); p.trash.splice(ti, 1); p.hand.push(card); aL(pName(idx2) + " returns " + cName(card) + " to hand from bin"); var np = ps.slice(); np[idx2] = p; setPs(np); return; }
+    if (ti >= 0) { var card = Object.assign({}, p.trash[ti], { exhausted: false }); p.trash.splice(ti, 1); p.hand.push(card); aL(pName(idx2) + " returns " + cName(card) + " to hand from bin"); var np = ps.slice(); np[idx2] = p; setPs(np); fireOnMoveToHandEffect(card); return; }
   }
 
   function binCard(card, p) {
@@ -5475,6 +5494,19 @@ function RiftboundGame() {
       prompt: function(p2) { if (p2 && p2.validUids) p2 = Object.assign({}, p2, { validUids: p2.validUids.filter(function(uid) { return !isEnemyDeflect(uid); }) }); _autoSelRef.current = []; setAutoPrompt(p2); }
     };
     try { eff.onMoveToBase(ctx); } catch(e) { console.error("onMoveToBase error for " + unit.name + ":", e); }
+  }
+  function fireOnMoveToHandEffect(unit) {
+    if (!autoMode) return;
+    var eff = CARD_EFFECTS[unit && unit.name];
+    if (!eff || !eff.onMoveToHand) return;
+    var ctx = {
+      card: unit, myActIdx: myActIdx,
+      banner: function(text) { showAutoBanner("AUTO · " + text); },
+      flash: function(uid2) { addAnim(uid2, "flash", 800); },
+      draw: function(n) { drawCards(n); },
+      prompt: function(p2) { if (p2 && p2.validUids) p2 = Object.assign({}, p2, { validUids: p2.validUids.filter(function(uid) { return !isEnemyDeflect(uid); }) }); _autoSelRef.current = []; setAutoPrompt(p2); }
+    };
+    try { eff.onMoveToHand(ctx); } catch(e) { console.error("onMoveToHand error for " + unit.name + ":", e); }
   }
   function fireOnTapEffect(card, wasExhausted) {
     if (!autoMode) return;
@@ -5888,15 +5920,29 @@ function RiftboundGame() {
       aL("Showdown resolved — resolve any remaining showcase cards.");
     }
     if (mode === "attacker") {
-      nb[bi].controller = savedSd.atkIdx; np[savedSd.atkIdx].score++;
-      aL(pName(savedSd.atkIdx) + " conquers " + nb[bi].name + "! (" + np[savedSd.atkIdx].score + (continuePlaying ? "" : "/8") + ")");
+      nb[bi].controller = savedSd.atkIdx;
+      var _atkPrior = (np[savedSd.atkIdx].lastScoredBfs || []).indexOf(nb[bi].uid) >= 0;
+      if (_atkPrior) {
+        aL(pName(savedSd.atkIdx) + " takes " + nb[bi].name + " — already scored from this battlefield this turn, no point");
+      } else {
+        np[savedSd.atkIdx].score++;
+        np[savedSd.atkIdx].lastScoredBfs = (np[savedSd.atkIdx].lastScoredBfs || []).concat([nb[bi].uid]);
+        aL(pName(savedSd.atkIdx) + " conquers " + nb[bi].name + "! (" + np[savedSd.atkIdx].score + (continuePlaying ? "" : "/8") + ")");
+      }
       fireConquerEffects(savedSd.atkIdx, bi);
       setTimeout(recalcAuras, 0);
       if (np[savedSd.atkIdx].score >= 8 && !continuePlaying) { setWin(savedSd.atkIdx); setScreen("go"); setBfs(nb); setPs(np); return; }
     } else if (mode === "defender") {
       var defIdx = 0; for (var j = 0; j < pc; j++) { if (j !== savedSd.atkIdx) { defIdx = j; break; } }
-      nb[bi].controller = defIdx; np[defIdx].score++;
-      aL(pName(defIdx) + " holds " + nb[bi].name + "! (" + np[defIdx].score + (continuePlaying ? "" : "/8") + ")");
+      nb[bi].controller = defIdx;
+      var _defPrior = (np[defIdx].lastScoredBfs || []).indexOf(nb[bi].uid) >= 0;
+      if (_defPrior) {
+        aL(pName(defIdx) + " holds " + nb[bi].name + " — already scored from this battlefield this turn, no point");
+      } else {
+        np[defIdx].score++;
+        np[defIdx].lastScoredBfs = (np[defIdx].lastScoredBfs || []).concat([nb[bi].uid]);
+        aL(pName(defIdx) + " holds " + nb[bi].name + "! (" + np[defIdx].score + (continuePlaying ? "" : "/8") + ")");
+      }
       fireConquerEffects(defIdx, bi);
       setTimeout(recalcAuras, 0);
       if (np[defIdx].score >= 8 && !continuePlaying) { setWin(defIdx); setScreen("go"); setBfs(nb); setPs(np); return; }
@@ -6041,12 +6087,17 @@ function RiftboundGame() {
           np[s.ownerIdx] = Object.assign({}, pp, { base: base });
           addAnim(s.uid, "draw");
         });
-        // Award conquer point if attacker holds the field
+        // Award conquer point if attacker holds the field — but only if they haven't already scored from this BF this turn
         if (atkSurvived && !defSurvived) {
           var atkP = np[savedSd.atkIdx];
           if (atkP) {
-            np[savedSd.atkIdx] = Object.assign({}, atkP, { score: (atkP.score || 0) + 1 });
-            aL(pName(savedSd.atkIdx) + " conquers " + bfNow.name + "!");
+            var _alreadyScored = (atkP.lastScoredBfs || []).indexOf(bfNow.uid) >= 0;
+            if (_alreadyScored) {
+              aL(pName(savedSd.atkIdx) + " takes " + bfNow.name + " — already scored from this battlefield this turn, no point");
+            } else {
+              np[savedSd.atkIdx] = Object.assign({}, atkP, { score: (atkP.score || 0) + 1, lastScoredBfs: (atkP.lastScoredBfs || []).concat([bfNow.uid]) });
+              aL(pName(savedSd.atkIdx) + " conquers " + bfNow.name + "!");
+            }
           }
         }
         return np;
@@ -6344,16 +6395,17 @@ function RiftboundGame() {
       {autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || autoPrompt.kind === "pickEnemyUnit" || autoPrompt.kind === "pickAnyUnit") && (function() {
         var _maxAvail = autoPrompt.kind === "pickFriendlyUnits" ? (autoPrompt.validUids ? autoPrompt.validUids.length : countFriendlyUnits()) : ((autoPrompt.validUids || []).length);
         var _selN = (autoPrompt._sel || []).length;
-        var _canConfirm = _selN === autoPrompt.n || _selN >= Math.min(_maxAvail, autoPrompt.n);
+        var _canConfirm = !!autoPrompt.upTo || _selN === autoPrompt.n || _selN >= Math.min(_maxAvail, autoPrompt.n);
+        var _verb = autoPrompt.upTo ? "Click up to " : "Click ";
         return <div style={{ position: "fixed", top: (autoMode && effectAnim) ? (effectAnim.toY + effectAnim.h / 2 + 16) : (autoMode ? "calc(50% + " + Math.round(301 * vScale * 0.5 + 18) + "px)" : 60), left: (autoMode && effectAnim) ? effectAnim.toX : "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #3b82f688", boxShadow: "0 8px 32px #000c, 0 0 24px #3b82f622", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 280, pointerEvents: "auto" }}>
           <div style={{ fontSize: 11, color: "#93c5fd99", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
-          <div style={{ fontSize: 14, color: "#93c5fd", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{(autoPrompt.kind === "pickEnemyUnit" ? "Click " + autoPrompt.n + " enemy unit" : autoPrompt.kind === "pickAnyUnit" ? "Click " + autoPrompt.n + " unit (friendly or enemy)" : "Click " + autoPrompt.n + " friendly unit") + (autoPrompt.kind !== "pickAnyUnit" && autoPrompt.n > 1 ? "s" : "") + " (" + _selN + "/" + autoPrompt.n + ")"}</div>
+          <div style={{ fontSize: 14, color: "#93c5fd", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{(autoPrompt.kind === "pickEnemyUnit" ? _verb + autoPrompt.n + " enemy unit" : autoPrompt.kind === "pickAnyUnit" ? _verb + autoPrompt.n + " unit (friendly or enemy)" : _verb + autoPrompt.n + " friendly unit") + (autoPrompt.kind !== "pickAnyUnit" && autoPrompt.n > 1 ? "s" : "") + " (" + _selN + "/" + autoPrompt.n + ")"}</div>
           <div style={{ display: "flex", gap: 6 }}>
             <button onClick={function() { if (!_canConfirm) return; var sel = _autoSelRef.current.slice(); resolveAutoPrompt(sel); }} disabled={!_canConfirm} style={{ padding: "5px 16px", borderRadius: 5, border: "1.5px solid " + (_canConfirm ? "#3b82f6" : "#444"), background: _canConfirm ? "rgba(59,130,246,0.18)" : "transparent", color: _canConfirm ? "#93c5fd" : "#666", cursor: _canConfirm ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 700, fontFamily: "Spectral,serif" }}>Confirm</button>
           </div>
         </div>;
       })()}
-      {autoPrompt && (autoPrompt.kind === "pickFromTrash" || autoPrompt.kind === "pickFromHand") && <div style={{ position: "fixed", top: (autoMode && effectAnim) ? (effectAnim.toY + effectAnim.h / 2 + 16) : (autoMode ? "calc(50% + " + Math.round(301 * vScale * 0.5 + 18) + "px)" : 60), left: (autoMode && effectAnim) ? effectAnim.toX : "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #3b82f688", boxShadow: "0 8px 32px #000c, 0 0 24px #3b82f622", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 320, maxWidth: "90vw", pointerEvents: "auto" }}>
+      {autoPrompt && (autoPrompt.kind === "pickFromTrash" || autoPrompt.kind === "pickFromHand") && <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #3b82f688", boxShadow: "0 8px 32px #000c, 0 0 24px #3b82f622", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 320, maxWidth: "90vw", pointerEvents: "auto" }}>
         <div style={{ fontSize: 11, color: "#93c5fd99", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
         <div style={{ fontSize: 14, color: "#93c5fd", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{autoPrompt.kind === "pickFromHand" ? ("Pick a " + (autoPrompt.label || "card") + " from your hand to discard") : ("Pick a " + (autoPrompt.label || "card") + " from your bin to return to hand")}</div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", maxWidth: "min(80vw, 760px)", maxHeight: 320, overflowY: "auto" }}>
@@ -7061,7 +7113,7 @@ function RiftboundGame() {
         var dx = effectAnim.arrived ? (effectAnim.toX - effectAnim.fromX) : 0;
         var dy = effectAnim.arrived ? (effectAnim.toY - effectAnim.fromY) : 0;
         var sc = effectAnim.arrived ? (endW / startW) : 1;
-        return <div style={{ position: "fixed", left: effectAnim.fromX - startW / 2, top: effectAnim.fromY - startH / 2, width: startW, height: startH, transform: "translate(" + dx + "px, " + dy + "px) scale(" + sc + ")", transformOrigin: "center center", transition: "transform 480ms cubic-bezier(0.22, 0.65, 0.28, 1), opacity 480ms ease-out", opacity: effectAnim.fading ? 0 : (effectAnim.arrived ? 0.92 : 1), zIndex: 1499, pointerEvents: "none", borderRadius: 6, overflow: "hidden", boxShadow: isBfSrc ? "0 0 28px rgba(255,215,0,0.7), 0 0 56px rgba(255,215,0,0.4), 0 8px 32px #000a" : "0 0 26px rgba(59,130,246,0.65), 0 8px 32px #000a", border: isBfSrc ? "2px solid #FFD700" : "2px solid #3b82f6" }}>
+        return <div style={{ position: "fixed", left: effectAnim.fromX - startW / 2, top: effectAnim.fromY - startH / 2, width: startW, height: startH, transform: "translate(" + dx + "px, " + dy + "px) scale(" + sc + ")", transformOrigin: "center center", transition: "transform 1480ms cubic-bezier(0.22, 0.65, 0.28, 1), opacity 1480ms ease-out", opacity: effectAnim.fading ? 0 : (effectAnim.arrived ? 0.92 : 1), zIndex: 1499, pointerEvents: "none", borderRadius: 6, overflow: "hidden", boxShadow: isBfSrc ? "0 0 28px rgba(255,215,0,0.7), 0 0 56px rgba(255,215,0,0.4), 0 8px 32px #000a" : "0 0 26px rgba(59,130,246,0.65), 0 8px 32px #000a", border: isBfSrc ? "2px solid #FFD700" : "2px solid #3b82f6" }}>
           {imgUrl ? <img src={imgUrl} style={{ width: "100%", height: "100%", objectFit: "fill", display: "block" }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 12 }}>{card.name}</div>}
         </div>;
       })()}
@@ -7091,9 +7143,9 @@ function RiftboundGame() {
                 </div>
                 {showcaseCard.counter2 !== 0 && showcaseCard.counter2 !== undefined && <div style={{ position: "absolute", top: -8, right: -8, background: "#854d0e", color: "#FACC15", borderRadius: 12, minWidth: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, boxShadow: "0 2px 6px #000a", padding: "0 4px", zIndex: 3 }}>{showcaseCard.counter2 > 0 ? "+" : ""}{showcaseCard.counter2}</div>}
                 {showcaseCard.counter !== 0 && showcaseCard.counter !== undefined && <div style={{ position: "absolute", top: -8, right: showcaseCard.counter2 ? 30 : -8, background: "#166534", color: "#4ADE80", borderRadius: 12, minWidth: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, boxShadow: "0 2px 6px #000a", padding: "0 4px", zIndex: 3 }}>{showcaseCard.counter > 0 ? "+" : ""}{showcaseCard.counter}</div>}
-                {showcaseOwner === myUid && <button onClick={function(e) { e.stopPropagation(); var idx = myActIdx; var _me = ps[idx]; if (_me) { var p = Object.assign({}, _me, { trash: (_me.trash || []).slice() }); p.trash.push(Object.assign({}, showcaseCard, { exhausted: false, gear: [] })); var np = ps.slice(); np[idx] = p; setPs(np); aL(pName(idx) + " bins " + cName(showcaseCard)); if (sd) markSdActed(); } if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false); setShowcaseAcceptors({}); setShowcasePriority(null); setShowcaseActed(false); } }} style={{ position: "absolute", bottom: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.75)", color: "#ffaaaa", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>🗑</button>}
-                <button onClick={function(e) { e.stopPropagation(); startArrow(showcaseCard.uid); }} style={{ position: "absolute", top: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #3B82F688", background: "rgba(59,130,246,0.75)", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>↗</button>
-                {cardHasArrow(showcaseCard.uid) && <button onClick={function(e) { e.stopPropagation(); removeArrow(showcaseCard.uid); }} style={{ position: "absolute", top: -8, left: 22, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(200,40,40,0.85)", color: "#fff", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, fontWeight: 700, zIndex: 3 }}>✕</button>}
+                {showcaseOwner === myUid && showcaseCard.type !== "Spell" && <button onClick={function(e) { e.stopPropagation(); var idx = myActIdx; var _me = ps[idx]; if (_me) { var p = Object.assign({}, _me, { trash: (_me.trash || []).slice() }); p.trash.push(Object.assign({}, showcaseCard, { exhausted: false, gear: [] })); var np = ps.slice(); np[idx] = p; setPs(np); aL(pName(idx) + " bins " + cName(showcaseCard)); if (sd) markSdActed(); } if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false); setShowcaseAcceptors({}); setShowcasePriority(null); setShowcaseActed(false); } }} style={{ position: "absolute", bottom: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.75)", color: "#ffaaaa", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>🗑</button>}
+                {showcaseCard.type !== "Spell" && <button onClick={function(e) { e.stopPropagation(); startArrow(showcaseCard.uid); }} style={{ position: "absolute", top: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #3B82F688", background: "rgba(59,130,246,0.75)", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>↗</button>}
+                {showcaseCard.type !== "Spell" && cardHasArrow(showcaseCard.uid) && <button onClick={function(e) { e.stopPropagation(); removeArrow(showcaseCard.uid); }} style={{ position: "absolute", top: -8, left: 22, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(200,40,40,0.85)", color: "#fff", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, fontWeight: 700, zIndex: 3 }}>✕</button>}
               </div>
             </div>
           </div>;
