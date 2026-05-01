@@ -2268,7 +2268,14 @@ function RiftboundGame() {
     return function() { cancelAnimationFrame(t1); };
   }, [autoPrompt && autoPrompt.sourceUid, autoPrompt && autoPrompt.kind]);
   useEffect(function() {
-    if (!autoPrompt) setEffectAnim(null);
+    if (!autoPrompt) {
+      clearTimeout(_effectFadeTimer.current);
+      _effectFadeTimer.current = setTimeout(function() {
+        setEffectAnim(function(prev) { return prev ? Object.assign({}, prev, { fading: true }) : null; });
+        _effectFadeTimer.current = setTimeout(function() { setEffectAnim(null); }, 480);
+      }, 350);
+      return function() { clearTimeout(_effectFadeTimer.current); };
+    }
   }, [!!autoPrompt]);
   var _aBnr = useState(null), autoBanner = _aBnr[0], setAutoBanner = _aBnr[1];
   var _aWatch = useState([]), autoWatchers = _aWatch[0], setAutoWatchers = _aWatch[1];
@@ -2289,6 +2296,7 @@ function RiftboundGame() {
   // a ghost copy of that card flies from its on-board position to the showcase location,
   // and the prompt modal is anchored just below the showcase.
   var _effectAnim = useState(null), effectAnim = _effectAnim[0], setEffectAnim = _effectAnim[1];
+  var _effectFadeTimer = useRef(null);
   // Hovered hand card (auto-mode only). Used by rune rendering to highlight which runes
   // would be tapped (light-blue) vs recycled (red) to pay the cost of the hovered card.
   var _hoveredHandCard = useState(null), hoveredHandCard = _hoveredHandCard[0], setHoveredHandCard = _hoveredHandCard[1];
@@ -6664,7 +6672,7 @@ function RiftboundGame() {
         var dx = effectAnim.arrived ? (effectAnim.toX - effectAnim.fromX) : 0;
         var dy = effectAnim.arrived ? (effectAnim.toY - effectAnim.fromY) : 0;
         var sc = effectAnim.arrived ? (endW / startW) : 1;
-        return <div style={{ position: "fixed", left: effectAnim.fromX - startW / 2, top: effectAnim.fromY - startH / 2, width: startW, height: startH, transform: "translate(" + dx + "px, " + dy + "px) scale(" + sc + ")", transformOrigin: "center center", transition: "transform 480ms cubic-bezier(0.22, 0.65, 0.28, 1), opacity 480ms ease-out", opacity: effectAnim.arrived ? 0.92 : 1, zIndex: 1499, pointerEvents: "none", borderRadius: 6, overflow: "hidden", boxShadow: "0 0 26px rgba(59,130,246,0.65), 0 8px 32px #000a", border: "2px solid #3b82f6" }}>
+        return <div style={{ position: "fixed", left: effectAnim.fromX - startW / 2, top: effectAnim.fromY - startH / 2, width: startW, height: startH, transform: "translate(" + dx + "px, " + dy + "px) scale(" + sc + ")", transformOrigin: "center center", transition: "transform 480ms cubic-bezier(0.22, 0.65, 0.28, 1), opacity 480ms ease-out", opacity: effectAnim.fading ? 0 : (effectAnim.arrived ? 0.92 : 1), zIndex: 1499, pointerEvents: "none", borderRadius: 6, overflow: "hidden", boxShadow: "0 0 26px rgba(59,130,246,0.65), 0 8px 32px #000a", border: "2px solid #3b82f6" }}>
           {imgUrl ? <img src={imgUrl} style={{ width: "100%", height: "100%", objectFit: "fill", display: "block" }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 12 }}>{card.name}</div>}
         </div>;
       })()}
