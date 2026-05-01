@@ -2707,7 +2707,11 @@ function RiftboundGame() {
     }
     if (showcaseCard) { setShowcaseHistory(function(prev) { return [showcaseCard].concat(prev); }); }
     setShowcaseCard(card);
-    if (!showcaseOwner) { setShowcaseOwner(myUid); }
+    // Always promote the latest caster to showcase owner. Previously this only set the owner when
+    // unset, which meant a Reaction cast during another player's chain (e.g. B's Gust during A's spell)
+    // left the resolve gated on the original caster — so the resolve useEffect fired on the wrong
+    // machine and the spell couldn't see its own caster's units / context properly.
+    setShowcaseOwner(myUid);
     setShowcaseAccepted(false);
     // Caster's acceptance is implicit — they're the actor, others must accept.
     var newCastAcc = {}; newCastAcc[myUid] = true;
@@ -2969,10 +2973,8 @@ function RiftboundGame() {
     setPromptVisible(false);
     // Pulse the source card so the player sees what triggered the effect.
     addAnim(autoPrompt.sourceUid, "flash", 800);
-    // 500ms pulse + 980ms ghost flight; central prompts dwell 1s extra at the showcase.
-    var base = 500 + 980;
-    var extra = _isCentralPromptKind(autoPrompt.kind) ? 1000 : 0;
-    var t = setTimeout(function() { setPromptVisible(true); }, base + extra);
+    // 500ms pulse + 980ms ghost flight before showing the prompt — same default for all prompt kinds.
+    var t = setTimeout(function() { setPromptVisible(true); }, 500 + 980);
     return function() { clearTimeout(t); };
   }, [autoPrompt && autoPrompt.sourceUid, autoPrompt && autoPrompt.kind]);
   // When an auto-mode prompt opens with a sourceUid, animate a ghost copy of that card from its
@@ -5789,8 +5791,11 @@ function RiftboundGame() {
       var p = Object.assign({}, turnPlayer, { runes: turnPlayer.runes.map(function(r) { return Object.assign({}, r, { exhausted: false }); }), base: turnPlayer.base.map(function(c) { return Object.assign({}, c, { exhausted: false, stunned: false }); }), legend: Object.assign({}, turnPlayer.legend, { exhausted: false }), runeDeck: turnPlayer.runeDeck.slice(), mainDeck: turnPlayer.mainDeck.slice(), hand: turnPlayer.hand.slice() });
       var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu, i) { return i === turnIdx ? pu.map(function(u) { return Object.assign({}, u, { exhausted: false, stunned: false, tempMight: 0 }); }) : pu.slice(); }) }); });
       // The Arena's Greatest: +1 point on each player's first beginning phase
-      if (autoMode && !_arenaFirstTurnRef.current[turnIdx] && bfs.some(function(b) { return b.name === "The Arena's Greatest"; })) {
-        _arenaFirstTurnRef.current[turnIdx] = true;
+      // Stored as a per-player flag (p._arenaPointFired) so it syncs via setPs/liveState and resets
+      // automatically each new game (since ps is rebuilt). The previous useRef variant didn't fire
+      // for player B reliably if the ref had stale values from a prior game.
+      if (autoMode && !p._arenaPointFired && bfs.some(function(b) { return b.name === "The Arena's Greatest"; })) {
+        p._arenaPointFired = true;
         p.score = (p.score || 0) + 1;
         aL(pName(turnIdx) + " gains 1 point (The Arena's Greatest — first beginning phase)");
         var _arenaBf = bfs.find(function(b) { return b.name === "The Arena's Greatest"; });
