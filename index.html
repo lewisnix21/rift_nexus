@@ -2265,9 +2265,11 @@ function RiftboundGame() {
     var t1 = requestAnimationFrame(function() {
       setEffectAnim(function(prev) { return prev ? Object.assign({}, prev, { arrived: true }) : prev; });
     });
-    var t2 = setTimeout(function() { setEffectAnim(null); }, 520);
-    return function() { cancelAnimationFrame(t1); clearTimeout(t2); };
+    return function() { cancelAnimationFrame(t1); };
   }, [autoPrompt && autoPrompt.sourceUid, autoPrompt && autoPrompt.kind]);
+  useEffect(function() {
+    if (!autoPrompt) setEffectAnim(null);
+  }, [!!autoPrompt]);
   var _aBnr = useState(null), autoBanner = _aBnr[0], setAutoBanner = _aBnr[1];
   var _aWatch = useState([]), autoWatchers = _aWatch[0], setAutoWatchers = _aWatch[1];
   var _autoSelRef = useRef([]);
@@ -3912,6 +3914,9 @@ function RiftboundGame() {
         _resolveDidSomethingRef.current = true;
         if (p2 && p2.validUids) {
           p2 = Object.assign({}, p2, { validUids: p2.validUids.filter(function(uid) { return !isEnemyDeflect(uid); }) });
+        }
+        if (p2 && !p2.sourceUid && card && card.uid) {
+          p2 = Object.assign({}, p2, { sourceUid: card.uid });
         }
         _autoSelRef.current = []; setAutoPrompt(p2);
       },
@@ -5973,7 +5978,7 @@ function RiftboundGame() {
       {autoPrompt && autoPrompt.kind === "placeTokens" && (function() {
         var placed = Object.keys(autoPrompt._placements || {}).reduce(function(a, k) { return a + (autoPrompt._placements[k] || 0); }, 0);
         var remaining = autoPrompt.total - placed;
-        return <div style={{ position: "fixed", top: autoMode ? "calc(50% + " + Math.round(301 * vScale * 0.5 + 18) + "px)" : 60, left: "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #FFD70088", boxShadow: "0 8px 32px #000c, 0 0 24px #FFD70022", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 320, pointerEvents: "auto" }}>
+        return <div style={{ position: "fixed", top: (autoMode && effectAnim) ? (effectAnim.toY + effectAnim.h / 2 + 16) : (autoMode ? "calc(50% + " + Math.round(301 * vScale * 0.5 + 18) + "px)" : 60), left: (autoMode && effectAnim) ? effectAnim.toX : "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #3b82f688", boxShadow: "0 8px 32px #000c, 0 0 24px #3b82f622", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 320, pointerEvents: "auto" }}>
           <div style={{ fontSize: 11, color: "#FFD70099", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
           <div style={{ fontSize: 14, color: "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{"Place " + autoPrompt.total + " " + autoPrompt.tokenName + " (" + remaining + " left)"}</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
@@ -5990,7 +5995,7 @@ function RiftboundGame() {
           </div>
         </div>;
       })()}
-      {autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || autoPrompt.kind === "pickEnemyUnit" || autoPrompt.kind === "pickAnyUnit") && <div style={{ position: "fixed", top: autoMode ? "calc(50% + " + Math.round(301 * vScale * 0.5 + 18) + "px)" : 60, left: "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #FFD70088", boxShadow: "0 8px 32px #000c, 0 0 24px #FFD70022", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 280, pointerEvents: "auto" }}>
+      {autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || autoPrompt.kind === "pickEnemyUnit" || autoPrompt.kind === "pickAnyUnit") && <div style={{ position: "fixed", top: (autoMode && effectAnim) ? (effectAnim.toY + effectAnim.h / 2 + 16) : (autoMode ? "calc(50% + " + Math.round(301 * vScale * 0.5 + 18) + "px)" : 60), left: (autoMode && effectAnim) ? effectAnim.toX : "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #3b82f688", boxShadow: "0 8px 32px #000c, 0 0 24px #3b82f622", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 280, pointerEvents: "auto" }}>
         <div style={{ fontSize: 11, color: "#FFD70099", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
         <div style={{ fontSize: 14, color: "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{(autoPrompt.kind === "pickEnemyUnit" ? "Click " + autoPrompt.n + " enemy unit" : autoPrompt.kind === "pickAnyUnit" ? "Click " + autoPrompt.n + " unit (friendly or enemy)" : "Click " + autoPrompt.n + " friendly unit") + (autoPrompt.kind !== "pickAnyUnit" && autoPrompt.n > 1 ? "s" : "") + " (" + ((autoPrompt._sel || []).length) + "/" + autoPrompt.n + ")"}</div>
         <div style={{ display: "flex", gap: 6 }}>
@@ -5998,7 +6003,7 @@ function RiftboundGame() {
           <button onClick={function() { setAutoPrompt(null); _autoSelRef.current = []; }} style={{ padding: "5px 16px", borderRadius: 5, border: "1px solid #555", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif" }}>Skip</button>
         </div>
       </div>}
-      {autoPrompt && (autoPrompt.kind === "pickFromTrash" || autoPrompt.kind === "pickFromHand") && <div style={{ position: "fixed", top: autoMode ? "calc(50% + " + Math.round(301 * vScale * 0.5 + 18) + "px)" : 60, left: "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #FFD70088", boxShadow: "0 8px 32px #000c, 0 0 24px #FFD70022", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 320, maxWidth: "90vw", pointerEvents: "auto" }}>
+      {autoPrompt && (autoPrompt.kind === "pickFromTrash" || autoPrompt.kind === "pickFromHand") && <div style={{ position: "fixed", top: (autoMode && effectAnim) ? (effectAnim.toY + effectAnim.h / 2 + 16) : (autoMode ? "calc(50% + " + Math.round(301 * vScale * 0.5 + 18) + "px)" : 60), left: (autoMode && effectAnim) ? effectAnim.toX : "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #3b82f688", boxShadow: "0 8px 32px #000c, 0 0 24px #3b82f622", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 320, maxWidth: "90vw", pointerEvents: "auto" }}>
         <div style={{ fontSize: 11, color: "#FFD70099", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
         <div style={{ fontSize: 14, color: "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{autoPrompt.kind === "pickFromHand" ? ("Pick a " + (autoPrompt.label || "card") + " from your hand to discard") : ("Pick a " + (autoPrompt.label || "card") + " from your bin to return to hand")}</div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", maxWidth: "min(80vw, 760px)", maxHeight: 320, overflowY: "auto" }}>
@@ -6009,7 +6014,7 @@ function RiftboundGame() {
           <button onClick={function() { setAutoPrompt(null); _autoSelRef.current = []; }} style={{ padding: "5px 16px", borderRadius: 5, border: "1px solid #555", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif" }}>Skip</button>
         </div>
       </div>}
-      {autoPrompt && autoPrompt.kind === "confirmAction" && <div style={{ position: "fixed", top: autoMode ? "calc(50% + " + Math.round(301 * vScale * 0.5 + 18) + "px)" : 60, left: "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #FFD70088", boxShadow: "0 8px 32px #000c, 0 0 24px #FFD70022", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 260, pointerEvents: "auto" }}>
+      {autoPrompt && autoPrompt.kind === "confirmAction" && <div style={{ position: "fixed", top: (autoMode && effectAnim) ? (effectAnim.toY + effectAnim.h / 2 + 16) : (autoMode ? "calc(50% + " + Math.round(301 * vScale * 0.5 + 18) + "px)" : 60), left: (autoMode && effectAnim) ? effectAnim.toX : "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #3b82f688", boxShadow: "0 8px 32px #000c, 0 0 24px #3b82f622", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 260, pointerEvents: "auto" }}>
         <div style={{ fontSize: 11, color: "#FFD70099", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
         <div style={{ fontSize: 14, color: "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{autoPrompt.question}</div>
         <div style={{ display: "flex", gap: 6 }}>
@@ -6017,7 +6022,7 @@ function RiftboundGame() {
           <button onClick={function() { setAutoPrompt(null); }} style={{ padding: "5px 16px", borderRadius: 5, border: "1px solid #555", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif" }}>No</button>
         </div>
       </div>}
-      {autoPrompt && autoPrompt.kind === "pickLocation" && <div style={{ position: "fixed", top: autoMode ? "calc(50% + " + Math.round(301 * vScale * 0.5 + 18) + "px)" : 60, left: "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #FFD70088", boxShadow: "0 8px 32px #000c, 0 0 24px #FFD70022", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 240, pointerEvents: "auto" }}>
+      {autoPrompt && autoPrompt.kind === "pickLocation" && <div style={{ position: "fixed", top: (autoMode && effectAnim) ? (effectAnim.toY + effectAnim.h / 2 + 16) : (autoMode ? "calc(50% + " + Math.round(301 * vScale * 0.5 + 18) + "px)" : 60), left: (autoMode && effectAnim) ? effectAnim.toX : "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #3b82f688", boxShadow: "0 8px 32px #000c, 0 0 24px #3b82f622", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 240, pointerEvents: "auto" }}>
         <div style={{ fontSize: 11, color: "#FFD70099", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
         <div style={{ fontSize: 14, color: "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{autoPrompt.question}</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 5, width: "100%" }}>
@@ -6659,7 +6664,7 @@ function RiftboundGame() {
         var dx = effectAnim.arrived ? (effectAnim.toX - effectAnim.fromX) : 0;
         var dy = effectAnim.arrived ? (effectAnim.toY - effectAnim.fromY) : 0;
         var sc = effectAnim.arrived ? (endW / startW) : 1;
-        return <div style={{ position: "fixed", left: effectAnim.fromX - startW / 2, top: effectAnim.fromY - startH / 2, width: startW, height: startH, transform: "translate(" + dx + "px, " + dy + "px) scale(" + sc + ")", transformOrigin: "center center", transition: "transform 480ms cubic-bezier(0.22, 0.65, 0.28, 1), opacity 480ms ease-out", opacity: effectAnim.arrived ? 0.92 : 1, zIndex: 1499, pointerEvents: "none", borderRadius: 6, overflow: "hidden", boxShadow: "0 0 26px rgba(255,215,0,0.65), 0 8px 32px #000a", border: "2px solid #FFD700" }}>
+        return <div style={{ position: "fixed", left: effectAnim.fromX - startW / 2, top: effectAnim.fromY - startH / 2, width: startW, height: startH, transform: "translate(" + dx + "px, " + dy + "px) scale(" + sc + ")", transformOrigin: "center center", transition: "transform 480ms cubic-bezier(0.22, 0.65, 0.28, 1), opacity 480ms ease-out", opacity: effectAnim.arrived ? 0.92 : 1, zIndex: 1499, pointerEvents: "none", borderRadius: 6, overflow: "hidden", boxShadow: "0 0 26px rgba(59,130,246,0.65), 0 8px 32px #000a", border: "2px solid #3b82f6" }}>
           {imgUrl ? <img src={imgUrl} style={{ width: "100%", height: "100%", objectFit: "fill", display: "block" }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 12 }}>{card.name}</div>}
         </div>;
       })()}
