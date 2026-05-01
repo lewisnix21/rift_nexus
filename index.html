@@ -2258,6 +2258,8 @@ function RiftboundGame() {
   // on-board position to the showcase location. The prompt modal anchors just below the showcase.
   useEffect(function() {
     if (!autoMode || !autoPrompt || !autoPrompt.sourceUid) { setEffectAnim(null); return; }
+    // If a manual ghost is already airborne for this source, leave it alone — the prompt will appear once it arrives.
+    if (effectAnim && effectAnim.sourceCard && effectAnim.sourceCard.uid === autoPrompt.sourceUid) return;
     var srcEl = typeof document !== "undefined" ? document.querySelector('[data-uid="' + autoPrompt.sourceUid + '"]') : null;
     if (!srcEl) { setEffectAnim(null); return; }
     // Find the source card object so we can render its image in the ghost.
@@ -4073,8 +4075,10 @@ function RiftboundGame() {
       }
     }
     if (eff && eff.onPlay) {
-      var ctx = makeAutoCtx(card, where, bi);
-      try { eff.onPlay(ctx); } catch(e) { console.error("CARD_EFFECTS onPlay error for " + card.name + ":", e); }
+      triggerEffectGhost(card, function() {
+        var ctx = makeAutoCtx(card, where, bi);
+        try { eff.onPlay(ctx); } catch(e) { console.error("CARD_EFFECTS onPlay error for " + card.name + ":", e); }
+      });
     }
   }
   function applyTempMightToUids(uids, amount, source) {
@@ -4472,17 +4476,19 @@ function RiftboundGame() {
       var legend = ps[playerIdx] && ps[playerIdx].legend;
       if (legend) {
         var lEff = CARD_EFFECTS[legend.name];
-        if (lEff && lEff.onConquer) { try { lEff.onConquer(makeConquerCtx(playerIdx, bfIdx, bf)); } catch(e) { console.error("legend onConquer error:", e); } }
+        if (lEff && lEff.onConquer) { triggerEffectGhost(legend, function() { try { lEff.onConquer(makeConquerCtx(playerIdx, bfIdx, bf)); } catch(e) { console.error("legend onConquer error:", e); } }); }
       }
       var bfEff = CARD_EFFECTS[bf.name];
-      if (bfEff && bfEff.onConquer) { try { bfEff.onConquer(makeConquerCtx(playerIdx, bfIdx, bf)); } catch(e) { console.error("bf onConquer error:", e); } }
+      if (bfEff && bfEff.onConquer) { triggerEffectGhost(bf, function() { try { bfEff.onConquer(makeConquerCtx(playerIdx, bfIdx, bf)); } catch(e) { console.error("bf onConquer error:", e); } }); }
       // Unit-level "When I conquer" triggers (e.g. Plundering Poro) — fire for each conquering unit at the BF.
       (bf.units[playerIdx] || []).forEach(function(u) {
         var uEff = CARD_EFFECTS[u.name];
         if (uEff && uEff.onConquer) {
-          var ctx = makeConquerCtx(playerIdx, bfIdx, bf);
-          ctx.unit = u; ctx.card = u;
-          try { uEff.onConquer(ctx); } catch(e) { console.error("unit onConquer error for " + u.name + ":", e); }
+          triggerEffectGhost(u, function() {
+            var ctx = makeConquerCtx(playerIdx, bfIdx, bf);
+            ctx.unit = u; ctx.card = u;
+            try { uEff.onConquer(ctx); } catch(e) { console.error("unit onConquer error for " + u.name + ":", e); }
+          });
         }
       });
     }, 80);
@@ -4491,14 +4497,16 @@ function RiftboundGame() {
     if (!autoMode) return;
     if (playerIdx !== myActIdx) return;
     var bfEff = CARD_EFFECTS[bf.name];
-    if (bfEff && bfEff.onHold) { try { bfEff.onHold(makeConquerCtx(playerIdx, bfIdx, bf)); } catch(e) { console.error("onHold error:", e); } }
+    if (bfEff && bfEff.onHold) { triggerEffectGhost(bf, function() { try { bfEff.onHold(makeConquerCtx(playerIdx, bfIdx, bf)); } catch(e) { console.error("onHold error:", e); } }); }
     // Unit-level "When I hold" triggers (e.g. Rumble Scrapper, Master Yi Honed).
     (bf.units[playerIdx] || []).forEach(function(u) {
       var uEff = CARD_EFFECTS[u.name];
       if (uEff && uEff.onHold) {
-        var ctx = makeConquerCtx(playerIdx, bfIdx, bf);
-        ctx.unit = u; ctx.card = u;
-        try { uEff.onHold(ctx); } catch(e) { console.error("unit onHold error for " + u.name + ":", e); }
+        triggerEffectGhost(u, function() {
+          var ctx = makeConquerCtx(playerIdx, bfIdx, bf);
+          ctx.unit = u; ctx.card = u;
+          try { uEff.onHold(ctx); } catch(e) { console.error("unit onHold error for " + u.name + ":", e); }
+        });
       }
     });
   }
@@ -5502,6 +5510,26 @@ function RiftboundGame() {
     var cleanBfs = (npBfs || bfs).map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
     fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPs, bfs: cleanBfs, turn: turn, act: act, screen: screen, log: log.slice(-30), sd: sd, ver: _lastSyncVersion.current, by: myUid })));
   }
+  // Fly a ghost copy of the source card to the showcase, pulse the source, then run the effect after the ghost arrives.
+  // Used so every triggered effect gets the same "card → showcase → resolve" cadence, including ones that don't open a prompt.
+  function triggerEffectGhost(card, fn) {
+    if (!autoMode || !card) { try { fn(); } catch(e) { console.error("triggerEffectGhost callback error:", e); } return; }
+    var srcEl = typeof document !== "undefined" ? document.querySelector('[data-uid="' + card.uid + '"]') : null;
+    if (!srcEl) { try { fn(); } catch(e) { console.error("triggerEffectGhost callback error:", e); } return; }
+    var rect = srcEl.getBoundingClientRect();
+    var vw = typeof window !== "undefined" ? window.innerWidth : 1920;
+    var vh = typeof window !== "undefined" ? window.innerHeight : 1080;
+    var _isBfSrc = bfs && bfs.some(function(b) { return b && b.uid === card.uid; });
+    var scCardW = _isBfSrc ? Math.round(361 * vScale) : Math.round(258 * vScale);
+    var scCardH = _isBfSrc ? Math.round(258 * vScale) : Math.round(361 * vScale);
+    var scTargetX = vw - vw * 0.02 - scCardW / 2;
+    var scTargetY = vh * 0.5;
+    setEffectAnim({ sourceCard: card, fromX: rect.left + rect.width / 2, fromY: rect.top + rect.height / 2, toX: scTargetX, toY: scTargetY, w: scCardW, h: scCardH, ts: Date.now(), arrived: false, isBfSrc: _isBfSrc });
+    addAnim(card.uid, "flash", 800);
+    setTimeout(function() { setEffectAnim(function(prev) { return prev ? Object.assign({}, prev, { arrived: true }) : prev; }); }, 500);
+    // 500ms hold + 980ms flight = 1480ms before the ghost arrives. Pulse the card again on arrival, then run the effect.
+    setTimeout(function() { addAnim(card.uid, "flash", 800); try { fn(); } catch(e) { console.error("triggerEffectGhost callback error:", e); } }, 1480);
+  }
   function fireOnMoveToBaseEffect(unit) {
     if (!autoMode) return;
     var eff = CARD_EFFECTS[unit && unit.name];
@@ -5513,7 +5541,7 @@ function RiftboundGame() {
       draw: function(n) { drawCards(n); },
       prompt: function(p2) { if (p2 && p2.validUids) p2 = Object.assign({}, p2, { validUids: p2.validUids.filter(function(uid) { return !isEnemyDeflect(uid); }) }); _autoSelRef.current = []; setAutoPrompt(p2); }
     };
-    try { eff.onMoveToBase(ctx); } catch(e) { console.error("onMoveToBase error for " + unit.name + ":", e); }
+    triggerEffectGhost(unit, function() { try { eff.onMoveToBase(ctx); } catch(e) { console.error("onMoveToBase error for " + unit.name + ":", e); } });
   }
   function fireOnMoveToHandEffect(unit) {
     if (!autoMode) return;
@@ -5526,7 +5554,7 @@ function RiftboundGame() {
       draw: function(n) { drawCards(n); },
       prompt: function(p2) { if (p2 && p2.validUids) p2 = Object.assign({}, p2, { validUids: p2.validUids.filter(function(uid) { return !isEnemyDeflect(uid); }) }); _autoSelRef.current = []; setAutoPrompt(p2); }
     };
-    try { eff.onMoveToHand(ctx); } catch(e) { console.error("onMoveToHand error for " + unit.name + ":", e); }
+    triggerEffectGhost(unit, function() { try { eff.onMoveToHand(ctx); } catch(e) { console.error("onMoveToHand error for " + unit.name + ":", e); } });
   }
   function fireOnTapEffect(card, wasExhausted) {
     if (!autoMode) return;
@@ -6342,7 +6370,7 @@ function RiftboundGame() {
         var handShift = 0;
         if (!autoMode && handHovIdx >= 0 && i !== handHovIdx && total > 3) { handShift = i < handHovIdx ? -15 : 15; }
         var _handAct = (canMoveOwn && !tm && !fc && !c.hidden && playable) ? (c.type === "Spell" ? "Cast" : "Play") : undefined;
-        return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover" + (autoMode ? " auto-hand-card" : "") + animCls, draggable: isDraggable2, onDragStart: isDraggable2 ? function(e) { e.dataTransfer.setData("text/plain", "hand:" + c.uid); setDragUnit(c); } : undefined, onDragEnd: function() { setDragUnit(null); }, onClick: (canMoveOwn && playable) ? function() { if (tm || fc) return; if (c.type === "Unit" || c.type === "Champion" || c.type === "Gear") { onPlay(c); } else if (c.type === "Spell") { if (showcaseCard && showcaseCard.uid === c.uid) { setShowcaseCard(null); } else { var idx = myActIdx; var _me = ps[idx]; if (_me) { var sp = Object.assign({}, _me, { hand: _me.hand.filter(function(h) { return h.uid !== c.uid; }) }); if (autoMode) { var rcN = (c.rc || []).slice(); var eN = c.energy || 0; var _hasEager = (_me.base || []).some(function(u){return u.name==="Eager Apprentice";})||bfs.some(function(b){return((b.units&&b.units[idx])||[]).some(function(u){return u.name==="Eager Apprentice";});}); if(_hasEager&&eN>1)eN--; var _xEnergy=_extraEnergyRef.current; if(_xEnergy>0){_extraEnergyRef.current=0;eN=Math.max(0,eN-_xEnergy);} var aR = _me.runes.slice(); var recUids = []; rcN.forEach(function(dom) { var f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0; }); if (f) { recUids.push(f.uid); if (eN > 0) eN--; } }); var tapUids = []; if (eN > 0) { var av = aR.filter(function(r) { return !r.exhausted && recUids.indexOf(r.uid) < 0; }); av.slice(0, eN).forEach(function(r) { tapUids.push(r.uid); }); } sp.runes = _me.runes.filter(function(r) { return recUids.indexOf(r.uid) < 0; }).map(function(r) { return tapUids.indexOf(r.uid) >= 0 ? Object.assign({}, r, { exhausted: true }) : r; }); sp.runeDeck = shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); }))); } var np = ps.slice(); np[idx] = sp; setPs(np); pushShowcase(c); aL(pName(idx) + " casts " + cName(c)); if (autoMode) { setPendingSpell(c); setResolveAcceptors({}); } else { runAutoOnCast(c); } } } if (sd) markSdActed(); } } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { setHandHovIdx(i); if (autoMode) setHoveredHandCard(c); if (!autoMode && _setHoverCard && !c.hidden) _setHoverCard(c, e, true); }, onMouseLeave: function() { setHandCtxUid(null); if (_clearHoverCard) _clearHoverCard(); }, style: { width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: (autoMode && playable) ? "3px solid #3b82f6" : "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + (playable ? "55" : "20")), flexShrink: 0, cursor: isDraggable2 ? "grab" : (autoMode && !playable ? "default" : "pointer"), transform: "rotate(" + rot + "deg) translateY(" + ty + "px)" + (autoMode ? "" : " translateX(" + handShift + "px)"), transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (autoMode ? (total > 7 ? -45 : total > 5 ? -24 : 0) : (total > 7 ? -30 : total > 5 ? -16 : 0)), transition: "transform 0.12s ease, box-shadow 0.2s ease, border 0.15s ease", position: "relative", zIndex: i === handHovIdx ? 998 : i, boxShadow: (autoMode && playable) ? "0 0 22px rgba(59,130,246,1), 0 0 44px rgba(59,130,246,0.65), 0 4px 16px #000a" : "0 4px 16px #000a", opacity: 1, pointerEvents: autoMode ? "auto" : undefined } },
+        return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover" + (autoMode ? " auto-hand-card" : "") + animCls, draggable: isDraggable2, onDragStart: isDraggable2 ? function(e) { e.dataTransfer.setData("text/plain", "hand:" + c.uid); setDragUnit(c); } : undefined, onDragEnd: function() { setDragUnit(null); }, onClick: (canMoveOwn && playable) ? function() { if (tm || fc) return; if (c.type === "Unit" || c.type === "Champion" || c.type === "Gear") { onPlay(c); } else if (c.type === "Spell") { if (showcaseCard && showcaseCard.uid === c.uid) { setShowcaseCard(null); } else { var idx = myActIdx; var _me = ps[idx]; if (_me) { var sp = Object.assign({}, _me, { hand: _me.hand.filter(function(h) { return h.uid !== c.uid; }) }); if (autoMode) { var rcN = (c.rc || []).slice(); var eN = c.energy || 0; var _hasEager = (_me.base || []).some(function(u){return u.name==="Eager Apprentice";})||bfs.some(function(b){return((b.units&&b.units[idx])||[]).some(function(u){return u.name==="Eager Apprentice";});}); if(_hasEager&&eN>1)eN--; var _xEnergy=_extraEnergyRef.current; if(_xEnergy>0){_extraEnergyRef.current=0;eN=Math.max(0,eN-_xEnergy);} var aR = _me.runes.slice(); var recUids = []; rcN.forEach(function(dom) { var f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0; }); if (f) { recUids.push(f.uid); if (eN > 0) eN--; } }); var tapUids = []; if (eN > 0) { var av = aR.filter(function(r) { return !r.exhausted && recUids.indexOf(r.uid) < 0; }); av.slice(0, eN).forEach(function(r) { tapUids.push(r.uid); }); } sp.runes = _me.runes.filter(function(r) { return recUids.indexOf(r.uid) < 0; }).map(function(r) { return tapUids.indexOf(r.uid) >= 0 ? Object.assign({}, r, { exhausted: true }) : r; }); sp.runeDeck = shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); }))); } var np = ps.slice(); np[idx] = sp; setPs(np); pushShowcase(c); aL(pName(idx) + " casts " + cName(c)); if (autoMode) { setPendingSpell(c); setResolveAcceptors({}); } else { runAutoOnCast(c); } } } if (sd) markSdActed(); } } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { setHandHovIdx(i); if (autoMode) setHoveredHandCard(c); if (!autoMode && _setHoverCard && !c.hidden) _setHoverCard(c, e, true); }, onMouseLeave: function() { setHandCtxUid(null); if (_clearHoverCard) _clearHoverCard(); }, style: { width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: (autoMode && playable) ? "3px solid #3b82f6" : "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + (playable ? "55" : "20")), flexShrink: 0, cursor: isDraggable2 ? "grab" : (autoMode && !playable ? "default" : "pointer"), transform: "rotate(" + rot + "deg) translateY(" + ty + "px)" + (autoMode ? "" : " translateX(" + handShift + "px)"), transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (autoMode ? (total > 7 ? -45 : total > 5 ? -24 : 0) : (total > 7 ? -30 : total > 5 ? -16 : 0)), transition: autoMode ? "transform 200ms ease-out, box-shadow 0.2s ease, border 0.15s ease, filter 200ms ease-out" : "transform 0.12s ease, box-shadow 0.2s ease, border 0.15s ease", position: "relative", zIndex: i === handHovIdx ? 998 : i, boxShadow: (autoMode && playable) ? "0 0 22px rgba(59,130,246,1), 0 0 44px rgba(59,130,246,0.65), 0 4px 16px #000a" : "0 4px 16px #000a", opacity: 1, pointerEvents: autoMode ? "auto" : undefined } },
           c.hidden ? React.createElement("img", { src: CARD_BACK, style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : (c.img ? React.createElement("img", { src: imgSrc(c.img), style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : React.createElement("div", { style: { width: "100%", height: "100%", background: "linear-gradient(180deg," + (DOM[c.domain] || DOM.Colorless).c + "15,#0a0a18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#666", padding: 4, textAlign: "center" } }, c.name)),
           handCtxUid === c.uid ? React.createElement("button", { onClick: function(e) { e.stopPropagation(); toggleHide(c.uid); setHandCtxUid(null); }, style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 10, padding: "4px 12px", borderRadius: 4, border: "1.5px solid #ffffff40", background: "rgba(20,20,50,0.92)", color: "#ddd", fontSize: 12, cursor: "pointer", fontFamily: "Spectral,serif", fontWeight: 700, boxShadow: "0 4px 12px #000a", whiteSpace: "nowrap" } }, c.hidden ? "Reveal" : "Hide") : null
         );
