@@ -2705,7 +2705,13 @@ function RiftboundGame() {
       setShowcaseActed(false);
       return;
     }
-    if (showcaseCard) { setShowcaseHistory(function(prev) { return [showcaseCard].concat(prev); }); }
+    if (showcaseCard) {
+      // Tag the displaced card with its current caster (showcaseOwner) so when the chain pops
+      // back to it after a Reaction resolves, we can re-establish its pending-spell + resolve
+      // state under the original caster's machine and re-prompt for that effect.
+      var _displaced = Object.assign({}, showcaseCard, { _caster: showcaseOwner || myUid });
+      setShowcaseHistory(function(prev) { return [_displaced].concat(prev); });
+    }
     setShowcaseCard(card);
     // Always promote the latest caster to showcase owner. Previously this only set the owner when
     // unset, which meant a Reaction cast during another player's chain (e.g. B's Gust during A's spell)
@@ -2719,6 +2725,31 @@ function RiftboundGame() {
     // Priority passes to the OTHER player after any spell cast — they now have the chance to respond
     setShowcasePriority(otherUid || myUid);
     setShowcaseActed(false);
+  }
+  // After a chained spell resolves and fizzles, pop the next spell off the showcase chain and
+  // re-establish its pending-spell + caster + acceptors state so its effect can be applied.
+  function _resumeChainedSpellFromHistory() {
+    if (showcaseHistory.length === 0) {
+      setShowcaseCard(null); setShowcaseOwner(null);
+      return;
+    }
+    var next = showcaseHistory[0];
+    setShowcaseCard(next);
+    setShowcaseHistory(function(prev) { return prev.slice(1); });
+    var ownerUid = (next && next._caster) ? next._caster : myUid;
+    setShowcaseOwner(ownerUid);
+    if (next && next.type === "Spell") {
+      // Re-pend the popped spell so the resolve useEffect fires again — the caster auto-accepts
+      // and the other players need to confirm again. This is what unblocks A's Back to Back after
+      // B's Gust resolves.
+      setPendingSpell(next);
+      var initAcc = {}; if (ownerUid) initAcc[ownerUid] = true;
+      setResolveAcceptors(initAcc);
+      // Also publish to Firebase so non-caster clients see the renewed pending state immediately.
+      if (roomCode && lobbyType !== "test") {
+        try { fbDb.ref("lobbies/" + roomCode + "/spellResolve").set({ card: next, acceptors: initAcc, by: myUid }); } catch(e) { /* ignore */ }
+      }
+    }
   }
   var _scOwner = useState(null), showcaseOwner = _scOwner[0], setShowcaseOwner = _scOwner[1];
   var _scAccepted = useState(false), showcaseAccepted = _scAccepted[0], setShowcaseAccepted = _scAccepted[1];
@@ -3099,7 +3130,7 @@ function RiftboundGame() {
           var np = prev.slice(); np[i] = Object.assign({}, p, { trash: trash });
           return np;
         });
-        if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); }
+        _resumeChainedSpellFromHistory();
       }, 1700);
     }, Math.max(1000, _waitForFizzles));
     return function() { clearTimeout(_spellFizzleAfterPromptTimer.current); };
@@ -3386,7 +3417,7 @@ function RiftboundGame() {
         addAnim(spellToResolve.uid, "fizzle", 1700);
         setTimeout(function() {
           setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p) return prev; var trash = (p.trash || []).slice(); if (!trash.some(function(c){return c.uid===spellToResolve.uid;})) trash.push(Object.assign({}, spellToResolve, { exhausted: false, gear: [] })); var np = prev.slice(); np[i] = Object.assign({}, p, { trash: trash }); return np; });
-          if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); }
+          _resumeChainedSpellFromHistory();
           if (!_resolveDidSomethingRef.current) showAutoBanner("AUTO · " + (spellToResolve.name || "Spell") + " — fizzled (no valid effect)");
         }, 1700);
       }, _w);
@@ -8038,7 +8069,7 @@ function RiftboundGame() {
                   addAnim(spellToResolve.uid, "fizzle", 1700);
                   setTimeout(function() {
                     setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p) return prev; var trash = (p.trash || []).slice(); if (!trash.some(function(c){return c.uid===spellToResolve.uid;})) trash.push(Object.assign({}, spellToResolve, { exhausted: false, gear: [] })); var np = prev.slice(); np[i] = Object.assign({}, p, { trash: trash }); return np; });
-                    if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); }
+                    _resumeChainedSpellFromHistory();
                     if (!_resolveDidSomethingRef.current) showAutoBanner("AUTO · " + (spellToResolve.name || "Spell") + " — fizzled (no valid effect)");
                   }, 1700);
                 }, _w);
