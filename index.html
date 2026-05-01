@@ -1696,7 +1696,7 @@ var _clearHoverCard = null;
 var _binGearRef = null;
 var _gvScale = (typeof window !== "undefined" ? Math.min(window.innerHeight / 1080, window.innerWidth / 1920) : 1);
 if (typeof window !== "undefined") { window.addEventListener("resize", function() { _gvScale = Math.min(window.innerHeight / 1080, window.innerWidth / 1920); }); }
-function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin, onPlus, onMinus, onPlus2, onMinus2, onGearDrop, onGearDetach, onHide, onArrow, hasArrow, onRemoveArrow, isMine, dragData, onDragStartCb, onDragEnd: _onDragEnd, actionLabel }) {
+function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin, onPlus, onMinus, onPlus2, onMinus2, onGearDrop, onGearDetach, onHide, onArrow, hasArrow, onRemoveArrow, isMine, dragData, onDragStartCb, onDragEnd: _onDragEnd, actionLabel, tiny }) {
   var _act = (!zoomed && actionLabel) ? actionLabel : undefined;
   var _cardDragStart = dragData ? function(e) { e.dataTransfer.setData("text/plain", dragData); if (onDragStartCb) onDragStartCb(e); } : undefined;
   var _hov = useState(false), isHov = _hov[0], setIsHov = _hov[1];
@@ -1705,8 +1705,9 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
   var _ghi = useState(-1), gearHovIdx = _ghi[0], setGearHovIdx = _ghi[1];
   if (!card || (!card.domain && !faceDown)) return null;
   var d = DOM[card.domain] || DOM.Colorless;
-  var w = small ? Math.round(125 * _gvScale) : zoomed ? 374 : 187;
-  var h = small ? Math.round(175 * _gvScale) : zoomed ? 524 : 262;
+  var _tinyMul = tiny ? 0.7 : 1;
+  var w = tiny ? Math.round(125 * _gvScale * _tinyMul) : small ? Math.round(125 * _gvScale) : zoomed ? 374 : 187;
+  var h = tiny ? Math.round(175 * _gvScale * _tinyMul) : small ? Math.round(175 * _gvScale) : zoomed ? 524 : 262;
   var ex = card.exhausted && !zoomed;
   var buff = (card.tempMight || 0) + (card._aura || 0);
   var _buffSrcList = (card._auraSources || []).concat(card._buffSources || []);
@@ -1721,7 +1722,7 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
   );
 
   if (card.hidden && !zoomed) {
-    var hw = small ? Math.round(125 * _gvScale) : 187; var hh = small ? Math.round(175 * _gvScale) : 262;
+    var hw = tiny ? Math.round(125 * _gvScale * _tinyMul) : small ? Math.round(125 * _gvScale) : 187; var hh = tiny ? Math.round(175 * _gvScale * _tinyMul) : small ? Math.round(175 * _gvScale) : 262;
     var gearCountH = (card.gear && small) ? card.gear.length : 0;
     var gearExtraH = gearCountH > 0 ? Math.round(hw * 0.3) * gearCountH : 0;
     return (
@@ -2277,6 +2278,42 @@ function RiftboundGame() {
       return function() { clearTimeout(_effectFadeTimer.current); };
     }
   }, [!!autoPrompt]);
+  // Compute average colors of BF card images (used to tint BF zone backgrounds in autoMode).
+  useEffect(function() {
+    if (!autoMode) return;
+    var urls = (bfs || []).map(function(b) { return b && b.name && CI[b.name] ? imgSrc(CI[b.name]) : (b && b.name && PA[b.name] ? PA_CDN + PA[b.name] + ".webp" : null); }).filter(function(u) { return u && !bfAvgColors[u]; });
+    var unique = {}; urls.forEach(function(u) { unique[u] = true; });
+    Object.keys(unique).forEach(function(url) {
+      var img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = function() {
+        try {
+          var c = document.createElement("canvas");
+          var W = 24, H = 24; c.width = W; c.height = H;
+          var ctx = c.getContext("2d");
+          ctx.drawImage(img, 0, 0, W, H);
+          var data = ctx.getImageData(0, 0, W, H).data;
+          var r = 0, g = 0, b = 0, n = 0;
+          for (var i = 0; i < data.length; i += 4) {
+            var a = data[i + 3]; if (a < 128) continue;
+            r += data[i]; g += data[i + 1]; b += data[i + 2]; n++;
+          }
+          if (n === 0) return;
+          r = Math.round(r / n); g = Math.round(g / n); b = Math.round(b / n);
+          setBfAvgColors(function(prev) { var next = Object.assign({}, prev); next[url] = "rgb(" + r + "," + g + "," + b + ")"; return next; });
+        } catch (e) { /* CORS/canvas tainted — silently skip */ }
+      };
+      img.src = url;
+    });
+  }, [bfs, autoMode]);
+  function _lightenColor(rgbStr, amount) {
+    var m = (rgbStr || "").match(/\d+/g); if (!m || m.length < 3) return null;
+    var r = +m[0], g = +m[1], b = +m[2];
+    var f = amount == null ? 0.55 : amount;
+    r = Math.round(r + (255 - r) * f); g = Math.round(g + (255 - g) * f); b = Math.round(b + (255 - b) * f);
+    return "rgb(" + r + "," + g + "," + b + ")";
+  }
+
   // After an autoPrompt that came from a spell resolves, fizzle that spell to bin.
   var _spellFizzleAfterPromptTimer = useRef(null);
   useEffect(function() {
@@ -2343,6 +2380,8 @@ function RiftboundGame() {
   var _pendingBeginConquer = useState(null), pendingBeginConquer = _pendingBeginConquer[0], setPendingBeginConquer = _pendingBeginConquer[1];
   // Contested showdown damage assignments — { [attackerUid]: targetUid }, synced via Firebase.
   var _dmgAsgn = useState({}), damageAssignments = _dmgAsgn[0], setDamageAssignments = _dmgAsgn[1];
+  // Cache of average colors for battlefield card images { [imgUrl]: "rgb(r,g,b)" } — used to tint BF zones in autoMode.
+  var _bfAvgColors = useState({}), bfAvgColors = _bfAvgColors[0], setBfAvgColors = _bfAvgColors[1];
   var autoMode = !!(lobbySettings && lobbySettings.autoMode);
   var _lobbyList = useState([]), lobbyList = _lobbyList[0], setLobbyList = _lobbyList[1];
   var _lobbyErr = useState(null), lobbyErr = _lobbyErr[0], setLobbyErr = _lobbyErr[1];
@@ -6064,6 +6103,12 @@ function RiftboundGame() {
   var HAND_W = Math.round(100 * vScale), HAND_H = Math.round(140 * vScale);
   var LEGEND_W = Math.round(100 * vScale), LEGEND_H = Math.round(140 * vScale);
   var BF_W = Math.round(HAND_W * 1.5), BF_H = Math.round(HAND_H * 1.5);
+  // Auto-mode BF redesign: zones get 20% taller; base/rune zones shrink to compensate.
+  var BF_ROW_H = autoMode ? Math.round((HAND_H + Math.round(125 * vScale)) * 1.2) : (HAND_H + Math.round(125 * vScale));
+  var ZONE_H = autoMode ? (HAND_H + Math.round(53 * vScale)) : (HAND_H + Math.round(80 * vScale));
+  var INNER_H = autoMode ? (HAND_H + Math.round(43 * vScale)) : (HAND_H + Math.round(70 * vScale));
+  // Auto-mode BF unit card sizes (smaller so friendly+enemy units fit top/bottom of BF zone with space between).
+  var BF_UNIT_W = Math.round(85 * vScale), BF_UNIT_H = Math.round(119 * vScale);
   // canPlayCard: in auto-mode, returns false when the player can't pay the rune cost
   // (so the card becomes uninteractable and we can paint a blue glow on affordable cards).
   // Outside auto-mode, the player handles cost themselves so we always allow play.
@@ -6653,11 +6698,11 @@ function RiftboundGame() {
           </div>
 
           {/* ROW 2: ENEMY RUNES + BASE */}
-          <div style={{ display: "flex", alignItems: "stretch", flexShrink: 0, padding: "2px 6px", gap: 6, overflow: "visible", zIndex: 1, height: HAND_H + Math.round(80 * vScale), minHeight: HAND_H + Math.round(80 * vScale), maxHeight: HAND_H + Math.round(80 * vScale) }}>
+          <div style={{ display: "flex", alignItems: "stretch", flexShrink: 0, padding: "2px 6px", gap: 6, overflow: "visible", zIndex: 1, height: ZONE_H, minHeight: ZONE_H, maxHeight: ZONE_H }}>
             {/* Enemy base - horizontal (gold) */}
             {ps.filter(function(_, i) { return i === effectiveSpotlight; }).map(function(enemy) {
               var eI = ps.indexOf(enemy);
-              return <div key={"ebase"} style={{ display: "flex", flexDirection: "row", gap: 3, padding: "3px 4px", borderRadius: 6, border: "1.5px solid #FFD70055", alignItems: "center", flexWrap: "nowrap", flex: 9, height: HAND_H + Math.round(70 * vScale), minHeight: HAND_H + Math.round(70 * vScale), maxHeight: HAND_H + Math.round(70 * vScale), overflow: "hidden" }}>
+              return <div key={"ebase"} style={{ display: "flex", flexDirection: "row", gap: 3, padding: "3px 4px", borderRadius: 6, border: "1.5px solid #FFD70055", alignItems: "center", flexWrap: "nowrap", flex: 9, height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H, overflow: "hidden" }}>
                 <div style={{ fontSize: 13, color: "#FFD70077", fontFamily: "Spectral,serif", letterSpacing: 1 }}>BASE</div>
                 {enemy.base.map(function(u) { return <Card key={u.uid} card={u} small onClick={tm ? function() { resTarget(u, eI, null); } : undefined} />; })}
               </div>;
@@ -6666,7 +6711,7 @@ function RiftboundGame() {
             {ps.filter(function(_, i) { return i === effectiveSpotlight; }).map(function(enemy) {
               var erc = enemy.runes.length;
               var step = 1 / 11;
-              return <div key={"erunes"} style={{ display: "flex", flexDirection: "row", padding: "3px 4px", borderRadius: 6, border: "1.5px solid #ffffff35", alignItems: "center", flex: 7, overflow: "visible", height: HAND_H + Math.round(70 * vScale), minHeight: HAND_H + Math.round(70 * vScale), maxHeight: HAND_H + Math.round(70 * vScale) }}>
+              return <div key={"erunes"} style={{ display: "flex", flexDirection: "row", padding: "3px 4px", borderRadius: 6, border: "1.5px solid #ffffff35", alignItems: "center", flex: 7, overflow: "visible", height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, marginRight: 4 }}>
                   <div style={{ fontSize: 13, color: "#ffffff55", fontFamily: "Spectral,serif", letterSpacing: 1 }}>RUNES</div>
                   <div style={{ fontSize: 13, color: "#ffffff44", fontFamily: "Spectral,serif" }}>({erc}/12)</div>
@@ -6684,7 +6729,7 @@ function RiftboundGame() {
           </div>{/* end ENEMY ZONE wrapper */}
 
           {/* ROW 3: BATTLEFIELDS — fixed static size */}
-          <div onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverBf(-1); }} style={{ display: "flex", gap: 3, padding: "2px 6px", flex: "0 0 auto", height: HAND_H + Math.round(125 * vScale), minHeight: HAND_H + Math.round(125 * vScale), maxHeight: HAND_H + Math.round(125 * vScale), position: "relative", zIndex: 3, overflow: "hidden" }}>
+          <div onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverBf(-1); }} style={{ display: "flex", gap: 3, padding: "2px 6px", flex: "0 0 auto", height: BF_ROW_H, minHeight: BF_ROW_H, maxHeight: BF_ROW_H, position: "relative", zIndex: 3, overflow: "hidden" }}>
             {bfs.map(function(bf, bi) {
               var bottomPlayer = isOnlineGame ? mySlot : (isSD && sd ? sd.atkIdx : act);
               var bfImg = CI[bf.name] ? imgSrc(CI[bf.name]) : (PA[bf.name] ? PA_CDN + PA[bf.name] + ".webp" : "");
@@ -6694,13 +6739,35 @@ function RiftboundGame() {
               var isSdBf = sd && sd.bfIdx === bi;
               // Auto-mode: when a base card is "picked up" (click-to-attach), every BF zone glows gold and is clickable to deploy.
               var isAutoBfTarget = autoMode && !!baseCardSelected;
+              var _bfTint = autoMode && bfImg ? bfAvgColors[bfImg] : null;
+              var _bfBgAuto = _bfTint ? _lightenColor(_bfTint, 0.55) : null;
               return <div key={"my-" + bf.uid}
                 className={isSdBf ? "anim-sd-pulse" : ""}
                 onClick={isAutoBfTarget ? function(e) { e.stopPropagation(); var u = baseCardSelected; setBaseCardSelected(null); moveUnit(u, bi); } : undefined}
                 onDragOver={canMoveOwn ? function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; if (dragOverBf !== bi) setDragOverBf(bi); } : undefined}
                 onDrop={canMoveOwn ? function(e) { e.preventDefault(); setDragOverBf(-1); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts.length > 1 ? parts[1] : parts[0]; if (type === "hand") { var card = myCur.hand.find(function(c) { return c.uid === uid2; }); if (card && (card.type === "Unit" || card.type === "Champion")) playToBattlefield(card, bi); } else if (type === "champ") { if (myCur.champion && myCur.champion.uid === uid2 && !myCur.championPlayed) playToBattlefield(myCur.champion, bi); } else if (type === "gear") { /* ignore gear on battlefield */ } else { moveUnit(uid2, bi); } setDragUnit(null); } : undefined}
-                style={{ flex: 1, background: (isBfOver || isAutoBfTarget) ? "rgba(255,215,0,0.13)" : "rgba(255,215,0,0.015)", borderRadius: 8, border: isSdBf ? "2px solid #FF6B35" : ("2.5px solid " + ((isBfOver || isAutoBfTarget) ? "#FFD700" : "#FFD70020")), boxShadow: (isBfOver || isAutoBfTarget) ? "0 0 22px rgba(255,215,0,0.55), inset 0 0 18px rgba(255,215,0,0.12)" : undefined, display: "flex", alignItems: "center", justifyContent: "center", overflow: "visible", position: "relative", cursor: isAutoBfTarget ? "pointer" : "default", outline: "none", transition: "background 0.15s ease, box-shadow 0.15s ease, border 0.15s ease" }}>
-                {/* BF card - fixed centre */}
+                style={{ flex: 1, background: (isBfOver || isAutoBfTarget) ? "rgba(255,215,0,0.13)" : (_bfBgAuto || "rgba(255,215,0,0.015)"), borderRadius: 8, border: isSdBf ? "2px solid #FF6B35" : ("2.5px solid " + ((isBfOver || isAutoBfTarget) ? "#FFD700" : "#FFD70020")), boxShadow: (isBfOver || isAutoBfTarget) ? "0 0 22px rgba(255,215,0,0.55), inset 0 0 18px rgba(255,215,0,0.12)" : undefined, display: "flex", alignItems: autoMode ? "stretch" : "center", justifyContent: autoMode ? "flex-start" : "center", overflow: "visible", position: "relative", cursor: isAutoBfTarget ? "pointer" : "default", outline: "none", transition: "background 0.15s ease, box-shadow 0.15s ease, border 0.15s ease" }}>
+                {autoMode ? (
+                  <div style={{ display: "flex", flexDirection: "row", alignItems: "stretch", width: "100%", height: "100%", padding: "4px", overflow: "visible", zIndex: 1 }}>
+                    {/* LEFT: BF card portrait */}
+                    <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingRight: 6 }}>
+                      <div data-uid={bf.uid} style={{ width: BF_W, height: BF_H, position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {bfImg ? <img className="bf-hover" src={bfImg} alt={bf.name} crossOrigin="anonymous" onMouseEnter={function(e) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: { name: bf.name, _isBf: true, _bfUrl: bfImg, _isLandscape: isLandscape }, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }); }} onMouseLeave={function() { setHoverCard(null); }} style={isLandscape ? { width: BF_H, height: BF_W, objectFit: "fill", borderRadius: 6, border: "1px solid #FFD70015", cursor: "pointer", transform: "rotate(-90deg)" } : { width: BF_W, height: BF_H, objectFit: "fill", borderRadius: 6, border: "1px solid #FFD70015", cursor: "pointer" }} /> : <div style={{ width: BF_W, height: BF_H, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#ffffff30" }}>{bf.name}</div>}
+                      </div>
+                    </div>
+                    {/* RIGHT: column with enemy units (top) + friendly units (bottom) */}
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "center", overflow: "visible", minWidth: 0, padding: "2px 0" }}>
+                      {/* Enemy units (top) */}
+                      <div style={{ display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "flex-start", flexWrap: "nowrap", overflow: "visible" }}>
+                        {ps.map(function(p, pi) { if (pi === bottomPlayer || !bf.units[pi] || bf.units[pi].length === 0) return null; var isMyUnits = pi === myActIdx; var units = bf.units[pi]; var totalU = units.length; var overlapPx = totalU <= 1 ? 0 : totalU === 2 ? 18 : totalU === 3 ? 32 : totalU === 4 ? 42 : totalU === 5 ? 50 : 56; return units.map(function(u, ui) { var wrapStyle = { marginLeft: ui === 0 ? 0 : Math.round(-overlapPx * vScale), zIndex: totalU - ui, position: "relative", flexShrink: 0 }; var _fizzle = getAnimType(u.uid) === "fizzle" ? "anim-fizzle" : ""; var _sdGlow = (sd && sd.assignmentPhase && bi === sd.bfIdx) ? (damageAssignments[u.uid] ? " sd-glow-red" : " sd-glow-blue") : ""; return isMyUnits ? <div key={u.uid} className={_fizzle + _sdGlow} style={wrapStyle}><Card card={u} small tiny isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow && !autoPrompt ? "bf:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} onClick={function() { if (showdownUnitClick(u, true)) return; if (autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0))) { toggleAutoSel(u.uid); return; } toggleTap(u.uid); }} actionLabel={autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0)) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (u.exhausted ? "Untap" : "Tap")} selected={!!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} /></div> : <div key={u.uid} className={_fizzle + _sdGlow} style={wrapStyle}><Card card={u} small tiny onClick={function() { if (showdownUnitClick(u, false)) return; if (autoPrompt && (autoPrompt.kind === "pickEnemyUnit" || autoPrompt.kind === "pickAnyUnit") && (autoPrompt.validUids || []).indexOf(u.uid) >= 0) { toggleAutoSel(u.uid); return; } if (tm) { resTarget(u, pi, bi); } }} actionLabel={(autoPrompt && (autoPrompt.kind === "pickEnemyUnit" || autoPrompt.kind === "pickAnyUnit") && (autoPrompt.validUids || []).indexOf(u.uid) >= 0) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (tm ? "Target" : undefined)} selected={!!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} /></div>; }); })}
+                      </div>
+                      {/* Friendly units (bottom) */}
+                      <div style={{ display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "flex-end", flexWrap: "nowrap", overflow: "visible" }}>
+                        {bf.units[bottomPlayer] && (function() { var units = bf.units[bottomPlayer]; var totalU = units.length; var overlapPx = totalU <= 1 ? 0 : totalU === 2 ? 18 : totalU === 3 ? 32 : totalU === 4 ? 42 : totalU === 5 ? 50 : 56; return units.map(function(u, ui) { var wrapStyle = { marginLeft: ui === 0 ? 0 : Math.round(-overlapPx * vScale), zIndex: totalU - ui, position: "relative", flexShrink: 0 }; var _sdGlow = (sd && sd.assignmentPhase && bi === sd.bfIdx) ? (damageAssignments[u.uid] ? "sd-glow-red" : "sd-glow-blue") : ""; return <div key={u.uid} className={_sdGlow} style={wrapStyle}><Card card={u} small tiny isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow && !autoPrompt ? "bf:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} onClick={function() { if (showdownUnitClick(u, true)) return; if (autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0))) { toggleAutoSel(u.uid); return; } toggleTap(u.uid); }} actionLabel={autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0)) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (u.exhausted ? "Untap" : "Tap")} selected={!!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} /></div>; }); })()}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
                 <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 1 }}>
                   {/* Enemy units — to the right of BF card, bottom aligned with BF bottom (top-right from your POV) */}
                   <div style={{ position: "absolute", left: "100%", bottom: 0, display: "flex", flexDirection: "row", flexWrap: "nowrap", marginLeft: Math.round(4 * vScale), zIndex: 2 }}>
@@ -6715,6 +6782,7 @@ function RiftboundGame() {
                     {bf.units[bottomPlayer] && (function() { var units = bf.units[bottomPlayer]; var totalU = units.length; var overlapPx = totalU <= 1 ? 0 : totalU === 2 ? 30 : totalU === 3 ? 50 : totalU === 4 ? 65 : totalU === 5 ? 75 : 82; return units.map(function(u, ui) { var wrapStyle = { marginRight: ui === 0 ? 0 : Math.round(-overlapPx * vScale), zIndex: totalU - ui, position: "relative", flexShrink: 0 }; var _sdGlow = (sd && sd.assignmentPhase && bi === sd.bfIdx) ? (damageAssignments[u.uid] ? "sd-glow-red" : "sd-glow-blue") : ""; return <div key={u.uid} className={_sdGlow} style={wrapStyle}><Card card={u} small isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow && !autoPrompt ? "bf:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} onClick={function() { if (showdownUnitClick(u, true)) return; if (autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0))) { toggleAutoSel(u.uid); return; } toggleTap(u.uid); }} actionLabel={autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0)) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (u.exhausted ? "Untap" : "Tap")} selected={!!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} /></div>; }); })()}
                   </div>
                 </div>
+                )}
               </div>;
             })}
           </div>
@@ -6722,10 +6790,10 @@ function RiftboundGame() {
           {/* PLAYER ZONE wrapper — pulses on your turn */}
           <div className={isMyTurnOnline && screen === "play" && !awakenPhase ? "anim-turn-pulse" : ""} style={{ margin: "4px 4px 4px", padding: 2, flexShrink: 0, overflow: "visible", border: "2px solid transparent", borderRadius: 8 }}>
           {/* ROW 4: PLAYER RUNES + BASE (legend/champion on right to mirror enemy) */}
-          <div style={{ display: "flex", alignItems: "stretch", flexShrink: 0, padding: "2px 6px", gap: 6, overflow: "visible", zIndex: 1, height: HAND_H + Math.round(80 * vScale), minHeight: HAND_H + Math.round(80 * vScale), maxHeight: HAND_H + Math.round(80 * vScale) }}>
+          <div style={{ display: "flex", alignItems: "stretch", flexShrink: 0, padding: "2px 6px", gap: 6, overflow: "visible", zIndex: 1, height: ZONE_H, minHeight: ZONE_H, maxHeight: ZONE_H }}>
             {/* Player runes - horizontal (white), overlapping via absolute positioning */}
             {function() { var prc = myCur.runes.length; var untapped = myCur.runes.filter(function(r) { return !r.exhausted; }).length; var step = 1 / 11; return (
-            <div style={{ display: "flex", flexDirection: "row", padding: "3px 4px", borderRadius: 6, border: "1.5px solid #ffffff35", alignItems: "center", flex: 7, overflow: "visible", height: HAND_H + Math.round(70 * vScale), minHeight: HAND_H + Math.round(70 * vScale), maxHeight: HAND_H + Math.round(70 * vScale) }}>
+            <div style={{ display: "flex", flexDirection: "row", padding: "3px 4px", borderRadius: 6, border: "1.5px solid #ffffff35", alignItems: "center", flex: 7, overflow: "visible", height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H }}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, marginRight: 4 }}>
                 <div style={{ fontSize: 16, color: "#ffffff66", fontFamily: "Spectral,serif", letterSpacing: 1, fontWeight: 700 }}>RUNES</div>
                 <div style={{ fontSize: 16, color: "#ffffff55", fontFamily: "Spectral,serif", fontWeight: 700 }}>{prc}/12</div>
@@ -6753,7 +6821,7 @@ function RiftboundGame() {
               onDragEnter={canMoveOwn && !tm && !fc ? function(e) { e.preventDefault(); if (!dragUnit || (dragUnit.type !== "Spell")) setDragOverBase(true); } : undefined}
               onDragLeave={function() { setDragOverBase(false); }}
               onDrop={canMoveOwn && !tm && !fc ? function(e) { e.preventDefault(); setDragOverBase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; if (type === "gear") { detachGear(uid2); } else if (type === "bf" || type === "bin") { returnToBase(uid2); } else { var card = null; if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } if (card && (card.type === "Unit" || card.type === "Champion" || card.type === "Gear")) { if (type === "champ" && (card.energy === 0 || card.energy === null)) { playChampionToBase(); } else { openPlay(card); } } } } : undefined}
-              style={{ display: "flex", flexDirection: "row", gap: 3, padding: "3px 4px", borderRadius: 6, border: dragOverBase ? "2px solid #FFD700" : "1.5px solid #FFD70055", background: dragOverBase ? "rgba(255,215,0,0.08)" : "transparent", boxShadow: dragOverBase ? "0 0 16px rgba(255,215,0,0.3), inset 0 0 16px rgba(255,215,0,0.05)" : "none", alignItems: "center", flexWrap: "nowrap", flex: 9, height: HAND_H + Math.round(70 * vScale), minHeight: HAND_H + Math.round(70 * vScale), maxHeight: HAND_H + Math.round(70 * vScale), overflow: "hidden", transition: "border 0.15s ease, background 0.15s ease, box-shadow 0.15s ease", position: "relative" }}>
+              style={{ display: "flex", flexDirection: "row", gap: 3, padding: "3px 4px", borderRadius: 6, border: dragOverBase ? "2px solid #FFD700" : "1.5px solid #FFD70055", background: dragOverBase ? "rgba(255,215,0,0.08)" : "transparent", boxShadow: dragOverBase ? "0 0 16px rgba(255,215,0,0.3), inset 0 0 16px rgba(255,215,0,0.05)" : "none", alignItems: "center", flexWrap: "nowrap", flex: 9, height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H, overflow: "hidden", transition: "border 0.15s ease, background 0.15s ease, box-shadow 0.15s ease", position: "relative" }}>
               <div style={{ fontSize: 13, color: "#FFD70077", fontFamily: "Spectral,serif", letterSpacing: 1 }}>BASE</div>
               {myCur.base.map(function(u) {
                 return <Card key={u.uid} card={u} small isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow ? "base:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} selected={(sel && sel.uid === u.uid) || !!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0) || (autoMode && baseCardSelected === u.uid)} onClick={function() { if (autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0))) { toggleAutoSel(u.uid); return; } if (tm) { resTarget(u, myActIdx, null); return; } if (autoMode) { setBaseCardSelected(baseCardSelected === u.uid ? null : u.uid); return; } toggleTap(u.uid); }} actionLabel={autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0)) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (tm ? "Target" : (autoMode ? "Battlefield" : (u.exhausted ? "Untap" : "Tap")))} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} />;
