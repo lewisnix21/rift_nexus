@@ -1695,6 +1695,304 @@ var CARD_EFFECTS = {
       _autoSelRef.current = [];
       setAutoPrompt({ kind: "confirmAction", sourceName: "Sunken Temple", question: "[Mighty] unit conquered — pay 1E to draw 1?", yesEffect: "sunkenTempleDraw" });
     }
+  },
+
+  // ============ Batch: 30 additional automated cards ============
+
+  "Acceptable Losses": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.myActIdx]; if (!meP) return;
+      var gearUids = (meP.base || []).filter(function(c) { return c.type === "Gear"; }).map(function(c) { return c.uid; });
+      ctx.bfs.forEach(function(b) { ((b.units && b.units[ctx.myActIdx]) || []).forEach(function(u) { (u.gear || []).forEach(function(g) { gearUids.push(g.uid); }); }); });
+      if (gearUids.length === 0) { ctx.banner("Acceptable Losses — you have no gear to kill"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: gearUids, sourceName: "Acceptable Losses", sourceUid: ctx.card.uid, effect: "kill" });
+    }
+  },
+
+  "Adaptatron": {
+    onConquer: function(ctx) {
+      // Unit-level dispatch only (BF onConquer fires once at BF level when ctx.unit is null)
+      if (!ctx.unit) return;
+      ctx.flash(ctx.card.uid);
+      ctx.applyTempMightToUids([ctx.card.uid], 1, "Adaptatron");
+      ctx.banner("Adaptatron — +1 might (approximate buff on conquer)");
+    }
+  },
+
+  "Against the Odds": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfFriendlyUids = [];
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[ctx.myActIdx]) || []).forEach(function(u) { bfFriendlyUids.push(u.uid); }); });
+      if (bfFriendlyUids.length === 0) { ctx.banner("Against the Odds — no friendly battlefield units"); return; }
+      // Approximation: flat +4 might (auto-mode doesn't track per-BF enemy count for split scaling).
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: bfFriendlyUids, sourceName: "Against the Odds", sourceUid: ctx.card.uid, effect: "tempMight", amount: 4 });
+    }
+  },
+
+  "Alpha Strike": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var enemyBfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi === ctx.myActIdx) return; (pu || []).forEach(function(u) { enemyBfUids.push(u.uid); }); }); });
+      if (enemyBfUids.length === 0) { ctx.banner("Alpha Strike — no enemy battlefield units"); return; }
+      // Approximation: deal 5 to one enemy BF unit (Alpha Strike's "split damage = friendly might" simplified).
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyBfUids, sourceName: "Alpha Strike", sourceUid: ctx.card.uid, effect: "damage", amount: 5 });
+    }
+  },
+
+  "Angler Beast": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfWeakUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { if (u.uid === ctx.card.uid) return; if (((u.might || 0) + (u.tempMight || 0) + (u._aura || 0)) <= 2) bfWeakUids.push(u.uid); }); }); });
+      if (bfWeakUids.length === 0) { ctx.banner("Angler Beast — no units with 2 might or less to bounce"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: bfWeakUids.length, validUids: bfWeakUids, sourceName: "Angler Beast", sourceUid: ctx.card.uid, effect: "bounceToHand", upTo: true });
+    }
+  },
+
+  "Arena Kingpin": { entersReady: true, banner: "Arena Kingpin enters ready" },
+
+  "Arise!": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      // Approximation: spawn 2 Sand Soldier tokens to base (no Equipment-count scaling).
+      ctx.spawnInBase("Sand Soldier", 2);
+      ctx.banner("Arise! — spawned 2 Sand Soldier tokens (approximate)");
+    }
+  },
+
+  "Bandle Soldier": { entersReady: true, banner: "Bandle Soldier enters ready (approximating Lvl 3 trigger)" },
+
+  "Beast Below": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allBfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { if (u.uid !== ctx.card.uid) allBfUids.push(u.uid); }); }); });
+      if (allBfUids.length === 0) { ctx.banner("Beast Below — no other battlefield units to bounce"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: Math.min(2, allBfUids.length), validUids: allBfUids, sourceName: "Beast Below", sourceUid: ctx.card.uid, effect: "bounceToHand", upTo: true });
+    }
+  },
+
+  "Blast Corps Cadet": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+      if (bfUids.length === 0) { ctx.banner("Blast Corps Cadet — no battlefield units to target"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Blast Corps Cadet", sourceUid: ctx.card.uid, effect: "damage", amount: 2 });
+    }
+  },
+
+  "Blastcone Fae": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      var meP = ps[ctx.myActIdx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+      if (allUids.length === 0) { ctx.banner("Blastcone Fae — no units to weaken"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Blastcone Fae", sourceUid: ctx.card.uid, effect: "tempMight", amount: -2 });
+    }
+  },
+
+  "Block": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      var meP = ps[ctx.myActIdx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+      if (allUids.length === 0) { ctx.banner("Block — no units to shield"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Block", sourceUid: ctx.card.uid, effect: "tempMight", amount: 3 });
+    }
+  },
+
+  "Blood Money": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfWeakUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { if (((u.might || 0) + (u.tempMight || 0) + (u._aura || 0)) <= 2) bfWeakUids.push(u.uid); }); }); });
+      if (bfWeakUids.length === 0) { ctx.banner("Blood Money — no battlefield units with 2 might or less"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfWeakUids, sourceName: "Blood Money", sourceUid: ctx.card.uid, effect: "kill" });
+      // Spawn the Gold token regardless (approximate — full rules check enemy/friendly to scale).
+      ctx.spawnInBase("Gold", 1);
+    }
+  },
+
+  "Blood Rush": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      var meP = ps[ctx.myActIdx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[ctx.myActIdx]) || []).forEach(function(u) { allUids.push(u.uid); }); });
+      if (allUids.length === 0) { ctx.banner("Blood Rush — no friendly units to buff"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: allUids, sourceName: "Blood Rush", sourceUid: ctx.card.uid, effect: "tempMight", amount: 2 });
+    }
+  },
+
+  "Bonds of Strength": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var friendly = ctx.countFriendlyUnits();
+      if (friendly <= 0) { ctx.banner("Bonds of Strength — no friendly units to buff"); return; }
+      var n = Math.min(2, friendly);
+      ctx.prompt({ kind: "pickFriendlyUnits", n: n, sourceName: "Bonds of Strength", sourceUid: ctx.card.uid, effect: "tempMight", amount: 1, upTo: true });
+    }
+  },
+
+  "Buhru Captain": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.draw(1);
+      ctx.banner("Buhru Captain — drew 1");
+    }
+  },
+
+  "Bullet Time": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var enemyBfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi === ctx.myActIdx) return; (pu || []).forEach(function(u) { enemyBfUids.push(u.uid); }); }); });
+      if (enemyBfUids.length === 0) { ctx.banner("Bullet Time — no enemy battlefield units"); return; }
+      // Approximation: deal 2 to one enemy BF unit (full rules: pay X runes -> X dmg to all at a BF).
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyBfUids, sourceName: "Bullet Time", sourceUid: ctx.card.uid, effect: "damage", amount: 2 });
+    }
+  },
+
+  "Bushwhack": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.addWatcher({ kind: "ownUnitEntersReady", source: ctx.card.uid, sourceName: "Bushwhack" });
+      ctx.spawnInBase("Gold", 1);
+      ctx.banner("Bushwhack — friendly units enter ready this turn, +1 Gold");
+    }
+  },
+
+  "Call to Glory": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      var meP = ps[ctx.myActIdx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+      if (allUids.length === 0) { ctx.banner("Call to Glory — no units to buff"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Call to Glory", sourceUid: ctx.card.uid, effect: "tempMight", amount: 3 });
+    }
+  },
+
+  "Carnivorous Snapvine": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var enemyBfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi === ctx.myActIdx) return; (pu || []).forEach(function(u) { enemyBfUids.push(u.uid); }); }); });
+      if (enemyBfUids.length === 0) { ctx.banner("Carnivorous Snapvine — no enemy battlefield units"); return; }
+      // Approximation: deal Snapvine's might (6) to enemy unit (skips mutual self-damage).
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyBfUids, sourceName: "Carnivorous Snapvine", sourceUid: ctx.card.uid, effect: "damage", amount: ctx.card.might || 6 });
+    }
+  },
+
+  "Carrion Dredger": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      // Approximation: spawn the Bird token immediately on play (was [Deathknell]).
+      ctx.spawnInBase("Bird", 1);
+      ctx.banner("Carrion Dredger — Bird token to base (approximate Deathknell)");
+    }
+  },
+
+  "Catalyst of Aeons": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      // Approximation: try to channel a rune via bookkeeping; if can't, draw 1.
+      var meP = ps[ctx.myActIdx]; if (!meP) { ctx.banner("Catalyst of Aeons — drew 1"); ctx.draw(1); return; }
+      if (!(meP.runeDeck || []).length || (meP.runes || []).length >= 12) { ctx.banner("Catalyst of Aeons — couldn't channel, drew 1"); ctx.draw(1); return; }
+      setPs(function(prev) {
+        var i = ctx.myActIdx; var p = prev[i]; if (!p) return prev;
+        var rd = (p.runeDeck || []).slice();
+        var taken = rd.splice(0, Math.min(2, rd.length)).map(function(r) { return Object.assign({}, r, { exhausted: true }); });
+        taken.forEach(function(r) { addAnim(r.uid, "draw"); });
+        var runes = (p.runes || []).concat(taken).slice(0, 12);
+        var np = prev.slice(); np[i] = Object.assign({}, p, { runeDeck: rd, runes: runes });
+        return np;
+      });
+      ctx.banner("Catalyst of Aeons — channeled up to 2 runes exhausted");
+    }
+  },
+
+  "Cithria of Cloudfield": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      // Approximation: Cithria gains +1 might on play (full rule: every later friendly unit grants +1 buff).
+      ctx.applyTempMightToUids([ctx.card.uid], 1, "Cithria of Cloudfield");
+      ctx.banner("Cithria of Cloudfield — +1 might (approximate buff)");
+    }
+  },
+
+  "Cleave": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      var meP = ps[ctx.myActIdx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[ctx.myActIdx]) || []).forEach(function(u) { allUids.push(u.uid); }); });
+      if (allUids.length === 0) { ctx.banner("Cleave — no friendly units to buff"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: allUids, sourceName: "Cleave", sourceUid: ctx.card.uid, effect: "tempMight", amount: 3 });
+    }
+  },
+
+  "Clockwork Keeper": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.draw(1);
+      ctx.banner("Clockwork Keeper — drew 1 (approximate, ignores additional cost)");
+    }
+  },
+
+  "Hwei, Brooding Painter": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.draw(1);
+      ctx.banner("Hwei, Brooding Painter — drew 1 (approximate, no discard branch)");
+    }
+  },
+
+  "Kadregrin the Infernal": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx; var meP = ps[idx]; var n = 0;
+      if (meP) (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && (((c.might || 0) + (c.tempMight || 0) + (c._aura || 0)) >= 5)) n++; });
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if (((u.might || 0) + (u.tempMight || 0) + (u._aura || 0)) >= 5) n++; }); });
+      if (n <= 0) { ctx.banner("Kadregrin — no [Mighty] friendly units, drew 0"); return; }
+      ctx.draw(n);
+      ctx.banner("Kadregrin — drew " + n + " (one per [Mighty] friendly unit)");
+    }
+  },
+
+  "Scuttle Crab": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.draw(1);
+      ctx.banner("Scuttle Crab — drew 1");
+    }
+  },
+
+  "Stellacorn Herder": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.draw(1);
+      ctx.banner("Stellacorn Herder — drew 1 (approximate, full rule fires on move)");
+    }
+  },
+
+  "Wuju Apprentice": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.draw(1);
+      ctx.banner("Wuju Apprentice — drew 1 (approximate, ignores Lvl 6 condition)");
+    }
   }
 };
 </script>
