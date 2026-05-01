@@ -153,7 +153,7 @@ function writeGameAction(code, state) {
   fbDb.ref("lobbies/" + code + "/gameState").set(state);
 }
 </script>
-<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}html,body{background:#0f0f23;overflow:hidden;font-family:'Inter',sans-serif;color:#ddd;text-rendering:optimizeLegibility;height:100%;width:100%}img{image-rendering:auto;-webkit-backface-visibility:hidden;backface-visibility:hidden}.card-hover,.bf-hover{-webkit-backface-visibility:hidden;backface-visibility:hidden;will-change:transform}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#FFD70033;border-radius:3px}button:hover{filter:brightness(1.15)}.card-hover{position:relative;z-index:1}.card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.hand-card-hover{position:relative;z-index:1}.hand-card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.75))}.auto-hand-card{transition:transform 200ms ease-out,filter 200ms ease-out}.auto-hand-card:hover{transform:translateY(calc(-0.35*var(--hand-ah,210px))) scale(1.91)!important;transform-origin:bottom center!important;z-index:999!important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.75))}.auto-zone-card{transition:transform 0.18s ease,filter 0.18s ease}.auto-zone-card:hover{transform:scale(2.1) translateY(-10%)!important;transform-origin:bottom center!important;z-index:999!important;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.85))!important}.card-tapped{position:relative;z-index:1}.card-tapped:hover{z-index:999 !important;filter:brightness(0.72) drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.gear-peek{position:relative;z-index:1}.gear-peek:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover{position:relative;z-index:1}.bf-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover-land{position:relative;z-index:1}.bf-hover-land:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.no-hover,.no-hover *{transition:none !important}.no-hover:hover,.no-hover:hover *{transform:none !important;filter:none !important;z-index:auto !important}@keyframes drawIn{0%{transform:translateX(500px) scale(0.4) rotate(-180deg);opacity:0}40%{opacity:1}100%{transform:translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}@keyframes fadeSlideUp{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-20px);opacity:0}}@keyframes untapGlow{0%{box-shadow:0 0 0 #FFD70000}50%{box-shadow:0 0 12px #FFD70066}100%{box-shadow:0 0 0 #FFD70000}}@keyframes cardDrawIn{0%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(180deg);opacity:0}40%{opacity:1}100%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes cardDrawOut{0%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}50%{opacity:0.7}100%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(-180deg);opacity:0}}.anim-recycle{animation:cardDrawOut 0.25s ease-in forwards !important;pointer-events:none;transition:none !important}.anim-rune-draw{animation:cardDrawIn 0.25s ease-out;transition:none !important}.anim-draw{animation:drawIn 0.25s ease-out;transition:none !important}@keyframes nameGlow{0%,100%{text-shadow:0 0 6px #FFD70033;opacity:0.7}50%{text-shadow:0 0 25px #FFD700ff,0 0 50px #FFD70088,0 0 80px #FFD70044;opacity:1}}@keyframes showdownPulse{0%,100%{box-shadow:inset 0 0 6px rgba(255,107,53,0.15),0 0 4px rgba(255,107,53,0.1);border-color:#FF6B3566}50%{box-shadow:inset 0 0 24px rgba(255,107,53,0.5),0 0 16px rgba(255,107,53,0.4);border-color:#FF6B35}}@keyframes turnPulse{0%,100%{box-shadow:inset 0 0 8px rgba(255,215,0,0.1),0 0 6px rgba(255,215,0,0.08);border-color:#FFD70044}50%{box-shadow:inset 0 0 20px rgba(255,215,0,0.3),0 0 14px rgba(255,215,0,0.25);border-color:#FFD700aa}}.anim-turn-pulse{animation:turnPulse 1.8s ease-in-out infinite}.anim-sd-pulse{animation:showdownPulse 1.2s ease-in-out infinite}.anim-name-glow{animation:nameGlow 1.2s ease-in-out infinite}.anim-pulse{animation:pulse 0.8s ease-in-out infinite}.anim-bin{animation:fadeSlideUp 0.4s ease-out forwards}.anim-untap{animation:untapGlow 0.6s ease-out}@keyframes pingRipple{0%{transform:translate(-50%,-50%) scale(0.3);opacity:1}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0}}.ping-dot{position:fixed;width:30px;height:30px;pointer-events:none;z-index:9997}.ping-dot::before,.ping-dot::after{content:'';position:absolute;top:50%;left:50%;width:100%;height:100%;border-radius:50%;border:2.5px solid #FFD700;transform:translate(-50%,-50%) scale(0.3);animation:pingRipple 0.8s ease-out forwards}.ping-dot::after{animation-delay:0.15s}[draggable=true]{cursor:grab;-webkit-user-select:none;user-select:none;touch-action:none;transition:none !important;animation-duration:0s !important}[draggable=true]:active{cursor:grabbing;opacity:0.6}[draggable=true] *{transition:none !important}[draggable=true] img{pointer-events:none;-webkit-user-drag:none}[data-action]{position:relative}[data-action]::after{content:attr(data-action);position:absolute;inset:0;background:rgba(0,0,0,0.42);color:#fff;display:none;align-items:center;justify-content:center;font-family:'Spectral',serif;font-weight:800;letter-spacing:3px;text-transform:uppercase;text-shadow:0 2px 8px rgba(0,0,0,0.9);pointer-events:none;border-radius:inherit;z-index:20;font-size:14px;text-align:center;padding:0 4px}[data-action]:hover::after{display:flex}@keyframes autoFlash{0%,100%{box-shadow:0 0 0 #FFD70000;filter:brightness(1)}40%{box-shadow:0 0 32px #FFD700cc,0 0 64px #FFD70066;filter:brightness(1.45) saturate(1.2)}}.anim-flash{animation:autoFlash 0.8s ease-in-out;border-radius:6px}@keyframes fizzleOut{0%{opacity:1;transform:scale(1) rotate(0deg);filter:brightness(1) blur(0)}25%{opacity:0.95;transform:scale(1.04) rotate(-2deg);filter:brightness(1.6) saturate(1.4) blur(0.5px);box-shadow:0 0 32px #ff6b35cc,0 0 60px #ff6b3566}55%{opacity:0.7;transform:scale(0.92) rotate(4deg);filter:brightness(1.2) blur(1.5px) hue-rotate(-15deg)}100%{opacity:0;transform:scale(0.45) rotate(12deg) translateY(20px);filter:brightness(0.4) blur(4px)}}.anim-fizzle{animation:fizzleOut 0.7s ease-out forwards;pointer-events:none;z-index:50!important}@keyframes autoBannerIn{0%{transform:translate(-50%,-12px);opacity:0}15%{transform:translate(-50%,0);opacity:1}85%{transform:translate(-50%,0);opacity:1}100%{transform:translate(-50%,-12px);opacity:0}}.auto-banner{position:fixed;top:14px;left:50%;transform:translate(-50%,0);z-index:1500;padding:8px 22px;border-radius:6px;background:linear-gradient(135deg,#1a1a3a,#0f0f23);border:2px solid #FFD70088;color:#FFD700;font-family:'Spectral',serif;font-weight:700;font-size:15px;letter-spacing:1.5px;text-transform:uppercase;box-shadow:0 6px 24px #000a,0 0 20px #FFD70033;pointer-events:none;animation:autoBannerIn 4.4s ease-out forwards}.auto-banner .auto-tag{font-size:10px;color:#FFD70099;letter-spacing:3px;display:block;margin-bottom:2px}</style></head><body><div id="root"></div>
+<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}html,body{background:#0f0f23;overflow:hidden;font-family:'Inter',sans-serif;color:#ddd;text-rendering:optimizeLegibility;height:100%;width:100%}img{image-rendering:auto;-webkit-backface-visibility:hidden;backface-visibility:hidden}.card-hover,.bf-hover{-webkit-backface-visibility:hidden;backface-visibility:hidden;will-change:transform}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#FFD70033;border-radius:3px}button:hover{filter:brightness(1.15)}.card-hover{position:relative;z-index:1}.card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.hand-card-hover{position:relative;z-index:1}.hand-card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.75))}.auto-hand-card{transition:transform 200ms ease-out,filter 200ms ease-out}.auto-hand-card:hover{transform:translateY(calc(-0.35*var(--hand-ah,210px))) scale(1.91)!important;transform-origin:bottom center!important;z-index:999!important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.75))}.auto-zone-card{transition:transform 0.18s ease,filter 0.18s ease}.auto-zone-card:hover{transform:scale(2.1) translateY(-10%)!important;transform-origin:bottom center!important;z-index:999!important;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.85))!important}.sd-glow-blue{box-shadow:0 0 0 3px #60a5fa,0 0 18px rgba(96,165,250,0.7),0 0 36px rgba(96,165,250,0.45)!important;border-radius:6px;cursor:pointer!important;transition:box-shadow 0.18s ease}.sd-glow-red{box-shadow:0 0 0 3px #ef4444,0 0 18px rgba(239,68,68,0.85),0 0 36px rgba(239,68,68,0.5)!important;border-radius:6px;cursor:pointer!important;transition:box-shadow 0.18s ease}.card-tapped{position:relative;z-index:1}.card-tapped:hover{z-index:999 !important;filter:brightness(0.72) drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.gear-peek{position:relative;z-index:1}.gear-peek:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover{position:relative;z-index:1}.bf-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover-land{position:relative;z-index:1}.bf-hover-land:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.no-hover,.no-hover *{transition:none !important}.no-hover:hover,.no-hover:hover *{transform:none !important;filter:none !important;z-index:auto !important}@keyframes drawIn{0%{transform:translateX(500px) scale(0.4) rotate(-180deg);opacity:0}40%{opacity:1}100%{transform:translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}@keyframes fadeSlideUp{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-20px);opacity:0}}@keyframes untapGlow{0%{box-shadow:0 0 0 #FFD70000}50%{box-shadow:0 0 12px #FFD70066}100%{box-shadow:0 0 0 #FFD70000}}@keyframes cardDrawIn{0%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(180deg);opacity:0}40%{opacity:1}100%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes cardDrawOut{0%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}50%{opacity:0.7}100%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(-180deg);opacity:0}}.anim-recycle{animation:cardDrawOut 0.25s ease-in forwards !important;pointer-events:none;transition:none !important}.anim-rune-draw{animation:cardDrawIn 0.25s ease-out;transition:none !important}.anim-draw{animation:drawIn 0.25s ease-out;transition:none !important}@keyframes nameGlow{0%,100%{text-shadow:0 0 6px #FFD70033;opacity:0.7}50%{text-shadow:0 0 25px #FFD700ff,0 0 50px #FFD70088,0 0 80px #FFD70044;opacity:1}}@keyframes showdownPulse{0%,100%{box-shadow:inset 0 0 6px rgba(255,107,53,0.15),0 0 4px rgba(255,107,53,0.1);border-color:#FF6B3566}50%{box-shadow:inset 0 0 24px rgba(255,107,53,0.5),0 0 16px rgba(255,107,53,0.4);border-color:#FF6B35}}@keyframes turnPulse{0%,100%{box-shadow:inset 0 0 8px rgba(255,215,0,0.1),0 0 6px rgba(255,215,0,0.08);border-color:#FFD70044}50%{box-shadow:inset 0 0 20px rgba(255,215,0,0.3),0 0 14px rgba(255,215,0,0.25);border-color:#FFD700aa}}.anim-turn-pulse{animation:turnPulse 1.8s ease-in-out infinite}.anim-sd-pulse{animation:showdownPulse 1.2s ease-in-out infinite}.anim-name-glow{animation:nameGlow 1.2s ease-in-out infinite}.anim-pulse{animation:pulse 0.8s ease-in-out infinite}.anim-bin{animation:fadeSlideUp 0.4s ease-out forwards}.anim-untap{animation:untapGlow 0.6s ease-out}@keyframes pingRipple{0%{transform:translate(-50%,-50%) scale(0.3);opacity:1}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0}}.ping-dot{position:fixed;width:30px;height:30px;pointer-events:none;z-index:9997}.ping-dot::before,.ping-dot::after{content:'';position:absolute;top:50%;left:50%;width:100%;height:100%;border-radius:50%;border:2.5px solid #FFD700;transform:translate(-50%,-50%) scale(0.3);animation:pingRipple 0.8s ease-out forwards}.ping-dot::after{animation-delay:0.15s}[draggable=true]{cursor:grab;-webkit-user-select:none;user-select:none;touch-action:none;transition:none !important;animation-duration:0s !important}[draggable=true]:active{cursor:grabbing;opacity:0.6}[draggable=true] *{transition:none !important}[draggable=true] img{pointer-events:none;-webkit-user-drag:none}[data-action]{position:relative}[data-action]::after{content:attr(data-action);position:absolute;inset:0;background:rgba(0,0,0,0.42);color:#fff;display:none;align-items:center;justify-content:center;font-family:'Spectral',serif;font-weight:800;letter-spacing:3px;text-transform:uppercase;text-shadow:0 2px 8px rgba(0,0,0,0.9);pointer-events:none;border-radius:inherit;z-index:20;font-size:14px;text-align:center;padding:0 4px}[data-action]:hover::after{display:flex}@keyframes autoFlash{0%,100%{box-shadow:0 0 0 #FFD70000;filter:brightness(1)}40%{box-shadow:0 0 32px #FFD700cc,0 0 64px #FFD70066;filter:brightness(1.45) saturate(1.2)}}.anim-flash{animation:autoFlash 0.8s ease-in-out;border-radius:6px}@keyframes fizzleOut{0%{opacity:1;transform:scale(1) rotate(0deg);filter:brightness(1) blur(0)}25%{opacity:0.95;transform:scale(1.04) rotate(-2deg);filter:brightness(1.6) saturate(1.4) blur(0.5px);box-shadow:0 0 32px #ff6b35cc,0 0 60px #ff6b3566}55%{opacity:0.7;transform:scale(0.92) rotate(4deg);filter:brightness(1.2) blur(1.5px) hue-rotate(-15deg)}100%{opacity:0;transform:scale(0.45) rotate(12deg) translateY(20px);filter:brightness(0.4) blur(4px)}}.anim-fizzle{animation:fizzleOut 0.7s ease-out forwards;pointer-events:none;z-index:50!important}@keyframes autoBannerIn{0%{transform:translate(-50%,-12px);opacity:0}15%{transform:translate(-50%,0);opacity:1}85%{transform:translate(-50%,0);opacity:1}100%{transform:translate(-50%,-12px);opacity:0}}.auto-banner{position:fixed;top:14px;left:50%;transform:translate(-50%,0);z-index:1500;padding:8px 22px;border-radius:6px;background:linear-gradient(135deg,#1a1a3a,#0f0f23);border:2px solid #FFD70088;color:#FFD700;font-family:'Spectral',serif;font-weight:700;font-size:15px;letter-spacing:1.5px;text-transform:uppercase;box-shadow:0 6px 24px #000a,0 0 20px #FFD70033;pointer-events:none;animation:autoBannerIn 4.4s ease-out forwards}.auto-banner .auto-tag{font-size:10px;color:#FFD70099;letter-spacing:3px;display:block;margin-bottom:2px}</style></head><body><div id="root"></div>
 <script>
 var IG="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/";
 var CARD_BACK="data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140"><rect width="100" height="140" rx="5" fill="#0f2640"/><rect x="4" y="4" width="92" height="132" rx="3" fill="none" stroke="#c8a84e" stroke-width="1"/><g stroke="#c8a84e" fill="none" stroke-width="0.8"><line x1="50" y1="18" x2="82" y2="50"/><line x1="50" y1="18" x2="18" y2="50"/><circle cx="50" cy="70" r="22"/><line x1="50" y1="122" x2="82" y2="90"/><line x1="50" y1="122" x2="18" y2="90"/><line x1="12" y1="70" x2="50" y2="38"/><line x1="88" y1="70" x2="50" y2="38"/><line x1="12" y1="70" x2="50" y2="102"/><line x1="88" y1="70" x2="50" y2="102"/><polygon points="50,38 82,70 50,102 18,70" stroke-width="1"/></g><text x="50" y="67" text-anchor="middle" font-size="7" font-weight="bold" fill="#c8a84e" font-family="serif">LEAGUE</text><text x="50" y="74" text-anchor="middle" font-size="5" fill="#c8a84e" font-family="serif">OF</text><text x="50" y="81" text-anchor="middle" font-size="6" font-weight="bold" fill="#c8a84e" font-family="serif">LEGENDS</text><polygon points="50,14 51.5,17 48.5,17" fill="#c8a84e"/><polygon points="50,126 51.5,123 48.5,123" fill="#c8a84e"/></svg>');
@@ -2277,6 +2277,33 @@ function RiftboundGame() {
       return function() { clearTimeout(_effectFadeTimer.current); };
     }
   }, [!!autoPrompt]);
+  // After an autoPrompt that came from a spell resolves, fizzle that spell to bin.
+  var _spellFizzleAfterPromptTimer = useRef(null);
+  useEffect(function() {
+    if (autoPrompt) { clearTimeout(_spellFizzleAfterPromptTimer.current); return; }
+    if (!autoMode) return;
+    var sc = showcaseCard;
+    if (!sc || sc.type !== "Spell") return;
+    var isOnline = lobbyType === "host" || lobbyType === "join";
+    if (isOnline && showcaseOwner !== myUid) return;
+    if (pendingSpell) return;
+    _spellFizzleAfterPromptTimer.current = setTimeout(function() {
+      if (autoPromptRef.current) return;
+      var scNow = sc;
+      addAnim(scNow.uid, "fizzle", 700);
+      setTimeout(function() {
+        setPs(function(prev) {
+          var i = myActIdx; var p = prev[i]; if (!p) return prev;
+          var trash = (p.trash || []).slice();
+          if (!trash.some(function(c){return c.uid===scNow.uid;})) trash.push(Object.assign({}, scNow, { exhausted: false, gear: [] }));
+          var np = prev.slice(); np[i] = Object.assign({}, p, { trash: trash });
+          return np;
+        });
+        if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); }
+      }, 700);
+    }, 600);
+    return function() { clearTimeout(_spellFizzleAfterPromptTimer.current); };
+  }, [autoPrompt, showcaseCard, pendingSpell]);
   var _aBnr = useState(null), autoBanner = _aBnr[0], setAutoBanner = _aBnr[1];
   var _aWatch = useState([]), autoWatchers = _aWatch[0], setAutoWatchers = _aWatch[1];
   var _autoSelRef = useRef([]);
@@ -2314,6 +2341,8 @@ function RiftboundGame() {
   var _conquerAcceptors = useState({}), conquerAcceptors = _conquerAcceptors[0], setConquerAcceptors = _conquerAcceptors[1];
   // Pre-conquer: attacker must press Begin Showdown before Resolve is shown to all players.
   var _pendingBeginConquer = useState(null), pendingBeginConquer = _pendingBeginConquer[0], setPendingBeginConquer = _pendingBeginConquer[1];
+  // Contested showdown damage assignments — { [attackerUid]: targetUid }, synced via Firebase.
+  var _dmgAsgn = useState({}), damageAssignments = _dmgAsgn[0], setDamageAssignments = _dmgAsgn[1];
   var autoMode = !!(lobbySettings && lobbySettings.autoMode);
   var _lobbyList = useState([]), lobbyList = _lobbyList[0], setLobbyList = _lobbyList[1];
   var _lobbyErr = useState(null), lobbyErr = _lobbyErr[0], setLobbyErr = _lobbyErr[1];
@@ -2452,6 +2481,49 @@ function RiftboundGame() {
     else if (!atkHas2 && defHas2) resolveShowdown("defender");
     else resolveShowdown("none");
   }, [sd, conquerAcceptors, lobbyPlayers, lobbyType, bfs]);
+
+  // Sync damageAssignments to Firebase so all players see the showdown arrows
+  var _daSyncFromRemote = useRef(false);
+  useEffect(function() {
+    if (!roomCode || lobbyType === "test" || _daSyncFromRemote.current) return;
+    if (_gamePhaseRef.current !== "playing") return;
+    fbDb.ref("lobbies/" + roomCode + "/damageAssignments").set({ assignments: damageAssignments || {}, by: myUid });
+  }, [damageAssignments]);
+  useEffect(function() {
+    if (!roomCode || lobbyType === "test") return;
+    var ref = fbDb.ref("lobbies/" + roomCode + "/damageAssignments");
+    var handler = ref.on("value", function(snap) {
+      var val = snap.val();
+      if (!val || val.by === myUid) return;
+      _daSyncFromRemote.current = true;
+      var remoteAsgn = val.assignments || {};
+      // Merge: keep my own assignments + add remote players' assignments
+      setDamageAssignments(function(prev) {
+        var merged = Object.assign({}, prev);
+        Object.keys(remoteAsgn).forEach(function(k) { merged[k] = remoteAsgn[k]; });
+        return merged;
+      });
+      // Rebuild showdown arrows from merged assignments
+      setArrows(function(prev) {
+        var nonShowdown = prev.filter(function(a) { return a.kind !== "showdown"; });
+        var sdArrows = Object.keys(remoteAsgn).map(function(fromUid) { return { fromUid: fromUid, toUid: remoteAsgn[fromUid], kind: "showdown" }; });
+        return nonShowdown.concat(sdArrows);
+      });
+      setTimeout(function() { _daSyncFromRemote.current = false; }, 50);
+    });
+    return function() { ref.off("value", handler); };
+  }, [roomCode, lobbyType]);
+
+  // Online: when all players have accepted in a contested showdown, attacker triggers resolveShowdownContested
+  useEffect(function() {
+    if (!sd || !sd.assignmentPhase || !autoMode) return;
+    if (lobbyType !== "host" && lobbyType !== "join") return;
+    var allUIDs = Object.keys(lobbyPlayers || {});
+    if (allUIDs.length === 0) return;
+    if (sd.atkIdx !== mySlot) return;
+    if (!allUIDs.every(function(u) { return conquerAcceptors[u]; })) return;
+    resolveShowdownContested();
+  }, [sd, conquerAcceptors, lobbyPlayers, lobbyType, damageAssignments, bfs]);
 
   // Sync pendingSpell + resolveAcceptors to Firebase so all players see the spell Resolve button
   var _srSyncFromRemote = useRef(false);
@@ -2759,6 +2831,7 @@ function RiftboundGame() {
   useEffect(function() {
     if (!sd || screen !== "sd") return;
     if (!sd.contested) return; // Uncontested showdowns must be resolved manually via pass priority
+    if (sd.assignmentPhase) return; // Auto-mode contested showdowns use manual damage assignment
     var bi = sd.bfIdx;
     var bf = bfs[bi];
     if (!bf) return;
@@ -5522,16 +5595,27 @@ function RiftboundGame() {
     if (!sd && !_firmingUp) {
       aL("SHOWDOWN at " + nb[bi].name + "!");
       var _defPresent = false; for (var _j = 0; _j < pc; _j++) { if (_j !== myActIdx && nb[bi].units[_j] && nb[bi].units[_j].length > 0) _defPresent = true; }
-      var _initAcc2 = {}; _initAcc2[myActIdx] = true; // attacker is implicitly accepted (they're the actor)
-      var newSd2 = { bfIdx: bi, atkIdx: myActIdx, priority: myActIdx, lastPass: null, acted: false, contested: _defPresent, acceptors: _initAcc2 };
-      setSd(newSd2);
-      setScreen("sd");
-      fireShowdownStartEffects(card, bi, myActIdx);
-      if (roomCode && lobbyType !== "test") {
-        _lastSyncVersion.current++;
-        var cleanPs4 = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
-        var cleanBfs4 = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
-        fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPs4, bfs: cleanBfs4, turn: turn, act: myActIdx, screen: "sd", log: log.slice(-30), sd: newSd2, ver: _lastSyncVersion.current, by: myUid })));
+      if (autoMode) {
+        setPendingBeginConquer({ bi: bi, playerIdx: myActIdx, unitName: card.name, bfName: nb[bi].name, contested: _defPresent });
+        showAutoBanner("AUTO · " + pName(myActIdx) + " moved to " + nb[bi].name + " — press " + (_defPresent ? "Start" : "Begin") + " Showdown");
+        if (roomCode && lobbyType !== "test") {
+          _lastSyncVersion.current++;
+          var cleanPs4a = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
+          var cleanBfs4a = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
+          fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPs4a, bfs: cleanBfs4a, turn: turn, act: myActIdx, screen: screen, log: log.slice(-30), sd: null, ver: _lastSyncVersion.current, by: myUid })));
+        }
+      } else {
+        var _initAcc2 = {}; _initAcc2[myActIdx] = true; // attacker is implicitly accepted (they're the actor)
+        var newSd2 = { bfIdx: bi, atkIdx: myActIdx, priority: myActIdx, lastPass: null, acted: false, contested: _defPresent, acceptors: _initAcc2 };
+        setSd(newSd2);
+        setScreen("sd");
+        fireShowdownStartEffects(card, bi, myActIdx);
+        if (roomCode && lobbyType !== "test") {
+          _lastSyncVersion.current++;
+          var cleanPs4 = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
+          var cleanBfs4 = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
+          fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPs4, bfs: cleanBfs4, turn: turn, act: myActIdx, screen: "sd", log: log.slice(-30), sd: newSd2, ver: _lastSyncVersion.current, by: myUid })));
+        }
       }
     } else if (_firmingUp && !sd) {
       // Push the state to other players without invoking showdown
@@ -5605,6 +5689,7 @@ function RiftboundGame() {
       if (/draw 1/i.test(card.text) && p.mainDeck.length > 0) { p.hand = p.hand.concat([p.mainDeck.shift()]); aL("  Draw 1"); }
       if (/draw 2/i.test(card.text)) { var d = p.mainDeck.splice(0, Math.min(2, p.mainDeck.length)); p.hand = p.hand.concat(d); }
       setTimeout(function() { fireUnitPlayedEffects(card, "base", null); }, 0);
+      setTimeout(function() { fireOnMoveToBaseEffect(card); }, 0);
     } else if (card.type === "Gear") {
       p.base = p.base.concat([Object.assign({}, card, { exhausted: false })]);
       aL(pName(myActIdx) + " plays " + cName(card) + " to base");
@@ -5641,6 +5726,7 @@ function RiftboundGame() {
       if (/draw 1/i.test(card.text) && p.mainDeck.length > 0) { p.hand = p.hand.concat([p.mainDeck.shift()]); aL("  Draw 1"); }
       if (/draw 2/i.test(card.text)) { var d = p.mainDeck.splice(0, Math.min(2, p.mainDeck.length)); p.hand = p.hand.concat(d); }
       setTimeout(function() { fireUnitPlayedEffects(card, "base", null); }, 0);
+      setTimeout(function() { fireOnMoveToBaseEffect(card); }, 0);
     } else if (card.type === "Spell") {
       p.trash = (p.trash || []).concat([card]); aL(pName(idx) + " casts " + cName(card));
       if (/Draw 2 cards/i.test(card.text)) { var d2 = p.mainDeck.splice(0, 2); p.hand = p.hand.concat(d2); }
@@ -5711,9 +5797,9 @@ function RiftboundGame() {
     // Otherwise fall through to the existing showdown trigger.
     var _bfHere = nb[bi];
     var _defPresentAuto = false; for (var _ja = 0; _ja < pc; _ja++) { if (_ja !== idx && _bfHere.units[_ja] && _bfHere.units[_ja].length > 0) _defPresentAuto = true; }
-    if (autoMode && !sd && _bfHere.controller == null && !_defPresentAuto) {
-      setPendingBeginConquer({ bi: bi, playerIdx: idx, unitName: unit.name, bfName: _bfHere.name });
-      showAutoBanner("AUTO · " + pName(idx) + " moved to " + _bfHere.name + " — press Begin Showdown");
+    if (autoMode && !sd) {
+      setPendingBeginConquer({ bi: bi, playerIdx: idx, unitName: unit.name, bfName: _bfHere.name, contested: _defPresentAuto });
+      showAutoBanner("AUTO · " + pName(idx) + " moved to " + _bfHere.name + " — press " + (_defPresentAuto ? "Start" : "Begin") + " Showdown");
       return;
     }
     if (!sd) {
@@ -5774,6 +5860,148 @@ function RiftboundGame() {
       var cleanBfs3 = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
       fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPs3, bfs: cleanBfs3, turn: turn, act: savedSd.atkIdx, screen: "play", log: log.slice(-30), sd: null, ver: _lastSyncVersion.current, by: myUid })));
     }
+  }
+
+  // ── Auto-mode contested showdown helpers ────────────────────────────────────
+  function _findUnitByUid(uid) {
+    for (var bi = 0; bi < bfs.length; bi++) {
+      var b = bfs[bi];
+      for (var pi = 0; pi < (b.units || []).length; pi++) {
+        var arr = b.units[pi] || [];
+        for (var ui = 0; ui < arr.length; ui++) { if (arr[ui].uid === uid) return { unit: arr[ui], bi: bi, pi: pi, ui: ui }; }
+      }
+    }
+    return null;
+  }
+  function showdownUnitClick(u, isMine) {
+    if (!sd || !sd.assignmentPhase) return false;
+    var bfHere = bfs[sd.bfIdx];
+    if (!bfHere) return false;
+    var atOwnerIdx = -1;
+    (bfHere.units || []).forEach(function(pu, pi) { (pu || []).forEach(function(x) { if (x.uid === u.uid) atOwnerIdx = pi; }); });
+    if (atOwnerIdx < 0) return false;
+    if (drawingArrow && drawingArrow.fromUid) {
+      var srcOwnerIdx = -1;
+      (bfHere.units || []).forEach(function(pu, pi) { (pu || []).forEach(function(x) { if (x.uid === drawingArrow.fromUid) srcOwnerIdx = pi; }); });
+      if (srcOwnerIdx < 0) { setDrawingArrow(null); return true; }
+      if (atOwnerIdx === srcOwnerIdx) return true; // ignore same-side click
+      var srcUid = drawingArrow.fromUid;
+      setDamageAssignments(function(prev) { var next = Object.assign({}, prev); next[srcUid] = u.uid; return next; });
+      setArrows(function(prev) { var next = prev.filter(function(a) { return a.fromUid !== srcUid; }); next.push({ fromUid: srcUid, toUid: u.uid, kind: "showdown" }); return next; });
+      setDrawingArrow(null);
+      return true;
+    }
+    if (isMine && atOwnerIdx === myActIdx) {
+      setDrawingArrow({ fromUid: u.uid, x: 0, y: 0 });
+      return true;
+    }
+    return false;
+  }
+  function clearShowdownAssignment(uid) {
+    setDamageAssignments(function(prev) { var next = Object.assign({}, prev); delete next[uid]; return next; });
+    setArrows(function(prev) { return prev.filter(function(a) { return !(a.kind === "showdown" && a.fromUid === uid); }); });
+  }
+  function myUnitsAtShowdownBf() {
+    if (!sd) return [];
+    var b = bfs[sd.bfIdx]; if (!b) return [];
+    return (b.units && b.units[myActIdx]) || [];
+  }
+  function allMyUnitsAssigned() {
+    var mine = myUnitsAtShowdownBf();
+    if (mine.length === 0) return true;
+    for (var i = 0; i < mine.length; i++) { if (!damageAssignments[mine[i].uid]) return false; }
+    return true;
+  }
+  function resolveShowdownContested() {
+    if (!sd || !sd.assignmentPhase) return;
+    var savedSd = sd;
+    var bi = savedSd.bfIdx;
+    var bfNow = bfs[bi]; if (!bfNow) return;
+    // Aggregate damage per unit uid based on damageAssignments
+    var damageMap = {};
+    Object.keys(damageAssignments).forEach(function(atkUid) {
+      var targetUid = damageAssignments[atkUid];
+      var found = _findUnitByUid(atkUid); if (!found) return;
+      var u = found.unit;
+      var dmg = (u.might || 0) + (u.tempMight || 0) + (u._aura || 0);
+      damageMap[targetUid] = (damageMap[targetUid] || 0) + dmg;
+    });
+    // Compute survivors and dead
+    var deadUids = [];
+    var survivorPlan = []; // {uid, ownerIdx, unit}
+    (bfNow.units || []).forEach(function(pu, pi) {
+      (pu || []).forEach(function(u) {
+        var totalHealth = (u.might || 0) + (u.tempMight || 0) + (u._aura || 0);
+        var totalDmg = (u.damage || 0) + (damageMap[u.uid] || 0);
+        if (totalDmg >= totalHealth) {
+          deadUids.push({ uid: u.uid, ownerIdx: pi, unit: u });
+        } else {
+          survivorPlan.push({ uid: u.uid, ownerIdx: pi, unit: Object.assign({}, u, { damage: 0, exhausted: true, tempMight: 0 }) });
+        }
+      });
+    });
+    // Animate fizzle on dead
+    deadUids.forEach(function(d) { addAnim(d.uid, "fizzle", 700); });
+    aL("Showdown damage resolves at " + bfNow.name + " — " + deadUids.length + " killed, " + survivorPlan.length + " survived.");
+    // Clear visual state
+    setSd(null);
+    setDamageAssignments({});
+    setConquerAcceptors({});
+    setArrows(function(prev) { return prev.filter(function(a) { return a.kind !== "showdown"; }); });
+    setDrawingArrow(null);
+    setScreen("play");
+    // Apply damage after fizzle anim plays
+    setTimeout(function() {
+      setBfs(function(prev) {
+        var nb = prev.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
+        nb[bi] = Object.assign({}, nb[bi], { units: nb[bi].units.map(function() { return []; }) });
+        // Determine new controller: if attacker has survivors and no defender survivors, attacker conquers
+        var atkSurvived = survivorPlan.some(function(s) { return s.ownerIdx === savedSd.atkIdx; });
+        var defSurvived = survivorPlan.some(function(s) { return s.ownerIdx !== savedSd.atkIdx; });
+        if (atkSurvived && !defSurvived) {
+          nb[bi].controller = savedSd.atkIdx;
+        }
+        return nb;
+      });
+      setPs(function(prev) {
+        var np = prev.slice();
+        // Move dead to trash
+        deadUids.forEach(function(d) {
+          var pp = np[d.ownerIdx]; if (!pp) return;
+          var trash = (pp.trash || []).slice();
+          trash.push(Object.assign({}, d.unit, { exhausted: false, gear: [] }));
+          np[d.ownerIdx] = Object.assign({}, pp, { trash: trash });
+        });
+        // Move survivors to base (exhausted, healed)
+        survivorPlan.forEach(function(s) {
+          var pp = np[s.ownerIdx]; if (!pp) return;
+          var base = (pp.base || []).slice();
+          base.push(s.unit);
+          np[s.ownerIdx] = Object.assign({}, pp, { base: base });
+          addAnim(s.uid, "draw");
+        });
+        // Award conquer point if attacker holds
+        var atkSurvived2 = survivorPlan.some(function(s) { return s.ownerIdx === savedSd.atkIdx; });
+        var defSurvived2 = survivorPlan.some(function(s) { return s.ownerIdx !== savedSd.atkIdx; });
+        if (atkSurvived2 && !defSurvived2) {
+          var atkP = np[savedSd.atkIdx];
+          if (atkP) {
+            np[savedSd.atkIdx] = Object.assign({}, atkP, { score: (atkP.score || 0) + 1 });
+            aL(pName(savedSd.atkIdx) + " conquers " + bfNow.name + "!");
+          }
+        }
+        return np;
+      });
+      setTimeout(recalcAuras, 0);
+      if (roomCode && lobbyType !== "test") {
+        setTimeout(function() {
+          _lastSyncVersion.current++;
+          var cleanPsX = ps.map(function(p) { if (!p) return p; return Object.assign({}, p, { hand: p.hand || [], base: (p.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: p.trash || [], runes: p.runes || [], runeDeck: p.runeDeck || [], mainDeck: p.mainDeck || [], battlefields: p.battlefields || [] }); });
+          var cleanBfsX = bfs.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
+          fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPsX, bfs: cleanBfsX, turn: turn, act: act, screen: "play", log: log.slice(-30), sd: null, ver: _lastSyncVersion.current, by: myUid })));
+        }, 50);
+      }
+    }, 720);
   }
 
   function passPriority() {
@@ -5874,7 +6102,7 @@ function RiftboundGame() {
     var meP = ps[myActIdx]; if (!meP) return true;
     // Timing: enforce when cards can be played based on turn state and card keywords
     var _isMyTurn = isOnlineGame ? (act === mySlot) : true;
-    var _inShowdown = !!sd;
+    var _inShowdown = !!sd || !!pendingBeginConquer;
     var _inSpellChain = !!(showcaseCard || pendingSpell);
     var _tx = c.text || "";
     var _isReaction = _tx.indexOf("[Reaction]") >= 0;
@@ -6048,14 +6276,18 @@ function RiftboundGame() {
           </div>
         </div>;
       })()}
-      {autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || autoPrompt.kind === "pickEnemyUnit" || autoPrompt.kind === "pickAnyUnit") && <div style={{ position: "fixed", top: (autoMode && effectAnim) ? (effectAnim.toY + effectAnim.h / 2 + 16) : (autoMode ? "calc(50% + " + Math.round(301 * vScale * 0.5 + 18) + "px)" : 60), left: (autoMode && effectAnim) ? effectAnim.toX : "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #3b82f688", boxShadow: "0 8px 32px #000c, 0 0 24px #3b82f622", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 280, pointerEvents: "auto" }}>
-        <div style={{ fontSize: 11, color: "#FFD70099", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
-        <div style={{ fontSize: 14, color: "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{(autoPrompt.kind === "pickEnemyUnit" ? "Click " + autoPrompt.n + " enemy unit" : autoPrompt.kind === "pickAnyUnit" ? "Click " + autoPrompt.n + " unit (friendly or enemy)" : "Click " + autoPrompt.n + " friendly unit") + (autoPrompt.kind !== "pickAnyUnit" && autoPrompt.n > 1 ? "s" : "") + " (" + ((autoPrompt._sel || []).length) + "/" + autoPrompt.n + ")"}</div>
-        <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={function() { var sel = _autoSelRef.current.slice(); if (sel.length === autoPrompt.n) resolveAutoPrompt(sel); }} disabled={(autoPrompt._sel || []).length !== autoPrompt.n} style={{ padding: "5px 16px", borderRadius: 5, border: "1.5px solid " + ((autoPrompt._sel || []).length === autoPrompt.n ? "#4ADE80" : "#444"), background: (autoPrompt._sel || []).length === autoPrompt.n ? "rgba(74,222,128,0.15)" : "transparent", color: (autoPrompt._sel || []).length === autoPrompt.n ? "#4ADE80" : "#666", cursor: (autoPrompt._sel || []).length === autoPrompt.n ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 700, fontFamily: "Spectral,serif" }}>Confirm</button>
-          <button onClick={function() { setAutoPrompt(null); _autoSelRef.current = []; }} style={{ padding: "5px 16px", borderRadius: 5, border: "1px solid #555", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif" }}>Skip</button>
-        </div>
-      </div>}
+      {autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || autoPrompt.kind === "pickEnemyUnit" || autoPrompt.kind === "pickAnyUnit") && (function() {
+        var _maxAvail = autoPrompt.kind === "pickFriendlyUnits" ? (autoPrompt.validUids ? autoPrompt.validUids.length : countFriendlyUnits()) : ((autoPrompt.validUids || []).length);
+        var _selN = (autoPrompt._sel || []).length;
+        var _canConfirm = _selN === autoPrompt.n || _selN >= Math.min(_maxAvail, autoPrompt.n);
+        return <div style={{ position: "fixed", top: (autoMode && effectAnim) ? (effectAnim.toY + effectAnim.h / 2 + 16) : (autoMode ? "calc(50% + " + Math.round(301 * vScale * 0.5 + 18) + "px)" : 60), left: (autoMode && effectAnim) ? effectAnim.toX : "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #3b82f688", boxShadow: "0 8px 32px #000c, 0 0 24px #3b82f622", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 280, pointerEvents: "auto" }}>
+          <div style={{ fontSize: 11, color: "#93c5fd99", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
+          <div style={{ fontSize: 14, color: "#93c5fd", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{(autoPrompt.kind === "pickEnemyUnit" ? "Click " + autoPrompt.n + " enemy unit" : autoPrompt.kind === "pickAnyUnit" ? "Click " + autoPrompt.n + " unit (friendly or enemy)" : "Click " + autoPrompt.n + " friendly unit") + (autoPrompt.kind !== "pickAnyUnit" && autoPrompt.n > 1 ? "s" : "") + " (" + _selN + "/" + autoPrompt.n + ")"}</div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button onClick={function() { if (!_canConfirm) return; var sel = _autoSelRef.current.slice(); resolveAutoPrompt(sel); }} disabled={!_canConfirm} style={{ padding: "5px 16px", borderRadius: 5, border: "1.5px solid " + (_canConfirm ? "#3b82f6" : "#444"), background: _canConfirm ? "rgba(59,130,246,0.18)" : "transparent", color: _canConfirm ? "#93c5fd" : "#666", cursor: _canConfirm ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 700, fontFamily: "Spectral,serif" }}>Confirm</button>
+          </div>
+        </div>;
+      })()}
       {autoPrompt && (autoPrompt.kind === "pickFromTrash" || autoPrompt.kind === "pickFromHand") && <div style={{ position: "fixed", top: (autoMode && effectAnim) ? (effectAnim.toY + effectAnim.h / 2 + 16) : (autoMode ? "calc(50% + " + Math.round(301 * vScale * 0.5 + 18) + "px)" : 60), left: (autoMode && effectAnim) ? effectAnim.toX : "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #3b82f688", boxShadow: "0 8px 32px #000c, 0 0 24px #3b82f622", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 320, maxWidth: "90vw", pointerEvents: "auto" }}>
         <div style={{ fontSize: 11, color: "#FFD70099", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
         <div style={{ fontSize: 14, color: "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{autoPrompt.kind === "pickFromHand" ? ("Pick a " + (autoPrompt.label || "card") + " from your hand to discard") : ("Pick a " + (autoPrompt.label || "card") + " from your bin to return to hand")}</div>
@@ -6472,7 +6704,7 @@ function RiftboundGame() {
                 <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 1 }}>
                   {/* Enemy units — to the right of BF card, bottom aligned with BF bottom (top-right from your POV) */}
                   <div style={{ position: "absolute", left: "100%", bottom: 0, display: "flex", flexDirection: "row", flexWrap: "nowrap", marginLeft: Math.round(4 * vScale), zIndex: 2 }}>
-                    {ps.map(function(p, pi) { if (pi === bottomPlayer || !bf.units[pi] || bf.units[pi].length === 0) return null; var isMyUnits = pi === myActIdx; var units = bf.units[pi]; var totalU = units.length; var overlapPx = totalU <= 1 ? 0 : totalU === 2 ? 30 : totalU === 3 ? 50 : totalU === 4 ? 65 : totalU === 5 ? 75 : 82; return units.map(function(u, ui) { var wrapStyle = { marginLeft: ui === 0 ? 0 : Math.round(-overlapPx * vScale), zIndex: totalU - ui, position: "relative", flexShrink: 0 }; var _fizzle = getAnimType(u.uid) === "fizzle" ? "anim-fizzle" : ""; return isMyUnits ? <div key={u.uid} className={_fizzle} style={wrapStyle}><Card card={u} small isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow && !autoPrompt ? "bf:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} onClick={function() { if (autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0))) { toggleAutoSel(u.uid); return; } toggleTap(u.uid); }} actionLabel={autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0)) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (u.exhausted ? "Untap" : "Tap")} selected={!!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} /></div> : <div key={u.uid} className={_fizzle} style={wrapStyle}><Card card={u} small onClick={(autoPrompt && (autoPrompt.kind === "pickEnemyUnit" || autoPrompt.kind === "pickAnyUnit") && (autoPrompt.validUids || []).indexOf(u.uid) >= 0) ? function() { toggleAutoSel(u.uid); } : (tm ? function() { resTarget(u, pi, bi); } : undefined)} actionLabel={(autoPrompt && (autoPrompt.kind === "pickEnemyUnit" || autoPrompt.kind === "pickAnyUnit") && (autoPrompt.validUids || []).indexOf(u.uid) >= 0) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (tm ? "Target" : undefined)} selected={!!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} /></div>; }); })}
+                    {ps.map(function(p, pi) { if (pi === bottomPlayer || !bf.units[pi] || bf.units[pi].length === 0) return null; var isMyUnits = pi === myActIdx; var units = bf.units[pi]; var totalU = units.length; var overlapPx = totalU <= 1 ? 0 : totalU === 2 ? 30 : totalU === 3 ? 50 : totalU === 4 ? 65 : totalU === 5 ? 75 : 82; return units.map(function(u, ui) { var wrapStyle = { marginLeft: ui === 0 ? 0 : Math.round(-overlapPx * vScale), zIndex: totalU - ui, position: "relative", flexShrink: 0 }; var _fizzle = getAnimType(u.uid) === "fizzle" ? "anim-fizzle" : ""; var _sdGlow = (sd && sd.assignmentPhase && bi === sd.bfIdx) ? (damageAssignments[u.uid] ? " sd-glow-red" : " sd-glow-blue") : ""; return isMyUnits ? <div key={u.uid} className={_fizzle + _sdGlow} style={wrapStyle}><Card card={u} small isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow && !autoPrompt ? "bf:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} onClick={function() { if (showdownUnitClick(u, true)) return; if (autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0))) { toggleAutoSel(u.uid); return; } toggleTap(u.uid); }} actionLabel={autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0)) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (u.exhausted ? "Untap" : "Tap")} selected={!!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} /></div> : <div key={u.uid} className={_fizzle + _sdGlow} style={wrapStyle}><Card card={u} small onClick={function() { if (showdownUnitClick(u, false)) return; if (autoPrompt && (autoPrompt.kind === "pickEnemyUnit" || autoPrompt.kind === "pickAnyUnit") && (autoPrompt.validUids || []).indexOf(u.uid) >= 0) { toggleAutoSel(u.uid); return; } if (tm) { resTarget(u, pi, bi); } }} actionLabel={(autoPrompt && (autoPrompt.kind === "pickEnemyUnit" || autoPrompt.kind === "pickAnyUnit") && (autoPrompt.validUids || []).indexOf(u.uid) >= 0) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (tm ? "Target" : undefined)} selected={!!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} /></div>; }); })}
                   </div>
                   {/* BF card itself */}
                   <div data-uid={bf.uid} style={{ width: BF_H, height: BF_W, display: "flex", justifyContent: "center", alignItems: "center" }}>
@@ -6480,7 +6712,7 @@ function RiftboundGame() {
                   </div>
                   {/* Your units — to the left of BF card, top aligned with BF top (bottom-left from your POV) */}
                   <div style={{ position: "absolute", right: "100%", top: 0, display: "flex", flexDirection: "row-reverse", flexWrap: "nowrap", marginRight: Math.round(4 * vScale), zIndex: 2 }}>
-                    {bf.units[bottomPlayer] && (function() { var units = bf.units[bottomPlayer]; var totalU = units.length; var overlapPx = totalU <= 1 ? 0 : totalU === 2 ? 30 : totalU === 3 ? 50 : totalU === 4 ? 65 : totalU === 5 ? 75 : 82; return units.map(function(u, ui) { var wrapStyle = { marginRight: ui === 0 ? 0 : Math.round(-overlapPx * vScale), zIndex: totalU - ui, position: "relative", flexShrink: 0 }; return <div key={u.uid} style={wrapStyle}><Card card={u} small isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow && !autoPrompt ? "bf:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} onClick={function() { if (autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0))) { toggleAutoSel(u.uid); return; } toggleTap(u.uid); }} actionLabel={autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0)) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (u.exhausted ? "Untap" : "Tap")} selected={!!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} /></div>; }); })()}
+                    {bf.units[bottomPlayer] && (function() { var units = bf.units[bottomPlayer]; var totalU = units.length; var overlapPx = totalU <= 1 ? 0 : totalU === 2 ? 30 : totalU === 3 ? 50 : totalU === 4 ? 65 : totalU === 5 ? 75 : 82; return units.map(function(u, ui) { var wrapStyle = { marginRight: ui === 0 ? 0 : Math.round(-overlapPx * vScale), zIndex: totalU - ui, position: "relative", flexShrink: 0 }; var _sdGlow = (sd && sd.assignmentPhase && bi === sd.bfIdx) ? (damageAssignments[u.uid] ? "sd-glow-red" : "sd-glow-blue") : ""; return <div key={u.uid} className={_sdGlow} style={wrapStyle}><Card card={u} small isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow && !autoPrompt ? "bf:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} onClick={function() { if (showdownUnitClick(u, true)) return; if (autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0))) { toggleAutoSel(u.uid); return; } toggleTap(u.uid); }} actionLabel={autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0)) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (u.exhausted ? "Untap" : "Tap")} selected={!!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} /></div>; }); })()}
                   </div>
                 </div>
               </div>;
@@ -6795,24 +7027,35 @@ function RiftboundGame() {
         var isOnline = lobbyType === "host" || lobbyType === "join";
         var isAttacker = isOnline ? pendingBeginConquer.playerIdx === mySlot : true;
         if (!isAttacker) return null;
+        var pbcContested = !!pendingBeginConquer.contested;
         return <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-          <span style={{ fontSize: 12, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>{pendingBeginConquer.bfName} — uncontested</span>
+          <span style={{ fontSize: 12, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>{pendingBeginConquer.bfName} — {pbcContested ? "contested" : "uncontested"}</span>
           <button onClick={function(e) {
             e.stopPropagation();
             var pbc = pendingBeginConquer;
-            var newSd = { bfIdx: pbc.bi, atkIdx: pbc.playerIdx, priority: pbc.playerIdx, lastPass: null, acted: false, contested: false };
+            var newSd = { bfIdx: pbc.bi, atkIdx: pbc.playerIdx, priority: pbc.playerIdx, lastPass: null, acted: false, contested: pbcContested, assignmentPhase: pbcContested, assignments: {} };
             setSd(newSd);
             setConquerAcceptors({});
             setPendingBeginConquer(null);
-            showAutoBanner("AUTO · Showdown at " + pbc.bfName + " — all players Resolve to conquer");
-            aL(pName(pbc.playerIdx) + " begins showdown at " + pbc.bfName);
+            if (pbcContested) {
+              setScreen("sd");
+              var unitObj = null;
+              var bfHere = bfs[pbc.bi];
+              if (bfHere) ((bfHere.units && bfHere.units[pbc.playerIdx]) || []).forEach(function(u) { if (u.name === pbc.unitName) unitObj = u; });
+              if (unitObj) fireShowdownStartEffects(unitObj, pbc.bi, pbc.playerIdx);
+              showAutoBanner("AUTO · Contested Showdown at " + pbc.bfName + " — assign damage, then Resolve");
+              aL(pName(pbc.playerIdx) + " starts contested showdown at " + pbc.bfName);
+            } else {
+              showAutoBanner("AUTO · Showdown at " + pbc.bfName + " — all players Resolve to conquer");
+              aL(pName(pbc.playerIdx) + " begins showdown at " + pbc.bfName);
+            }
             if (roomCode && lobbyType !== "test") {
               _lastSyncVersion.current++;
               var cleanPsBC = ps.map(function(p) { if (!p) return p; return Object.assign({}, p, { hand: p.hand || [], base: (p.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: p.trash || [], runes: p.runes || [], runeDeck: p.runeDeck || [], mainDeck: p.mainDeck || [], battlefields: p.battlefields || [] }); });
               var cleanBfsBC = bfs.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
-              fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPsBC, bfs: cleanBfsBC, turn: turn, act: act, screen: screen, log: log.slice(-30), sd: newSd, ver: _lastSyncVersion.current, by: myUid })));
+              fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPsBC, bfs: cleanBfsBC, turn: turn, act: act, screen: pbcContested ? "sd" : screen, log: log.slice(-30), sd: newSd, ver: _lastSyncVersion.current, by: myUid })));
             }
-          }} style={{ padding: "12px 28px", borderRadius: 8, border: "2px solid #60a5fa", background: "linear-gradient(135deg,#3b82f6,#60a5fa)", color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: "Spectral,serif", cursor: "pointer", letterSpacing: 1.5, boxShadow: "0 4px 16px #000c, 0 0 22px rgba(96,165,250,0.6)", textTransform: "uppercase" }}>Begin Showdown</button>
+          }} style={{ padding: "12px 28px", borderRadius: 8, border: "2px solid #60a5fa", background: "linear-gradient(135deg,#3b82f6,#60a5fa)", color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: "Spectral,serif", cursor: "pointer", letterSpacing: 1.5, boxShadow: "0 4px 16px #000c, 0 0 22px rgba(96,165,250,0.6)", textTransform: "uppercase" }}>{pbcContested ? "Start Showdown" : "Begin Showdown"}</button>
         </div>;
       })()}
       {/* AUTO MODE: Conquer-Resolve button — shown to all players during uncontested showdown */}
@@ -6842,6 +7085,29 @@ function RiftboundGame() {
             {meReady ? "Waiting…" : "Resolve"}
           </button>
           {isOnline && pending.length > 0 && pendingNames.length > 0 && <span style={{ fontSize: 11, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Awaiting: {pendingNames.join(", ")}</span>}
+        </div>;
+      })()}
+      {/* AUTO MODE: Contested-Showdown Resolve button — grey until all my BF units have damage assignments, then blue */}
+      {autoMode && sd && sd.contested && sd.assignmentPhase && (function() {
+        var isOnline = lobbyType === "host" || lobbyType === "join";
+        var meReady = !!conquerAcceptors[myUid];
+        var allUids = isOnline ? Object.keys(lobbyPlayers || {}) : [myUid];
+        var pending = allUids.filter(function(u) { return !conquerAcceptors[u]; });
+        var pendingNames = pending.map(function(u) { var sl = lobbyPlayers && lobbyPlayers[u] && typeof lobbyPlayers[u].slot === "number" ? lobbyPlayers[u].slot : -1; return sl >= 0 ? pName(sl) : (lobbyPlayers && lobbyPlayers[u] && lobbyPlayers[u].name) || "?"; });
+        var bfLabel = (bfs[sd.bfIdx] && bfs[sd.bfIdx].name) || "";
+        var allAssigned = allMyUnitsAssigned();
+        var canPress = allAssigned && !meReady;
+        return <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+          <span style={{ fontSize: 12, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Contested: {bfLabel}</span>
+          <button onClick={function(e) {
+            e.stopPropagation();
+            if (!canPress) return;
+            var newAcc = Object.assign({}, conquerAcceptors); newAcc[myUid] = true; setConquerAcceptors(newAcc);
+            if (!isOnline) { resolveShowdownContested(); }
+          }} disabled={!canPress} style={{ padding: "12px 28px", borderRadius: 8, border: "2px solid " + (canPress ? "#60a5fa" : (meReady ? "#60a5fa" : "#444")), background: canPress ? "linear-gradient(135deg,#3b82f6,#60a5fa)" : (meReady ? "rgba(96,165,250,0.15)" : "rgba(80,80,90,0.4)"), color: canPress ? "#fff" : (meReady ? "#60a5fa" : "#888"), fontSize: 15, fontWeight: 700, fontFamily: "Spectral,serif", cursor: canPress ? "pointer" : (meReady ? "default" : "not-allowed"), letterSpacing: 1.5, boxShadow: canPress ? "0 4px 16px #000c, 0 0 22px rgba(96,165,250,0.6)" : "0 4px 16px #000a", textTransform: "uppercase" }}>
+            {meReady ? "Waiting…" : (allAssigned ? "Resolve" : "Assign damage")}
+          </button>
+          {isOnline && meReady && pending.length > 0 && pendingNames.length > 0 && <span style={{ fontSize: 11, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Awaiting: {pendingNames.join(", ")}</span>}
         </div>;
       })()}
       {/* AUTO MODE: Floating END TURN button (bottom-right) — only when no showdown and no pending spell-resolve chain */}
@@ -6894,15 +7160,20 @@ function RiftboundGame() {
           return "M " + x1 + " " + y1 + " Q " + cx + " " + cy + " " + x2 + " " + y2;
         }
         var paths = [];
+        var sdPaths = [];
         // Persisted arrows
         arrows.forEach(function(a) {
           var from = getCardCenter(a.fromUid);
           var to = getCardCenter(a.toUid);
-          if (from && to) paths.push({ d: makePath(from.x, from.y, to.x, to.y), key: a.id });
+          if (from && to) {
+            var entry = { d: makePath(from.x, from.y, to.x, to.y), key: a.id || ("sd-" + a.fromUid + "-" + a.toUid) };
+            if (a.kind === "showdown") sdPaths.push(entry); else paths.push(entry);
+          }
         });
         var scChainPaths = [];
         // Drawing arrow
         var drawPath = null;
+        var drawIsShowdown = !!(sd && sd.assignmentPhase);
         if (drawingArrow && drawingArrow.x > 0) {
           var from2 = getCardCenter(drawingArrow.fromUid);
           if (from2) drawPath = makePath(from2.x, from2.y, drawingArrow.x, drawingArrow.y);
@@ -6912,10 +7183,15 @@ function RiftboundGame() {
             <marker id="arrowhead" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 10 4, 0 8" fill="#3B82F6" /></marker>
             <marker id="arrowhead-draw" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 10 4, 0 8" fill="#3B82F6" opacity="0.6" /></marker>
             <marker id="arrowhead-chain" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 10 4, 0 8" fill="#FFD700" /></marker>
+            <marker id="arrowhead-sd" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 10 4, 0 8" fill="#ef4444" /></marker>
+            <marker id="arrowhead-sd-draw" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 10 4, 0 8" fill="#60a5fa" opacity="0.85" /></marker>
           </defs>
           {paths.map(function(p) { return <path key={p.key} d={p.d} fill="none" stroke="#3B82F6" strokeWidth="4" markerEnd="url(#arrowhead)" strokeLinecap="round" />; })}
+          {sdPaths.map(function(p) { return <path key={p.key} d={p.d} fill="none" stroke="#ef4444" strokeWidth="4" markerEnd="url(#arrowhead-sd)" strokeLinecap="round" />; })}
           {scChainPaths.map(function(p) { return <path key={p.key} d={p.d} fill="none" stroke="#FFD700" strokeWidth="3" markerEnd="url(#arrowhead-chain)" strokeLinecap="round" opacity="0.8" />; })}
-          {drawPath && <path d={drawPath} fill="none" stroke="#3B82F6" strokeWidth="3" strokeDasharray="8 5" markerEnd="url(#arrowhead-draw)" strokeLinecap="round" opacity="0.7" />}
+          {drawPath && (drawIsShowdown
+            ? <path d={drawPath} fill="none" stroke="#60a5fa" strokeWidth="3" strokeDasharray="8 5" markerEnd="url(#arrowhead-sd-draw)" strokeLinecap="round" opacity="0.85" />
+            : <path d={drawPath} fill="none" stroke="#3B82F6" strokeWidth="3" strokeDasharray="8 5" markerEnd="url(#arrowhead-draw)" strokeLinecap="round" opacity="0.7" />)}
         </svg>;
       })()}
       {/* Floating hover tooltip */}
