@@ -153,7 +153,7 @@ function writeGameAction(code, state) {
   fbDb.ref("lobbies/" + code + "/gameState").set(state);
 }
 </script>
-<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}html,body{background:#0f0f23;overflow:hidden;font-family:'Inter',sans-serif;color:#ddd;text-rendering:optimizeLegibility;height:100%;width:100%}img{image-rendering:auto;-webkit-backface-visibility:hidden;backface-visibility:hidden}.card-hover,.bf-hover{-webkit-backface-visibility:hidden;backface-visibility:hidden;will-change:transform}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#FFD70033;border-radius:3px}button:hover{filter:brightness(1.15)}.card-hover{position:relative;z-index:1}.card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.hand-card-hover{position:relative;z-index:1}.hand-card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.75))}.auto-hand-card{transition:transform 200ms ease-out,filter 200ms ease-out}.auto-hand-card:hover{transform:translateY(calc(-0.35*var(--hand-ah,210px))) scale(1.91)!important;transform-origin:bottom center!important;z-index:999!important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.75))}.auto-zone-card{transition:transform 0.18s ease,filter 0.18s ease}.auto-zone-card:hover{transform:scale(2.1) translateY(-10%)!important;transform-origin:bottom center!important;z-index:999!important;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.85))!important}.sd-glow-blue{box-shadow:0 0 0 3px #60a5fa,0 0 18px rgba(96,165,250,0.7),0 0 36px rgba(96,165,250,0.45)!important;border-radius:6px;cursor:pointer!important;transition:box-shadow 0.18s ease}.sd-glow-red{box-shadow:0 0 0 3px #ef4444,0 0 18px rgba(239,68,68,0.85),0 0 36px rgba(239,68,68,0.5)!important;border-radius:6px;cursor:pointer!important;transition:box-shadow 0.18s ease}.card-tapped{position:relative;z-index:1}.card-tapped:hover{z-index:999 !important;filter:brightness(0.72) drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.gear-peek{position:relative;z-index:1}.gear-peek:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover{position:relative;z-index:1}.bf-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover-land{position:relative;z-index:1}.bf-hover-land:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.no-hover,.no-hover *{transition:none !important}.no-hover:hover,.no-hover:hover *{transform:none !important;filter:none !important;z-index:auto !important}@keyframes drawIn{0%{transform:translateX(500px) scale(0.4) rotate(-180deg);opacity:0}40%{opacity:1}100%{transform:translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}@keyframes fadeSlideUp{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-20px);opacity:0}}@keyframes untapGlow{0%{box-shadow:0 0 0 #FFD70000}50%{box-shadow:0 0 12px #FFD70066}100%{box-shadow:0 0 0 #FFD70000}}@keyframes cardDrawIn{0%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(180deg);opacity:0}40%{opacity:1}100%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes cardDrawOut{0%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}50%{opacity:0.7}100%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(-180deg);opacity:0}}.anim-recycle{animation:cardDrawOut 0.25s ease-in forwards !important;pointer-events:none;transition:none !important}.anim-rune-draw{animation:cardDrawIn 0.25s ease-out;transition:none !important}.anim-draw{animation:drawIn 0.25s ease-out;transition:none !important}@keyframes nameGlow{0%,100%{text-shadow:0 0 6px #FFD70033;opacity:0.7}50%{text-shadow:0 0 25px #FFD700ff,0 0 50px #FFD70088,0 0 80px #FFD70044;opacity:1}}@keyframes showdownPulse{0%,100%{box-shadow:inset 0 0 6px rgba(255,107,53,0.15),0 0 4px rgba(255,107,53,0.1);border-color:#FF6B3566}50%{box-shadow:inset 0 0 24px rgba(255,107,53,0.5),0 0 16px rgba(255,107,53,0.4);border-color:#FF6B35}}@keyframes turnPulse{0%,100%{box-shadow:inset 0 0 8px rgba(255,215,0,0.1),0 0 6px rgba(255,215,0,0.08);border-color:#FFD70044}50%{box-shadow:inset 0 0 20px rgba(255,215,0,0.3),0 0 14px rgba(255,215,0,0.25);border-color:#FFD700aa}}.anim-turn-pulse{animation:turnPulse 1.8s ease-in-out infinite}.anim-sd-pulse{animation:showdownPulse 1.2s ease-in-out infinite}.anim-name-glow{animation:nameGlow 1.2s ease-in-out infinite}.anim-pulse{animation:pulse 0.8s ease-in-out infinite}.anim-bin{animation:fadeSlideUp 0.4s ease-out forwards}.anim-untap{animation:untapGlow 0.6s ease-out}@keyframes pingRipple{0%{transform:translate(-50%,-50%) scale(0.3);opacity:1}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0}}.ping-dot{position:fixed;width:30px;height:30px;pointer-events:none;z-index:9997}.ping-dot::before,.ping-dot::after{content:'';position:absolute;top:50%;left:50%;width:100%;height:100%;border-radius:50%;border:2.5px solid #FFD700;transform:translate(-50%,-50%) scale(0.3);animation:pingRipple 0.8s ease-out forwards}.ping-dot::after{animation-delay:0.15s}[draggable=true]{cursor:grab;-webkit-user-select:none;user-select:none;touch-action:none;transition:none !important;animation-duration:0s !important}[draggable=true]:active{cursor:grabbing;opacity:0.6}[draggable=true] *{transition:none !important}[draggable=true] img{pointer-events:none;-webkit-user-drag:none}[data-action]{position:relative}[data-action]::after{content:attr(data-action);position:absolute;inset:0;background:rgba(0,0,0,0.42);color:#fff;display:none;align-items:center;justify-content:center;font-family:'Spectral',serif;font-weight:800;letter-spacing:3px;text-transform:uppercase;text-shadow:0 2px 8px rgba(0,0,0,0.9);pointer-events:none;border-radius:inherit;z-index:20;font-size:14px;text-align:center;padding:0 4px}[data-action]:hover::after{display:flex}@keyframes autoFlash{0%,100%{box-shadow:0 0 0 #FFD70000;filter:brightness(1)}40%{box-shadow:0 0 32px #FFD700cc,0 0 64px #FFD70066;filter:brightness(1.45) saturate(1.2)}}.anim-flash{animation:autoFlash 0.8s ease-in-out;border-radius:6px}@keyframes fizzleOut{0%{opacity:1;transform:scale(1) rotate(0deg);filter:brightness(1) blur(0)}25%{opacity:0.95;transform:scale(1.04) rotate(-2deg);filter:brightness(1.6) saturate(1.4) blur(0.5px);box-shadow:0 0 32px #ff6b35cc,0 0 60px #ff6b3566}55%{opacity:0.7;transform:scale(0.92) rotate(4deg);filter:brightness(1.2) blur(1.5px) hue-rotate(-15deg)}100%{opacity:0;transform:scale(0.45) rotate(12deg) translateY(20px);filter:brightness(0.4) blur(4px)}}.anim-fizzle{animation:fizzleOut 0.7s ease-out forwards;pointer-events:none;z-index:50!important}@keyframes autoBannerIn{0%{transform:translate(-50%,-12px);opacity:0}15%{transform:translate(-50%,0);opacity:1}85%{transform:translate(-50%,0);opacity:1}100%{transform:translate(-50%,-12px);opacity:0}}.auto-banner{position:fixed;top:14px;left:50%;transform:translate(-50%,0);z-index:1500;padding:8px 22px;border-radius:6px;background:linear-gradient(135deg,#1a1a3a,#0f0f23);border:2px solid #FFD70088;color:#FFD700;font-family:'Spectral',serif;font-weight:700;font-size:15px;letter-spacing:1.5px;text-transform:uppercase;box-shadow:0 6px 24px #000a,0 0 20px #FFD70033;pointer-events:none;animation:autoBannerIn 4.4s ease-out forwards}.auto-banner .auto-tag{font-size:10px;color:#FFD70099;letter-spacing:3px;display:block;margin-bottom:2px}</style></head><body><div id="root"></div>
+<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}html,body{background:#0f0f23;overflow:hidden;font-family:'Inter',sans-serif;color:#ddd;text-rendering:optimizeLegibility;height:100%;width:100%}img{image-rendering:auto;-webkit-backface-visibility:hidden;backface-visibility:hidden}.card-hover,.bf-hover{-webkit-backface-visibility:hidden;backface-visibility:hidden;will-change:transform}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#FFD70033;border-radius:3px}button:hover{filter:brightness(1.15)}.card-hover{position:relative;z-index:1}.card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.hand-card-hover{position:relative;z-index:1}.hand-card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.75))}.auto-hand-card{transition:transform 200ms ease-out,filter 200ms ease-out}.auto-hand-card:hover{transform:translateY(calc(-0.35*var(--hand-ah,210px))) scale(1.91)!important;transform-origin:bottom center!important;z-index:999!important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.75))}.auto-zone-card{transition:transform 0.18s ease,filter 0.18s ease}.auto-zone-card:hover{transform:scale(2.1) translateY(-10%)!important;transform-origin:bottom center!important;z-index:999!important;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.85))!important}.sd-glow-blue{box-shadow:0 0 0 3px #60a5fa,0 0 18px rgba(96,165,250,0.7),0 0 36px rgba(96,165,250,0.45)!important;border-radius:6px;cursor:pointer!important;transition:box-shadow 0.18s ease}.sd-glow-red{box-shadow:0 0 0 3px #ef4444,0 0 18px rgba(239,68,68,0.85),0 0 36px rgba(239,68,68,0.5)!important;border-radius:6px;cursor:pointer!important;transition:box-shadow 0.18s ease}.card-tapped{position:relative;z-index:1}.card-tapped:hover{z-index:999 !important;filter:brightness(0.72) drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.gear-peek{position:relative;z-index:1}.gear-peek:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover{position:relative;z-index:1}.bf-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover-land{position:relative;z-index:1}.bf-hover-land:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.no-hover,.no-hover *{transition:none !important}.no-hover:hover,.no-hover:hover *{transform:none !important;filter:none !important;z-index:auto !important}@keyframes drawIn{0%{transform:translateX(500px) scale(0.4) rotate(-180deg);opacity:0}40%{opacity:1}100%{transform:translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}@keyframes fadeSlideUp{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-20px);opacity:0}}@keyframes untapGlow{0%{box-shadow:0 0 0 #FFD70000}50%{box-shadow:0 0 12px #FFD70066}100%{box-shadow:0 0 0 #FFD70000}}@keyframes cardDrawIn{0%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(180deg);opacity:0}40%{opacity:1}100%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes cardDrawOut{0%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}50%{opacity:0.7}100%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(-180deg);opacity:0}}.anim-recycle{animation:cardDrawOut 0.25s ease-in forwards !important;pointer-events:none;transition:none !important}.anim-rune-draw{animation:cardDrawIn 0.25s ease-out;transition:none !important}.anim-draw{animation:drawIn 0.25s ease-out;transition:none !important}@keyframes nameGlow{0%,100%{text-shadow:0 0 6px #FFD70033;opacity:0.7}50%{text-shadow:0 0 25px #FFD700ff,0 0 50px #FFD70088,0 0 80px #FFD70044;opacity:1}}@keyframes showdownPulse{0%,100%{box-shadow:inset 0 0 6px rgba(255,107,53,0.15),0 0 4px rgba(255,107,53,0.1);border-color:#FF6B3566}50%{box-shadow:inset 0 0 24px rgba(255,107,53,0.5),0 0 16px rgba(255,107,53,0.4);border-color:#FF6B35}}@keyframes turnPulse{0%,100%{box-shadow:inset 0 0 8px rgba(255,215,0,0.1),0 0 6px rgba(255,215,0,0.08);border-color:#FFD70044}50%{box-shadow:inset 0 0 20px rgba(255,215,0,0.3),0 0 14px rgba(255,215,0,0.25);border-color:#FFD700aa}}.anim-turn-pulse{animation:turnPulse 1.8s ease-in-out infinite}.anim-sd-pulse{animation:showdownPulse 1.2s ease-in-out infinite}.anim-name-glow{animation:nameGlow 1.2s ease-in-out infinite}.anim-pulse{animation:pulse 0.8s ease-in-out infinite}.anim-bin{animation:fadeSlideUp 0.4s ease-out forwards}.anim-untap{animation:untapGlow 0.6s ease-out}@keyframes pingRipple{0%{transform:translate(-50%,-50%) scale(0.3);opacity:1}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0}}.ping-dot{position:fixed;width:30px;height:30px;pointer-events:none;z-index:9997}.ping-dot::before,.ping-dot::after{content:'';position:absolute;top:50%;left:50%;width:100%;height:100%;border-radius:50%;border:2.5px solid #FFD700;transform:translate(-50%,-50%) scale(0.3);animation:pingRipple 0.8s ease-out forwards}.ping-dot::after{animation-delay:0.15s}[draggable=true]{cursor:grab;-webkit-user-select:none;user-select:none;touch-action:none;transition:none !important;animation-duration:0s !important}[draggable=true]:active{cursor:grabbing;opacity:0.6}[draggable=true] *{transition:none !important}[draggable=true] img{pointer-events:none;-webkit-user-drag:none}[data-action]{position:relative}[data-action]::after{content:attr(data-action);position:absolute;inset:0;background:rgba(0,0,0,0.42);color:#fff;display:none;align-items:center;justify-content:center;font-family:'Spectral',serif;font-weight:800;letter-spacing:3px;text-transform:uppercase;text-shadow:0 2px 8px rgba(0,0,0,0.9);pointer-events:none;border-radius:inherit;z-index:20;font-size:14px;text-align:center;padding:0 4px}[data-action]:hover::after{display:flex}@keyframes autoFlash{0%,100%{box-shadow:0 0 0 #FFD70000;filter:brightness(1)}40%{box-shadow:0 0 32px #FFD700cc,0 0 64px #FFD70066;filter:brightness(1.45) saturate(1.2)}}.anim-flash{animation:autoFlash 0.8s ease-in-out;border-radius:6px}@keyframes fizzleOut{0%{opacity:1;transform:scale(1) rotate(0deg);filter:brightness(1) blur(0)}25%{opacity:0.95;transform:scale(1.04) rotate(-2deg);filter:brightness(1.6) saturate(1.4) blur(0.5px);box-shadow:0 0 32px #ff6b35cc,0 0 60px #ff6b3566}55%{opacity:0.7;transform:scale(0.92) rotate(4deg);filter:brightness(1.2) blur(1.5px) hue-rotate(-15deg)}100%{opacity:0;transform:scale(0.45) rotate(12deg) translateY(20px);filter:brightness(0.4) blur(4px)}}.anim-fizzle{animation:fizzleOut 1.7s ease-out forwards;pointer-events:none;z-index:50!important}@keyframes autoBannerIn{0%{transform:translate(-50%,-12px);opacity:0}15%{transform:translate(-50%,0);opacity:1}85%{transform:translate(-50%,0);opacity:1}100%{transform:translate(-50%,-12px);opacity:0}}.auto-banner{position:fixed;top:14px;left:50%;transform:translate(-50%,0);z-index:1500;padding:8px 22px;border-radius:6px;background:linear-gradient(135deg,#1a1a3a,#0f0f23);border:2px solid #FFD70088;color:#FFD700;font-family:'Spectral',serif;font-weight:700;font-size:15px;letter-spacing:1.5px;text-transform:uppercase;box-shadow:0 6px 24px #000a,0 0 20px #FFD70033;pointer-events:none;animation:autoBannerIn 4.4s ease-out forwards}.auto-banner .auto-tag{font-size:10px;color:#FFD70099;letter-spacing:3px;display:block;margin-bottom:2px}</style></head><body><div id="root"></div>
 <script>
 var IG="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/";
 var CARD_BACK="data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140"><rect width="100" height="140" rx="5" fill="#0f2640"/><rect x="4" y="4" width="92" height="132" rx="3" fill="none" stroke="#c8a84e" stroke-width="1"/><g stroke="#c8a84e" fill="none" stroke-width="0.8"><line x1="50" y1="18" x2="82" y2="50"/><line x1="50" y1="18" x2="18" y2="50"/><circle cx="50" cy="70" r="22"/><line x1="50" y1="122" x2="82" y2="90"/><line x1="50" y1="122" x2="18" y2="90"/><line x1="12" y1="70" x2="50" y2="38"/><line x1="88" y1="70" x2="50" y2="38"/><line x1="12" y1="70" x2="50" y2="102"/><line x1="88" y1="70" x2="50" y2="102"/><polygon points="50,38 82,70 50,102 18,70" stroke-width="1"/></g><text x="50" y="67" text-anchor="middle" font-size="7" font-weight="bold" fill="#c8a84e" font-family="serif">LEAGUE</text><text x="50" y="74" text-anchor="middle" font-size="5" fill="#c8a84e" font-family="serif">OF</text><text x="50" y="81" text-anchor="middle" font-size="6" font-weight="bold" fill="#c8a84e" font-family="serif">LEGENDS</text><polygon points="50,14 51.5,17 48.5,17" fill="#c8a84e"/><polygon points="50,126 51.5,123 48.5,123" fill="#c8a84e"/></svg>');
@@ -2255,14 +2255,21 @@ function RiftboundGame() {
         if (srcCard) break;
       }
     }
+    // Battlefield card source (e.g. Zaun Warrens onConquer) — render the ghost landscape in the showcase.
+    if (!srcCard) {
+      var bfHit = (bfs || []).find(function(b) { return b && b.uid === autoPrompt.sourceUid; });
+      if (bfHit) srcCard = Object.assign({}, bfHit, { _isBfSrc: true });
+    }
     if (!srcCard) return;
     var rect = srcEl.getBoundingClientRect();
     var vw = window.innerWidth, vh = window.innerHeight;
-    var scCardW = Math.round(258 * vScale), scCardH = Math.round(361 * vScale);
+    var _isBfSrcShow = !!srcCard._isBfSrc;
+    var scCardW = _isBfSrcShow ? Math.round(361 * vScale) : Math.round(258 * vScale);
+    var scCardH = _isBfSrcShow ? Math.round(258 * vScale) : Math.round(361 * vScale);
     // Showcase is positioned at right: 2%, top: 50%, transform: translateY(-50%). Compute its center in viewport coords.
     var scTargetX = vw - vw * 0.02 - scCardW / 2;
     var scTargetY = vh * 0.5;
-    setEffectAnim({ sourceCard: srcCard, fromX: rect.left + rect.width / 2, fromY: rect.top + rect.height / 2, toX: scTargetX, toY: scTargetY, w: scCardW, h: scCardH, ts: Date.now(), arrived: false });
+    setEffectAnim({ sourceCard: srcCard, fromX: rect.left + rect.width / 2, fromY: rect.top + rect.height / 2, toX: scTargetX, toY: scTargetY, w: scCardW, h: scCardH, ts: Date.now(), arrived: false, isBfSrc: _isBfSrcShow });
     var t1 = requestAnimationFrame(function() {
       setEffectAnim(function(prev) { return prev ? Object.assign({}, prev, { arrived: true }) : prev; });
     });
@@ -2332,7 +2339,7 @@ function RiftboundGame() {
     _spellFizzleAfterPromptTimer.current = setTimeout(function() {
       if (autoPromptRef.current) return;
       var scNow = sc;
-      addAnim(scNow.uid, "fizzle", 700);
+      addAnim(scNow.uid, "fizzle", 1700);
       setTimeout(function() {
         setPs(function(prev) {
           var i = myActIdx; var p = prev[i]; if (!p) return prev;
@@ -2342,7 +2349,7 @@ function RiftboundGame() {
           return np;
         });
         if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); }
-      }, 700);
+      }, 1700);
     }, 600);
     return function() { clearTimeout(_spellFizzleAfterPromptTimer.current); };
   }, [autoPrompt, showcaseCard, pendingSpell]);
@@ -2607,12 +2614,12 @@ function RiftboundGame() {
     setTimeout(function() {
       if (_resolveDidSomethingRef.current) return;
       if (autoPromptRef.current) return;
-      addAnim(spellToResolve.uid, "fizzle", 700);
+      addAnim(spellToResolve.uid, "fizzle", 1700);
       setTimeout(function() {
         setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p) return prev; var trash = (p.trash || []).slice(); trash.push(Object.assign({}, spellToResolve, { exhausted: false, gear: [] })); var np = prev.slice(); np[i] = Object.assign({}, p, { trash: trash }); return np; });
         if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); }
         showAutoBanner("AUTO · " + (spellToResolve.name || "Spell") + " — fizzled (no valid effect)");
-      }, 700);
+      }, 1700);
     }, 250);
   }, [pendingSpell, resolveAcceptors, lobbyPlayers, lobbyType]);
 
@@ -4216,7 +4223,7 @@ function RiftboundGame() {
         return;
       }
       // Kill: trigger fizzle anim first, defer state mutation so the animation has time to play.
-      addAnim(victimUid, "fizzle", 700);
+      addAnim(victimUid, "fizzle", 1700);
       var snap = found;
       setTimeout(function() {
         setBfs(function(prev) {
@@ -4259,7 +4266,7 @@ function RiftboundGame() {
             showAutoBanner("AUTO · Wraith of Echoes — first friendly death this turn, drew 1");
           }
         }
-      }, 700);
+      }, 1700);
     } else {
       // Just apply damage — no animation needed.
       setBfs(function(prev) {
@@ -5985,7 +5992,7 @@ function RiftboundGame() {
       });
     });
     // Animate fizzle on dead
-    deadUids.forEach(function(d) { addAnim(d.uid, "fizzle", 700); });
+    deadUids.forEach(function(d) { addAnim(d.uid, "fizzle", 1700); });
     aL("Showdown damage resolves at " + bfNow.name + " — " + deadUids.length + " killed, " + survivorPlan.length + " survived.");
     // Clear visual state
     setSd(null);
@@ -6045,7 +6052,7 @@ function RiftboundGame() {
           fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPsX, bfs: cleanBfsX, turn: turn, act: act, screen: "play", log: log.slice(-30), sd: null, ver: _lastSyncVersion.current, by: myUid })));
         }, 50);
       }
-    }, 720);
+    }, 1720);
   }
 
   function passPriority() {
@@ -7004,7 +7011,7 @@ function RiftboundGame() {
                     </div>;
                   })}
                   {/* Main showcase card (most recent, on top/right) */}
-                  <div data-uid={showcaseCard.uid} className={getAnimType(showcaseCard.uid) === "flash" ? "anim-flash" : ""} onMouseEnter={function() { setScHovIdx(-1); }} style={{ position: "relative", cursor: drawingArrow ? "crosshair" : "default", width: scCardW, height: scCardH, flexShrink: 0, overflow: "visible", zIndex: scHistLen + 2 }}>
+                  <div data-uid={showcaseCard.uid} className={getAnimType(showcaseCard.uid) === "flash" ? "anim-flash" : ""} onMouseEnter={function() { setScHovIdx(-1); }} style={{ position: "relative", cursor: drawingArrow ? "crosshair" : "default", width: scCardW, height: scCardH, flexShrink: 0, overflow: "visible", zIndex: scHistLen + 2, borderRadius: 6, boxShadow: autoMode ? "0 0 28px rgba(255,215,0,0.7), 0 0 56px rgba(255,215,0,0.4), 0 0 90px rgba(255,140,0,0.25)" : undefined }}>
                     <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: 6 }}>
                       {showcaseCard.img ? <img src={imgSrc(showcaseCard.img)} onError={function(e) { if (PA[showcaseCard.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[showcaseCard.name] + ".webp"; } }} style={{ width: "100%", height: "100%", objectFit: "fill", display: "block" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 16, fontFamily: "Spectral,serif", border: "1px solid #ffffff20", textAlign: "center", padding: 8 }}>{showcaseCard.name}</div>}
                     </div>
@@ -7037,13 +7044,16 @@ function RiftboundGame() {
       {/* AUTO MODE: Effect-trigger duplicate-card animation — ghost flies from source to showcase */}
       {effectAnim && effectAnim.sourceCard && (function() {
         var card = effectAnim.sourceCard;
-        var imgUrl = card.img ? imgSrc(card.img) : "";
-        var startW = HAND_W, startH = HAND_H;
+        var isBfSrc = !!effectAnim.isBfSrc;
+        var imgUrl = isBfSrc
+          ? (CI[card.name] ? imgSrc(CI[card.name]) : (PA[card.name] ? PA_CDN + PA[card.name] + ".webp" : ""))
+          : (card.img ? imgSrc(card.img) : "");
+        var startW = isBfSrc ? HAND_H : HAND_W, startH = isBfSrc ? HAND_W : HAND_H;
         var endW = effectAnim.w, endH = effectAnim.h;
         var dx = effectAnim.arrived ? (effectAnim.toX - effectAnim.fromX) : 0;
         var dy = effectAnim.arrived ? (effectAnim.toY - effectAnim.fromY) : 0;
         var sc = effectAnim.arrived ? (endW / startW) : 1;
-        return <div style={{ position: "fixed", left: effectAnim.fromX - startW / 2, top: effectAnim.fromY - startH / 2, width: startW, height: startH, transform: "translate(" + dx + "px, " + dy + "px) scale(" + sc + ")", transformOrigin: "center center", transition: "transform 480ms cubic-bezier(0.22, 0.65, 0.28, 1), opacity 480ms ease-out", opacity: effectAnim.fading ? 0 : (effectAnim.arrived ? 0.92 : 1), zIndex: 1499, pointerEvents: "none", borderRadius: 6, overflow: "hidden", boxShadow: "0 0 26px rgba(59,130,246,0.65), 0 8px 32px #000a", border: "2px solid #3b82f6" }}>
+        return <div style={{ position: "fixed", left: effectAnim.fromX - startW / 2, top: effectAnim.fromY - startH / 2, width: startW, height: startH, transform: "translate(" + dx + "px, " + dy + "px) scale(" + sc + ")", transformOrigin: "center center", transition: "transform 480ms cubic-bezier(0.22, 0.65, 0.28, 1), opacity 480ms ease-out", opacity: effectAnim.fading ? 0 : (effectAnim.arrived ? 0.92 : 1), zIndex: 1499, pointerEvents: "none", borderRadius: 6, overflow: "hidden", boxShadow: isBfSrc ? "0 0 28px rgba(255,215,0,0.7), 0 0 56px rgba(255,215,0,0.4), 0 8px 32px #000a" : "0 0 26px rgba(59,130,246,0.65), 0 8px 32px #000a", border: isBfSrc ? "2px solid #FFD700" : "2px solid #3b82f6" }}>
           {imgUrl ? <img src={imgUrl} style={{ width: "100%", height: "100%", objectFit: "fill", display: "block" }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 12 }}>{card.name}</div>}
         </div>;
       })()}
@@ -7067,7 +7077,7 @@ function RiftboundGame() {
                   {hImg ? <img src={hImg} style={{ width: scCardW, height: scCardH, objectFit: "fill", display: "block" }} /> : <div style={{ width: scCardW, height: scCardH, background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#FFD700" }}>{hc.name}</div>}
                 </div>;
               })}
-              <div data-uid={showcaseCard.uid} className={getAnimType(showcaseCard.uid) === "flash" ? "anim-flash" : ""} onMouseEnter={function() { setScHovIdx(-1); }} style={{ position: "relative", cursor: drawingArrow ? "crosshair" : "default", width: scCardW, height: scCardH, flexShrink: 0, overflow: "visible", zIndex: scHistLen + 2 }}>
+              <div data-uid={showcaseCard.uid} className={getAnimType(showcaseCard.uid) === "flash" ? "anim-flash" : ""} onMouseEnter={function() { setScHovIdx(-1); }} style={{ position: "relative", cursor: drawingArrow ? "crosshair" : "default", width: scCardW, height: scCardH, flexShrink: 0, overflow: "visible", zIndex: scHistLen + 2, borderRadius: 6, boxShadow: autoMode ? "0 0 28px rgba(255,215,0,0.7), 0 0 56px rgba(255,215,0,0.4), 0 0 90px rgba(255,140,0,0.25)" : undefined }}>
                 <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: 6 }}>
                   {showcaseCard.img ? <img src={imgSrc(showcaseCard.img)} onError={function(e) { if (PA[showcaseCard.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[showcaseCard.name] + ".webp"; } }} style={{ width: "100%", height: "100%", objectFit: "fill", display: "block" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 16, fontFamily: "Spectral,serif", border: "1px solid #ffffff20", textAlign: "center", padding: 8 }}>{showcaseCard.name}</div>}
                 </div>
@@ -7102,12 +7112,12 @@ function RiftboundGame() {
               setTimeout(function() {
                 if (_resolveDidSomethingRef.current) return;
                 if (autoPromptRef && autoPromptRef.current) return;
-                addAnim(spellToResolve.uid, "fizzle", 700);
+                addAnim(spellToResolve.uid, "fizzle", 1700);
                 setTimeout(function() {
                   setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p) return prev; var trash = (p.trash || []).slice(); trash.push(Object.assign({}, spellToResolve, { exhausted: false, gear: [] })); var np = prev.slice(); np[i] = Object.assign({}, p, { trash: trash }); return np; });
                   if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); }
                   showAutoBanner("AUTO · " + (spellToResolve.name || "Spell") + " — fizzled (no valid effect)");
-                }, 700);
+                }, 1700);
               }, 250);
             }
           }} disabled={meReady} style={{ padding: "12px 28px", borderRadius: 8, border: "2px solid #60a5fa", background: meReady ? "rgba(96,165,250,0.15)" : "linear-gradient(135deg,#3b82f6,#60a5fa)", color: meReady ? "#60a5fa" : "#fff", fontSize: 15, fontWeight: 700, fontFamily: "Spectral,serif", cursor: meReady ? "default" : "pointer", letterSpacing: 1.5, boxShadow: "0 4px 16px #000c, 0 0 22px rgba(96,165,250,0.6)", textTransform: "uppercase" }}>
