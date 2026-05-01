@@ -2365,6 +2365,8 @@ function RiftboundGame() {
     var isOnline = lobbyType === "host" || lobbyType === "join";
     if (isOnline && showcaseOwner !== myUid) return;
     if (pendingSpell) return;
+    // Wait for any other fizzle animations (e.g. Incinerate's killed target) to finish before spell fizzle.
+    var _waitForFizzles = Math.max(0, (_lastFizzleEndRef.current || 0) - Date.now() + 200);
     _spellFizzleAfterPromptTimer.current = setTimeout(function() {
       if (autoPromptRef.current) return;
       var scNow = sc;
@@ -2379,7 +2381,7 @@ function RiftboundGame() {
         });
         if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); }
       }, 1700);
-    }, 1000);
+    }, Math.max(1000, _waitForFizzles));
     return function() { clearTimeout(_spellFizzleAfterPromptTimer.current); };
   }, [autoPrompt, showcaseCard, pendingSpell]);
   var _aBnr = useState(null), autoBanner = _aBnr[0], setAutoBanner = _aBnr[1];
@@ -2412,6 +2414,9 @@ function RiftboundGame() {
   var _pendingSpell = useState(null), pendingSpell = _pendingSpell[0], setPendingSpell = _pendingSpell[1];
   var _resolveAcceptors = useState({}), resolveAcceptors = _resolveAcceptors[0], setResolveAcceptors = _resolveAcceptors[1];
   var _resolveDidSomethingRef = useRef(false);
+  // Tracks the latest timestamp by which any active fizzle animation will finish.
+  // Used so spell-card showcase fizzles wait for any in-flight target fizzles (e.g. Incinerate's killed enemy).
+  var _lastFizzleEndRef = useRef(0);
   // Click-to-attach: in auto-mode, clicking a base card "picks it up". Both BFs glow gold; clicking a BF deploys.
   var _baseCardSelected = useState(null), baseCardSelected = _baseCardSelected[0], setBaseCardSelected = _baseCardSelected[1];
   // Conquer-by-resolve: when a unit moves from base to an unconquered BF, both players must click Resolve to commit the conquer + 1 point.
@@ -2646,6 +2651,7 @@ function RiftboundGame() {
     // Wait for any prompt to clear, then 1s dwell, then fizzle to bin — always, so the showcase ghost ends up in the trash.
     function _tryFizzleOnline() {
       if (autoPromptRef.current) { setTimeout(_tryFizzleOnline, 200); return; }
+      var _w = Math.max(1000, (_lastFizzleEndRef.current || 0) - Date.now() + 200);
       setTimeout(function() {
         addAnim(spellToResolve.uid, "fizzle", 1700);
         setTimeout(function() {
@@ -2653,7 +2659,7 @@ function RiftboundGame() {
           if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); }
           if (!_resolveDidSomethingRef.current) showAutoBanner("AUTO · " + (spellToResolve.name || "Spell") + " — fizzled (no valid effect)");
         }, 1700);
-      }, 1000);
+      }, _w);
     }
     _tryFizzleOnline();
   }, [pendingSpell, resolveAcceptors, lobbyPlayers, lobbyType]);
@@ -3948,7 +3954,7 @@ function RiftboundGame() {
   var myActIdx = isOnlineGame ? mySlot : act;
   var myPs = ps[myActIdx] || null;
 
-  function addAnim(id, type, dur) { var d = dur || 300; var ts = Date.now(); setAnims(function(prev) { return prev.concat([{ id: id, type: type, ts: ts }]); }); setTimeout(function() { setAnims(function(prev) { return prev.filter(function(a) { return !(a.id === id && a.ts === ts); }); }); }, d); }
+  function addAnim(id, type, dur) { var d = dur || 300; var ts = Date.now(); if (type === "fizzle") { _lastFizzleEndRef.current = Math.max(_lastFizzleEndRef.current || 0, ts + d); } setAnims(function(prev) { return prev.concat([{ id: id, type: type, ts: ts }]); }); setTimeout(function() { setAnims(function(prev) { return prev.filter(function(a) { return !(a.id === id && a.ts === ts); }); }); }, d); }
   function showAutoBanner(text) { var ts = Date.now(); setAutoBanner({ text: text, ts: ts }); setTimeout(function() { setAutoBanner(function(b) { return (b && b.ts === ts) ? null : b; }); }, 4400); }
   function shouldEnterReady(card) {
     if (!autoMode) return false;
@@ -7293,6 +7299,7 @@ function RiftboundGame() {
               // Wait for any prompt to clear, then 1s dwell, then fizzle to bin (always — _spellFizzleAfterPromptTimer also covers this).
               function _tryFizzleOffline() {
                 if (autoPromptRef && autoPromptRef.current) { setTimeout(_tryFizzleOffline, 200); return; }
+                var _w = Math.max(1000, (_lastFizzleEndRef.current || 0) - Date.now() + 200);
                 setTimeout(function() {
                   addAnim(spellToResolve.uid, "fizzle", 1700);
                   setTimeout(function() {
@@ -7300,7 +7307,7 @@ function RiftboundGame() {
                     if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); }
                     if (!_resolveDidSomethingRef.current) showAutoBanner("AUTO · " + (spellToResolve.name || "Spell") + " — fizzled (no valid effect)");
                   }, 1700);
-                }, 1000);
+                }, _w);
               }
               _tryFizzleOffline();
             }
@@ -7311,7 +7318,7 @@ function RiftboundGame() {
         </div>;
       })()}
       {/* AUTO MODE: Begin Showdown button — attacker only, after moving to unconquered BF */}
-      {autoMode && pendingBeginConquer && !pendingConquer && (function() {
+      {autoMode && pendingBeginConquer && !pendingConquer && !pendingSpell && !autoPrompt && (function() {
         var isOnline = lobbyType === "host" || lobbyType === "join";
         var isAttacker = isOnline ? pendingBeginConquer.playerIdx === mySlot : true;
         if (!isAttacker) return null;
@@ -7347,7 +7354,7 @@ function RiftboundGame() {
         </div>;
       })()}
       {/* AUTO MODE: Conquer-Resolve button — shown to all players during uncontested showdown */}
-      {autoMode && sd && !sd.contested && (function() {
+      {autoMode && sd && !sd.contested && !pendingSpell && !autoPrompt && (function() {
         var isOnline = lobbyType === "host" || lobbyType === "join";
         var meReady = !!conquerAcceptors[myUid];
         var allUids = isOnline ? Object.keys(lobbyPlayers || {}) : [myUid];
@@ -7376,7 +7383,7 @@ function RiftboundGame() {
         </div>;
       })()}
       {/* AUTO MODE: Contested-Showdown Resolve button — grey until all my BF units have damage assignments, then blue */}
-      {autoMode && sd && sd.contested && sd.assignmentPhase && (function() {
+      {autoMode && sd && sd.contested && sd.assignmentPhase && !pendingSpell && !autoPrompt && (function() {
         var isOnline = lobbyType === "host" || lobbyType === "join";
         var meReady = !!conquerAcceptors[myUid];
         var allUids = isOnline ? Object.keys(lobbyPlayers || {}) : [myUid];
@@ -7399,18 +7406,14 @@ function RiftboundGame() {
         </div>;
       })()}
       {/* AUTO MODE: Floating END TURN button (bottom-right) — only when no showdown and no pending spell-resolve chain */}
-      {autoMode && screen === "play" && !awakenPhase && !sd && !pendingSpell && !pendingBeginConquer && (function() {
+      {autoMode && screen === "play" && !awakenPhase && !sd && !pendingSpell && !pendingBeginConquer && !autoPrompt && !showcaseCard && (function() {
         var isOnlineGame = lobbyType === "host" || lobbyType === "join";
         if (isOnlineGame) { if (_gamePhaseRef.current !== "playing") return null; if (act !== mySlot) return null; }
         return <button onClick={endTurn} style={{ position: "fixed", bottom: 24, right: 24, padding: "12px 28px", borderRadius: 8, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70060,#FF8C0030)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif", zIndex: 950, boxShadow: "0 4px 16px #000c, 0 0 24px rgba(255,215,0,0.2)", letterSpacing: 1 }}>END TURN</button>;
       })()}
       {/* AUTO MODE: Bottom tabs (Log + Chat) */}
-      {autoMode && <div style={{ position: "fixed", top: 60, right: 12, zIndex: 900, display: "flex", flexDirection: "column", alignItems: "flex-end", pointerEvents: "auto" }}>
-        <div style={{ display: "flex", gap: 0 }}>
-          <button onClick={function() { setBottomTab(bottomTab === "log" ? null : "log"); }} style={{ padding: "6px 16px", border: "1px solid #ffffff20", background: bottomTab === "log" ? "rgba(20,20,50,0.95)" : "rgba(0,0,0,0.6)", color: "#FFD700", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif", borderRadius: bottomTab === "log" ? "4px 4px 0 0" : 4, borderBottom: bottomTab === "log" ? "1px solid rgba(20,20,50,0.95)" : "1px solid #ffffff20", letterSpacing: 1 }}>LOG</button>
-          <button onClick={function() { setBottomTab(bottomTab === "chat" ? null : "chat"); }} style={{ padding: "6px 16px", border: "1px solid #ffffff20", borderLeft: "none", background: bottomTab === "chat" ? "rgba(20,20,50,0.95)" : "rgba(0,0,0,0.6)", color: "#FFD700", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif", borderRadius: bottomTab === "chat" ? "4px 4px 0 0" : 4, borderBottom: bottomTab === "chat" ? "1px solid rgba(20,20,50,0.95)" : "1px solid #ffffff20", letterSpacing: 1 }}>CHAT</button>
-        </div>
-        {bottomTab && <div style={{ width: 380, height: 240, background: "rgba(20,20,50,0.95)", border: "1px solid #ffffff20", borderTop: "none", borderRadius: "0 0 6px 6px", padding: 8, display: "flex", flexDirection: "column" }}>
+      {autoMode && <div style={{ position: "fixed", bottom: 24, right: 220, zIndex: 900, display: "flex", flexDirection: "column", alignItems: "flex-end", pointerEvents: "auto" }}>
+        {bottomTab && <div style={{ width: 380, height: 240, background: "rgba(20,20,50,0.95)", border: "1px solid #ffffff20", borderBottom: "none", borderRadius: "6px 6px 0 0", padding: 8, display: "flex", flexDirection: "column" }}>
           {bottomTab === "log" && <>
             <div ref={lr} style={{ flex: 1, overflow: "auto", padding: 4, fontSize: 12, lineHeight: 1.5 }}>
               {log.map(function(e, i) { return <div key={i} style={{ color: e.m.indexOf("===") >= 0 ? "#FFD700" : e.m.indexOf("wins") >= 0 ? "#FFD700" : e.m.indexOf("SHOWDOWN") >= 0 ? "#FF6B35" : e.m.indexOf("onquer") >= 0 || e.m.indexOf("holding point") >= 0 ? "#4ADE80" : "#667", marginBottom: 2, fontFamily: e.m.indexOf("===") >= 0 ? "Spectral,serif" : "inherit" }}>{e.m}</div>; })}
@@ -7428,6 +7431,10 @@ function RiftboundGame() {
             </div>}
           </>}
         </div>}
+        <div style={{ display: "flex", gap: 0 }}>
+          <button onClick={function() { setBottomTab(bottomTab === "log" ? null : "log"); }} style={{ padding: "6px 16px", border: "1px solid #ffffff20", background: bottomTab === "log" ? "rgba(20,20,50,0.95)" : "rgba(0,0,0,0.6)", color: "#FFD700", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif", borderRadius: bottomTab === "log" ? "0 0 4px 4px" : 4, borderTop: bottomTab === "log" ? "1px solid rgba(20,20,50,0.95)" : "1px solid #ffffff20", letterSpacing: 1 }}>LOG</button>
+          <button onClick={function() { setBottomTab(bottomTab === "chat" ? null : "chat"); }} style={{ padding: "6px 16px", border: "1px solid #ffffff20", borderLeft: "none", background: bottomTab === "chat" ? "rgba(20,20,50,0.95)" : "rgba(0,0,0,0.6)", color: "#FFD700", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif", borderRadius: bottomTab === "chat" ? "0 0 4px 4px" : 4, borderTop: bottomTab === "chat" ? "1px solid rgba(20,20,50,0.95)" : "1px solid #ffffff20", letterSpacing: 1 }}>CHAT</button>
+        </div>
       </div>}
       {/* Centered point announcement (autoMode) */}
       {autoMode && pointMessage && <div key={pointMessage.ts} className="anim-point-msg" style={{ position: "fixed", top: "40%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 1600, padding: "20px 44px", borderRadius: 10, background: "linear-gradient(135deg,rgba(255,215,0,0.18),rgba(255,140,0,0.10))", border: "2px solid #FFD700", color: "#FFD700", fontFamily: "Spectral,serif", fontSize: 28, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", textShadow: "0 0 14px #FFD700aa, 0 0 36px #FFD70066", boxShadow: "0 0 36px rgba(255,215,0,0.45), 0 0 72px rgba(255,215,0,0.25), 0 12px 36px #000c", pointerEvents: "none" }}>{pointMessage.text}</div>}
