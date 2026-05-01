@@ -1993,6 +1993,196 @@ var CARD_EFFECTS = {
       ctx.draw(1);
       ctx.banner("Wuju Apprentice — drew 1 (approximate, ignores Lvl 6 condition)");
     }
+  },
+
+  // ============ Batch: 20 additional automated cards ============
+
+  "Concentrate": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.draw(2);
+      ctx.banner("Concentrate — drew 2");
+    }
+  },
+
+  "Corina Veraza": {
+    onPlay: function(ctx) {
+      if (ctx.where !== "battlefield") return;
+      ctx.flash(ctx.card.uid);
+      ctx.spawnInBattlefield("Recruit (Demacian)", 3);
+      ctx.banner("Corina Veraza — 3 Recruit tokens at " + (ctx.bfName || "battlefield"));
+    }
+  },
+
+  "Crescent Strike": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var enemyBfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi === ctx.myActIdx) return; (pu || []).forEach(function(u) { enemyBfUids.push(u.uid); }); }); });
+      if (enemyBfUids.length === 0) { ctx.banner("Crescent Strike — no enemy battlefield units"); return; }
+      // Approximation: 4 damage to one enemy BF unit (skips splash 1 to others at same BF).
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyBfUids, sourceName: "Crescent Strike", sourceUid: ctx.card.uid, effect: "damage", amount: 4 });
+    }
+  },
+
+  "Dancing Grenade": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      var meP = ps[ctx.myActIdx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+      if (allUids.length === 0) { ctx.banner("Dancing Grenade — no units to damage"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Dancing Grenade", sourceUid: ctx.card.uid, effect: "damage", amount: 2 });
+    }
+  },
+
+  "Desert's Call": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.spawnInBase("Sand Soldier", 1);
+      ctx.banner("Desert's Call — spawned 1 Sand Soldier");
+    }
+  },
+
+  "Detonate": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.myActIdx]; if (!meP) return;
+      var gearUids = (meP.base || []).filter(function(c) { return c.type === "Gear"; }).map(function(c) { return c.uid; });
+      ctx.bfs.forEach(function(b) { ((b.units && b.units[ctx.myActIdx]) || []).forEach(function(u) { (u.gear || []).forEach(function(g) { gearUids.push(g.uid); }); }); });
+      if (gearUids.length === 0) { ctx.banner("Detonate — no gear to kill, drew 2"); ctx.draw(2); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: gearUids, sourceName: "Detonate", sourceUid: ctx.card.uid, effect: "kill", andDraw: 2 });
+    }
+  },
+
+  "Disarming Rake": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.myActIdx]; if (!meP) return;
+      var gearUids = (meP.base || []).filter(function(c) { return c.type === "Gear"; }).map(function(c) { return c.uid; });
+      ctx.bfs.forEach(function(b) { ((b.units && b.units[ctx.myActIdx]) || []).forEach(function(u) { (u.gear || []).forEach(function(g) { gearUids.push(g.uid); }); }); });
+      if (gearUids.length === 0) { ctx.banner("Disarming Rake — no gear to kill"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: gearUids, sourceName: "Disarming Rake", sourceUid: ctx.card.uid, effect: "kill", upTo: true });
+    }
+  },
+
+  "Eclipse": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      var meP = ps[ctx.myActIdx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+      if (allUids.length === 0) { ctx.banner("Eclipse — no units to weaken"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Eclipse", sourceUid: ctx.card.uid, effect: "tempMight", amount: -4 });
+    }
+  },
+
+  "Elder Dragon": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var enemyBfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi === ctx.myActIdx) return; (pu || []).forEach(function(u) { enemyBfUids.push(u.uid); }); }); });
+      if (enemyBfUids.length === 0) { ctx.banner("Elder Dragon — no enemy battlefield units"); return; }
+      // Approximation: 1 damage to one enemy BF unit (rule: 1 dmg to one enemy at each location).
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyBfUids, sourceName: "Elder Dragon", sourceUid: ctx.card.uid, effect: "damage", amount: 1 });
+    }
+  },
+
+  "Eminent Benefactor": {
+    onHold: function(ctx) {
+      if (ctx.unit) return;
+      ctx.spawnInBase("Gold", 2);
+      ctx.banner("Eminent Benefactor — 2 Gold tokens (held " + ctx.bfName + ")");
+    }
+  },
+
+  "Evershade Stalker": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.draw(1);
+      ctx.banner("Evershade Stalker — drew 1 (approximate, skips discard)");
+    }
+  },
+
+  "Ezreal, Prodigy": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.draw(2);
+      ctx.banner("Ezreal, Prodigy — drew 2 (approximate, skips discard)");
+    }
+  },
+
+  "Falling Star": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      var meP = ps[ctx.myActIdx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+      if (allUids.length === 0) { ctx.banner("Falling Star — no units to damage"); return; }
+      var n = Math.min(2, allUids.length);
+      ctx.prompt({ kind: "pickAnyUnit", n: n, validUids: allUids, sourceName: "Falling Star", sourceUid: ctx.card.uid, effect: "damage", amount: 3 });
+    }
+  },
+
+  "Feral Strength": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      var meP = ps[ctx.myActIdx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+      if (allUids.length === 0) { ctx.banner("Feral Strength — no units to buff"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Feral Strength", sourceUid: ctx.card.uid, effect: "tempMight", amount: 2 });
+    }
+  },
+
+  "Frisky Hunter": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      if (ctx.where === "battlefield") ctx.spawnInBattlefield("Bird", 1);
+      else ctx.spawnInBase("Bird", 1);
+      ctx.banner("Frisky Hunter — Bird token (Deflect)");
+    }
+  },
+
+  "Frostcoat Cub": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      var meP = ps[ctx.myActIdx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+      if (allUids.length === 0) { ctx.banner("Frostcoat Cub — no units to weaken"); return; }
+      // Approximation: -2 might unconditionally (skips additional-cost branch).
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Frostcoat Cub", sourceUid: ctx.card.uid, effect: "tempMight", amount: -2 });
+    }
+  },
+
+  "Eager Drakehound": { entersReady: true, banner: "Eager Drakehound enters ready" },
+
+  "Direwing": { entersReady: true, banner: "Direwing enters ready (approximate, skips Dragon condition)" },
+
+  "Death from Below": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+      if (bfUids.length === 0) { ctx.banner("Death from Below — no battlefield units to kill"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Death from Below", sourceUid: ctx.card.uid, effect: "kill" });
+    }
+  },
+
+  "Drag Under": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+      if (bfUids.length === 0) { ctx.banner("Drag Under — no battlefield units to kill"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Drag Under", sourceUid: ctx.card.uid, effect: "kill" });
+    }
   }
 };
 </script>
