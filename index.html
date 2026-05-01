@@ -332,25 +332,23 @@ var CARD_EFFECTS = {
 
   // --- Legend ---
   "Might of Demacia - Starter": {
+    condition: function(ctx) { return (ctx.friendlyUnitsHere ? ctx.friendlyUnitsHere().length : 0) >= 4; },
     onConquer: function(ctx) {
       var unitCount = ctx.friendlyUnitsHere().length;
-      if (unitCount >= 4) {
-        ctx.draw(2);
-        ctx.banner("Might of Demacia — drew 2 (" + unitCount + " units at " + ctx.bfName + ")");
-      }
+      ctx.draw(2);
+      ctx.banner("Might of Demacia — drew 2 (" + unitCount + " units at " + ctx.bfName + ")");
     }
   },
 
   // --- Battlefields ---
   "Trifarian War Camp": { _automatedElsewhere: "Units here +1 might — fires from computeAuraSources" },
   "The Grand Plaza": {
+    condition: function(ctx) { return (ctx.friendlyUnitsHere ? ctx.friendlyUnitsHere().length : 0) >= 7; },
     onHold: function(ctx) {
       var unitCount = ctx.friendlyUnitsHere().length;
-      if (unitCount >= 7) {
-        ctx.banner("The Grand Plaza — INSTANT WIN with " + unitCount + " units!");
-        // Defer slightly so the banner registers and other hold effects this turn complete.
-        setTimeout(function() { setWin(ctx.player); setScreen("go"); }, 200);
-      }
+      ctx.banner("The Grand Plaza — INSTANT WIN with " + unitCount + " units!");
+      // Defer slightly so the banner registers and other hold effects this turn complete.
+      setTimeout(function() { setWin(ctx.player); setScreen("go"); }, 200);
     }
   },
   "Altar to Unity": {
@@ -4600,10 +4598,8 @@ function RiftboundGame() {
       }
     }
     if (eff && eff.onPlay) {
-      triggerEffectGhost(card, function() {
-        var ctx = makeAutoCtx(card, where, bi);
-        try { eff.onPlay(ctx); } catch(e) { console.error("CARD_EFFECTS onPlay error for " + card.name + ":", e); }
-      });
+      var _ctxOP = makeAutoCtx(card, where, bi);
+      triggerEffectGhost(card, function() { try { eff.onPlay(_ctxOP); } catch(e) { console.error("CARD_EFFECTS onPlay error for " + card.name + ":", e); } }, eff.condition ? function() { return eff.condition(_ctxOP); } : null);
     }
   }
   function applyTempMightToUids(uids, amount, source) {
@@ -5001,19 +4997,23 @@ function RiftboundGame() {
       var legend = ps[playerIdx] && ps[playerIdx].legend;
       if (legend) {
         var lEff = CARD_EFFECTS[legend.name];
-        if (lEff && lEff.onConquer) { triggerEffectGhost(legend, function() { try { lEff.onConquer(makeConquerCtx(playerIdx, bfIdx, bf)); } catch(e) { console.error("legend onConquer error:", e); } }); }
+        if (lEff && lEff.onConquer) {
+          var _lCtx = makeConquerCtx(playerIdx, bfIdx, bf);
+          triggerEffectGhost(legend, function() { try { lEff.onConquer(_lCtx); } catch(e) { console.error("legend onConquer error:", e); } }, lEff.condition ? function() { return lEff.condition(_lCtx); } : null);
+        }
       }
       var bfEff = CARD_EFFECTS[bf.name];
-      if (bfEff && bfEff.onConquer) { triggerEffectGhost(bf, function() { try { bfEff.onConquer(makeConquerCtx(playerIdx, bfIdx, bf)); } catch(e) { console.error("bf onConquer error:", e); } }); }
+      if (bfEff && bfEff.onConquer) {
+        var _bfCtx = makeConquerCtx(playerIdx, bfIdx, bf);
+        triggerEffectGhost(bf, function() { try { bfEff.onConquer(_bfCtx); } catch(e) { console.error("bf onConquer error:", e); } }, bfEff.condition ? function() { return bfEff.condition(_bfCtx); } : null);
+      }
       // Unit-level "When I conquer" triggers (e.g. Plundering Poro) — fire for each conquering unit at the BF.
       (bf.units[playerIdx] || []).forEach(function(u) {
         var uEff = CARD_EFFECTS[u.name];
         if (uEff && uEff.onConquer) {
-          triggerEffectGhost(u, function() {
-            var ctx = makeConquerCtx(playerIdx, bfIdx, bf);
-            ctx.unit = u; ctx.card = u;
-            try { uEff.onConquer(ctx); } catch(e) { console.error("unit onConquer error for " + u.name + ":", e); }
-          });
+          var _uCtx = makeConquerCtx(playerIdx, bfIdx, bf);
+          _uCtx.unit = u; _uCtx.card = u;
+          triggerEffectGhost(u, function() { try { uEff.onConquer(_uCtx); } catch(e) { console.error("unit onConquer error for " + u.name + ":", e); } }, uEff.condition ? function() { return uEff.condition(_uCtx); } : null);
         }
       });
     }, 80);
@@ -5022,16 +5022,17 @@ function RiftboundGame() {
     if (!autoMode) return;
     if (playerIdx !== myActIdx) return;
     var bfEff = CARD_EFFECTS[bf.name];
-    if (bfEff && bfEff.onHold) { triggerEffectGhost(bf, function() { try { bfEff.onHold(makeConquerCtx(playerIdx, bfIdx, bf)); } catch(e) { console.error("onHold error:", e); } }); }
+    if (bfEff && bfEff.onHold) {
+      var _bfHCtx = makeConquerCtx(playerIdx, bfIdx, bf);
+      triggerEffectGhost(bf, function() { try { bfEff.onHold(_bfHCtx); } catch(e) { console.error("onHold error:", e); } }, bfEff.condition ? function() { return bfEff.condition(_bfHCtx); } : null);
+    }
     // Unit-level "When I hold" triggers (e.g. Rumble Scrapper, Master Yi Honed).
     (bf.units[playerIdx] || []).forEach(function(u) {
       var uEff = CARD_EFFECTS[u.name];
       if (uEff && uEff.onHold) {
-        triggerEffectGhost(u, function() {
-          var ctx = makeConquerCtx(playerIdx, bfIdx, bf);
-          ctx.unit = u; ctx.card = u;
-          try { uEff.onHold(ctx); } catch(e) { console.error("unit onHold error for " + u.name + ":", e); }
-        });
+        var _uHCtx = makeConquerCtx(playerIdx, bfIdx, bf);
+        _uHCtx.unit = u; _uHCtx.card = u;
+        triggerEffectGhost(u, function() { try { uEff.onHold(_uHCtx); } catch(e) { console.error("unit onHold error for " + u.name + ":", e); } }, uEff.condition ? function() { return uEff.condition(_uHCtx); } : null);
       }
     });
   }
@@ -6048,7 +6049,14 @@ function RiftboundGame() {
   }
   // Fly a ghost copy of the source card to the showcase, pulse the source, then run the effect after the ghost arrives.
   // Used so every triggered effect gets the same "card → showcase → resolve" cadence, including ones that don't open a prompt.
-  function triggerEffectGhost(card, fn) {
+  function triggerEffectGhost(card, fn, condition) {
+    // If a condition predicate is provided and returns false, skip the ghost AND skip the effect
+    // entirely — the card's trigger conditions weren't met (e.g. The Grand Plaza needs 7+ units).
+    if (condition) {
+      var _passed = true;
+      try { _passed = !!condition(); } catch(e) { _passed = true; }
+      if (!_passed) return;
+    }
     if (!autoMode || !card) { try { fn(); } catch(e) { console.error("triggerEffectGhost callback error:", e); } return; }
     var srcEl = typeof document !== "undefined" ? document.querySelector('[data-uid="' + card.uid + '"]') : null;
     if (!srcEl) { try { fn(); } catch(e) { console.error("triggerEffectGhost callback error:", e); } return; }
@@ -6086,7 +6094,7 @@ function RiftboundGame() {
       draw: function(n) { drawCards(n); },
       prompt: function(p2) { if (p2 && p2.validUids) p2 = Object.assign({}, p2, { validUids: p2.validUids.filter(function(uid) { return !isEnemyDeflect(uid); }) }); _autoSelRef.current = []; setAutoPrompt(p2); }
     };
-    triggerEffectGhost(unit, function() { try { eff.onMoveToBase(ctx); } catch(e) { console.error("onMoveToBase error for " + unit.name + ":", e); } });
+    triggerEffectGhost(unit, function() { try { eff.onMoveToBase(ctx); } catch(e) { console.error("onMoveToBase error for " + unit.name + ":", e); } }, eff.condition ? function() { return eff.condition(ctx); } : null);
   }
   function fireOnMoveToHandEffect(unit) {
     if (!autoMode) return;
@@ -6099,7 +6107,7 @@ function RiftboundGame() {
       draw: function(n) { drawCards(n); },
       prompt: function(p2) { if (p2 && p2.validUids) p2 = Object.assign({}, p2, { validUids: p2.validUids.filter(function(uid) { return !isEnemyDeflect(uid); }) }); _autoSelRef.current = []; setAutoPrompt(p2); }
     };
-    triggerEffectGhost(unit, function() { try { eff.onMoveToHand(ctx); } catch(e) { console.error("onMoveToHand error for " + unit.name + ":", e); } });
+    triggerEffectGhost(unit, function() { try { eff.onMoveToHand(ctx); } catch(e) { console.error("onMoveToHand error for " + unit.name + ":", e); } }, eff.condition ? function() { return eff.condition(ctx); } : null);
   }
   function fireOnTapEffect(card, wasExhausted) {
     if (!autoMode) return;
@@ -6439,6 +6447,7 @@ function RiftboundGame() {
     var idx = myActIdx;
     var _me = ps[idx]; if (!_me) return;
     if (!canMoveOwn || !_me.champion || _me.championPlayed) return;
+    if (autoMode && autoPrompt) return;
     if (sd) markSdActed();
     markShowcaseActed();
     var np = ps.slice();
@@ -6450,6 +6459,7 @@ function RiftboundGame() {
 
   function moveUnit(uUid, bi) {
     if (!canMoveOwn) return;
+    if (autoMode && autoPrompt) return;
     if (sd) markSdActed();
     markShowcaseActed();
     var idx = myActIdx;
@@ -6812,6 +6822,9 @@ function RiftboundGame() {
   var canPlayCard = function(c) {
     if (!autoMode || !c) return true;
     var meP = ps[myActIdx]; if (!meP) return true;
+    // Block all hand plays while a card-effect prompt is open — the player must finish the
+    // current effect (target picks, peeks, etc) before starting a new card.
+    if (autoPrompt) return false;
     // Timing: enforce when cards can be played based on turn state and card keywords
     var _isMyTurn = isOnlineGame ? (act === mySlot) : true;
     var _inShowdown = !!sd || !!pendingBeginConquer;
