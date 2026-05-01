@@ -2414,15 +2414,15 @@ function RiftboundGame() {
     return function() { ref.off("value", handler); };
   }, [roomCode, lobbyType]);
 
-  // Sync pendingConquer + conquerAcceptors to Firebase so all players see the Resolve button
+  // Sync conquerAcceptors to Firebase so all players see each other's Resolve state
   var _pcSyncFromRemote = useRef(false);
   useEffect(function() {
     if (!roomCode || lobbyType === "test" || _pcSyncFromRemote.current) return;
     if (_gamePhaseRef.current !== "playing") return;
-    fbDb.ref("lobbies/" + roomCode + "/pendingConquer").set({ data: pendingConquer || null, acceptors: conquerAcceptors, by: myUid });
-  }, [pendingConquer, conquerAcceptors]);
+    fbDb.ref("lobbies/" + roomCode + "/pendingConquer").set({ acceptors: conquerAcceptors, by: myUid });
+  }, [conquerAcceptors]);
 
-  // Listen for pendingConquer updates from other players
+  // Listen for conquerAcceptors updates from other players
   useEffect(function() {
     if (!roomCode || lobbyType === "test") return;
     var ref = fbDb.ref("lobbies/" + roomCode + "/pendingConquer");
@@ -2430,30 +2430,28 @@ function RiftboundGame() {
       var val = snap.val();
       if (!val || val.by === myUid) return;
       _pcSyncFromRemote.current = true;
-      var newConquer = val.data || null;
-      var newAcc = val.acceptors || {};
-      setPendingConquer(newConquer);
-      setConquerAcceptors(newAcc);
+      setConquerAcceptors(val.acceptors || {});
       setTimeout(function() { _pcSyncFromRemote.current = false; }, 50);
     });
     return function() { ref.off("value", handler); };
   }, [roomCode, lobbyType]);
 
-  // Online: attacker auto-executes conquer when all players have accepted
+  // Online: attacker auto-resolves uncontested showdown when all players have clicked Resolve
   useEffect(function() {
-    if (!pendingConquer || !autoMode) return;
+    if (!sd || !autoMode || sd.contested) return;
     if (lobbyType !== "host" && lobbyType !== "join") return;
     var allUIDs = Object.keys(lobbyPlayers || {});
     if (allUIDs.length === 0) return;
-    if (pendingConquer.playerIdx !== mySlot) return;
+    if (sd.atkIdx !== mySlot) return;
     if (!allUIDs.every(function(u) { return conquerAcceptors[u]; })) return;
-    var pc2 = pendingConquer;
-    setBfs(function(prev) { var nb2 = prev.slice(); nb2[pc2.bi] = Object.assign({}, prev[pc2.bi], { controller: pc2.playerIdx }); return nb2; });
-    setPs(function(prev) { var np2 = prev.slice(); var pp = prev[pc2.playerIdx]; if (!pp) return prev; np2[pc2.playerIdx] = Object.assign({}, pp, { score: (pp.score || 0) + 1 }); return np2; });
-    showAutoBanner("AUTO · " + pName(pc2.playerIdx) + " conquered " + pc2.bfName + " — +1 point");
-    aL(pName(pc2.playerIdx) + " conquers " + pc2.bfName + " (+1 point)");
-    setPendingConquer(null); setConquerAcceptors({});
-  }, [pendingConquer, conquerAcceptors, lobbyPlayers, lobbyType]);
+    var bi2 = sd.bfIdx; var bf2 = bfs[bi2]; if (!bf2) return;
+    var atkHas2 = bf2.units && bf2.units[sd.atkIdx] && bf2.units[sd.atkIdx].length > 0;
+    var defHas2 = false; for (var j2 = 0; j2 < ps.length; j2++) { if (j2 !== sd.atkIdx && bf2.units && bf2.units[j2] && bf2.units[j2].length > 0) { defHas2 = true; break; } }
+    setConquerAcceptors({});
+    if (atkHas2 && !defHas2) resolveShowdown("attacker");
+    else if (!atkHas2 && defHas2) resolveShowdown("defender");
+    else resolveShowdown("none");
+  }, [sd, conquerAcceptors, lobbyPlayers, lobbyType, bfs]);
 
   // Chat listener
   useEffect(function() {
@@ -6764,34 +6762,43 @@ function RiftboundGame() {
           <button onClick={function(e) {
             e.stopPropagation();
             var pbc = pendingBeginConquer;
-            setPendingConquer(pbc);
+            var newSd = { bfIdx: pbc.bi, atkIdx: pbc.playerIdx, priority: pbc.playerIdx, lastPass: null, acted: false, contested: false };
+            setSd(newSd);
             setConquerAcceptors({});
             setPendingBeginConquer(null);
             showAutoBanner("AUTO · Showdown at " + pbc.bfName + " — all players Resolve to conquer");
             aL(pName(pbc.playerIdx) + " begins showdown at " + pbc.bfName);
+            if (roomCode && lobbyType !== "test") {
+              _lastSyncVersion.current++;
+              var cleanPsBC = ps.map(function(p) { if (!p) return p; return Object.assign({}, p, { hand: p.hand || [], base: (p.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: p.trash || [], runes: p.runes || [], runeDeck: p.runeDeck || [], mainDeck: p.mainDeck || [], battlefields: p.battlefields || [] }); });
+              var cleanBfsBC = bfs.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
+              fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPsBC, bfs: cleanBfsBC, turn: turn, act: act, screen: screen, log: log.slice(-30), sd: newSd, ver: _lastSyncVersion.current, by: myUid })));
+            }
           }} style={{ padding: "12px 28px", borderRadius: 8, border: "2px solid #60a5fa", background: "linear-gradient(135deg,#3b82f6,#60a5fa)", color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: "Spectral,serif", cursor: "pointer", letterSpacing: 1.5, boxShadow: "0 4px 16px #000c, 0 0 22px rgba(96,165,250,0.6)", textTransform: "uppercase" }}>Begin Showdown</button>
         </div>;
       })()}
-      {/* AUTO MODE: Conquer-Resolve button — shown to all players after Begin Showdown */}
-      {autoMode && pendingConquer && (function() {
+      {/* AUTO MODE: Conquer-Resolve button — shown to all players during uncontested showdown */}
+      {autoMode && sd && !sd.contested && (function() {
         var isOnline = lobbyType === "host" || lobbyType === "join";
         var meReady = !!conquerAcceptors[myUid];
         var allUids = isOnline ? Object.keys(lobbyPlayers || {}) : [myUid];
         var pending = allUids.filter(function(u) { return !conquerAcceptors[u]; });
         var pendingNames = pending.map(function(u) { var sl = lobbyPlayers && lobbyPlayers[u] && typeof lobbyPlayers[u].slot === "number" ? lobbyPlayers[u].slot : -1; return sl >= 0 ? pName(sl) : (lobbyPlayers && lobbyPlayers[u] && lobbyPlayers[u].name) || "?"; });
+        var bfLabel = (bfs[sd.bfIdx] && bfs[sd.bfIdx].name) || "";
         return <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-          <span style={{ fontSize: 12, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Conquer: {pendingConquer.bfName}</span>
+          <span style={{ fontSize: 12, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Showdown: {bfLabel}</span>
           <button onClick={function(e) {
             e.stopPropagation();
+            if (meReady) return;
             var newAcc = Object.assign({}, conquerAcceptors); newAcc[myUid] = true; setConquerAcceptors(newAcc);
-            // Offline: execute immediately when allReady; online: attacker executes via useEffect
             if (!isOnline) {
-              var pc2 = pendingConquer;
-              setBfs(function(prev) { var nb2 = prev.slice(); nb2[pc2.bi] = Object.assign({}, prev[pc2.bi], { controller: pc2.playerIdx }); return nb2; });
-              setPs(function(prev) { var np2 = prev.slice(); var pp = prev[pc2.playerIdx]; if (!pp) return prev; np2[pc2.playerIdx] = Object.assign({}, pp, { score: (pp.score || 0) + 1 }); return np2; });
-              showAutoBanner("AUTO · " + pName(pc2.playerIdx) + " conquered " + pc2.bfName + " — +1 point");
-              aL(pName(pc2.playerIdx) + " conquers " + pc2.bfName + " (+1 point)");
-              setPendingConquer(null); setConquerAcceptors({});
+              var bi4 = sd.bfIdx; var bf4 = bfs[bi4];
+              var atkHas = bf4 && bf4.units && bf4.units[sd.atkIdx] && bf4.units[sd.atkIdx].length > 0;
+              var defHas = false; for (var j4 = 0; j4 < ps.length; j4++) { if (j4 !== sd.atkIdx && bf4 && bf4.units && bf4.units[j4] && bf4.units[j4].length > 0) { defHas = true; break; } }
+              setConquerAcceptors({});
+              if (atkHas && !defHas) resolveShowdown("attacker");
+              else if (!atkHas && defHas) resolveShowdown("defender");
+              else resolveShowdown("none");
             }
           }} disabled={meReady} style={{ padding: "12px 28px", borderRadius: 8, border: "2px solid #60a5fa", background: meReady ? "rgba(96,165,250,0.15)" : "linear-gradient(135deg,#3b82f6,#60a5fa)", color: meReady ? "#60a5fa" : "#fff", fontSize: 15, fontWeight: 700, fontFamily: "Spectral,serif", cursor: meReady ? "default" : "pointer", letterSpacing: 1.5, boxShadow: "0 4px 16px #000c, 0 0 22px rgba(96,165,250,0.6)", textTransform: "uppercase" }}>
             {meReady ? "Waiting…" : "Resolve"}
@@ -6800,7 +6807,7 @@ function RiftboundGame() {
         </div>;
       })()}
       {/* AUTO MODE: Floating END TURN button (bottom-right) — only when no showdown and no pending spell-resolve chain */}
-      {autoMode && screen === "play" && !awakenPhase && !sd && !pendingSpell && !pendingConquer && !pendingBeginConquer && (function() {
+      {autoMode && screen === "play" && !awakenPhase && !sd && !pendingSpell && !pendingBeginConquer && (function() {
         var isOnlineGame = lobbyType === "host" || lobbyType === "join";
         if (isOnlineGame) { if (_gamePhaseRef.current !== "playing") return null; if (act !== mySlot) return null; }
         return <button onClick={endTurn} style={{ position: "fixed", bottom: 24, right: 24, padding: "12px 28px", borderRadius: 8, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70060,#FF8C0030)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif", zIndex: 950, boxShadow: "0 4px 16px #000c, 0 0 24px rgba(255,215,0,0.2)", letterSpacing: 1 }}>END TURN</button>;
