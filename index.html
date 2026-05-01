@@ -153,7 +153,7 @@ function writeGameAction(code, state) {
   fbDb.ref("lobbies/" + code + "/gameState").set(state);
 }
 </script>
-<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}html,body{background:#0f0f23;overflow:hidden;font-family:'Inter',sans-serif;color:#ddd;text-rendering:optimizeLegibility;height:100%;width:100%}img{image-rendering:auto;-webkit-backface-visibility:hidden;backface-visibility:hidden}.card-hover,.bf-hover{-webkit-backface-visibility:hidden;backface-visibility:hidden;will-change:transform}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#FFD70033;border-radius:3px}button:hover{filter:brightness(1.15)}.card-hover{position:relative;z-index:1}.card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.hand-card-hover{position:relative;z-index:1}.hand-card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.75))}.auto-hand-card{transition:transform 200ms ease-out,filter 200ms ease-out}.auto-hand-card:hover{transform:translateY(calc(-0.35*var(--hand-ah,210px))) scale(1.91)!important;transform-origin:bottom center!important;z-index:999!important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.75))}.auto-zone-card{transition:transform 0.18s ease,filter 0.18s ease}.auto-zone-card:hover{transform:scale(2.1) translateY(-10%)!important;transform-origin:bottom center!important;z-index:999!important;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.85))!important}.sd-glow-blue{box-shadow:0 0 0 3px #60a5fa,0 0 18px rgba(96,165,250,0.7),0 0 36px rgba(96,165,250,0.45)!important;border-radius:6px;cursor:pointer!important;transition:box-shadow 0.18s ease}.sd-glow-red{box-shadow:0 0 0 3px #ef4444,0 0 18px rgba(239,68,68,0.85),0 0 36px rgba(239,68,68,0.5)!important;border-radius:6px;cursor:pointer!important;transition:box-shadow 0.18s ease}.card-tapped{position:relative;z-index:1}.card-tapped:hover{z-index:999 !important;filter:brightness(0.72) drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.gear-peek{position:relative;z-index:1}.gear-peek:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover{position:relative;z-index:1}.bf-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover-land{position:relative;z-index:1}.bf-hover-land:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.no-hover,.no-hover *{transition:none !important}.no-hover:hover,.no-hover:hover *{transform:none !important;filter:none !important;z-index:auto !important}@keyframes drawIn{0%{transform:translateX(500px) scale(0.4) rotate(-180deg);opacity:0}40%{opacity:1}100%{transform:translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}@keyframes fadeSlideUp{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-20px);opacity:0}}@keyframes untapGlow{0%{box-shadow:0 0 0 #FFD70000}50%{box-shadow:0 0 12px #FFD70066}100%{box-shadow:0 0 0 #FFD70000}}@keyframes cardDrawIn{0%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(180deg);opacity:0}40%{opacity:1}100%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes cardDrawOut{0%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}50%{opacity:0.7}100%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(-180deg);opacity:0}}.anim-recycle{animation:cardDrawOut 0.25s ease-in forwards !important;pointer-events:none;transition:none !important}.anim-rune-draw{animation:cardDrawIn 0.25s ease-out;transition:none !important}.anim-draw{animation:drawIn 0.25s ease-out;transition:none !important}@keyframes nameGlow{0%,100%{text-shadow:0 0 6px #FFD70033;opacity:0.7}50%{text-shadow:0 0 25px #FFD700ff,0 0 50px #FFD70088,0 0 80px #FFD70044;opacity:1}}@keyframes showdownPulse{0%,100%{box-shadow:inset 0 0 6px rgba(255,107,53,0.15),0 0 4px rgba(255,107,53,0.1);border-color:#FF6B3566}50%{box-shadow:inset 0 0 24px rgba(255,107,53,0.5),0 0 16px rgba(255,107,53,0.4);border-color:#FF6B35}}@keyframes turnPulse{0%,100%{box-shadow:inset 0 0 8px rgba(255,215,0,0.1),0 0 6px rgba(255,215,0,0.08);border-color:#FFD70044}50%{box-shadow:inset 0 0 20px rgba(255,215,0,0.3),0 0 14px rgba(255,215,0,0.25);border-color:#FFD700aa}}.anim-turn-pulse{animation:turnPulse 1.8s ease-in-out infinite}.anim-sd-pulse{animation:showdownPulse 1.2s ease-in-out infinite}.anim-name-glow{animation:nameGlow 1.2s ease-in-out infinite}.anim-pulse{animation:pulse 0.8s ease-in-out infinite}.anim-bin{animation:fadeSlideUp 0.4s ease-out forwards}.anim-untap{animation:untapGlow 0.6s ease-out}@keyframes pingRipple{0%{transform:translate(-50%,-50%) scale(0.3);opacity:1}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0}}.ping-dot{position:fixed;width:30px;height:30px;pointer-events:none;z-index:9997}.ping-dot::before,.ping-dot::after{content:'';position:absolute;top:50%;left:50%;width:100%;height:100%;border-radius:50%;border:2.5px solid #FFD700;transform:translate(-50%,-50%) scale(0.3);animation:pingRipple 0.8s ease-out forwards}.ping-dot::after{animation-delay:0.15s}[draggable=true]{cursor:grab;-webkit-user-select:none;user-select:none;touch-action:none;transition:none !important;animation-duration:0s !important}[draggable=true]:active{cursor:grabbing;opacity:0.6}[draggable=true] *{transition:none !important}[draggable=true] img{pointer-events:none;-webkit-user-drag:none}[data-action]{position:relative}[data-action]::after{content:attr(data-action);position:absolute;inset:0;background:rgba(0,0,0,0.42);color:#fff;display:none;align-items:center;justify-content:center;font-family:'Spectral',serif;font-weight:800;letter-spacing:3px;text-transform:uppercase;text-shadow:0 2px 8px rgba(0,0,0,0.9);pointer-events:none;border-radius:inherit;z-index:20;font-size:14px;text-align:center;padding:0 4px}[data-action]:hover::after{display:flex}@keyframes autoFlash{0%,100%{box-shadow:0 0 0 #FFD70000;filter:brightness(1)}40%{box-shadow:0 0 32px #FFD700cc,0 0 64px #FFD70066;filter:brightness(1.45) saturate(1.2)}}.anim-flash{animation:autoFlash 0.8s ease-in-out;border-radius:6px}@keyframes fizzleOut{0%{opacity:1;transform:scale(1) rotate(0deg);filter:brightness(1) blur(0)}25%{opacity:0.95;transform:scale(1.04) rotate(-2deg);filter:brightness(1.6) saturate(1.4) blur(0.5px);box-shadow:0 0 32px #ff6b35cc,0 0 60px #ff6b3566}55%{opacity:0.7;transform:scale(0.92) rotate(4deg);filter:brightness(1.2) blur(1.5px) hue-rotate(-15deg)}100%{opacity:0;transform:scale(0.45) rotate(12deg) translateY(20px);filter:brightness(0.4) blur(4px)}}.anim-fizzle{animation:fizzleOut 1.7s ease-out forwards;pointer-events:none;z-index:50!important}@keyframes autoBannerIn{0%{transform:translate(-50%,-12px);opacity:0}15%{transform:translate(-50%,0);opacity:1}85%{transform:translate(-50%,0);opacity:1}100%{transform:translate(-50%,-12px);opacity:0}}.auto-banner{position:fixed;top:14px;left:50%;transform:translate(-50%,0);z-index:1500;padding:8px 22px;border-radius:6px;background:linear-gradient(135deg,#1a1a3a,#0f0f23);border:2px solid #FFD70088;color:#FFD700;font-family:'Spectral',serif;font-weight:700;font-size:15px;letter-spacing:1.5px;text-transform:uppercase;box-shadow:0 6px 24px #000a,0 0 20px #FFD70033;pointer-events:none;animation:autoBannerIn 4.4s ease-out forwards}.auto-banner .auto-tag{font-size:10px;color:#FFD70099;letter-spacing:3px;display:block;margin-bottom:2px}</style></head><body><div id="root"></div>
+<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}html,body{background:#0f0f23;overflow:hidden;font-family:'Inter',sans-serif;color:#ddd;text-rendering:optimizeLegibility;height:100%;width:100%}img{image-rendering:auto;-webkit-backface-visibility:hidden;backface-visibility:hidden}.card-hover,.bf-hover{-webkit-backface-visibility:hidden;backface-visibility:hidden;will-change:transform}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#FFD70033;border-radius:3px}button:hover{filter:brightness(1.15)}.card-hover{position:relative;z-index:1}.card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.hand-card-hover{position:relative;z-index:1}.hand-card-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.75))}.auto-hand-card{transition:transform 200ms ease-out,filter 200ms ease-out}.auto-hand-card:hover{transform:translateY(calc(-0.35*var(--hand-ah,210px))) scale(1.91)!important;transform-origin:bottom center!important;z-index:999!important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.75))}.auto-zone-card{transition:transform 0.18s ease,filter 0.18s ease}.auto-zone-card:hover{transform:scale(2.1) translateY(-10%)!important;transform-origin:bottom center!important;z-index:999!important;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.85))!important}.sd-glow-blue{box-shadow:0 0 0 3px #60a5fa,0 0 18px rgba(96,165,250,0.7),0 0 36px rgba(96,165,250,0.45)!important;border-radius:6px;cursor:pointer!important;transition:box-shadow 0.18s ease}.sd-glow-red{box-shadow:0 0 0 3px #ef4444,0 0 18px rgba(239,68,68,0.85),0 0 36px rgba(239,68,68,0.5)!important;border-radius:6px;cursor:pointer!important;transition:box-shadow 0.18s ease}.card-tapped{position:relative;z-index:1}.card-tapped:hover{z-index:999 !important;filter:brightness(0.72) drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.gear-peek{position:relative;z-index:1}.gear-peek:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover{position:relative;z-index:1}.bf-hover:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.bf-hover-land{position:relative;z-index:1}.bf-hover-land:hover{z-index:999 !important;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.65))}.no-hover,.no-hover *{transition:none !important}.no-hover:hover,.no-hover:hover *{transform:none !important;filter:none !important;z-index:auto !important}@keyframes drawIn{0%{transform:translateX(500px) scale(0.4) rotate(-180deg);opacity:0}40%{opacity:1}100%{transform:translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}@keyframes fadeSlideUp{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-20px);opacity:0}}@keyframes untapGlow{0%{box-shadow:0 0 0 #FFD70000}50%{box-shadow:0 0 12px #FFD70066}100%{box-shadow:0 0 0 #FFD70000}}@keyframes cardDrawIn{0%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(180deg);opacity:0}40%{opacity:1}100%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}}@keyframes cardDrawOut{0%{transform:translateY(0) translateX(0) scale(1) rotate(0deg);opacity:1}50%{opacity:0.7}100%{transform:translateY(160px) translateX(-150px) scale(0.4) rotate(-180deg);opacity:0}}.anim-recycle{animation:cardDrawOut 0.25s ease-in forwards !important;pointer-events:none;transition:none !important}.anim-rune-draw{animation:cardDrawIn 0.25s ease-out;transition:none !important}.anim-draw{animation:drawIn 0.25s ease-out;transition:none !important}@keyframes nameGlow{0%,100%{text-shadow:0 0 6px #FFD70033;opacity:0.7}50%{text-shadow:0 0 25px #FFD700ff,0 0 50px #FFD70088,0 0 80px #FFD70044;opacity:1}}@keyframes showdownPulse{0%,100%{box-shadow:inset 0 0 6px rgba(255,107,53,0.15),0 0 4px rgba(255,107,53,0.1);border-color:#FF6B3566}50%{box-shadow:inset 0 0 24px rgba(255,107,53,0.5),0 0 16px rgba(255,107,53,0.4);border-color:#FF6B35}}@keyframes turnPulse{0%,100%{box-shadow:inset 0 0 8px rgba(255,215,0,0.1),0 0 6px rgba(255,215,0,0.08);border-color:#FFD70044}50%{box-shadow:inset 0 0 20px rgba(255,215,0,0.3),0 0 14px rgba(255,215,0,0.25);border-color:#FFD700aa}}.anim-turn-pulse{animation:turnPulse 1.8s ease-in-out infinite}.anim-sd-pulse{animation:showdownPulse 1.2s ease-in-out infinite}.anim-name-glow{animation:nameGlow 1.2s ease-in-out infinite}.anim-pulse{animation:pulse 0.8s ease-in-out infinite}.anim-bin{animation:fadeSlideUp 0.4s ease-out forwards}.anim-untap{animation:untapGlow 0.6s ease-out}@keyframes pingRipple{0%{transform:translate(-50%,-50%) scale(0.3);opacity:1}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0}}.ping-dot{position:fixed;width:30px;height:30px;pointer-events:none;z-index:9997}.ping-dot::before,.ping-dot::after{content:'';position:absolute;top:50%;left:50%;width:100%;height:100%;border-radius:50%;border:2.5px solid #FFD700;transform:translate(-50%,-50%) scale(0.3);animation:pingRipple 0.8s ease-out forwards}.ping-dot::after{animation-delay:0.15s}[draggable=true]{cursor:grab;-webkit-user-select:none;user-select:none;touch-action:none;transition:none !important;animation-duration:0s !important}[draggable=true]:active{cursor:grabbing;opacity:0.6}[draggable=true] *{transition:none !important}[draggable=true] img{pointer-events:none;-webkit-user-drag:none}[data-action]{position:relative}[data-action]::after{content:attr(data-action);position:absolute;inset:0;background:rgba(0,0,0,0.42);color:#fff;display:none;align-items:center;justify-content:center;font-family:'Spectral',serif;font-weight:800;letter-spacing:3px;text-transform:uppercase;text-shadow:0 2px 8px rgba(0,0,0,0.9);pointer-events:none;border-radius:inherit;z-index:20;font-size:14px;text-align:center;padding:0 4px}[data-action]:hover::after{display:flex}@keyframes autoFlash{0%,100%{box-shadow:0 0 0 #FFD70000;filter:brightness(1)}40%{box-shadow:0 0 32px #FFD700cc,0 0 64px #FFD70066;filter:brightness(1.45) saturate(1.2)}}.anim-flash{animation:autoFlash 0.8s ease-in-out;border-radius:6px}@keyframes scorePulse{0%,100%{transform:scale(1);box-shadow:0 0 0 rgba(255,215,0,0)}50%{transform:scale(1.3);box-shadow:0 0 24px rgba(255,215,0,0.85),0 0 48px rgba(255,215,0,0.5)}}.anim-score-pulse{animation:scorePulse 0.5s ease-in-out 4}@keyframes pointMsgIn{0%{transform:translate(-50%,-50%) scale(0.6);opacity:0}15%{transform:translate(-50%,-50%) scale(1.1);opacity:1}25%{transform:translate(-50%,-50%) scale(1);opacity:1}85%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(-50%,-50%) scale(0.95);opacity:0}}.anim-point-msg{animation:pointMsgIn 2s ease-out forwards}@keyframes fizzleOut{0%{opacity:1;transform:scale(1) rotate(0deg);filter:brightness(1) blur(0)}25%{opacity:0.95;transform:scale(1.04) rotate(-2deg);filter:brightness(1.6) saturate(1.4) blur(0.5px);box-shadow:0 0 32px #ff6b35cc,0 0 60px #ff6b3566}55%{opacity:0.7;transform:scale(0.92) rotate(4deg);filter:brightness(1.2) blur(1.5px) hue-rotate(-15deg)}100%{opacity:0;transform:scale(0.45) rotate(12deg) translateY(20px);filter:brightness(0.4) blur(4px)}}.anim-fizzle{animation:fizzleOut 1.7s ease-out forwards;pointer-events:none;z-index:50!important}@keyframes autoBannerIn{0%{transform:translate(-50%,-12px);opacity:0}15%{transform:translate(-50%,0);opacity:1}85%{transform:translate(-50%,0);opacity:1}100%{transform:translate(-50%,-12px);opacity:0}}.auto-banner{position:fixed;top:14px;left:50%;transform:translate(-50%,0);z-index:1500;padding:8px 22px;border-radius:6px;background:linear-gradient(135deg,#1a1a3a,#0f0f23);border:2px solid #FFD70088;color:#FFD700;font-family:'Spectral',serif;font-weight:700;font-size:15px;letter-spacing:1.5px;text-transform:uppercase;box-shadow:0 6px 24px #000a,0 0 20px #FFD70033;pointer-events:none;animation:autoBannerIn 4.4s ease-out forwards}.auto-banner .auto-tag{font-size:10px;color:#FFD70099;letter-spacing:3px;display:block;margin-bottom:2px}</style></head><body><div id="root"></div>
 <script>
 var IG="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/";
 var CARD_BACK="data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140"><rect width="100" height="140" rx="5" fill="#0f2640"/><rect x="4" y="4" width="92" height="132" rx="3" fill="none" stroke="#c8a84e" stroke-width="1"/><g stroke="#c8a84e" fill="none" stroke-width="0.8"><line x1="50" y1="18" x2="82" y2="50"/><line x1="50" y1="18" x2="18" y2="50"/><circle cx="50" cy="70" r="22"/><line x1="50" y1="122" x2="82" y2="90"/><line x1="50" y1="122" x2="18" y2="90"/><line x1="12" y1="70" x2="50" y2="38"/><line x1="88" y1="70" x2="50" y2="38"/><line x1="12" y1="70" x2="50" y2="102"/><line x1="88" y1="70" x2="50" y2="102"/><polygon points="50,38 82,70 50,102 18,70" stroke-width="1"/></g><text x="50" y="67" text-anchor="middle" font-size="7" font-weight="bold" fill="#c8a84e" font-family="serif">LEAGUE</text><text x="50" y="74" text-anchor="middle" font-size="5" fill="#c8a84e" font-family="serif">OF</text><text x="50" y="81" text-anchor="middle" font-size="6" font-weight="bold" fill="#c8a84e" font-family="serif">LEGENDS</text><polygon points="50,14 51.5,17 48.5,17" fill="#c8a84e"/><polygon points="50,126 51.5,123 48.5,123" fill="#c8a84e"/></svg>');
@@ -234,10 +234,13 @@ var CARD_EFFECTS = {
 
   "First Mate": {
     onPlay: function(ctx) {
-      var ids = ctx.friendlyUnitUids(ctx.card.uid);
-      if (ids.length === 0) { ctx.flash(ctx.card.uid); ctx.banner("First Mate — no other friendly units to ready"); return; }
       ctx.flash(ctx.card.uid);
-      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, excludeUid: ctx.card.uid, sourceName: "First Mate", sourceUid: ctx.card.uid, effect: "ready" });
+      var meP = ps[ctx.myActIdx]; if (!meP) return;
+      var exhUids = [];
+      (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && c.uid !== ctx.card.uid && c.exhausted) exhUids.push(c.uid); });
+      bfs.forEach(function(b) { ((b.units && b.units[ctx.myActIdx]) || []).forEach(function(c) { if (c.uid !== ctx.card.uid && c.exhausted) exhUids.push(c.uid); }); });
+      if (exhUids.length === 0) { ctx.banner("First Mate — no exhausted friendly units to ready"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: exhUids, excludeUid: ctx.card.uid, sourceName: "First Mate", sourceUid: ctx.card.uid, effect: "ready" });
     }
   },
 
@@ -2420,6 +2423,9 @@ function RiftboundGame() {
   var _dmgAsgn = useState({}), damageAssignments = _dmgAsgn[0], setDamageAssignments = _dmgAsgn[1];
   // Cache of average colors for battlefield card images { [imgUrl]: "rgb(r,g,b)" } — used to tint BF zones in autoMode.
   var _bfAvgColors = useState({}), bfAvgColors = _bfAvgColors[0], setBfAvgColors = _bfAvgColors[1];
+  // Point announcement: centered message ("Conquer point for X") + pulse the score counter for that player.
+  var _ptMsg = useState(null), pointMessage = _ptMsg[0], setPointMessage = _ptMsg[1];
+  var _scrPulse = useState(-1), scorePulseIdx = _scrPulse[0], setScorePulseIdx = _scrPulse[1];
   var autoMode = !!(lobbySettings && lobbySettings.autoMode);
   var _lobbyList = useState([]), lobbyList = _lobbyList[0], setLobbyList = _lobbyList[1];
   var _lobbyErr = useState(null), lobbyErr = _lobbyErr[0], setLobbyErr = _lobbyErr[1];
@@ -2930,6 +2936,7 @@ function RiftboundGame() {
         } else {
           np2[sd.atkIdx] = Object.assign({}, np2[sd.atkIdx], { score: np2[sd.atkIdx].score + 1, lastScoredBfs: (np2[sd.atkIdx].lastScoredBfs || []).concat([bf.uid]) });
           aL(pName(sd.atkIdx) + " conquers " + bf.name + "! (" + np2[sd.atkIdx].score + "/8)");
+          _announcePoint(sd.atkIdx, "conquer");
         }
         setBfs(nb2); setPs(np2);
         fireConquerEffects(sd.atkIdx, bi);
@@ -5091,6 +5098,7 @@ function RiftboundGame() {
           if (!contested && !blockedByTeammate) {
             sc++; scoredBfUidsThisTurn.push(bf.uid);
             aL(pName(turnIdx) + " gets a holding point from " + bf.name + "!");
+            _announcePoint(turnIdx, "hold");
             fireHoldEffects(turnIdx, bfIdxLocal, bf);
           } else if (!contested && blockedByTeammate) {
             aL("  " + bf.name + " skipped — teammate just scored here");
@@ -5510,6 +5518,16 @@ function RiftboundGame() {
     var cleanBfs = (npBfs || bfs).map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
     fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPs, bfs: cleanBfs, turn: turn, act: act, screen: screen, log: log.slice(-30), sd: sd, ver: _lastSyncVersion.current, by: myUid })));
   }
+  function _announcePoint(playerIdx, source) {
+    if (!autoMode) return;
+    var label = source === "hold" ? "Holding point" : "Conquer point";
+    setPointMessage({ text: label + " for " + pName(playerIdx), idx: playerIdx, ts: Date.now() });
+    setScorePulseIdx(playerIdx);
+    setTimeout(function() {
+      setPointMessage(function(prev) { return (prev && prev.idx === playerIdx) ? null : prev; });
+      setScorePulseIdx(function(prev) { return prev === playerIdx ? -1 : prev; });
+    }, 2000);
+  }
   // Fly a ghost copy of the source card to the showcase, pulse the source, then run the effect after the ghost arrives.
   // Used so every triggered effect gets the same "card → showcase → resolve" cadence, including ones that don't open a prompt.
   function triggerEffectGhost(card, fn) {
@@ -5528,7 +5546,16 @@ function RiftboundGame() {
     addAnim(card.uid, "flash", 800);
     setTimeout(function() { setEffectAnim(function(prev) { return prev ? Object.assign({}, prev, { arrived: true }) : prev; }); }, 500);
     // 500ms hold + 980ms flight = 1480ms before the ghost arrives. Pulse the card again on arrival, then run the effect.
-    setTimeout(function() { addAnim(card.uid, "flash", 800); try { fn(); } catch(e) { console.error("triggerEffectGhost callback error:", e); } }, 1480);
+    setTimeout(function() {
+      addAnim(card.uid, "flash", 800);
+      try { fn(); } catch(e) { console.error("triggerEffectGhost callback error:", e); }
+      // If the effect didn't open a prompt, dwell 2s at the showcase then fade the ghost out.
+      setTimeout(function() {
+        if (autoPromptRef.current) return; // prompt-driven flow handles ghost lifetime
+        setEffectAnim(function(prev) { return prev ? Object.assign({}, prev, { fading: true }) : null; });
+        setTimeout(function() { setEffectAnim(function(prev) { return prev && prev.fading ? null : prev; }); }, 480);
+      }, 2000);
+    }, 1480);
   }
   function fireOnMoveToBaseEffect(unit) {
     if (!autoMode) return;
@@ -5724,11 +5751,33 @@ function RiftboundGame() {
     for (var _k = 0; _k < pc; _k++) { if (_k !== myActIdx && bfs[bi].units[_k] && bfs[bi].units[_k].length > 0) { _noEnemy = false; break; } }
     var _firmingUp = _alreadyHeld && _noEnemy;
     if (!sd && !_firmingUp) {
-      aL("SHOWDOWN at " + nb[bi].name + "!");
       var _defPresent = false; for (var _j = 0; _j < pc; _j++) { if (_j !== myActIdx && nb[bi].units[_j] && nb[bi].units[_j].length > 0) _defPresent = true; }
+      if (autoMode && !_defPresent) {
+        // Uncontested: instant conquer (no Showdown button needed).
+        var _alreadyScoredOP = ((np[myActIdx] && np[myActIdx].lastScoredBfs) || []).indexOf(nb[bi].uid) >= 0;
+        nb[bi] = Object.assign({}, nb[bi], { controller: myActIdx });
+        if (!_alreadyScoredOP) {
+          np[myActIdx] = Object.assign({}, np[myActIdx], { score: (np[myActIdx].score || 0) + 1, lastScoredBfs: ((np[myActIdx].lastScoredBfs) || []).concat([nb[bi].uid]) });
+          aL(pName(myActIdx) + " conquers " + nb[bi].name + "!");
+          _announcePoint(myActIdx, "conquer");
+        } else {
+          aL(pName(myActIdx) + " takes " + nb[bi].name + " — already scored from this battlefield this turn, no point");
+        }
+        setPs(np); setBfs(nb);
+        fireConquerEffects(myActIdx, bi);
+        setTimeout(recalcAuras, 0);
+        if (roomCode && lobbyType !== "test") {
+          _lastSyncVersion.current++;
+          var cleanPsUC = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
+          var cleanBfsUC = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
+          fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPsUC, bfs: cleanBfsUC, turn: turn, act: myActIdx, screen: screen, log: log.slice(-30), sd: null, ver: _lastSyncVersion.current, by: myUid })));
+        }
+        return;
+      }
+      aL("SHOWDOWN at " + nb[bi].name + "!");
       if (autoMode) {
         setPendingBeginConquer({ bi: bi, playerIdx: myActIdx, unitName: card.name, bfName: nb[bi].name, contested: _defPresent });
-        showAutoBanner("AUTO · " + pName(myActIdx) + " moved to " + nb[bi].name + " — press " + (_defPresent ? "Start" : "Begin") + " Showdown");
+        showAutoBanner("AUTO · " + pName(myActIdx) + " moved to " + nb[bi].name + " — press Start Showdown");
         if (roomCode && lobbyType !== "test") {
           _lastSyncVersion.current++;
           var cleanPs4a = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
@@ -5928,10 +5977,31 @@ function RiftboundGame() {
     // Otherwise fall through to the existing showdown trigger.
     var _bfHere = nb[bi];
     var _defPresentAuto = false; for (var _ja = 0; _ja < pc; _ja++) { if (_ja !== idx && _bfHere.units[_ja] && _bfHere.units[_ja].length > 0) _defPresentAuto = true; }
-    if (autoMode && !sd) {
-      setPendingBeginConquer({ bi: bi, playerIdx: idx, unitName: unit.name, bfName: _bfHere.name, contested: _defPresentAuto });
-      showAutoBanner("AUTO · " + pName(idx) + " moved to " + _bfHere.name + " — press " + (_defPresentAuto ? "Start" : "Begin") + " Showdown");
-      return;
+    if (autoMode) {
+      if (!_defPresentAuto) {
+        // Uncontested: instant conquer — flip controller and award point (skip if already scored from this BF this turn).
+        var _alreadyScored = ((ps[idx] && ps[idx].lastScoredBfs) || []).indexOf(_bfHere.uid) >= 0;
+        var nb2 = nb.map(function(b) { return Object.assign({}, b); });
+        nb2[bi] = Object.assign({}, nb2[bi], { controller: idx });
+        var np2 = ps.slice();
+        np2[idx] = Object.assign({}, np2[idx], { base: p.base, trash: p.trash, hand: p.hand });
+        if (!_alreadyScored) {
+          np2[idx] = Object.assign({}, np2[idx], { score: (np2[idx].score || 0) + 1, lastScoredBfs: ((np2[idx].lastScoredBfs) || []).concat([_bfHere.uid]) });
+          aL(pName(idx) + " conquers " + _bfHere.name + "!");
+          _announcePoint(idx, "conquer");
+        } else {
+          aL(pName(idx) + " takes " + _bfHere.name + " — already scored from this battlefield this turn, no point");
+        }
+        setPs(np2); setBfs(nb2);
+        fireConquerEffects(idx, bi);
+        setTimeout(recalcAuras, 0);
+        return;
+      }
+      if (!sd) {
+        setPendingBeginConquer({ bi: bi, playerIdx: idx, unitName: unit.name, bfName: _bfHere.name, contested: true });
+        showAutoBanner("AUTO · " + pName(idx) + " moved to " + _bfHere.name + " — press Start Showdown");
+        return;
+      }
     }
     if (!sd) {
       aL("SHOWDOWN at " + nb[bi].name + "!");
@@ -5976,6 +6046,7 @@ function RiftboundGame() {
         np[savedSd.atkIdx].score++;
         np[savedSd.atkIdx].lastScoredBfs = (np[savedSd.atkIdx].lastScoredBfs || []).concat([nb[bi].uid]);
         aL(pName(savedSd.atkIdx) + " conquers " + nb[bi].name + "! (" + np[savedSd.atkIdx].score + (continuePlaying ? "" : "/8") + ")");
+        _announcePoint(savedSd.atkIdx, "conquer");
       }
       fireConquerEffects(savedSd.atkIdx, bi);
       setTimeout(recalcAuras, 0);
@@ -5990,6 +6061,7 @@ function RiftboundGame() {
         np[defIdx].score++;
         np[defIdx].lastScoredBfs = (np[defIdx].lastScoredBfs || []).concat([nb[bi].uid]);
         aL(pName(defIdx) + " holds " + nb[bi].name + "! (" + np[defIdx].score + (continuePlaying ? "" : "/8") + ")");
+        _announcePoint(defIdx, "conquer");
       }
       fireConquerEffects(defIdx, bi);
       setTimeout(recalcAuras, 0);
@@ -6145,6 +6217,7 @@ function RiftboundGame() {
             } else {
               np[savedSd.atkIdx] = Object.assign({}, atkP, { score: (atkP.score || 0) + 1, lastScoredBfs: (atkP.lastScoredBfs || []).concat([bfNow.uid]) });
               aL(pName(savedSd.atkIdx) + " conquers " + bfNow.name + "!");
+              _announcePoint(savedSd.atkIdx, "conquer");
             }
           }
         }
@@ -6786,7 +6859,7 @@ function RiftboundGame() {
             </div>;
           })()}
           <div style={{ position: "relative", width: 50, height: 50 }} onMouseEnter={function() { setScoreHov(true); }} onMouseLeave={function() { setScoreHov(false); }}>
-            <div style={{ width: Math.round(50 * vScale), height: Math.round(50 * vScale), borderRadius: "50%", border: "3px solid #FFD700", background: "linear-gradient(135deg,#FFD70030,#FF8C0015)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, color: "#FFD700", fontFamily: "Spectral,serif" }}>{scoreHov ? "" : (myCur.score + (continuePlaying ? "" : (lobbySettings && lobbySettings.mode === "Doubles" ? "/11" : "/8")))}</div>
+            <div className={scorePulseIdx === myActIdx ? "anim-score-pulse" : ""} style={{ width: Math.round(50 * vScale), height: Math.round(50 * vScale), borderRadius: "50%", border: "3px solid #FFD700", background: "linear-gradient(135deg,#FFD70030,#FF8C0015)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, color: "#FFD700", fontFamily: "Spectral,serif" }}>{scoreHov ? "" : (myCur.score + (continuePlaying ? "" : (lobbySettings && lobbySettings.mode === "Doubles" ? "/11" : "/8")))}</div>
             {scoreHov && <>
               <button onClick={function() { var idx = myActIdx; var np = ps.slice(); np[idx] = Object.assign({}, np[idx], { score: np[idx].score + 1 }); setPs(np); }} style={{ position: "absolute", top: 2, left: "50%", transform: "translateX(-50%)", width: 20, height: 20, borderRadius: "50%", border: "none", background: "transparent", color: "#FFD700", fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>+</button>
               <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: 16, fontWeight: 700, color: "#FFD700", fontFamily: "Spectral,serif", pointerEvents: "none" }}>{myCur.score}</div>
@@ -7017,7 +7090,7 @@ function RiftboundGame() {
                 transition: "background 0.12s ease, border-color 0.12s ease"
               }}
             >
-              <div style={{ width: Math.round(50 * vScale), height: Math.round(50 * vScale), borderRadius: "50%", border: "3px solid " + (isSpotlightTab ? "#FFD700" : "#FFD70055"), background: isSpotlightTab ? "rgba(255,215,0,0.10)" : "rgba(255,215,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, color: isSpotlightTab ? "#FFD700" : "#FFD70088", fontFamily: "Spectral,serif" }}>{(enemy.score || 0) + (continuePlaying ? "" : (lobbySettings && lobbySettings.mode === "Doubles" ? "/11" : "/8"))}</div>
+              <div className={scorePulseIdx === eIdx ? "anim-score-pulse" : ""} style={{ width: Math.round(50 * vScale), height: Math.round(50 * vScale), borderRadius: "50%", border: "3px solid " + (isSpotlightTab ? "#FFD700" : "#FFD70055"), background: isSpotlightTab ? "rgba(255,215,0,0.10)" : "rgba(255,215,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, color: isSpotlightTab ? "#FFD700" : "#FFD70088", fontFamily: "Spectral,serif" }}>{(enemy.score || 0) + (continuePlaying ? "" : (lobbySettings && lobbySettings.mode === "Doubles" ? "/11" : "/8"))}</div>
               <div className={isEnemyTurn ? "anim-name-glow" : ""} style={{ writingMode: "vertical-rl", textOrientation: "mixed", fontSize: 18, fontFamily: "Spectral,serif", fontWeight: 700, color: isEnemyTurn ? "#FFD700" : isSpotlightTab ? "#FFD700cc" : "#FFD70055", letterSpacing: 2, marginTop: 4, transition: "color 0.3s ease" }}>{pName(eIdx)}</div>
             </div>;
           })}
@@ -7356,6 +7429,8 @@ function RiftboundGame() {
           </>}
         </div>}
       </div>}
+      {/* Centered point announcement (autoMode) */}
+      {autoMode && pointMessage && <div key={pointMessage.ts} className="anim-point-msg" style={{ position: "fixed", top: "40%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 1600, padding: "20px 44px", borderRadius: 10, background: "linear-gradient(135deg,rgba(255,215,0,0.18),rgba(255,140,0,0.10))", border: "2px solid #FFD700", color: "#FFD700", fontFamily: "Spectral,serif", fontSize: 28, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", textShadow: "0 0 14px #FFD700aa, 0 0 36px #FFD70066", boxShadow: "0 0 36px rgba(255,215,0,0.45), 0 0 72px rgba(255,215,0,0.25), 0 12px 36px #000c", pointerEvents: "none" }}>{pointMessage.text}</div>}
       {/* Ping effects */}
       {pings.map(function(p) { var el = document.querySelector("[data-uid='" + p.cardUid + "']"); if (!el) return null; var r = el.getBoundingClientRect(); return <div key={p.id} className="ping-dot" style={{ left: r.left + r.width / 2, top: r.top + r.height / 2 }} />; })}
       {/* Arrow SVG overlay */}
