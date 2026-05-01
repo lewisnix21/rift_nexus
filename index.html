@@ -2196,6 +2196,223 @@ var CARD_EFFECTS = {
       if (bfsWithEnemies.length === 0) { ctx.banner("Firestorm — no enemy battlefield units"); return; }
       ctx.prompt({ kind: "pickBattlefield", sourceName: "Firestorm", sourceUid: ctx.card.uid, locations: bfsWithEnemies, effect: "damageAllEnemiesAtBf", amount: 3 });
     }
+  },
+
+  // ============ Batch: 20 additional automated cards ============
+
+  "Hextech Ray": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+      if (bfUids.length === 0) { ctx.banner("Hextech Ray — no battlefield units to target"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Hextech Ray", sourceUid: ctx.card.uid, effect: "damage", amount: 3 });
+    }
+  },
+
+  "Honest Broker": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.spawnInBase("Gold", 1);
+      ctx.banner("Honest Broker — Gold gear token (approximate, [Deathknell] simplified to onPlay)");
+    }
+  },
+
+  "Icathian Rain": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      var meP = ps[ctx.myActIdx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+      if (allUids.length === 0) { ctx.banner("Icathian Rain — no units to damage"); return; }
+      var n = Math.min(6, allUids.length);
+      ctx.prompt({ kind: "pickAnyUnit", n: n, validUids: allUids, sourceName: "Icathian Rain", sourceUid: ctx.card.uid, effect: "damage", amount: 2, upTo: true });
+    }
+  },
+
+  "Inviolus Vox": {
+    onConquer: function(ctx) {
+      if (!ctx.unit) return;
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.player]; if (!meP) return;
+      var allUids = [];
+      (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && c.uid !== ctx.card.uid) allUids.push(c.uid); });
+      bfs.forEach(function(b) { ((b && b.units && b.units[ctx.player]) || []).forEach(function(u) { if (u.uid !== ctx.card.uid) allUids.push(u.uid); }); });
+      if (allUids.length === 0) { ctx.banner("Inviolus Vox — no other friendly units to buff"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: allUids, sourceName: "Inviolus Vox", sourceUid: ctx.card.uid, effect: "tempMight", amount: 8 });
+    }
+  },
+
+  "Invert Timelines": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.draw(4);
+      ctx.banner("Invert Timelines — drew 4 (approximate, skips discard hand)");
+    }
+  },
+
+  "Kai'Sa, Survivor": {
+    onConquer: function(ctx) {
+      if (!ctx.unit) return;
+      ctx.flash(ctx.card.uid);
+      ctx.draw(1);
+      ctx.banner("Kai'Sa, Survivor — drew 1 (conquered " + ctx.bfName + ")");
+    }
+  },
+
+  "Kinkou Monk": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      var meP = ps[ctx.myActIdx];
+      if (meP) (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && c.uid !== ctx.card.uid) allUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[ctx.myActIdx]) || []).forEach(function(u) { if (u.uid !== ctx.card.uid) allUids.push(u.uid); }); });
+      if (allUids.length === 0) { ctx.banner("Kinkou Monk — no other friendly units to buff"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: Math.min(2, allUids.length), validUids: allUids, sourceName: "Kinkou Monk", sourceUid: ctx.card.uid, effect: "addCounter", amount: 1, upTo: true });
+    }
+  },
+
+  "Last Stand": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      var meP = ps[ctx.myActIdx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[ctx.myActIdx]) || []).forEach(function(u) { allUids.push(u.uid); }); });
+      if (allUids.length === 0) { ctx.banner("Last Stand — no friendly units to buff"); return; }
+      // Approximation: +6 might (instead of doubling unit's might).
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: allUids, sourceName: "Last Stand", sourceUid: ctx.card.uid, effect: "tempMight", amount: 6 });
+    }
+  },
+
+  "Lord Broadmane": {
+    onPlay: function(ctx) {
+      if (ctx.where !== "battlefield" || ctx.bi == null) return;
+      ctx.flash(ctx.card.uid);
+      var bf = ctx.bfs[ctx.bi];
+      var uids = ((bf && bf.units && bf.units[ctx.myActIdx]) || []).filter(function(u) { return u.uid !== ctx.card.uid; }).map(function(u) { return u.uid; });
+      if (uids.length === 0) { ctx.banner("Lord Broadmane — no other friendly units here"); return; }
+      ctx.applyTempMightToUids(uids, 1, "Lord Broadmane [Assault] (approximate)");
+      ctx.banner("Lord Broadmane — +1 might to " + uids.length + " other friendly unit" + (uids.length === 1 ? "" : "s") + " here");
+    }
+  },
+
+  "Lunar Boon": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.draw(2);
+      ctx.banner("Lunar Boon — drew 2 (approximate, skips discard)");
+    }
+  },
+
+  "Machine Evangel": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.spawnInBase("Recruit (Demacian)", 3);
+      ctx.banner("Machine Evangel — 3 Recruit tokens (approximate, [Deathknell] simplified to onPlay)");
+    }
+  },
+
+  "Mischievous Marai": {
+    onPlay: function(ctx) {
+      if (ctx.where !== "battlefield" || ctx.bi == null) return;
+      ctx.flash(ctx.card.uid);
+      var bf = ctx.bfs[ctx.bi];
+      var enemyUids = [];
+      if (bf && bf.units) bf.units.forEach(function(pu, pi) { if (pi === ctx.myActIdx) return; (pu || []).forEach(function(u) { enemyUids.push(u.uid); }); });
+      if (enemyUids.length === 0) { ctx.banner("Mischievous Marai — no enemy units here"); return; }
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Mischievous Marai", sourceUid: ctx.card.uid, effect: "damage", amount: 2 });
+    }
+  },
+
+  "Monster Harpoon": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+      if (bfUids.length === 0) { ctx.banner("Monster Harpoon — no battlefield units to target"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Monster Harpoon", sourceUid: ctx.card.uid, effect: "damage", amount: 2 });
+    }
+  },
+
+  "Moonlight Affliction": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      var meP = ps[ctx.myActIdx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+      if (allUids.length === 0) { ctx.banner("Moonlight Affliction — no units to weaken"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Moonlight Affliction", sourceUid: ctx.card.uid, effect: "tempMight", amount: -10 });
+    }
+  },
+
+  "On the Hunt": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx;
+      var meP = ps[idx]; if (!meP) { ctx.banner("On the Hunt — no friendly units"); return; }
+      var uids = [];
+      (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") uids.push(c.uid); });
+      bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { uids.push(u.uid); }); });
+      if (uids.length === 0) { ctx.banner("On the Hunt — no friendly units"); return; }
+      ctx.readyUids(uids);
+      ctx.banner("On the Hunt — readied " + uids.length + " friendly unit" + (uids.length === 1 ? "" : "s"));
+    }
+  },
+
+  "Premonition": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.draw(3);
+      ctx.banner("Premonition — drew 3");
+    }
+  },
+
+  "Primal Strength": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      var meP = ps[ctx.myActIdx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+      if (allUids.length === 0) { ctx.banner("Primal Strength — no units to buff"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Primal Strength", sourceUid: ctx.card.uid, effect: "tempMight", amount: 7 });
+    }
+  },
+
+  "Progress Day": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.draw(4);
+      ctx.banner("Progress Day — drew 4");
+    }
+  },
+
+  "Peak Guardian": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var uids = [ctx.card.uid];
+      if (ctx.where === "battlefield" && ctx.bi != null) {
+        var bf = ctx.bfs[ctx.bi];
+        ((bf && bf.units && bf.units[ctx.myActIdx]) || []).forEach(function(u) { if (u.uid !== ctx.card.uid) uids.push(u.uid); });
+      }
+      ctx.applyTempMightToUids(uids, 1, "Peak Guardian (approximate buff)");
+      ctx.banner("Peak Guardian — +1 might to " + uids.length + " friendly unit" + (uids.length === 1 ? "" : "s"));
+    }
+  },
+
+  "Heroic Charge": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      var meP = ps[ctx.myActIdx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[ctx.myActIdx]) || []).forEach(function(u) { allUids.push(u.uid); }); });
+      if (allUids.length === 0) { ctx.banner("Heroic Charge — no friendly units to buff"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: allUids, sourceName: "Heroic Charge", sourceUid: ctx.card.uid, effect: "tempMight", amount: 1 });
+    }
   }
 };
 </script>
