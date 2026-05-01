@@ -3135,6 +3135,12 @@ function RiftboundGame() {
     var spellToResolve = pendingSpell;
     _resolveDidSomethingRef.current = false;
     setPendingSpell(null); setResolveAcceptors({});
+    // Force-publish cleared spellResolve state to Firebase. The reactive sync useEffect can be
+    // suppressed by the _srSyncFromRemote guard (because we just received the other player's
+    // accept update <50ms ago), which leaves the non-caster stuck on "Waiting…".
+    if (roomCode) {
+      try { fbDb.ref("lobbies/" + roomCode + "/spellResolve").set({ card: null, acceptors: {}, by: myUid }); } catch(e) { /* ignore */ }
+    }
     runAutoOnCast(spellToResolve);
     // Wait for any prompt to clear, then 1s dwell, then fizzle to bin — always, so the showcase ghost ends up in the trash.
     function _tryFizzleOnline() {
