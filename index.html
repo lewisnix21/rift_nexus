@@ -1273,8 +1273,20 @@ var CARD_EFFECTS = {
     }
   },
   "Monastery of Hirana": {
+    condition: function(ctx) {
+      var meP = ps[ctx.player]; if (!meP) return false;
+      var has = (meP.base || []).some(function(c) { return (c.type === "Unit" || c.type === "Champion") && (c.counter || 0) > 0; });
+      if (has) return true;
+      return bfs.some(function(b) { return ((b && b.units && b.units[ctx.player]) || []).some(function(u) { return (u.counter || 0) > 0; }); });
+    },
     onConquer: function(ctx) {
-      ctx.prompt({ kind: "confirmAction", sourceName: "Monastery of Hirana", question: "Spend a buff to draw 1?", yesEffect: "drawOne" });
+      if (ctx.unit) return; // BF-level dispatch only
+      var meP = ps[ctx.player]; if (!meP) return;
+      var buffedUids = [];
+      (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && (c.counter || 0) > 0) buffedUids.push(c.uid); });
+      bfs.forEach(function(b) { ((b && b.units && b.units[ctx.player]) || []).forEach(function(u) { if ((u.counter || 0) > 0) buffedUids.push(u.uid); }); });
+      if (buffedUids.length === 0) { ctx.banner("Monastery of Hirana — no buffed friendly units, no draw"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: buffedUids, sourceName: "Monastery of Hirana", sourceUid: ctx.bf && ctx.bf.uid, effect: "spendBuffAndDraw", andDraw: 1 });
     }
   },
   "Sigil of the Storm": {
@@ -2739,15 +2751,42 @@ function RiftboundGame() {
     var ownerUid = (next && next._caster) ? next._caster : myUid;
     setShowcaseOwner(ownerUid);
     if (next && next.type === "Spell") {
-      // Re-pend the popped spell so the resolve useEffect fires again — the caster auto-accepts
-      // and the other players need to confirm again. This is what unblocks A's Back to Back after
-      // B's Gust resolves.
-      setPendingSpell(next);
-      var initAcc = {}; if (ownerUid) initAcc[ownerUid] = true;
-      setResolveAcceptors(initAcc);
-      // Also publish to Firebase so non-caster clients see the renewed pending state immediately.
-      if (roomCode && lobbyType !== "test") {
-        try { fbDb.ref("lobbies/" + roomCode + "/spellResolve").set({ card: next, acceptors: initAcc, by: myUid }); } catch(e) { /* ignore */ }
+      // Auto-resolve the popped chained spell — both players already accepted at the start of the
+      // chain, so we don't make them click Resolve again for each layer.
+      if (lobbyType === "test") {
+        // Offline: directly run the spell + fizzle path (mirrors the offline Resolve button onClick).
+        // No useEffect handles offline spell resolve, so we kick off the same flow here.
+        var spellToResolve = next;
+        _resolveDidSomethingRef.current = false;
+        setPendingSpell(null); setResolveAcceptors({});
+        runAutoOnCast(spellToResolve);
+        function _autoFizzleAndContinue() {
+          if (autoPromptRef && autoPromptRef.current) { setTimeout(_autoFizzleAndContinue, 200); return; }
+          var _w = Math.max(1000, (_lastFizzleEndRef.current || 0) - Date.now() + 200);
+          setTimeout(function() {
+            if (autoPromptRef && autoPromptRef.current) { _autoFizzleAndContinue(); return; }
+            addAnim(spellToResolve.uid, "fizzle", 1700);
+            setTimeout(function() {
+              setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p) return prev; var trash = (p.trash || []).slice(); if (!trash.some(function(c){return c.uid===spellToResolve.uid;})) trash.push(Object.assign({}, spellToResolve, { exhausted: false, gear: [] })); var np = prev.slice(); np[i] = Object.assign({}, p, { trash: trash }); return np; });
+              if (!_resolveDidSomethingRef.current) showAutoBanner("AUTO · " + (spellToResolve.name || "Spell") + " — fizzled (no valid effect)");
+              // Recurse into the next chained spell.
+              _resumeChainedSpellFromHistory();
+            }, 1700);
+          }, _w);
+        }
+        setTimeout(_autoFizzleAndContinue, 150);
+      } else {
+        // Online: pre-fill resolveAcceptors with every known player so the spell-resolve useEffect
+        // fires on the caster's machine immediately (no Resolve clicks needed for chained layers).
+        setPendingSpell(next);
+        var allAccepted = {};
+        Object.keys(lobbyPlayers || {}).forEach(function(uid) { allAccepted[uid] = true; });
+        if (Object.keys(allAccepted).length === 0) allAccepted[myUid] = true;
+        setResolveAcceptors(allAccepted);
+        // Force-publish so non-caster clients see the renewed + pre-accepted state immediately.
+        if (roomCode) {
+          try { fbDb.ref("lobbies/" + roomCode + "/spellResolve").set({ card: next, acceptors: allAccepted, by: myUid }); } catch(e) { /* ignore */ }
+        }
       }
     }
   }
@@ -5453,6 +5492,12 @@ function RiftboundGame() {
       showAutoBanner("AUTO · " + p.sourceName + " — buff token (+" + (p.amount || 1) + ") to " + uids.length + " unit" + (uids.length === 1 ? "" : "s") + (suWatcher ? " (+1 might via " + suWatcher.sourceName + ")" : ""));
       if (p.andDraw) drawCards(p.andDraw);
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+    } else if (p.effect === "spendBuffAndDraw") {
+      // Monastery of Hirana — remove a buff counter from the chosen friendly unit, then draw.
+      uids.forEach(function(u2) { addCounter(u2, -1); addAnim(u2, "flash", 800); });
+      if (p.andDraw) drawCards(p.andDraw);
+      showAutoBanner("AUTO · " + p.sourceName + " — spent buff on " + uids.length + " unit" + (uids.length === 1 ? "" : "s") + ", drew " + (p.andDraw || 1));
+      if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
     } else if (p.effect === "kill") {
       // "Kill a unit" — deal absurd damage so dealDamageToUid's lethal check triggers the fizzle anim.
       uids.forEach(function(u2) { dealDamageToUid(u2, 9999, p.sourceName); });
@@ -6246,7 +6291,10 @@ function RiftboundGame() {
   }
 
   function addCounter(cardUid, delta) {
-    if (!canMoveOwn) return;
+    // Note: no canMoveOwn gate — addCounter is called by both user clicks and system-driven
+    // effects (Pit Rookie, Stand United, Monastery of Hirana etc.). Gating on movement state
+    // could silently swallow buff applications during reactions / off-turn effects, so we
+    // always apply the counter change.
     var idx = myActIdx;
     var _me = ps[idx]; if (!_me) return;
     if (sd) markSdActed();
