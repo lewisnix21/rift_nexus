@@ -2183,6 +2183,21 @@ var CARD_EFFECTS = {
       if (bfUids.length === 0) { ctx.banner("Drag Under — no battlefield units to kill"); return; }
       ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Drag Under", sourceUid: ctx.card.uid, effect: "kill" });
     }
+  },
+
+  "Firestorm": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfsWithEnemies = [];
+      ctx.bfs.forEach(function(b, bi) {
+        if (!b || !b.units) return;
+        var hasEnemy = false;
+        b.units.forEach(function(pu, pi) { if (pi === ctx.myActIdx) return; if ((pu || []).length > 0) hasEnemy = true; });
+        if (hasEnemy) bfsWithEnemies.push({ key: "bf:" + bi, label: b.name, bi: bi });
+      });
+      if (bfsWithEnemies.length === 0) { ctx.banner("Firestorm — no enemy battlefield units"); return; }
+      ctx.prompt({ kind: "pickBattlefield", sourceName: "Firestorm", sourceUid: ctx.card.uid, locations: bfsWithEnemies, effect: "damageAllEnemiesAtBf", amount: 3 });
+    }
   }
 };
 </script>
@@ -3142,11 +3157,15 @@ function RiftboundGame() {
       try { fbDb.ref("lobbies/" + roomCode + "/spellResolve").set({ card: null, acceptors: {}, by: myUid }); } catch(e) { /* ignore */ }
     }
     runAutoOnCast(spellToResolve);
+    // Defer _tryFizzleOnline by 150ms so React has applied the setAutoPrompt(...) inside runAutoOnCast
+    // before we read autoPromptRef.current — otherwise the ref still holds the pre-cast null value.
+    setTimeout(_tryFizzleOnline, 150);
     // Wait for any prompt to clear, then 1s dwell, then fizzle to bin — always, so the showcase ghost ends up in the trash.
     function _tryFizzleOnline() {
       if (autoPromptRef.current) { setTimeout(_tryFizzleOnline, 200); return; }
       var _w = Math.max(1000, (_lastFizzleEndRef.current || 0) - Date.now() + 200);
       setTimeout(function() {
+        if (autoPromptRef.current) { _tryFizzleOnline(); return; }
         addAnim(spellToResolve.uid, "fizzle", 1700);
         setTimeout(function() {
           setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p) return prev; var trash = (p.trash || []).slice(); if (!trash.some(function(c){return c.uid===spellToResolve.uid;})) trash.push(Object.assign({}, spellToResolve, { exhausted: false, gear: [] })); var np = prev.slice(); np[i] = Object.assign({}, p, { trash: trash }); return np; });
@@ -3155,7 +3174,6 @@ function RiftboundGame() {
         }, 1700);
       }, _w);
     }
-    _tryFizzleOnline();
   }, [pendingSpell, resolveAcceptors, lobbyPlayers, lobbyType]);
 
   // Chat listener
@@ -6252,32 +6270,10 @@ function RiftboundGame() {
     var _firmingUp = _alreadyHeld && _noEnemy;
     if (!sd && !_firmingUp) {
       var _defPresent = false; for (var _j = 0; _j < pc; _j++) { if (_j !== myActIdx && nb[bi].units[_j] && nb[bi].units[_j].length > 0) _defPresent = true; }
-      if (autoMode && !_defPresent) {
-        // Uncontested: instant conquer (no Showdown button needed).
-        var _alreadyScoredOP = ((np[myActIdx] && np[myActIdx].lastScoredBfs) || []).indexOf(nb[bi].uid) >= 0;
-        nb[bi] = Object.assign({}, nb[bi], { controller: myActIdx });
-        if (!_alreadyScoredOP) {
-          np[myActIdx] = Object.assign({}, np[myActIdx], { score: (np[myActIdx].score || 0) + 1, lastScoredBfs: ((np[myActIdx].lastScoredBfs) || []).concat([nb[bi].uid]) });
-          aL(pName(myActIdx) + " conquers " + nb[bi].name + "!");
-          _announcePoint(myActIdx, "conquer");
-        } else {
-          aL(pName(myActIdx) + " takes " + nb[bi].name + " — already scored from this battlefield this turn, no point");
-        }
-        setPs(np); setBfs(nb);
-        fireConquerEffects(myActIdx, bi);
-        setTimeout(recalcAuras, 0);
-        if (roomCode && lobbyType !== "test") {
-          _lastSyncVersion.current++;
-          var cleanPsUC = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
-          var cleanBfsUC = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
-          fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPsUC, bfs: cleanBfsUC, turn: turn, act: myActIdx, screen: screen, log: log.slice(-30), sd: null, ver: _lastSyncVersion.current, by: myUid })));
-        }
-        return;
-      }
       aL("SHOWDOWN at " + nb[bi].name + "!");
       if (autoMode) {
         setPendingBeginConquer({ bi: bi, playerIdx: myActIdx, unitName: card.name, bfName: nb[bi].name, contested: _defPresent });
-        showAutoBanner("AUTO · " + pName(myActIdx) + " moved to " + nb[bi].name + " — press Start Showdown");
+        showAutoBanner("AUTO · " + pName(myActIdx) + " moved to " + nb[bi].name + " — press " + (_defPresent ? "Start" : "Begin") + " Showdown");
         if (roomCode && lobbyType !== "test") {
           _lastSyncVersion.current++;
           var cleanPs4a = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
@@ -6477,31 +6473,10 @@ function RiftboundGame() {
     // Otherwise fall through to the existing showdown trigger.
     var _bfHere = nb[bi];
     var _defPresentAuto = false; for (var _ja = 0; _ja < pc; _ja++) { if (_ja !== idx && _bfHere.units[_ja] && _bfHere.units[_ja].length > 0) _defPresentAuto = true; }
-    if (autoMode) {
-      if (!_defPresentAuto) {
-        // Uncontested: instant conquer — flip controller and award point (skip if already scored from this BF this turn).
-        var _alreadyScored = ((ps[idx] && ps[idx].lastScoredBfs) || []).indexOf(_bfHere.uid) >= 0;
-        var nb2 = nb.map(function(b) { return Object.assign({}, b); });
-        nb2[bi] = Object.assign({}, nb2[bi], { controller: idx });
-        var np2 = ps.slice();
-        np2[idx] = Object.assign({}, np2[idx], { base: p.base, trash: p.trash, hand: p.hand });
-        if (!_alreadyScored) {
-          np2[idx] = Object.assign({}, np2[idx], { score: (np2[idx].score || 0) + 1, lastScoredBfs: ((np2[idx].lastScoredBfs) || []).concat([_bfHere.uid]) });
-          aL(pName(idx) + " conquers " + _bfHere.name + "!");
-          _announcePoint(idx, "conquer");
-        } else {
-          aL(pName(idx) + " takes " + _bfHere.name + " — already scored from this battlefield this turn, no point");
-        }
-        setPs(np2); setBfs(nb2);
-        fireConquerEffects(idx, bi);
-        setTimeout(recalcAuras, 0);
-        return;
-      }
-      if (!sd) {
-        setPendingBeginConquer({ bi: bi, playerIdx: idx, unitName: unit.name, bfName: _bfHere.name, contested: true });
-        showAutoBanner("AUTO · " + pName(idx) + " moved to " + _bfHere.name + " — press Start Showdown");
-        return;
-      }
+    if (autoMode && !sd) {
+      setPendingBeginConquer({ bi: bi, playerIdx: idx, unitName: unit.name, bfName: _bfHere.name, contested: _defPresentAuto });
+      showAutoBanner("AUTO · " + pName(idx) + " moved to " + _bfHere.name + " — press " + (_defPresentAuto ? "Start" : "Begin") + " Showdown");
+      return;
     }
     if (!sd) {
       aL("SHOWDOWN at " + nb[bi].name + "!");
@@ -7018,7 +6993,7 @@ function RiftboundGame() {
         var _selN = (autoPrompt._sel || []).length;
         var _canConfirm = !!autoPrompt.upTo || _selN === autoPrompt.n || _selN >= Math.min(_maxAvail, autoPrompt.n);
         var _verb = autoPrompt.upTo ? "Click up to " : "Click ";
-        return <div style={{ position: "fixed", top: (autoMode && effectAnim) ? (effectAnim.toY + effectAnim.h / 2 + 16) : (autoMode ? "calc(50% + " + Math.round(301 * vScale * 0.5 + 18) + "px)" : 60), left: (autoMode && effectAnim) ? effectAnim.toX : "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #3b82f688", boxShadow: "0 8px 32px #000c, 0 0 24px #3b82f622", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 280, pointerEvents: "auto" }}>
+        return <div style={{ position: "fixed", top: (autoMode && effectAnim) ? (effectAnim.toY + effectAnim.h / 2 + 16) : (autoMode ? "calc(50% + " + Math.round(301 * vScale * 0.5 + 18) + "px)" : 60), right: autoMode ? "2%" : undefined, left: autoMode ? undefined : "50%", transform: autoMode ? undefined : "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #3b82f688", boxShadow: "0 8px 32px #000c, 0 0 24px #3b82f622", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 280, pointerEvents: "auto" }}>
           <div style={{ fontSize: 11, color: "#93c5fd99", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
           <div style={{ fontSize: 14, color: "#93c5fd", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>{(autoPrompt.kind === "pickEnemyUnit" ? _verb + autoPrompt.n + " enemy unit" : autoPrompt.kind === "pickAnyUnit" ? _verb + autoPrompt.n + " unit (friendly or enemy)" : _verb + autoPrompt.n + " friendly unit") + (autoPrompt.kind !== "pickAnyUnit" && autoPrompt.n > 1 ? "s" : "") + " (" + _selN + "/" + autoPrompt.n + ")"}</div>
           <div style={{ display: "flex", gap: 6 }}>
@@ -7068,6 +7043,13 @@ function RiftboundGame() {
           {autoPrompt.locations.map(function(loc) { return <button key={loc.key} onClick={function() { if (loc.bi != null) moveUnit(autoPrompt.cardUid, loc.bi); var next = autoPrompt.thenPrompt; setAutoPrompt(null); if (next) setTimeout(function() { _autoSelRef.current = []; setAutoPrompt(next); }, 150); }} style={{ padding: "6px 12px", borderRadius: 5, border: "1.5px solid #3b82f6", background: "rgba(59,130,246,0.18)", color: "#93c5fd", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif", textAlign: "left" }}>{loc.label}</button>; })}
         </div>
         <button onClick={function() { var next = autoPrompt.thenPrompt; setAutoPrompt(null); if (next) setTimeout(function() { _autoSelRef.current = []; setAutoPrompt(next); }, 150); }} style={{ padding: "5px 16px", borderRadius: 5, border: "1px solid #555", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif" }}>Skip</button>
+      </div>}
+      {autoPrompt && promptVisible && autoPrompt.kind === "pickBattlefield" && <div style={{ position: "fixed", top: (autoMode && effectAnim) ? (effectAnim.toY + effectAnim.h / 2 + 16) : (autoMode ? "calc(50% + " + Math.round(301 * vScale * 0.5 + 18) + "px)" : 60), left: (autoMode && effectAnim) ? effectAnim.toX : "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #3b82f688", boxShadow: "0 8px 32px #000c, 0 0 24px #3b82f622", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 240, pointerEvents: "auto" }}>
+        <div style={{ fontSize: 11, color: "#93c5fd99", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
+        <div style={{ fontSize: 14, color: "#93c5fd", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>Pick a battlefield</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 5, width: "100%" }}>
+          {autoPrompt.locations.map(function(loc) { return <button key={loc.key} onClick={function() { var p = autoPrompt; setAutoPrompt(null); if (p.effect === "damageAllEnemiesAtBf") { var enemyUids = []; var b = bfs[loc.bi]; if (b && b.units) b.units.forEach(function(pu, pi) { if (pi === myActIdx) return; (pu || []).forEach(function(u) { enemyUids.push(u.uid); }); }); enemyUids.forEach(function(uid) { dealDamageToUid(uid, p.amount, p.sourceName); }); showAutoBanner("AUTO · " + p.sourceName + " — " + p.amount + " damage to " + enemyUids.length + " enemy unit" + (enemyUids.length === 1 ? "" : "s") + " at " + (b ? b.name : "battlefield")); if (p.sourceUid) addAnim(p.sourceUid, "flash", 800); } }} style={{ padding: "6px 12px", borderRadius: 5, border: "1.5px solid #3b82f6", background: "rgba(59,130,246,0.18)", color: "#93c5fd", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif", textAlign: "left" }}>{loc.label}</button>; })}
+        </div>
       </div>}
 
       {screen === "go" && (function() {
@@ -7795,6 +7777,7 @@ function RiftboundGame() {
                 if (autoPromptRef && autoPromptRef.current) { setTimeout(_tryFizzleOffline, 200); return; }
                 var _w = Math.max(1000, (_lastFizzleEndRef.current || 0) - Date.now() + 200);
                 setTimeout(function() {
+                  if (autoPromptRef && autoPromptRef.current) { _tryFizzleOffline(); return; }
                   addAnim(spellToResolve.uid, "fizzle", 1700);
                   setTimeout(function() {
                     setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p) return prev; var trash = (p.trash || []).slice(); if (!trash.some(function(c){return c.uid===spellToResolve.uid;})) trash.push(Object.assign({}, spellToResolve, { exhausted: false, gear: [] })); var np = prev.slice(); np[i] = Object.assign({}, p, { trash: trash }); return np; });
@@ -7803,7 +7786,8 @@ function RiftboundGame() {
                   }, 1700);
                 }, _w);
               }
-              _tryFizzleOffline();
+              // Defer the first poll so React has applied any setAutoPrompt(...) from runAutoOnCast.
+              setTimeout(_tryFizzleOffline, 150);
             }
           }} disabled={meReady} style={{ padding: "12px 28px", borderRadius: 8, border: "2px solid #60a5fa", background: meReady ? "rgba(96,165,250,0.15)" : "linear-gradient(135deg,#3b82f6,#60a5fa)", color: meReady ? "#60a5fa" : "#fff", fontSize: 15, fontWeight: 700, fontFamily: "Spectral,serif", cursor: meReady ? "default" : "pointer", letterSpacing: 1.5, boxShadow: "0 4px 16px #000c, 0 0 22px rgba(96,165,250,0.6)", textTransform: "uppercase" }}>
             {meReady ? "Waiting…" : "Resolve"}
