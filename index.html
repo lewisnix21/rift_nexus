@@ -2278,7 +2278,8 @@ function RiftboundGame() {
       return function() { clearTimeout(_effectFadeTimer.current); };
     }
   }, [!!autoPrompt]);
-  // Compute average colors of BF card images (used to tint BF zone backgrounds in autoMode).
+  // Compute average colors of BF card images via canvas (used to tint BF zone backgrounds in autoMode).
+  // Falls back to a CSS blurred-image overlay (handled in render) when canvas read fails due to CORS.
   useEffect(function() {
     if (!autoMode) return;
     var urls = (bfs || []).map(function(b) { return b && b.name && CI[b.name] ? imgSrc(CI[b.name]) : (b && b.name && PA[b.name] ? PA_CDN + PA[b.name] + ".webp" : null); }).filter(function(u) { return u && !bfAvgColors[u]; });
@@ -2286,6 +2287,7 @@ function RiftboundGame() {
     Object.keys(unique).forEach(function(url) {
       var img = new Image();
       img.crossOrigin = "anonymous";
+      img.onerror = function() { setBfAvgColors(function(prev) { var next = Object.assign({}, prev); next[url] = "__fallback__"; return next; }); };
       img.onload = function() {
         try {
           var c = document.createElement("canvas");
@@ -2298,10 +2300,13 @@ function RiftboundGame() {
             var a = data[i + 3]; if (a < 128) continue;
             r += data[i]; g += data[i + 1]; b += data[i + 2]; n++;
           }
-          if (n === 0) return;
+          if (n === 0) { setBfAvgColors(function(prev) { var next = Object.assign({}, prev); next[url] = "__fallback__"; return next; }); return; }
           r = Math.round(r / n); g = Math.round(g / n); b = Math.round(b / n);
           setBfAvgColors(function(prev) { var next = Object.assign({}, prev); next[url] = "rgb(" + r + "," + g + "," + b + ")"; return next; });
-        } catch (e) { /* CORS/canvas tainted — silently skip */ }
+        } catch (e) {
+          // Canvas tainted by cross-origin image — fall back to blurred-image approach.
+          setBfAvgColors(function(prev) { var next = Object.assign({}, prev); next[url] = "__fallback__"; return next; });
+        }
       };
       img.src = url;
     });
@@ -6740,19 +6745,24 @@ function RiftboundGame() {
               // Auto-mode: when a base card is "picked up" (click-to-attach), every BF zone glows gold and is clickable to deploy.
               var isAutoBfTarget = autoMode && !!baseCardSelected;
               var _bfTint = autoMode && bfImg ? bfAvgColors[bfImg] : null;
-              var _bfBgAuto = _bfTint ? _lightenColor(_bfTint, 0.55) : null;
+              var _bfBgAuto = (_bfTint && _bfTint !== "__fallback__") ? _lightenColor(_bfTint, 0.55) : null;
+              var _bfUseBlurFallback = autoMode && bfImg && (!_bfTint || _bfTint === "__fallback__");
+              // Auto-mode BF card portrait sizing — fits the full vertical span of the BF zone.
+              var _bfAutoH = BF_ROW_H - Math.round(14 * vScale);
+              var _bfAutoW = Math.round(_bfAutoH * 744 / 1038);
               return <div key={"my-" + bf.uid}
                 className={isSdBf ? "anim-sd-pulse" : ""}
                 onClick={isAutoBfTarget ? function(e) { e.stopPropagation(); var u = baseCardSelected; setBaseCardSelected(null); moveUnit(u, bi); } : undefined}
                 onDragOver={canMoveOwn ? function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; if (dragOverBf !== bi) setDragOverBf(bi); } : undefined}
                 onDrop={canMoveOwn ? function(e) { e.preventDefault(); setDragOverBf(-1); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts.length > 1 ? parts[1] : parts[0]; if (type === "hand") { var card = myCur.hand.find(function(c) { return c.uid === uid2; }); if (card && (card.type === "Unit" || card.type === "Champion")) playToBattlefield(card, bi); } else if (type === "champ") { if (myCur.champion && myCur.champion.uid === uid2 && !myCur.championPlayed) playToBattlefield(myCur.champion, bi); } else if (type === "gear") { /* ignore gear on battlefield */ } else { moveUnit(uid2, bi); } setDragUnit(null); } : undefined}
                 style={{ flex: 1, background: (isBfOver || isAutoBfTarget) ? "rgba(255,215,0,0.13)" : (_bfBgAuto || "rgba(255,215,0,0.015)"), borderRadius: 8, border: isSdBf ? "2px solid #FF6B35" : ("2.5px solid " + ((isBfOver || isAutoBfTarget) ? "#FFD700" : "#FFD70020")), boxShadow: (isBfOver || isAutoBfTarget) ? "0 0 22px rgba(255,215,0,0.55), inset 0 0 18px rgba(255,215,0,0.12)" : undefined, display: "flex", alignItems: autoMode ? "stretch" : "center", justifyContent: autoMode ? "flex-start" : "center", overflow: "visible", position: "relative", cursor: isAutoBfTarget ? "pointer" : "default", outline: "none", transition: "background 0.15s ease, box-shadow 0.15s ease, border 0.15s ease" }}>
+                {_bfUseBlurFallback && <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: 8, pointerEvents: "none", zIndex: 0 }}><img src={bfImg} alt="" aria-hidden="true" style={{ position: "absolute", top: "-15%", left: "-15%", width: "130%", height: "130%", objectFit: "cover", filter: "blur(45px) saturate(1.6) brightness(1.5)", opacity: 0.55 }} /></div>}
                 {autoMode ? (
-                  <div style={{ display: "flex", flexDirection: "row", alignItems: "stretch", width: "100%", height: "100%", padding: "4px", overflow: "visible", zIndex: 1 }}>
-                    {/* LEFT: BF card portrait */}
-                    <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingRight: 6 }}>
-                      <div data-uid={bf.uid} style={{ width: BF_W, height: BF_H, position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        {bfImg ? <img className="bf-hover" src={bfImg} alt={bf.name} crossOrigin="anonymous" onMouseEnter={function(e) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: { name: bf.name, _isBf: true, _bfUrl: bfImg, _isLandscape: isLandscape }, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }); }} onMouseLeave={function() { setHoverCard(null); }} style={isLandscape ? { width: BF_H, height: BF_W, objectFit: "fill", borderRadius: 6, border: "1px solid #FFD70015", cursor: "pointer", transform: "rotate(-90deg)" } : { width: BF_W, height: BF_H, objectFit: "fill", borderRadius: 6, border: "1px solid #FFD70015", cursor: "pointer" }} /> : <div style={{ width: BF_W, height: BF_H, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#ffffff30" }}>{bf.name}</div>}
+                  <div style={{ display: "flex", flexDirection: "row", alignItems: "stretch", width: "100%", height: "100%", padding: Math.round(4 * vScale) + "px", overflow: "visible", position: "relative", zIndex: 1 }}>
+                    {/* LEFT: BF card portrait — fills the full height of the BF zone */}
+                    <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingRight: Math.round(6 * vScale) }}>
+                      <div data-uid={bf.uid} style={{ width: _bfAutoW, height: _bfAutoH, position: "relative", overflow: "hidden", borderRadius: 6, border: "1px solid #FFD70015", cursor: "pointer" }} onMouseEnter={function(e) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: { name: bf.name, _isBf: true, _bfUrl: bfImg, _isLandscape: isLandscape }, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }); }} onMouseLeave={function() { setHoverCard(null); }}>
+                        {bfImg ? (isLandscape ? <img className="bf-hover" src={bfImg} alt={bf.name} style={{ position: "absolute", top: "50%", left: "50%", width: _bfAutoH, height: _bfAutoW, transform: "translate(-50%,-50%) rotate(90deg)", objectFit: "fill", display: "block" }} /> : <img className="bf-hover" src={bfImg} alt={bf.name} style={{ width: "100%", height: "100%", objectFit: "fill", display: "block" }} />) : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#ffffff30" }}>{bf.name}</div>}
                       </div>
                     </div>
                     {/* RIGHT: column with enemy units (top) + friendly units (bottom) */}
