@@ -6568,14 +6568,12 @@ function RiftboundGame() {
     // Check runes
     var ri = p.runes.findIndex(function(r) { return r.uid === cardUid; });
     if (ri >= 0) {
-      if (autoMode) return; // runes are managed automatically in auto-mode (no manual tap/untap)
       p.runes = p.runes.slice(); p.runes[ri] = Object.assign({}, p.runes[ri], { exhausted: !p.runes[ri].exhausted }); var np = ps.slice(); np[idx] = p; setPs(np); _syncLive(np, null); return;
     }
     // Check base
     var bi2 = p.base.findIndex(function(c) { return c.uid === cardUid; });
     if (bi2 >= 0) {
       var _baseCard = p.base[bi2];
-      if (autoMode && !(CARD_EFFECTS[_baseCard.name] && CARD_EFFECTS[_baseCard.name].onTap)) return;
       var _wasExBase = _baseCard.exhausted; p.base = p.base.slice(); p.base[bi2] = Object.assign({}, _baseCard, { exhausted: !_baseCard.exhausted }); var np = ps.slice(); np[idx] = p; setPs(np); _syncLive(np, null); fireOnTapEffect(p.base[bi2], _wasExBase); return;
     }
     // Check battlefield units
@@ -6585,14 +6583,12 @@ function RiftboundGame() {
       var ui = nb[bk].units[idx].findIndex(function(u) { return u.uid === cardUid; });
       if (ui >= 0) {
         var _bfCard = nb[bk].units[idx][ui];
-        if (autoMode && !(CARD_EFFECTS[_bfCard.name] && CARD_EFFECTS[_bfCard.name].onTap)) return;
         var _wasExBf = _bfCard.exhausted; nb[bk].units[idx][ui] = Object.assign({}, _bfCard, { exhausted: !_bfCard.exhausted }); setBfs(nb); _syncLive(null, nb); fireOnTapEffect(nb[bk].units[idx][ui], _wasExBf); return;
       }
     }
   }
 
   function recycleRune(runeUid) {
-    if (autoMode) return; // runes are managed automatically in auto-mode (no manual recycle)
     var idx = myActIdx;
     var _me = ps[idx]; if (!_me) return;
     if (sd) markSdActed();
@@ -7927,9 +7923,9 @@ function RiftboundGame() {
                   var __isTap = __runeAsgn && __runeAsgn.tapUids.indexOf(r.uid) >= 0;
                   var __payBorder = __isRecycle ? "2.5px solid #ef4444" : __isTap ? "2.5px solid #3b82f6" : null;
                   var __payShadow = __isRecycle ? "0 0 16px rgba(239,68,68,0.85), 0 0 30px rgba(239,68,68,0.45)" : __isTap ? "0 0 16px rgba(59,130,246,0.85), 0 0 30px rgba(59,130,246,0.45)" : "none";
-                  return <div key={r.uid} data-uid={r.uid} data-action={autoMode ? undefined : (r.exhausted ? "Untap" : "Tap")} draggable={false} className={(autoMode ? "" : (r.exhausted ? "card-tapped" : "card-hover")) + animCls} onClick={autoMode ? undefined : function() { toggleTap(r.uid); }} style={{ width: RUNE_W, height: RUNE_H, borderRadius: 5, border: __payBorder || ("2px solid " + (r.exhausted ? "#DC262644" : DOM[r.domain].c + "66")), boxShadow: __payShadow, filter: r.exhausted ? "brightness(0.58)" : "none", transform: [r.exhausted ? "rotate(10deg)" : "", (__isTap || __isRecycle) ? "translateY(-8px)" : ""].filter(Boolean).join(" ") || "none", position: "absolute", left: leftCalc, top: 0, zIndex: ri, overflow: "visible", cursor: autoMode ? "default" : "pointer", transition: "border 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease" }}>
+                  return <div key={r.uid} data-uid={r.uid} data-action={r.exhausted ? "Untap" : "Tap"} draggable={false} className={(r.exhausted ? "card-tapped" : "card-hover") + animCls} onClick={function() { toggleTap(r.uid); }} style={{ width: RUNE_W, height: RUNE_H, borderRadius: 5, border: __payBorder || ("2px solid " + (r.exhausted ? "#DC262644" : DOM[r.domain].c + "66")), boxShadow: __payShadow, filter: r.exhausted ? "brightness(0.58)" : "none", transform: [r.exhausted ? "rotate(10deg)" : "", (__isTap || __isRecycle) ? "translateY(-8px)" : ""].filter(Boolean).join(" ") || "none", position: "absolute", left: leftCalc, top: 0, zIndex: ri, overflow: "visible", cursor: "pointer", transition: "border 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease" }}>
                     <div style={{ width: "100%", height: "100%", borderRadius: 3, overflow: "hidden" }}>{rUrl ? <img draggable={false} src={rUrl} style={{ width: "100%", height: "100%", objectFit: "fill" }} /> : <div style={{ width: "100%", height: "100%", background: DOM[r.domain].c + "33", display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: RUNE_W * 0.3 }}>{DOM[r.domain].i}</span></div>}</div>
-                    {!autoMode && canMoveOwn && !fc && !tm && <button onClick={function(e) { e.stopPropagation(); recycleRune(r.uid); }} style={{ position: "absolute", top: -8, right: -8, width: 27, height: 27, borderRadius: "50%", border: "2px solid #FFD70066", background: "#1a1a3a", color: "#FFD700", fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 1000 }} title="Recycle rune">⟲</button>}
+                    {canMoveOwn && !fc && !tm && <button onClick={function(e) { e.stopPropagation(); recycleRune(r.uid); }} style={{ position: "absolute", top: -8, right: -8, width: 27, height: 27, borderRadius: "50%", border: "2px solid #FFD70066", background: "#1a1a3a", color: "#FFD700", fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 1000 }} title="Recycle rune">⟲</button>}
                   </div>;
                 })}
               </div>); })()}
