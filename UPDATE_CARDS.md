@@ -105,9 +105,11 @@ console.log('Extracted ' + Object.keys(ciMap).length + ' image hashes');
 ## Step 3: Replace Files
 
 1. Copy the downloaded `db.js` and `ci.js` to the riftbound folder, replacing the old ones
-2. In `riftbound_v10.html`, find and replace:
+2. In `riftbound_v10.html` AND `index.html` (the deployed file), find and replace:
    - Line starting with `var CI=` — replace with contents of new `ci.js`
    - Line starting with `var DB=` — replace with contents of new `db.js`
+
+> **⚠ Source-of-truth gotcha**: the standalone `db.js` / `ci.js` / `pa_map.js` / `decks.js` files in the repo root are *working copies only*. The deployed page (`index.html`) inlines all four (`var DB=…`, `var CI=…`, `var PA=…`, `var DECKS=…`) directly inside its `<script>` block, and `firebase.json` rewrites all routes to `/index.html`. Editing the standalone file alone will NOT change deployed behaviour — you must paste the new contents into the matching inline `var X=…` line in `index.html`. Same applies to `decks.js` ↔ `var DECKS=…` (lines 229–241 as of writing).
 
 ## Field Reference
 
