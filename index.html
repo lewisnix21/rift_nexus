@@ -1128,18 +1128,13 @@ var CARD_EFFECTS = {
   "Wildclaw Shaman": {
     onPlay: function(ctx) {
       ctx.flash(ctx.card.uid);
-      // "When you play me, you may spend a buff to buff me and ready me. (If I don't have a buff, I get a +1 might buff.)"
-      // Find any friendly unit with a buff counter > 0 to spend from.
+      // Trigger only if another friendly card has a buff token to spend. No no-buffs fallback — silent if nothing to take.
       var idx = ctx.myActIdx;
       var meP = ps[idx];
       var buffedUids = [];
       if (meP) (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && (c.counter || 0) > 0 && c.uid !== ctx.card.uid) buffedUids.push(c.uid); });
       ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if ((u.counter || 0) > 0 && u.uid !== ctx.card.uid) buffedUids.push(u.uid); }); });
-      if (!buffedUids.length) {
-        addCounter(ctx.card.uid, 1);
-        ctx.banner("Wildclaw Shaman — no friendly buffs to spend; gained +1 buff");
-        return;
-      }
+      if (!buffedUids.length) { ctx.banner("Wildclaw Shaman — no other friendly buffs to spend"); return; }
       ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: buffedUids, sourceName: "Wildclaw Shaman (spend buff?)", sourceUid: ctx.card.uid, effect: "wildclawSpendBuff" });
     }
   },
@@ -1595,10 +1590,13 @@ var CARD_EFFECTS = {
   "Blind Monk": {
     onTap: function(ctx) {
       if (ctx.wasExhausted) return;
-      // "1E + Exhaust: buff a friendly unit." → +1 buff counter to chosen friendly.
-      var idx = ctx.myActIdx; var friendlyUids = friendlyUnitUids();
-      if (!friendlyUids.length) { ctx.banner("Blind Monk — no friendly units"); return; }
-      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Blind Monk (cost 1E manual)", sourceUid: ctx.card.uid, effect: "addCounter", amount: 1 });
+      // ":rb_energy_1: + :rb_exhaust:: Buff a friendly unit." Cost: 1 untapped Calm or Body rune. Effect: +1 buff (recruit token = +1 might) to chosen friendly.
+      var idx = ctx.myActIdx; var meP = ps[idx]; if (!meP) return;
+      var hasPayRune = (meP.runes || []).some(function(r) { return !r.exhausted && (r.domain === "Calm" || r.domain === "Body"); });
+      if (!hasPayRune) { ctx.banner("Blind Monk — need an untapped Calm or Body rune to pay"); return; }
+      var friendlyUids = friendlyUnitUids();
+      if (!friendlyUids.length) { ctx.banner("Blind Monk — no friendly units to buff"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Blind Monk (pay 1 Calm/Body, +1 might)", sourceUid: ctx.card.uid, effect: "blindMonkBuff", amount: 1 });
     }
   },
   "Rumble, Mechanized Menace": {
@@ -5599,6 +5597,22 @@ function RiftboundGame() {
       uids.forEach(function(u2) { addAnim(u2, "flash", 800); });
       showAutoBanner("AUTO · " + p.sourceName + " — stunned " + uids.length + " unit" + (uids.length === 1 ? "" : "s"));
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+    } else if (p.effect === "blindMonkBuff") {
+      // Blind Monk: pay 1 Calm or Body rune, then +1 buff counter to chosen friendly unit.
+      var bmIdx = myActIdx; var bmP = ps[bmIdx];
+      if (bmP) {
+        var bmRunes = (bmP.runes || []).slice();
+        var bmRi = bmRunes.findIndex(function(r) { return !r.exhausted && (r.domain === "Calm" || r.domain === "Body"); });
+        if (bmRi >= 0) {
+          bmRunes[bmRi] = Object.assign({}, bmRunes[bmRi], { exhausted: true });
+          var bmNp = ps.slice(); bmNp[bmIdx] = Object.assign({}, bmP, { runes: bmRunes }); setPs(bmNp);
+        }
+      }
+      uids.forEach(function(u2) { addCounter(u2, p.amount || 1); addAnim(u2, "flash", 800); });
+      var bmSu = autoWatchers.find(function(w) { return w.kind === "friendlyBuffedGetsExtraMight"; });
+      if (bmSu) applyTempMightToUids(uids, 1, bmSu.sourceName);
+      showAutoBanner("AUTO · Blind Monk — paid 1 Calm/Body, +1 might to " + uids.length + " unit");
+      if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
     } else if (p.effect === "wildclawSpendBuff") {
       // Wildclaw Shaman: remove 1 buff counter from chosen unit; +1 buff to Wildclaw and ready it.
       uids.forEach(function(u2) { addCounter(u2, -1); });
@@ -7753,17 +7767,17 @@ function RiftboundGame() {
               <span style={{ transform: "rotate(-45deg)", fontSize: 12, fontWeight: 700, color: "#4ADE80", fontFamily: "Inter,sans-serif", lineHeight: 1 }}>{xpHov ? "" : (myCur.xp || 0)}</span>
             </div>
             {xpHov && <>
-              <button onClick={function() { var idx = myActIdx; var np = ps.slice(); np[idx] = Object.assign({}, np[idx], { xp: (np[idx].xp || 0) + 1 }); setPs(np); }} style={{ position: "absolute", top: -2, left: "50%", transform: "translateX(-50%)", width: 16, height: 16, borderRadius: "50%", border: "none", background: "transparent", color: "#4ADE80", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 2 }}>+</button>
+              <button onClick={function() { var idx = myActIdx; var np = ps.slice(); np[idx] = Object.assign({}, np[idx], { xp: (np[idx].xp || 0) + 1 }); setPs(np); _syncLive(np, null); }} style={{ position: "absolute", top: -2, left: "50%", transform: "translateX(-50%)", width: 16, height: 16, borderRadius: "50%", border: "none", background: "transparent", color: "#4ADE80", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 2 }}>+</button>
               <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: 13, fontWeight: 700, color: "#4ADE80", fontFamily: "Inter,sans-serif", pointerEvents: "none", zIndex: 1 }}>{myCur.xp || 0}</div>
-              <button onClick={function() { var idx = myActIdx; var np = ps.slice(); np[idx] = Object.assign({}, np[idx], { xp: Math.max(0, (np[idx].xp || 0) - 1) }); setPs(np); }} style={{ position: "absolute", bottom: -2, left: "50%", transform: "translateX(-50%)", width: 16, height: 16, borderRadius: "50%", border: "none", background: "transparent", color: "#4ADE80", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 2 }}>−</button>
+              <button onClick={function() { var idx = myActIdx; var np = ps.slice(); np[idx] = Object.assign({}, np[idx], { xp: Math.max(0, (np[idx].xp || 0) - 1) }); setPs(np); _syncLive(np, null); }} style={{ position: "absolute", bottom: -2, left: "50%", transform: "translateX(-50%)", width: 16, height: 16, borderRadius: "50%", border: "none", background: "transparent", color: "#4ADE80", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 2 }}>−</button>
             </>}
           </div>
           <div style={{ position: "relative", width: 50, height: 50 }} onMouseEnter={function() { setScoreHov(true); }} onMouseLeave={function() { setScoreHov(false); }}>
             <div className={scorePulseIdx === myActIdx ? "anim-score-pulse" : ""} style={{ width: Math.round(50 * vScale), height: Math.round(50 * vScale), borderRadius: "50%", border: "3px solid #FFD700", background: "linear-gradient(135deg,#FFD70030,#FF8C0015)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, color: "#FFD700", fontFamily: "Spectral,serif" }}>{scoreHov ? "" : (myCur.score + (continuePlaying ? "" : (lobbySettings && lobbySettings.mode === "Doubles" ? "/11" : "/8")))}</div>
             {scoreHov && <>
-              <button onClick={function() { var idx = myActIdx; var np = ps.slice(); np[idx] = Object.assign({}, np[idx], { score: np[idx].score + 1 }); setPs(np); }} style={{ position: "absolute", top: 2, left: "50%", transform: "translateX(-50%)", width: 20, height: 20, borderRadius: "50%", border: "none", background: "transparent", color: "#FFD700", fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>+</button>
+              <button onClick={function() { var idx = myActIdx; var np = ps.slice(); np[idx] = Object.assign({}, np[idx], { score: np[idx].score + 1 }); setPs(np); _syncLive(np, null); }} style={{ position: "absolute", top: 2, left: "50%", transform: "translateX(-50%)", width: 20, height: 20, borderRadius: "50%", border: "none", background: "transparent", color: "#FFD700", fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>+</button>
               <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: 16, fontWeight: 700, color: "#FFD700", fontFamily: "Spectral,serif", pointerEvents: "none" }}>{myCur.score}</div>
-              <button onClick={function() { var idx = myActIdx; var np = ps.slice(); np[idx] = Object.assign({}, np[idx], { score: Math.max(0, np[idx].score - 1) }); setPs(np); }} style={{ position: "absolute", bottom: 2, left: "50%", transform: "translateX(-50%)", width: 20, height: 20, borderRadius: "50%", border: "none", background: "transparent", color: "#FFD700", fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>−</button>
+              <button onClick={function() { var idx = myActIdx; var np = ps.slice(); np[idx] = Object.assign({}, np[idx], { score: Math.max(0, np[idx].score - 1) }); setPs(np); _syncLive(np, null); }} style={{ position: "absolute", bottom: 2, left: "50%", transform: "translateX(-50%)", width: 20, height: 20, borderRadius: "50%", border: "none", background: "transparent", color: "#FFD700", fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>−</button>
             </>}
           </div>
         </div>); }()}
