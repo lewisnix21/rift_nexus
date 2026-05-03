@@ -33,6 +33,15 @@ items.forEach(function(c) {
   if (pwVal > 0 && primaryDomain !== "Colorless") {
     for (var i = 0; i < pwVal; i++) rc.push(primaryDomain);
   }
+  // Derive set code (OGN/SFD/UNL) from card image URL, which contains "OGN-XXX", "SFD-XXX", or "UNL-XXX" in the asset filename.
+  // Falls back to scanning any string field on the card for a "(OGN|SFD|UNL)-..." token. If neither yields a hit, leave as null and the runtime setOf() helper picks it up.
+  var setCode = null;
+  var imgUrl = c.cardImage && c.cardImage.url ? c.cardImage.url : "";
+  var setMatch = imgUrl.match(/(OGN|OGS|SFD|UNL)-[A-Z0-9]+/);
+  if (!setMatch) {
+    try { var blob = JSON.stringify(c); var m2 = blob.match(/(OGN|OGS|SFD|UNL)-[A-Z0-9]+/); if (m2) setMatch = m2; } catch(e) {}
+  }
+  if (setMatch) { setCode = setMatch[1] === "OGS" ? "OGN" : setMatch[1]; }
   cards.push({
     n: c.name,
     t: tMap[mainType] || mainType,
@@ -42,7 +51,8 @@ items.forEach(function(c) {
     m: c.might && c.might.value ? c.might.value.id : null,
     kw: c.tags && c.tags.tags ? c.tags.tags : [],
     tx: c.text && c.text.richText ? c.text.richText.body.replace(/<[^>]*>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/\s+/g,' ').trim() : "",
-    rc: rc
+    rc: rc,
+    s: setCode
   });
 });
 
@@ -112,6 +122,7 @@ console.log('Extracted ' + Object.keys(ciMap).length + ' image hashes');
 | `kw` | `tags.tags` | Tags/keywords (e.g. ["Mech", "Piltover"]) |
 | `tx` | `text.richText.body` | Card text (HTML stripped) |
 | `rc` | Derived from `power.value.id` | Recycle cost array (e.g. ["Fury"] = recycle 1 Fury rune) |
+| `s` | Derived from `cardImage.url` set prefix | Set code: `"OGN"` (Origins, incl. OGS starter variants), `"SFD"` (Spiritforged), `"UNL"` (Unleashed). `null` if not detected — the runtime `setOf()` helper in index.html falls back to PA + precon membership. |
 
 ### Recycle Cost Logic
 The `power` field = number of primary-domain runes to recycle. A card with `power: 2` and `domain: "Calm"` gets `rc: ["Calm", "Calm"]`.
