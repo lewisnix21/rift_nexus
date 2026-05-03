@@ -19,9 +19,17 @@ The data is embedded in the page's `__NEXT_DATA__` JSON at:
 var nd = JSON.parse(document.getElementById('__NEXT_DATA__').textContent);
 var items = nd.props.pageProps.page.blades[2].cards.items;
 
+// IMPORTANT: dedup must keep the ORIGINAL print, not the first-seen.
+// Riot's gallery lists alt-art / "star" / showcase variants of the same card with the SAME name but a HIGHER collectorNumber.
+// First-seen-wins (what we used to do) picked alt arts for ~34 cards including Piltover Enforcer, Gloomist, Hand of Noxus, Scorn of the Moon, Nine-Tailed Fox, etc.
+// The original = the variant with the lowest collectorNumber within its set. Use sort, not first-pass.
+var sorted = items.slice().sort(function(a,b){
+  if (a.name !== b.name) return a.name < b.name ? -1 : 1;
+  return (a.collectorNumber || 0) - (b.collectorNumber || 0);
+});
 var seen = {};
 var cards = [];
-items.forEach(function(c) {
+sorted.forEach(function(c) {
   if (seen[c.name]) return;
   seen[c.name] = true;
   var tMap = {unit:"Unit",spell:"Spell",gear:"Gear",legend:"Legend",battlefield:"Battlefield",champion:"Champion",rune:"Rune"};
@@ -33,15 +41,11 @@ items.forEach(function(c) {
   if (pwVal > 0 && primaryDomain !== "Colorless") {
     for (var i = 0; i < pwVal; i++) rc.push(primaryDomain);
   }
-  // Derive set code (OGN/SFD/UNL) from card image URL, which contains "OGN-XXX", "SFD-XXX", or "UNL-XXX" in the asset filename.
-  // Falls back to scanning any string field on the card for a "(OGN|SFD|UNL)-..." token. If neither yields a hit, leave as null and the runtime setOf() helper picks it up.
+  // Set code: prefer the structured field c.set.value.id (OGN/SFD/UNL); collapse OGS starter prints into OGN.
   var setCode = null;
-  var imgUrl = c.cardImage && c.cardImage.url ? c.cardImage.url : "";
-  var setMatch = imgUrl.match(/(OGN|OGS|SFD|UNL)-[A-Z0-9]+/);
-  if (!setMatch) {
-    try { var blob = JSON.stringify(c); var m2 = blob.match(/(OGN|OGS|SFD|UNL)-[A-Z0-9]+/); if (m2) setMatch = m2; } catch(e) {}
+  if (c.set && c.set.value && c.set.value.id) {
+    setCode = c.set.value.id === "OGS" ? "OGN" : c.set.value.id;
   }
-  if (setMatch) { setCode = setMatch[1] === "OGS" ? "OGN" : setMatch[1]; }
   cards.push({
     n: c.name,
     t: tMap[mainType] || mainType,
@@ -72,9 +76,14 @@ Run this in the same console session:
 var nd = JSON.parse(document.getElementById('__NEXT_DATA__').textContent);
 var items = nd.props.pageProps.page.blades[2].cards.items;
 
+// Same dedup-by-lowest-collectorNumber rule as Step 1 — must match or db.js and ci.js will reference different prints.
+var sorted = items.slice().sort(function(a,b){
+  if (a.name !== b.name) return a.name < b.name ? -1 : 1;
+  return (a.collectorNumber || 0) - (b.collectorNumber || 0);
+});
 var seen = {};
 var ciMap = {};
-items.forEach(function(c) {
+sorted.forEach(function(c) {
   if (seen[c.name]) return;
   seen[c.name] = true;
   if (c.cardImage && c.cardImage.url) {
