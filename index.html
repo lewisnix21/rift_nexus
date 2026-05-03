@@ -6879,6 +6879,12 @@ function RiftboundGame() {
     if (autoMode && !sd) {
       setPendingBeginConquer({ bi: bi, playerIdx: idx, unitName: unit.name, bfName: _bfHere.name, contested: _defPresentAuto });
       showAutoBanner("AUTO · " + pName(idx) + " moved to " + _bfHere.name + " — press " + (_defPresentAuto ? "Start" : "Begin") + " Showdown");
+      if (roomCode && lobbyType !== "test") {
+        _lastSyncVersion.current++;
+        var cleanPsMU = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
+        var cleanBfsMU = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
+        fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPsMU, bfs: cleanBfsMU, turn: turn, act: idx, screen: screen, log: log.slice(-30), sd: null, ver: _lastSyncVersion.current, by: myUid })));
+      }
       return;
     }
     if (!sd) {
