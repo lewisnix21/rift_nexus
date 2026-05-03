@@ -3318,7 +3318,7 @@ function RiftboundGame() {
       // Fix cards that lost properties during Firebase serialization (empty arrays become null)
       function fixCards(arr) { if (!arr) return []; return arr.map(function(c) { if (!c) return c; c.gear = c.gear || []; c.keywords = c.keywords || []; c.domains = c.domains || []; c.rc = c.rc || []; c.counter = c.counter || 0; c.counter2 = c.counter2 || 0; c.damage = c.damage || 0; c.tempMight = c.tempMight || 0; return c; }); }
       function fixPlayer(p) { if (!p) return p; p.hand = fixCards(p.hand); p.base = fixCards(p.base); p.trash = fixCards(p.trash || []); p.runes = p.runes || []; p.runeDeck = p.runeDeck || []; p.mainDeck = fixCards(p.mainDeck || []); p.battlefields = fixCards(p.battlefields || []); p.base.forEach(function(c) { c.gear = fixCards(c.gear); }); return p; }
-      function fixBf(b) { if (!b) return b; var u = b.units || []; b.units = []; for (var pi2 = 0; pi2 < pc; pi2++) { b.units[pi2] = fixCards(u[pi2] || []); } return b; }
+      function fixBf(b) { if (!b) return b; var u = b.units || []; b.units = u.map(function(slot) { return fixCards(slot || []); }); return b; }
       if (state.ps) setPs(state.ps.map(fixPlayer));
       if (state.bfs) setBfs(state.bfs.map(fixBf));
       if (state.turn !== undefined) setTurn(state.turn);
