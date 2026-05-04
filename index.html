@@ -3745,7 +3745,8 @@ var CARD_EFFECTS = {
       ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Icevale Archer (paid 1E)", sourceUid: ctx.unit.uid, effect: "tempMight", amount: -1 });
     }
   },
-  "Towering Pairofant": { _automatedElsewhere: "[Assault] from parseKeywordBonus; conditional enters-ready (unit died this turn) — death-this-turn tracker not built; player toggles ready manually" }
+  "Towering Pairofant": { _automatedElsewhere: "[Assault] from parseKeywordBonus; conditional enters-ready (unit died this turn) — death-this-turn tracker not built; player toggles ready manually" },
+  "Yordle Explorer":    { _automatedElsewhere: "On-card-with-Power-cost-≥2-played → draw 1 — onCardPlayed friendly hook not built; resolve manually" }
 };
 </script>
 <script type="text/babel">
