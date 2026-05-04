@@ -261,6 +261,8 @@ function _ahriInquisitiveDebuff(ctx) {
   ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemies.map(function(u) { return u.uid; }), sourceName: "Ahri, Inquisitive", sourceUid: ctx.unit.uid, effect: "tempMight", amount: -2 });
 }
 
+function _effMight(u) { return _effMight(u) + (u.counter || 0) + (u.gear || []).reduce(function(s,g){return s+(g.might||0);},0); }
+
 var CARD_EFFECTS = {
   // ============ Garen precon (Body/Order) ============
 
@@ -760,7 +762,7 @@ var CARD_EFFECTS = {
         if (!b || !b.units) return;
         b.units.forEach(function(pu) {
           (pu || []).forEach(function(u) {
-            if ((u.might || 0) + (u.tempMight || 0) + (u._aura || 0) <= 3) bfUids.push(u.uid);
+            if (_effMight(u) <= 3) bfUids.push(u.uid);
           });
         });
       });
@@ -1242,7 +1244,7 @@ var CARD_EFFECTS = {
       ctx.flash(ctx.card.uid);
       var idx = ctx.myActIdx; var meP = ps[idx];
       var n = 0;
-      function _isMighty(c) { return ((c.might || 0) + (c.tempMight || 0) + (c._aura || 0)) >= 5; }
+      function _isMighty(c) { return (_effMight(c)) >= 5; }
       if (meP) (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && _isMighty(c)) n++; });
       ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if (_isMighty(u)) n++; }); });
       if (n <= 0) { ctx.banner("Show of Strength — no [Mighty] units"); return; }
@@ -1653,7 +1655,7 @@ var CARD_EFFECTS = {
       var enemies = ctx.enemyUnits ? ctx.enemyUnits() : [];
       if (allies.length === 1 && enemies.length === 1) {
         var u = ctx.unit;
-        var curr = (u.might || 0) + (u.tempMight || 0) + (u._aura || 0);
+        var curr = _effMight(u);
         applyTempMightToUids([u.uid], curr, "Fiora, Peerless (1v1 double)");
         ctx.banner("Fiora, Peerless — 1v1, doubled might (+" + curr + ")");
       }
@@ -1663,7 +1665,7 @@ var CARD_EFFECTS = {
       var enemies = ctx.enemyUnits ? ctx.enemyUnits() : [];
       if (allies.length === 1 && enemies.length === 1) {
         var u = ctx.unit;
-        var curr = (u.might || 0) + (u.tempMight || 0) + (u._aura || 0);
+        var curr = _effMight(u);
         applyTempMightToUids([u.uid], curr, "Fiora, Peerless (1v1 double)");
         ctx.banner("Fiora, Peerless — 1v1, doubled might (+" + curr + ")");
       }
@@ -1672,7 +1674,7 @@ var CARD_EFFECTS = {
   "Unsung Hero": {
     onDeath: function(ctx) {
       var u = ctx.card;
-      var wasMighty = ((u.might || 0) + (u.tempMight || 0) + (u._aura || 0)) >= 5;
+      var wasMighty = (_effMight(u)) >= 5;
       if (!wasMighty) { ctx.banner("Unsung Hero [Deathknell] — was not Mighty, no draw"); return; }
       ctx.draw(2);
       ctx.banner("Unsung Hero [Deathknell] — was Mighty, drew 2");
@@ -1756,7 +1758,7 @@ var CARD_EFFECTS = {
       }
       if (anyEnemy) { ctx.banner("Yone, Blademaster — BF was contested, no bonus damage"); return; }
       var u = ctx.unit;
-      var dmg = (u.might || 0) + (u.tempMight || 0) + (u._aura || 0);
+      var dmg = _effMight(u);
       var allBfUids = [];
       bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(uu) { allBfUids.push(uu.uid); }); }); });
       if (!allBfUids.length) { ctx.banner("Yone, Blademaster — no BF units to damage"); return; }
@@ -1781,7 +1783,7 @@ var CARD_EFFECTS = {
   "Sunken Temple": {
     onConquer: function(ctx) {
       var idx = ctx.player; var bf = ctx.bf;
-      function isMighty(u) { return ((u.might || 0) + (u.tempMight || 0) + (u._aura || 0)) >= 5; }
+      function isMighty(u) { return (_effMight(u)) >= 5; }
       var hasMighty = (bf && bf.units && (bf.units[idx] || []).some(isMighty));
       if (!hasMighty) { ctx.banner("Sunken Temple — conqueror has no [Mighty] units here"); return; }
       var meP = ps[idx];
@@ -1841,7 +1843,7 @@ var CARD_EFFECTS = {
     onPlay: function(ctx) {
       ctx.flash(ctx.card.uid);
       var bfWeakUids = [];
-      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { if (u.uid === ctx.card.uid) return; if (((u.might || 0) + (u.tempMight || 0) + (u._aura || 0)) <= 2) bfWeakUids.push(u.uid); }); }); });
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { if (u.uid === ctx.card.uid) return; if ((_effMight(u)) <= 2) bfWeakUids.push(u.uid); }); }); });
       if (bfWeakUids.length === 0) { ctx.banner("Angler Beast — no units with 2 might or less to bounce"); return; }
       ctx.prompt({ kind: "pickAnyUnit", n: bfWeakUids.length, validUids: bfWeakUids, sourceName: "Angler Beast", sourceUid: ctx.card.uid, effect: "bounceToHand", upTo: true });
     }
@@ -1908,7 +1910,7 @@ var CARD_EFFECTS = {
     onCast: function(ctx) {
       ctx.flash(ctx.card.uid);
       var bfWeakUids = [];
-      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { if (((u.might || 0) + (u.tempMight || 0) + (u._aura || 0)) <= 2) bfWeakUids.push(u.uid); }); }); });
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { if ((_effMight(u)) <= 2) bfWeakUids.push(u.uid); }); }); });
       if (bfWeakUids.length === 0) { ctx.banner("Blood Money — no battlefield units with 2 might or less"); return; }
       ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfWeakUids, sourceName: "Blood Money", sourceUid: ctx.card.uid, effect: "kill" });
       // Spawn the Gold token regardless (approximate — full rules check enemy/friendly to scale).
@@ -2058,8 +2060,8 @@ var CARD_EFFECTS = {
     onPlay: function(ctx) {
       ctx.flash(ctx.card.uid);
       var idx = ctx.myActIdx; var meP = ps[idx]; var n = 0;
-      if (meP) (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && (((c.might || 0) + (c.tempMight || 0) + (c._aura || 0)) >= 5)) n++; });
-      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if (((u.might || 0) + (u.tempMight || 0) + (u._aura || 0)) >= 5) n++; }); });
+      if (meP) (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && ((_effMight(c)) >= 5)) n++; });
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if ((_effMight(u)) >= 5) n++; }); });
       if (n <= 0) { ctx.banner("Kadregrin — no [Mighty] friendly units, drew 0"); return; }
       ctx.draw(n);
       ctx.banner("Kadregrin — drew " + n + " (one per [Mighty] friendly unit)");
@@ -2617,7 +2619,7 @@ var CARD_EFFECTS = {
   "Sandshifter": {
     onPlay: function(ctx) {
       ctx.flash(ctx.card.uid);
-      var enemyUids = []; ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { var eff = ((u.might || 0) + (u.tempMight || 0) + (u._aura || 0)); if (eff <= 3) enemyUids.push(u.uid); }); })); });
+      var enemyUids = []; ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { var eff = (_effMight(u)); if (eff <= 3) enemyUids.push(u.uid); }); })); });
       if (!enemyUids.length) { ctx.banner("Sandshifter — no enemy units with 3 might or less"); return; }
       ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Sandshifter (3 might or less)", sourceUid: ctx.card.uid, effect: "kill" });
     }
@@ -2726,7 +2728,7 @@ var CARD_EFFECTS = {
     onAttack: function(ctx) {
       var enemyUids = (ctx.enemyUnits() || []).map(function(u) { return u.uid; });
       if (!enemyUids.length) { ctx.banner("Yasuo, Remorseful — no enemy units here"); return; }
-      var dmg = (ctx.unit.might || 0) + (ctx.unit.tempMight || 0) + (ctx.unit._aura || 0);
+      var dmg = _effMight(ctx.unit);
       ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Yasuo, Remorseful (" + dmg + " dmg)", sourceUid: ctx.unit.uid, effect: "damage", amount: dmg });
     }
   },
@@ -2734,13 +2736,13 @@ var CARD_EFFECTS = {
     onAttack: function(ctx) {
       var enemyUids = (ctx.enemyUnits() || []).map(function(u) { return u.uid; });
       if (!enemyUids.length) { ctx.banner("Ezreal, Dashing — no enemy units here"); return; }
-      var dmg = (ctx.unit.might || 0) + (ctx.unit.tempMight || 0) + (ctx.unit._aura || 0);
+      var dmg = _effMight(ctx.unit);
       ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Ezreal, Dashing (" + dmg + " dmg)", sourceUid: ctx.unit.uid, effect: "damage", amount: dmg });
     },
     onDefend: function(ctx) {
       var enemyUids = (ctx.enemyUnits() || []).map(function(u) { return u.uid; });
       if (!enemyUids.length) { ctx.banner("Ezreal, Dashing — no enemy units here"); return; }
-      var dmg = (ctx.unit.might || 0) + (ctx.unit.tempMight || 0) + (ctx.unit._aura || 0);
+      var dmg = _effMight(ctx.unit);
       ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Ezreal, Dashing (" + dmg + " dmg)", sourceUid: ctx.unit.uid, effect: "damage", amount: dmg });
     }
   },
@@ -3177,7 +3179,7 @@ var CARD_EFFECTS = {
   "Soul Harvest": {
     onCast: function(ctx) {
       ctx.flash(ctx.card.uid);
-      var enemyAtBf = []; ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { var eff = (u.might || 0) + (u.tempMight || 0) + (u._aura || 0); if (eff <= 3) enemyAtBf.push(u.uid); }); })); });
+      var enemyAtBf = []; ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { var eff = _effMight(u); if (eff <= 3) enemyAtBf.push(u.uid); }); })); });
       if (!enemyAtBf.length) { ctx.banner("Soul Harvest — no enemy units at BFs with ≤3 might"); return; }
       ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyAtBf, sourceName: "Soul Harvest", sourceUid: ctx.card.uid, effect: "kill" });
     }
@@ -3297,7 +3299,7 @@ var CARD_EFFECTS = {
   "Caitlyn, Patrolling": {
     onTap: function(ctx) {
       if (ctx.wasExhausted) return;
-      var dmg = (ctx.card.might || 0) + (ctx.card.tempMight || 0) + (ctx.card._aura || 0);
+      var dmg = _effMight(ctx.card);
       var enemyAtBf = []; ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { enemyAtBf.push(u.uid); }); })); });
       if (!enemyAtBf.length) { ctx.banner("Caitlyn, Patrolling — no enemy units at BFs"); return; }
       _autoSelRef.current = []; setAutoPrompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyAtBf, sourceName: "Caitlyn, Patrolling (" + dmg + " dmg)", sourceUid: ctx.card.uid, effect: "damage", amount: dmg });
@@ -3440,7 +3442,7 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
         {card.stunned && <div style={{ position: "absolute", inset: 0, background: "#000a", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 4 }}><span style={{ color: "#FFD700", fontSize: zoomed ? 18 : 10, fontWeight: 800, background: "#000c", padding: "2px 8px", borderRadius: 6, border: "1px solid #FFD70066" }}>STUNNED</span></div>}
         {card.counter2 !== 0 && card.counter2 !== undefined && card.type !== "Gear" && <div style={{ position: "absolute", top: -8, right: -8, background: "#854d0e", color: "#FACC15", borderRadius: 10, minWidth: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, boxShadow: "0 2px 6px #000a", zIndex: 5, padding: "0 3px" }}>{card.counter2 > 0 ? "+" : ""}{card.counter2}</div>}
         {card.counter !== 0 && card.counter !== undefined && card.type !== "Gear" && <div style={{ position: "absolute", top: -8, right: (card.counter2 ? 18 : -8), background: "#166534", color: "#4ADE80", borderRadius: 10, minWidth: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, boxShadow: "0 2px 6px #000a", zIndex: 5, padding: "0 3px" }}>{card.counter > 0 ? "+" : ""}{card.counter}</div>}
-        {isUnit && (buff + gearMight) > 0 && <div style={{ position: "absolute", top: small ? 2 : 3, right: small ? 2 : 3, background: "#16A34Aee", color: "#fff", borderRadius: "50%", width: small ? Math.round(15 * _tinyMul) : 20, height: small ? Math.round(15 * _tinyMul) : 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: small ? Math.round(7 * _tinyMul) : 10, fontWeight: 800, zIndex: 4, boxShadow: "0 1px 4px #000a", border: "1px solid #fff4" }}>{(card.might || 0) + buff + gearMight}</div>}
+        {isUnit && (buff + gearMight + (card.counter || 0)) > 0 && <div style={{ position: "absolute", top: small ? 2 : 3, right: small ? 2 : 3, background: "#16A34Aee", color: "#fff", borderRadius: "50%", width: small ? Math.round(15 * _tinyMul) : 20, height: small ? Math.round(15 * _tinyMul) : 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: small ? Math.round(7 * _tinyMul) : 10, fontWeight: 800, zIndex: 4, boxShadow: "0 1px 4px #000a", border: "1px solid #fff4" }}>{(card.might || 0) + buff + gearMight + (card.counter || 0)}</div>}
         {isHov && small && !zoomed && <>
           {onBin && <button onClick={function(e) { e.stopPropagation(); onBin(card.uid); }} style={{ position: "absolute", bottom: -8, left: -8, width: 22, height: 22, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.75)", color: "#ffaaaa", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 6 }}>🗑</button>}
           {onPlus && card.type !== "Gear" && <button onClick={function(e) { e.stopPropagation(); onPlus(card.uid); }} style={{ position: "absolute", top: "15%", right: -12, width: 22, height: 22, borderRadius: "50%", border: "1.5px solid #16653488", background: "#166534", color: "#4ADE80", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 6 }}>+</button>}
@@ -3572,7 +3574,7 @@ function RiftboundGame() {
   useEffect(function() {
     if (!autoMode) return;
     var snap = {};
-    function isMighty(u) { return ((u.might || 0) + (u.tempMight || 0) + (u._aura || 0)) >= 5; }
+    function isMighty(u) { return (_effMight(u)) >= 5; }
     ps.forEach(function(p, pi) {
       if (!p) return;
       (p.base || []).forEach(function(u) { if (u.type === "Unit" || u.type === "Champion") snap[u.uid] = { ownerIdx: pi, mighty: isMighty(u), name: u.name }; });
@@ -5961,7 +5963,7 @@ function RiftboundGame() {
     }
     if (!found) return;
     var newDmg = (found.unit.damage || 0) + amount;
-    var maxHP = (found.unit.might || 0) + (found.unit.tempMight || 0) + (found.unit._aura || 0);
+    var maxHP = _effMight(found.unit);
     if (newDmg >= maxHP) {
       // Highlander shield: heal + exhaust + recall to base instead of dying. One-shot consumption.
       if (autoMode && found.unit._highlanderShield) {
@@ -6448,7 +6450,7 @@ function RiftboundGame() {
           b.units.forEach(function(pu, pi) {
             if (pi === myActIdx) return;
             (pu || []).forEach(function(u) {
-              var m = (u.might || 0) + (u.tempMight || 0) + (u._aura || 0);
+              var m = _effMight(u);
               if (m < lowest) { lowest = m; enemyVictim = u; }
             });
           });
@@ -6501,7 +6503,7 @@ function RiftboundGame() {
       if (meP) (meP.base || []).forEach(function(c) { if (c.uid === friendlyUid) foundFriendly = c; });
       if (!foundFriendly) bfs.forEach(function(b) { ((b.units && b.units[idx]) || []).forEach(function(u) { if (u.uid === friendlyUid) foundFriendly = u; }); });
       if (!foundFriendly) { setAutoPrompt(null); _autoSelRef.current = []; return; }
-      var dmg = (foundFriendly.might || 0) + (foundFriendly.tempMight || 0) + (foundFriendly._aura || 0);
+      var dmg = _effMight(foundFriendly);
       var enemyUids2 = [];
       bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi === idx) return; (pu || []).forEach(function(u) { enemyUids2.push(u.uid); }); }); });
       if (!enemyUids2.length) { showAutoBanner("AUTO · Strike Down — no enemy units to target"); setAutoPrompt(null); _autoSelRef.current = []; return; }
@@ -6536,7 +6538,7 @@ function RiftboundGame() {
         uids.forEach(function(u2) {
           var found = null;
           bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { if (u.uid === u2) found = u; }); }); });
-          if (found && p.amount >= ((found.might || 0) + (found.tempMight || 0) + (found._aura || 0) - (found.damage || 0))) {
+          if (found && p.amount >= (_effMight(found) - (found.damage || 0))) {
             drawCards(p.andDrawOnKill);
           }
         });
@@ -6702,7 +6704,7 @@ function RiftboundGame() {
       var enemyUidsC = [];
       bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi === idxC) return; (pu || []).forEach(function(u) { enemyUidsC.push(u.uid); }); }); });
       if (!enemyUidsC.length) { showAutoBanner("AUTO · Challenge — no enemy units"); setAutoPrompt(null); _autoSelRef.current = []; return; }
-      var fMight = (fFound.might || 0) + (fFound.tempMight || 0) + (fFound._aura || 0);
+      var fMight = _effMight(fFound);
       // Deal damage to friendly equal to its own might (mutual). We delay this so the user can resolve enemy pick first.
       setTimeout(function() {
         _autoSelRef.current = [];
@@ -6714,7 +6716,7 @@ function RiftboundGame() {
       var enemyUid = uids[0]; var fUidR = p._challengeFriendlyUid; var fMightR = p._challengeFriendlyMight || 0;
       var found = null;
       bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { if (u.uid === enemyUid) found = u; }); }); });
-      var eMight = found ? ((found.might || 0) + (found.tempMight || 0) + (found._aura || 0)) : 0;
+      var eMight = found ? (_effMight(found)) : 0;
       dealDamageToUid(enemyUid, fMightR, "Challenge");
       dealDamageToUid(fUidR, eMight, "Challenge (return)");
       showAutoBanner("AUTO · Challenge — mutual " + fMightR + " ↔ " + eMight + " damage");
@@ -6727,7 +6729,7 @@ function RiftboundGame() {
       var meDP = ps[idxD]; var fFound2 = null;
       if (meDP) (meDP.base || []).forEach(function(c) { if (c.uid === fUid2) fFound2 = c; });
       if (!fFound2) bfs.forEach(function(b) { ((b.units && b.units[idxD]) || []).forEach(function(u) { if (u.uid === fUid2) fFound2 = u; }); });
-      var fMight2 = fFound2 ? ((fFound2.might || 0) + (fFound2.tempMight || 0) + (fFound2._aura || 0) + 3) : 3;
+      var fMight2 = fFound2 ? (_effMight(fFound2) + 3) : 3;
       var enemyUidsD = [];
       bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi === idxD) return; (pu || []).forEach(function(u) { enemyUidsD.push(u.uid); }); }); });
       if (!enemyUidsD.length) { showAutoBanner("AUTO · Gentlemen's Duel — +3 might (no enemy to duel)"); setAutoPrompt(null); _autoSelRef.current = []; return; }
@@ -7732,7 +7734,7 @@ function RiftboundGame() {
     if (idx < 0) { setTm(null); return; }
     var target = arr[idx];
     if (tm.ty === "buff" && pi === myActIdx) { target.tempMight = (target.tempMight || 0) + tm.v; target._buffSources = (target._buffSources || []).concat([{ source: "Spell (manual)", amount: tm.v }]); aL("  " + cName(target) + " +" + tm.v + "M!"); }
-    else if (tm.ty === "dmg") { target.damage = (target.damage || 0) + tm.v; target._damageSources = (target._damageSources || []).concat([{ source: "Spell (manual)", amount: tm.v }]); if (target.damage >= (target.might || 0) + (target.tempMight || 0) + (target._aura || 0)) { aL("  " + cName(target) + " killed!"); np[pi].trash.push(target); arr.splice(idx, 1); } else { aL("  " + cName(target) + " takes " + tm.v); } }
+    else if (tm.ty === "dmg") { target.damage = (target.damage || 0) + tm.v; target._damageSources = (target._damageSources || []).concat([{ source: "Spell (manual)", amount: tm.v }]); if (target.damage >= _effMight(target)) { aL("  " + cName(target) + " killed!"); np[pi].trash.push(target); arr.splice(idx, 1); } else { aL("  " + cName(target) + " takes " + tm.v); } }
     else if (tm.ty === "stun" && pi !== myActIdx) { target.stunned = true; aL("  " + cName(target) + " stunned!"); }
     setBfs(nb); setPs(np); setTm(null);
   }
@@ -7927,7 +7929,7 @@ function RiftboundGame() {
       var targetUid = damageAssignments[atkUid];
       var found = _findUnitByUid(atkUid); if (!found) return;
       var u = found.unit;
-      var dmg = (u.might || 0) + (u.tempMight || 0) + (u._aura || 0);
+      var dmg = _effMight(u);
       damageMap[targetUid] = (damageMap[targetUid] || 0) + dmg;
     });
     // Compute survivors and dead
@@ -7935,7 +7937,7 @@ function RiftboundGame() {
     var survivorPlan = []; // {uid, ownerIdx, unit}
     (bfNow.units || []).forEach(function(pu, pi) {
       (pu || []).forEach(function(u) {
-        var totalHealth = (u.might || 0) + (u.tempMight || 0) + (u._aura || 0);
+        var totalHealth = _effMight(u);
         var totalDmg = (u.damage || 0) + (damageMap[u.uid] || 0);
         if (totalDmg >= totalHealth) {
           deadUids.push({ uid: u.uid, ownerIdx: pi, unit: u });
