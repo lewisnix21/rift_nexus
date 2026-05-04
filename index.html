@@ -3582,7 +3582,18 @@ var CARD_EFFECTS = {
   },
   "Rengar, Unseen":     { _automatedElsewhere: "[Accelerate] cost-time; [Assault 2] +2 might attacking via parseKeywordBonus; [Deflect] via isEnemyDeflect; [Ganking] via base→BF→BF moves" },
   "Shen, Kinkou":       { _automatedElsewhere: "[Reaction] manual play timing; [Shield 2] +2 might defending via parseKeywordBonus; [Tank] manual combat assignment" },
-  "Reflection":         { _automatedElsewhere: "Copy-on-play — token mechanic with no automated copy resolution; player picks the copy target manually" }
+  "Reflection":         { _automatedElsewhere: "Copy-on-play — token mechanic with no automated copy resolution; player picks the copy target manually" },
+  "The Ruination": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      ps.forEach(function(p) { (p && p.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); }); });
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+      if (!allUids.length) { ctx.banner("The Ruination — no units on the board"); return; }
+      allUids.forEach(function(uid) { ctx.dealDamage(uid, 9999, "The Ruination"); });
+      ctx.banner("The Ruination — killed " + allUids.length + " unit" + (allUids.length === 1 ? "" : "s"));
+    }
+  }
 };
 </script>
 <script type="text/babel">
