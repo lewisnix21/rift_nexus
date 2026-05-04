@@ -3794,7 +3794,17 @@ var CARD_EFFECTS = {
   "Abandoned Hall":     { _automatedElsewhere: "BF spell-play → optional +1 might to a unit here — onSpellCastAtBF hook not built; apply tempMight manually" },
   "The Dreaming Tree":  { _automatedElsewhere: "BF first-spell-targets-friendly-here-each-turn → draw 1 — onChosenBySpell + first-each-turn gate not built; resolve manually" },
   "Frozen Fortress":    { _automatedElsewhere: "BF start-of-each-BG-phase → 1 dmg to each unit here — beginning-phase BF damage tick not built; resolve manually" },
-  "Ripper's Bay":       { _automatedElsewhere: "BF on-unit-bounced-from-here → optional 1E to channel rune exhausted — onBounceFromBF hook + activated-channel not modelled; resolve manually" }
+  "Ripper's Bay":       { _automatedElsewhere: "BF on-unit-bounced-from-here → optional 1E to channel rune exhausted — onBounceFromBF hook + activated-channel not modelled; resolve manually" },
+  "Flurry of Blades": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+      if (!bfUids.length) { ctx.banner("Flurry of Blades — no BF units"); return; }
+      bfUids.forEach(function(uid) { ctx.dealDamage(uid, 1, "Flurry of Blades"); });
+      ctx.banner("Flurry of Blades — 1 dmg to " + bfUids.length + " BF unit" + (bfUids.length === 1 ? "" : "s"));
+    }
+  }
 };
 </script>
 <script type="text/babel">
