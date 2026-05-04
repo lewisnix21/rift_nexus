@@ -3699,7 +3699,8 @@ var CARD_EFFECTS = {
   "Harpoon Squad":      { _automatedElsewhere: "On-self-move-from-BF → +2 might this turn — onMoveFromBattlefield hook not built; apply tempMight manually" },
   "Corrupt Enforcer":   { _automatedElsewhere: "On-move-to-BF discard 1 / on-win-combat draw 1 — onMove + onWinCombat hooks not built; resolve manually" },
   "Ember Monk":         { _automatedElsewhere: "On-friendly-Hidden-play → +2 might this turn — onHiddenPlay hook not built; apply tempMight manually" },
-  "Jhin, Murderous Artist": { _automatedElsewhere: "[Deflect] via isEnemyDeflect; [Ganking] via base→BF→BF moves; on-move [Add] 1E + Rainbow — declarative add-resource (cost-time)" }
+  "Jhin, Murderous Artist": { _automatedElsewhere: "[Deflect] via isEnemyDeflect; [Ganking] via base→BF→BF moves; on-move [Add] 1E + Rainbow — declarative add-resource (cost-time)" },
+  "Stealthy Pursuer":   { _automatedElsewhere: "Tag-along on friendly move — onFriendlyMove hook not built; player drags Pursuer along with the moving unit" }
 };
 </script>
 <script type="text/babel">
