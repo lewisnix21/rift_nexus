@@ -3735,7 +3735,16 @@ var CARD_EFFECTS = {
   },
   "Ribbon Dancer":      { _automatedElsewhere: "On-move-to-BF +1 might to another friendly — onMove hook not built; apply tempMight manually" },
   "Monch":              { _automatedElsewhere: "Cost-time -2E + enters-ready when enemy has [Stunned] unit — conditional cost discount not modelled; resolve manually" },
-  "Jinx, Rebel":        { _automatedElsewhere: "On-discard ready + 1 might — onDiscard hook not built; resolve manually after discarding" }
+  "Jinx, Rebel":        { _automatedElsewhere: "On-discard ready + 1 might — onDiscard hook not built; resolve manually after discarding" },
+  "Icevale Archer": {
+    onAttack: function(ctx) {
+      var enemyUids = (ctx.enemyUnits() || []).map(function(u) { return u.uid; });
+      if (!enemyUids.length) { ctx.banner("Icevale Archer — no enemy units here"); return; }
+      ctx.flash(ctx.unit.uid);
+      // Optional 1E paid → -1 might. Auto-pays the optional cost (assumes affordable).
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Icevale Archer (paid 1E)", sourceUid: ctx.unit.uid, effect: "tempMight", amount: -1 });
+    }
+  }
 };
 </script>
 <script type="text/babel">
