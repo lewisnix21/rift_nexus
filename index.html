@@ -3690,7 +3690,8 @@ var CARD_EFFECTS = {
   "Petal Pixie":        { _automatedElsewhere: "Conditional aura (+1 per friendly [Temporary] at my BF) — apply +might counter manually" },
   "Sona, Harmonious":   { _automatedElsewhere: "End of turn at BF — ready up to 4 runes — fires inline from endTurn" },
   "Pirate's Haven":     { _automatedElsewhere: "On friendly-unit-ready → +1 might that turn — onUnitReadied hook not built; apply +/- counter manually" },
-  "Fresh Beans":        { _automatedElsewhere: "Showdown unit-played → exhaust to draw 1 — declarative gear ability, resolve manually" }
+  "Fresh Beans":        { _automatedElsewhere: "Showdown unit-played → exhaust to draw 1 — declarative gear ability, resolve manually" },
+  "Yi, Meditative":     { _automatedElsewhere: "Self-aura: +4 might while owner has 8+ runes — fires from computeAuraSources" }
 };
 </script>
 <script type="text/babel">
@@ -6682,6 +6683,13 @@ function RiftboundGame() {
     }
     // Self-buff auras (location-independent).
     if (unit.name === "Wizened Elder" && (unit.counter || 0) > 0) sources.push({ source: "Wizened Elder (buffed)", amount: 1 });
+    // Yi, Meditative: +4 might while you have 8+ runes. We treat the owner as the local
+    // player (recalcAuras runs from the local view); for a second player's Yi, the
+    // aura is recomputed under their own ps slot when they take a turn.
+    if (unit.name === "Yi, Meditative") {
+      var _ownerRunes = (ps[myActIdx] && ps[myActIdx].runes && ps[myActIdx].runes.length) || 0;
+      if (_ownerRunes >= 8) sources.push({ source: "Yi, Meditative (8+ runes)", amount: 4 });
+    }
     return sources;
   }
   function _auraEqual(a, b) {
