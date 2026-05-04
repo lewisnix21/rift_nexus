@@ -3656,6 +3656,15 @@ var CARD_EFFECTS = {
       if (!enemyUids.length) { ctx.banner("Ruined Rex [Deathknell] — no enemy units"); return; }
       ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Ruined Rex [Deathknell] (4 dmg)", sourceUid: ctx.card.uid, effect: "damage", amount: 4 });
     }
+  },
+  "Zaunite Bouncer": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { if (u.uid !== ctx.card.uid) bfUids.push(u.uid); }); }); });
+      if (!bfUids.length) { ctx.banner("Zaunite Bouncer — no other BF units to bounce"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Zaunite Bouncer", sourceUid: ctx.card.uid, effect: "bounceToHand" });
+    }
   }
 };
 </script>
