@@ -7728,27 +7728,15 @@ function RiftboundGame() {
     if (!sd && !_firmingUp) {
       var _defPresent = false; for (var _j = 0; _j < pc; _j++) { if (_j !== myActIdx && nb[bi].units[_j] && nb[bi].units[_j].length > 0) _defPresent = true; }
       aL("SHOWDOWN at " + nb[bi].name + "!");
-      if (autoMode) {
-        setPendingBeginConquer({ bi: bi, playerIdx: myActIdx, unitName: card.name, bfName: nb[bi].name, contested: _defPresent });
-        showAutoBanner("AUTO · " + pName(myActIdx) + " moved to " + nb[bi].name + " — press " + (_defPresent ? "Start" : "Begin") + " Showdown");
-        if (roomCode) {
-          _lastSyncVersion.current++;
-          var cleanPs4a = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
-          var cleanBfs4a = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
-          fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPs4a, bfs: cleanBfs4a, turn: turn, act: myActIdx, screen: screen, log: log.slice(-30), sd: null, ver: _lastSyncVersion.current, by: myUid })));
-        }
-      } else {
-        var _initAcc2 = {}; _initAcc2[myActIdx] = true; // attacker is implicitly accepted (they're the actor)
-        var newSd2 = { bfIdx: bi, atkIdx: myActIdx, priority: myActIdx, lastPass: null, acted: false, contested: _defPresent, acceptors: _initAcc2 };
-        setSd(newSd2);
-        setScreen("sd");
-        fireShowdownStartEffects(card, bi, myActIdx);
-        if (roomCode) {
-          _lastSyncVersion.current++;
-          var cleanPs4 = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
-          var cleanBfs4 = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
-          fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPs4, bfs: cleanBfs4, turn: turn, act: myActIdx, screen: "sd", log: log.slice(-30), sd: newSd2, ver: _lastSyncVersion.current, by: myUid })));
-        }
+      // Use the auto-mode pendingBeginConquer flow in both modes — manual just gets the same Begin Showdown button.
+      // The fireShowdownStartEffects dispatcher is autoMode-gated, so card effects only fire in auto.
+      setPendingBeginConquer({ bi: bi, playerIdx: myActIdx, unitName: card.name, bfName: nb[bi].name, contested: _defPresent });
+      if (autoMode) showAutoBanner("AUTO · " + pName(myActIdx) + " moved to " + nb[bi].name + " — press " + (_defPresent ? "Start" : "Begin") + " Showdown");
+      if (roomCode) {
+        _lastSyncVersion.current++;
+        var cleanPs4a = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
+        var cleanBfs4a = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
+        fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPs4a, bfs: cleanBfs4a, turn: turn, act: myActIdx, screen: screen, log: log.slice(-30), sd: null, ver: _lastSyncVersion.current, by: myUid })));
       }
     } else if (_firmingUp && !sd) {
       // Push the state to other players without invoking showdown
@@ -8390,7 +8378,7 @@ function RiftboundGame() {
         var isDraggable2 = !isEnemy && canMoveOwn && !tm && !fc && (autoMode || playable);
         var _handAct = (canMoveOwn && !tm && !fc && !c.hidden && playable) ? (c.type === "Spell" ? "Cast" : "Play") : undefined;
         // Hand card positioning matches auto-mode in both modes — same overlap, transitions, and CSS hover lift.
-        return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover auto-hand-card" + animCls, draggable: isDraggable2, onDragStart: isDraggable2 ? function(e) { e.dataTransfer.setData("text/plain", "hand:" + c.uid); setDragUnit(c); } : undefined, onDragEnd: function() { setDragUnit(null); }, onClick: (canMoveOwn && playable) ? function() { if (tm || fc) return; if (c.type === "Unit" || c.type === "Champion" || c.type === "Gear") { onPlay(c); } else if (c.type === "Spell") { if (showcaseCard && showcaseCard.uid === c.uid) { setShowcaseCard(null); } else { if (autoMode && !canPlayCard(c)) return; var idx = myActIdx; var _me = ps[idx]; if (_me) { var sp = Object.assign({}, _me, { hand: _me.hand.filter(function(h) { return h.uid !== c.uid; }) }); if (autoMode) { var rcN = (c.rc || []).slice(); var eN = c.energy || 0; var _hasEager = (_me.base || []).some(function(u){return u.name==="Eager Apprentice";})||bfs.some(function(b){return((b.units&&b.units[idx])||[]).some(function(u){return u.name==="Eager Apprentice";});}); if(_hasEager&&eN>1)eN--; var _xEnergy=_extraEnergyRef.current; if(_xEnergy>0){_extraEnergyRef.current=0;eN=Math.max(0,eN-_xEnergy);} var aR = _me.runes.slice(); var recUids = []; rcN.forEach(function(dom) { var f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0; }); if (f) { recUids.push(f.uid); if (eN > 0) eN--; } }); var tapUids = []; if (eN > 0) { var av = aR.filter(function(r) { return !r.exhausted && recUids.indexOf(r.uid) < 0; }); av.slice(0, eN).forEach(function(r) { tapUids.push(r.uid); }); } sp.runes = _me.runes.filter(function(r) { return recUids.indexOf(r.uid) < 0; }).map(function(r) { return tapUids.indexOf(r.uid) >= 0 ? Object.assign({}, r, { exhausted: true }) : r; }); sp.runeDeck = shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); }))); } var np = ps.slice(); np[idx] = sp; setPs(np); pushShowcase(c); aL(pName(idx) + " casts " + cName(c)); if (autoMode) { setPendingSpell(c); setResolveAcceptors({}); } else { runAutoOnCast(c); } } } if (sd) markSdActed(); } } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { setHandHovIdx(i); if (autoMode) setHoveredHandCard(c); if (!autoMode && _setHoverCard && !c.hidden) _setHoverCard(c, e, true); }, onMouseLeave: function() { setHandCtxUid(null); if (_clearHoverCard) _clearHoverCard(); }, style: { width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: (autoMode && playable) ? "3px solid #3b82f6" : "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + (playable ? "55" : "20")), flexShrink: 0, cursor: isDraggable2 ? "grab" : (autoMode && !playable ? "default" : "pointer"), transform: "rotate(" + rot + "deg) translateY(" + ty + "px)", transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -45 : total > 5 ? -24 : 0), transition: "transform 200ms ease-out, box-shadow 0.2s ease, border 0.15s ease, filter 200ms ease-out", position: "relative", zIndex: i === handHovIdx ? 998 : i, boxShadow: (autoMode && playable) ? "0 0 22px rgba(59,130,246,1), 0 0 44px rgba(59,130,246,0.65), 0 4px 16px #000a" : "0 4px 16px #000a", opacity: 1, pointerEvents: "auto" } },
+        return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover auto-hand-card" + animCls, draggable: isDraggable2, onDragStart: isDraggable2 ? function(e) { e.dataTransfer.setData("text/plain", "hand:" + c.uid); setDragUnit(c); } : undefined, onDragEnd: function() { setDragUnit(null); }, onClick: (canMoveOwn && playable) ? function() { if (tm || fc) return; if (c.type === "Unit" || c.type === "Champion" || c.type === "Gear") { onPlay(c); } else if (c.type === "Spell") { if (showcaseCard && showcaseCard.uid === c.uid) { setShowcaseCard(null); } else { if (autoMode && !canPlayCard(c)) return; var idx = myActIdx; var _me = ps[idx]; if (_me) { var sp = Object.assign({}, _me, { hand: _me.hand.filter(function(h) { return h.uid !== c.uid; }) }); if (autoMode) { var rcN = (c.rc || []).slice(); var eN = c.energy || 0; var _hasEager = (_me.base || []).some(function(u){return u.name==="Eager Apprentice";})||bfs.some(function(b){return((b.units&&b.units[idx])||[]).some(function(u){return u.name==="Eager Apprentice";});}); if(_hasEager&&eN>1)eN--; var _xEnergy=_extraEnergyRef.current; if(_xEnergy>0){_extraEnergyRef.current=0;eN=Math.max(0,eN-_xEnergy);} var aR = _me.runes.slice(); var recUids = []; rcN.forEach(function(dom) { var f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0; }); if (f) { recUids.push(f.uid); if (eN > 0) eN--; } }); var tapUids = []; if (eN > 0) { var av = aR.filter(function(r) { return !r.exhausted && recUids.indexOf(r.uid) < 0; }); av.slice(0, eN).forEach(function(r) { tapUids.push(r.uid); }); } sp.runes = _me.runes.filter(function(r) { return recUids.indexOf(r.uid) < 0; }).map(function(r) { return tapUids.indexOf(r.uid) >= 0 ? Object.assign({}, r, { exhausted: true }) : r; }); sp.runeDeck = shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); }))); } var np = ps.slice(); np[idx] = sp; setPs(np); pushShowcase(c); aL(pName(idx) + " casts " + cName(c)); setPendingSpell(c); setResolveAcceptors({}); } } if (sd) markSdActed(); } } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { setHandHovIdx(i); if (autoMode) setHoveredHandCard(c); if (!autoMode && _setHoverCard && !c.hidden) _setHoverCard(c, e, true); }, onMouseLeave: function() { setHandCtxUid(null); if (_clearHoverCard) _clearHoverCard(); }, style: { width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: (autoMode && playable) ? "3px solid #3b82f6" : "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + (playable ? "55" : "20")), flexShrink: 0, cursor: isDraggable2 ? "grab" : (autoMode && !playable ? "default" : "pointer"), transform: "rotate(" + rot + "deg) translateY(" + ty + "px)", transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -45 : total > 5 ? -24 : 0), transition: "transform 200ms ease-out, box-shadow 0.2s ease, border 0.15s ease, filter 200ms ease-out", position: "relative", zIndex: i === handHovIdx ? 998 : i, boxShadow: (autoMode && playable) ? "0 0 22px rgba(59,130,246,1), 0 0 44px rgba(59,130,246,0.65), 0 4px 16px #000a" : "0 4px 16px #000a", opacity: 1, pointerEvents: "auto" } },
           c.hidden ? React.createElement("img", { src: CARD_BACK, style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : (c.img ? React.createElement("img", { src: imgSrc(c.img), style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : React.createElement("div", { style: { width: "100%", height: "100%", background: "linear-gradient(180deg," + (DOM[c.domain] || DOM.Colorless).c + "15,#0a0a18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#666", padding: 4, textAlign: "center" } }, c.name)),
           handCtxUid === c.uid ? React.createElement("button", { onClick: function(e) { e.stopPropagation(); toggleHide(c.uid); setHandCtxUid(null); }, style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 10, padding: "4px 12px", borderRadius: 4, border: "1.5px solid #ffffff40", background: "rgba(20,20,50,0.92)", color: "#ddd", fontSize: 12, cursor: "pointer", fontFamily: "Spectral,serif", fontWeight: 700, boxShadow: "0 4px 12px #000a", whiteSpace: "nowrap" } }, c.hidden ? "Reveal" : "Hide") : null
         );
@@ -9246,11 +9234,11 @@ function RiftboundGame() {
           {imgUrl ? <img src={imgUrl} style={{ width: "100%", height: "100%", objectFit: "fill", display: "block" }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 12 }}>{card.name}</div>}
         </div>;
       })()}
-      {/* AUTO MODE: Floating showcase (right side, no border) */}
-      {autoMode && (showcaseCard || dragOverShowcase) && <div className={sd ? "anim-sd-pulse" : ""}
+      {/* Floating showcase (right side, no border) — both modes */}
+      {(showcaseCard || dragOverShowcase) && <div className={sd ? "anim-sd-pulse" : ""}
         onDragOver={function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; if (!dragOverShowcase) setDragOverShowcase(true); }}
         onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverShowcase(false); }}
-        onDrop={function(e) { e.preventDefault(); e.stopPropagation(); setDragOverShowcase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; var card = null; if (myCur) { if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } else if (type === "base") { card = myCur.base.find(function(c) { return c.uid === uid2; }); } else if (type === "bf") { for (var bk = 0; bk < bfs.length; bk++) { var uArr = bfs[bk].units[myActIdx]; if (!uArr) continue; var found = uArr.find(function(u) { return u.uid === uid2; }); if (found) { card = found; break; } } } else if (type === "bin") { card = (myCur.trash || []).find(function(c) { return c.uid === uid2; }); } } if (card) { if (autoMode && type === "hand" && card.type === "Spell") { var _idx = myActIdx; setPs(function(prev) { var p = prev[_idx]; if (!p) return prev; var np = prev.slice(); np[_idx] = Object.assign({}, p, { hand: p.hand.filter(function(h) { return h.uid !== card.uid; }) }); return np; }); aL(pName(_idx) + " casts " + cName(card)); } pushShowcase(card); if (card.type === "Spell") { if (autoMode) { setPendingSpell(card); setResolveAcceptors({}); } else { runAutoOnCast(card); } } } }}
+        onDrop={function(e) { e.preventDefault(); e.stopPropagation(); setDragOverShowcase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; var card = null; if (myCur) { if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } else if (type === "base") { card = myCur.base.find(function(c) { return c.uid === uid2; }); } else if (type === "bf") { for (var bk = 0; bk < bfs.length; bk++) { var uArr = bfs[bk].units[myActIdx]; if (!uArr) continue; var found = uArr.find(function(u) { return u.uid === uid2; }); if (found) { card = found; break; } } } else if (type === "bin") { card = (myCur.trash || []).find(function(c) { return c.uid === uid2; }); } } if (card) { if (type === "hand" && card.type === "Spell") { var _idx = myActIdx; setPs(function(prev) { var p = prev[_idx]; if (!p) return prev; var np = prev.slice(); np[_idx] = Object.assign({}, p, { hand: p.hand.filter(function(h) { return h.uid !== card.uid; }) }); return np; }); aL(pName(_idx) + " casts " + cName(card)); } pushShowcase(card); if (card.type === "Spell") { setPendingSpell(card); setResolveAcceptors({}); } } }}
         style={{ position: "fixed", right: "2%", top: "50%", transform: "translateY(-50%)", padding: "6px 4px", display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "center", overflow: "visible", zIndex: scryMode && showcaseCard ? 1250 : 800, pointerEvents: "auto" }}>
         {showcaseCard ? (function() {
           var scCardW = Math.round(258 * vScale); var scCardH = Math.round(361 * vScale);
@@ -9280,8 +9268,8 @@ function RiftboundGame() {
           </div>;
         })() : <div style={{ width: Math.round(258 * vScale), height: Math.round(361 * vScale), border: "2px dashed #FFD70066", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD70088", fontSize: 12, fontFamily: "Spectral,serif", background: "rgba(255,215,0,0.05)" }}>Drop here</div>}
       </div>}
-      {/* AUTO MODE: Spell chain Resolve button — shown to all players when a spell is awaiting resolution */}
-      {autoMode && pendingSpell && (function() {
+      {/* Spell chain Resolve button — shown to all players when a spell is awaiting resolution (both modes; card effects only fire in auto) */}
+      {pendingSpell && (function() {
         var isOnline = lobbyType === "host" || lobbyType === "join";
         var meReady = !!resolveAcceptors[myUid];
         var allUids = isOnline ? Object.keys(lobbyPlayers || {}) : [myUid];
@@ -9322,12 +9310,12 @@ function RiftboundGame() {
           {isOnline && pending.length > 0 && pendingNames.length > 0 && <span style={{ fontSize: 11, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Awaiting: {pendingNames.join(", ")}</span>}
         </div>;
       })()}
-      {autoMode && spellResolving && !pendingSpell && <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+      {spellResolving && !pendingSpell && <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
         <span style={{ fontSize: 12, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>{spellResolving}</span>
         <button disabled style={{ padding: "12px 28px", borderRadius: 8, border: "2px solid #60a5fa44", background: "rgba(96,165,250,0.07)", color: "#60a5fa66", fontSize: 15, fontWeight: 700, fontFamily: "Spectral,serif", cursor: "not-allowed", letterSpacing: 1.5, boxShadow: "0 4px 16px #000c", textTransform: "uppercase" }}>Resolving…</button>
       </div>}
-      {/* AUTO MODE: Begin Showdown button — attacker only, after moving to unconquered BF */}
-      {autoMode && pendingBeginConquer && !pendingConquer && !pendingSpell && !autoPrompt && (function() {
+      {/* Begin Showdown button — attacker only, after moving to unconquered BF (both modes) */}
+      {pendingBeginConquer && !pendingConquer && !pendingSpell && !autoPrompt && (function() {
         var isOnline = lobbyType === "host" || lobbyType === "join";
         var isAttacker = isOnline ? pendingBeginConquer.playerIdx === mySlot : true;
         if (!isAttacker) return null;
@@ -9362,8 +9350,8 @@ function RiftboundGame() {
           }} style={{ padding: "12px 28px", borderRadius: 8, border: "2px solid #60a5fa", background: "linear-gradient(135deg,#3b82f6,#60a5fa)", color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: "Spectral,serif", cursor: "pointer", letterSpacing: 1.5, boxShadow: "0 4px 16px #000c, 0 0 22px rgba(96,165,250,0.6)", textTransform: "uppercase" }}>{pbcContested ? "Start Showdown" : "Begin Showdown"}</button>
         </div>;
       })()}
-      {/* AUTO MODE: Conquer-Resolve button — shown to all players during uncontested showdown */}
-      {autoMode && sd && !sd.contested && !pendingSpell && !autoPrompt && (function() {
+      {/* Conquer-Resolve button — shown to all players during uncontested showdown (both modes) */}
+      {sd && !sd.contested && !pendingSpell && !autoPrompt && (function() {
         var isOnline = lobbyType === "host" || lobbyType === "join";
         var meReady = !!conquerAcceptors[myUid];
         var allUids = isOnline ? Object.keys(lobbyPlayers || {}) : [myUid];
@@ -9391,8 +9379,8 @@ function RiftboundGame() {
           {isOnline && pending.length > 0 && pendingNames.length > 0 && <span style={{ fontSize: 11, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Awaiting: {pendingNames.join(", ")}</span>}
         </div>;
       })()}
-      {/* AUTO MODE: Contested-Showdown Resolve button — grey until all my BF units have damage assignments, then blue */}
-      {autoMode && sd && sd.contested && sd.assignmentPhase && !pendingSpell && !autoPrompt && (function() {
+      {/* Contested-Showdown Resolve button — grey until all my BF units have damage assignments, then blue (both modes) */}
+      {sd && sd.contested && sd.assignmentPhase && !pendingSpell && !autoPrompt && (function() {
         var isOnline = lobbyType === "host" || lobbyType === "join";
         var meReady = !!conquerAcceptors[myUid];
         var allUids = isOnline ? Object.keys(lobbyPlayers || {}) : [myUid];
