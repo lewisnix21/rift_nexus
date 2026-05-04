@@ -3732,7 +3732,8 @@ var CARD_EFFECTS = {
       bfUids.forEach(function(uid) { ctx.dealDamage(uid, 4, "Kog'Maw, Caustic [Deathknell]"); });
       ctx.banner("Kog'Maw, Caustic [Deathknell] — 4 dmg to " + bfUids.length + " BF unit" + (bfUids.length === 1 ? "" : "s"));
     }
-  }
+  },
+  "Ribbon Dancer":      { _automatedElsewhere: "On-move-to-BF +1 might to another friendly — onMove hook not built; apply tempMight manually" }
 };
 </script>
 <script type="text/babel">
