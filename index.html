@@ -3626,6 +3626,19 @@ var CARD_EFFECTS = {
       bfUids.forEach(function(uid) { ctx.dealDamage(uid, 12, "Unchecked Power"); });
       ctx.banner("Unchecked Power — exhausted " + fCount + " friendly, 12 dmg to " + bfUids.length + " BF unit" + (bfUids.length === 1 ? "" : "s"));
     }
+  },
+  "Ride the Wind": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx;
+      var meP = ps[idx];
+      var friendlyUids = [];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") friendlyUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { friendlyUids.push(u.uid); }); });
+      if (!friendlyUids.length) { ctx.banner("Ride the Wind — no friendly units"); return; }
+      // Ready them all and let the player move whichever they target manually (move plumbing not in spell prompts).
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Ride the Wind (ready; move manually)", sourceUid: ctx.card.uid, effect: "ready" });
+    }
   }
 };
 </script>
