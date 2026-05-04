@@ -3665,6 +3665,21 @@ var CARD_EFFECTS = {
       if (!bfUids.length) { ctx.banner("Zaunite Bouncer — no other BF units to bounce"); return; }
       ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Zaunite Bouncer", sourceUid: ctx.card.uid, effect: "bounceToHand" });
     }
+  },
+  "Herald of Spring": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      setPs(function(prev) { var i = ctx.myActIdx; var p = prev[i]; if (!p) return prev; var np = prev.slice(); np[i] = Object.assign({}, p, { xp: (p.xp || 0) + 2 }); return np; });
+      ctx.banner("Herald of Spring — +2 XP");
+    },
+    onConquer: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 1;
+      ctx.banner("Herald of Spring [Hunt] — +1 XP (now " + _xpRef.current[ctx.player] + ")");
+    },
+    onHold: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 1;
+      ctx.banner("Herald of Spring [Hunt] — +1 XP (now " + _xpRef.current[ctx.player] + ")");
+    }
   }
 };
 </script>
