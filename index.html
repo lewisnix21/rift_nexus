@@ -3733,7 +3733,8 @@ var CARD_EFFECTS = {
       ctx.banner("Kog'Maw, Caustic [Deathknell] — 4 dmg to " + bfUids.length + " BF unit" + (bfUids.length === 1 ? "" : "s"));
     }
   },
-  "Ribbon Dancer":      { _automatedElsewhere: "On-move-to-BF +1 might to another friendly — onMove hook not built; apply tempMight manually" }
+  "Ribbon Dancer":      { _automatedElsewhere: "On-move-to-BF +1 might to another friendly — onMove hook not built; apply tempMight manually" },
+  "Monch":              { _automatedElsewhere: "Cost-time -2E + enters-ready when enemy has [Stunned] unit — conditional cost discount not modelled; resolve manually" }
 };
 </script>
 <script type="text/babel">
