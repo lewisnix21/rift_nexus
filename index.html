@@ -4532,9 +4532,10 @@ function RiftboundGame() {
     return function() { ref.off("value", handler); };
   }, [roomCode, lobbyType]);
 
-  // Online: spell owner auto-executes when all players have clicked Resolve
+  // Online: spell owner auto-executes when all players have clicked Resolve. Runs in both modes —
+  // runAutoOnCast is autoMode-gated internally, so in manual mode it just funnels the spell to trash.
   useEffect(function() {
-    if (!pendingSpell || !autoMode) return;
+    if (!pendingSpell) return;
     if (lobbyType !== "host" && lobbyType !== "join") return;
     if (showcaseOwner !== myUid) return;
     var allUIDs = Object.keys(lobbyPlayers || {});
@@ -9146,41 +9147,40 @@ function RiftboundGame() {
             style={{ flexShrink: 0, height: Math.round(370 * vScale), padding: "6px 4px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", margin: "0 4px", border: sd ? "2px solid #FF6B35" : (dragOverShowcase ? "1.5px solid #ffffff55" : "1.5px solid #ffffff20"), borderTop: sd ? "none" : undefined, borderRadius: sd ? "0 0 6px 6px" : 4, transition: "border 0.15s ease", overflow: "visible", position: "relative", zIndex: scryMode && showcaseCard ? 1250 : undefined }}>
             <div style={{ fontSize: 11, color: "#ffffff44", fontFamily: "Spectral,serif", letterSpacing: 1, marginBottom: 3 }}>SHOWCASE</div>
             {showcaseCard ? (<>
-              {!sd && showcaseOwner && isOnlineGame && (function() {
-                var boxStyle = { width: "100%", maxWidth: Math.round(215 * vScale), padding: "4px 0", flexShrink: 0, textAlign: "center", marginBottom: 3 };
-                // Accepted (resolved) — chain finished, owner can resolve cards
-                if (showcaseAccepted) {
-                  return <div style={boxStyle}><div style={{ width: "100%", padding: "4px 8px", borderRadius: 5, border: "1.5px solid #4ADE80", background: "rgba(74,222,128,0.12)", color: "#4ADE80", fontSize: 13, fontFamily: "Spectral,serif", fontWeight: 700, boxShadow: "0 0 10px rgba(74,222,128,0.3)" }}>Accepted ✓ - resolve your cards</div></div>;
-                }
-                // 3+ player flow: every player must accept individually (the actor is implicit).
-                // Any action resets others' acceptances; the new actor is implicitly accepted.
-                if (pc >= 3) {
-                  var allUids = Object.keys(lobbyPlayers || {});
-                  var iAccepted = !!showcaseAcceptors[myUid];
-                  var pendingNames = allUids.filter(function(uid) { return !showcaseAcceptors[uid]; }).map(function(uid) { var slot = lobbyPlayers[uid] && typeof lobbyPlayers[uid].slot === "number" ? lobbyPlayers[uid].slot : -1; return slot >= 0 ? pName(slot) : (lobbyPlayers[uid] && lobbyPlayers[uid].name) || "?"; });
-                  if (iAccepted) {
-                    return <div style={boxStyle}><div style={{ padding: "4px 8px", borderRadius: 5, border: "1.5px solid #4ADE80", background: "rgba(74,222,128,0.12)", color: "#4ADE80", fontSize: 12, fontFamily: "Spectral,serif", fontWeight: 700 }}>Waiting for {pendingNames.length === 0 ? "resolve" : pendingNames.join(", ")} to accept...</div></div>;
-                  }
-                  return <div style={boxStyle}><button onClick={function() {
-                    var newAcc = Object.assign({}, showcaseAcceptors); newAcc[myUid] = true;
-                    setShowcaseAcceptors(newAcc);
-                    aL(pName(mySlot) + " accepts the showcase");
-                    // If every player has now accepted, mark resolved
-                    var allAcceptedNow = allUids.every(function(uid) { return newAcc[uid]; });
-                    if (allAcceptedNow) { setShowcaseAccepted(true); aL("All players accepted — resolving showcase"); }
-                  }} style={{ width: "100%", padding: "4px 8px", borderRadius: 5, border: "1.5px solid #FFD700", background: "rgba(255,215,0,0.12)", color: "#FFD700", fontSize: 13, fontFamily: "Spectral,serif", fontWeight: 700, cursor: "pointer", boxShadow: "0 0 10px rgba(255,215,0,0.3)" }}>Accept</button></div>;
-                }
-                // 1v1 flow: priority cycles between the two players
-                var hasPriorityLocal = showcasePriority === myUid;
-                if (hasPriorityLocal) {
-                  if (showcaseActed) {
-                    return <div style={boxStyle}><button onClick={function() { var other = _otherPlayerUid(); setShowcasePriority(other || myUid); setShowcaseActed(false); aL(pName(mySlot) + " passes priority"); }} style={{ width: "100%", padding: "4px 8px", borderRadius: 5, border: "1.5px solid #FF6B35", background: "rgba(255,107,53,0.15)", color: "#FF6B35", fontSize: 13, fontFamily: "Spectral,serif", fontWeight: 700, cursor: "pointer", boxShadow: "0 0 10px rgba(255,107,53,0.3)" }}>Pass Priority</button></div>;
-                  }
-                  return <div style={boxStyle}><button onClick={function() { setShowcaseAccepted(true); }} style={{ width: "100%", padding: "4px 8px", borderRadius: 5, border: "1.5px solid #FFD700", background: "rgba(255,215,0,0.12)", color: "#FFD700", fontSize: 13, fontFamily: "Spectral,serif", fontWeight: 700, cursor: "pointer", boxShadow: "0 0 10px rgba(255,215,0,0.3)" }}>Accept - no more responses</button></div>;
-                }
-                var otherSlot = (lobbyPlayers && showcasePriority && lobbyPlayers[showcasePriority] && typeof lobbyPlayers[showcasePriority].slot === "number") ? lobbyPlayers[showcasePriority].slot : (mySlot === 0 ? 1 : 0);
-                return <div style={boxStyle}><div style={{ padding: "4px 8px", borderRadius: 5, border: "1.5px solid #ff4444", background: "rgba(255,68,68,0.12)", color: "#ff6666", fontSize: 13, fontFamily: "Spectral,serif", fontWeight: 700, boxShadow: "0 0 10px rgba(255,68,68,0.3)" }}>Waiting for {pName(otherSlot)}...</div></div>;
+              {/* Spell-resolve button — auto-mode style, positioned inline within the panel above the showcase card. */}
+              {pendingSpell && (function() {
+                var isOnline = lobbyType === "host" || lobbyType === "join";
+                var meReady = !!resolveAcceptors[myUid];
+                var allUids = isOnline ? Object.keys(lobbyPlayers || {}) : [myUid];
+                var pending = allUids.filter(function(u) { return !resolveAcceptors[u]; });
+                var pendingNames = pending.map(function(u) { var sl = lobbyPlayers && lobbyPlayers[u] && typeof lobbyPlayers[u].slot === "number" ? lobbyPlayers[u].slot : -1; return sl >= 0 ? pName(sl) : (lobbyPlayers && lobbyPlayers[u] && lobbyPlayers[u].name) || "?"; });
+                return <div style={{ width: "100%", maxWidth: Math.round(215 * vScale), display: "flex", flexDirection: "column", alignItems: "center", gap: 4, marginBottom: 6, flexShrink: 0 }}>
+                  <span style={{ fontSize: 12, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>{pendingSpell.name || "Spell"}</span>
+                  <button onClick={function(e) {
+                    e.stopPropagation();
+                    if (meReady) return;
+                    var newAcc = Object.assign({}, resolveAcceptors); newAcc[myUid] = true; setResolveAcceptors(newAcc);
+                    if (!isOnline) {
+                      var spellToResolve = pendingSpell;
+                      _resolveDidSomethingRef.current = false;
+                      setSpellResolving(spellToResolve.name || "Spell");
+                      setPendingSpell(null); setResolveAcceptors({});
+                      runAutoOnCast(spellToResolve);
+                      setTimeout(function() {
+                        setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p) return prev; var trash = (p.trash || []).slice(); if (!trash.some(function(c){return c.uid===spellToResolve.uid;})) trash.push(Object.assign({}, spellToResolve, { exhausted: false, gear: [] })); var np = prev.slice(); np[i] = Object.assign({}, p, { trash: trash }); return np; });
+                        setShowcaseCard(null); setShowcaseOwner(null); setSpellResolving(null);
+                      }, 500);
+                    }
+                  }} disabled={meReady} style={{ width: "100%", padding: "8px 16px", borderRadius: 6, border: "2px solid #60a5fa", background: meReady ? "rgba(96,165,250,0.15)" : "linear-gradient(135deg,#3b82f6,#60a5fa)", color: meReady ? "#60a5fa" : "#fff", fontSize: 14, fontWeight: 700, fontFamily: "Spectral,serif", cursor: meReady ? "default" : "pointer", letterSpacing: 1.5, boxShadow: "0 4px 16px #000a, 0 0 18px rgba(96,165,250,0.5)", textTransform: "uppercase" }}>
+                    {meReady ? "Waiting…" : "Resolve"}
+                  </button>
+                  {isOnline && pending.length > 0 && pendingNames.length > 0 && <span style={{ fontSize: 10, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1, textAlign: "center" }}>Awaiting: {pendingNames.join(", ")}</span>}
+                </div>;
               })()}
+              {!pendingSpell && spellResolving && <div style={{ width: "100%", maxWidth: Math.round(215 * vScale), display: "flex", flexDirection: "column", alignItems: "center", gap: 4, marginBottom: 6, flexShrink: 0 }}>
+                <span style={{ fontSize: 12, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>{spellResolving}</span>
+                <button disabled style={{ width: "100%", padding: "8px 16px", borderRadius: 6, border: "2px solid #60a5fa44", background: "rgba(96,165,250,0.07)", color: "#60a5fa66", fontSize: 14, fontWeight: 700, fontFamily: "Spectral,serif", cursor: "not-allowed", letterSpacing: 1.5, boxShadow: "0 4px 16px #000a", textTransform: "uppercase" }}>Resolving…</button>
+              </div>}
               {(function() {
                 var scCardW = Math.round(215 * vScale); var scCardH = Math.round(301 * vScale);
                 var scPeek = Math.round(scCardW * 0.3);
@@ -9248,8 +9248,8 @@ function RiftboundGame() {
           {imgUrl ? <img src={imgUrl} style={{ width: "100%", height: "100%", objectFit: "fill", display: "block" }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 12 }}>{card.name}</div>}
         </div>;
       })()}
-      {/* Floating showcase (right side, no border) — both modes */}
-      {(showcaseCard || dragOverShowcase) && <div className={sd ? "anim-sd-pulse" : ""}
+      {/* Floating showcase (right side, no border) — auto mode only; manual uses the paneled showcase */}
+      {autoMode && (showcaseCard || dragOverShowcase) && <div className={sd ? "anim-sd-pulse" : ""}
         onDragOver={function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; if (!dragOverShowcase) setDragOverShowcase(true); }}
         onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverShowcase(false); }}
         onDrop={function(e) { e.preventDefault(); e.stopPropagation(); setDragOverShowcase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; var card = null; if (myCur) { if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } else if (type === "base") { card = myCur.base.find(function(c) { return c.uid === uid2; }); } else if (type === "bf") { for (var bk = 0; bk < bfs.length; bk++) { var uArr = bfs[bk].units[myActIdx]; if (!uArr) continue; var found = uArr.find(function(u) { return u.uid === uid2; }); if (found) { card = found; break; } } } else if (type === "bin") { card = (myCur.trash || []).find(function(c) { return c.uid === uid2; }); } } if (card) { if (type === "hand" && card.type === "Spell") { var _idx = myActIdx; setPs(function(prev) { var p = prev[_idx]; if (!p) return prev; var np = prev.slice(); np[_idx] = Object.assign({}, p, { hand: p.hand.filter(function(h) { return h.uid !== card.uid; }) }); return np; }); aL(pName(_idx) + " casts " + cName(card)); } pushShowcase(card); if (card.type === "Spell") { setPendingSpell(card); setResolveAcceptors({}); } } }}
@@ -9282,8 +9282,8 @@ function RiftboundGame() {
           </div>;
         })() : <div style={{ width: Math.round(258 * vScale), height: Math.round(361 * vScale), border: "2px dashed #FFD70066", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD70088", fontSize: 12, fontFamily: "Spectral,serif", background: "rgba(255,215,0,0.05)" }}>Drop here</div>}
       </div>}
-      {/* Spell chain Resolve button — shown to all players when a spell is awaiting resolution (both modes; card effects only fire in auto) */}
-      {pendingSpell && (function() {
+      {/* Spell chain Resolve button — auto mode renders this floating bottom-right; manual mode renders an equivalent button inline within the paneled showcase below */}
+      {autoMode && pendingSpell && (function() {
         var isOnline = lobbyType === "host" || lobbyType === "join";
         var meReady = !!resolveAcceptors[myUid];
         var allUids = isOnline ? Object.keys(lobbyPlayers || {}) : [myUid];
@@ -9324,7 +9324,7 @@ function RiftboundGame() {
           {isOnline && pending.length > 0 && pendingNames.length > 0 && <span style={{ fontSize: 11, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Awaiting: {pendingNames.join(", ")}</span>}
         </div>;
       })()}
-      {spellResolving && !pendingSpell && <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+      {autoMode && spellResolving && !pendingSpell && <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
         <span style={{ fontSize: 12, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>{spellResolving}</span>
         <button disabled style={{ padding: "12px 28px", borderRadius: 8, border: "2px solid #60a5fa44", background: "rgba(96,165,250,0.07)", color: "#60a5fa66", fontSize: 15, fontWeight: 700, fontFamily: "Spectral,serif", cursor: "not-allowed", letterSpacing: 1.5, boxShadow: "0 4px 16px #000c", textTransform: "uppercase" }}>Resolving…</button>
       </div>}
