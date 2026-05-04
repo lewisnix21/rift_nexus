@@ -3680,6 +3680,12 @@ var CARD_EFFECTS = {
       _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 1;
       ctx.banner("Herald of Spring [Hunt] — +1 XP (now " + _xpRef.current[ctx.player] + ")");
     }
+  },
+  "LeBlanc, Fragmented": {
+    onDeath: function(ctx) {
+      ctx.draw(1);
+      ctx.banner("LeBlanc, Fragmented [Deathknell] — drew 1 (Beginning-phase x2 not auto-detected)");
+    }
   }
 };
 </script>
