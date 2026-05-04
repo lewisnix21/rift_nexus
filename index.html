@@ -3593,7 +3593,8 @@ var CARD_EFFECTS = {
       allUids.forEach(function(uid) { ctx.dealDamage(uid, 9999, "The Ruination"); });
       ctx.banner("The Ruination — killed " + allUids.length + " unit" + (allUids.length === 1 ? "" : "s"));
     }
-  }
+  },
+  "Time Warp":          { _automatedElsewhere: "Extra-turn (Banish self) — turn-order manipulation not modelled; player passes the spell through and skips opponent end manually" }
 };
 </script>
 <script type="text/babel">
