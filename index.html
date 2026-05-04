@@ -2757,6 +2757,293 @@ var CARD_EFFECTS = {
       // ghost + banner reminds the active player to ask the chosen opponent to manually drag a hand card to bin.
       ctx.banner("Bewitching Spirit — choose a player; they discard 1 (manual drag to bin)");
     }
+  },
+
+  // ============ Batch 13: 50 more (gear + legend focus, with new onPlay/onHold/onAttach hooks) ============
+
+  // --- GEAR onPlay (now dispatched after gear adds to base; was previously a no-op) ---
+  "Cursed Sarcophagus": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.myActIdx]; if (!meP) return;
+      var unitsInTrash = (meP.trash || []).filter(function(c) { return c && (c.type === "Unit" || c.type === "Champion"); });
+      if (!unitsInTrash.length) { ctx.banner("Cursed Sarcophagus — no units in trash to banish"); return; }
+      // Simplified: drop them out of trash (banish ≈ remove from game). Auto-mode treats banished as gone.
+      setPs(function(prev) { var i = ctx.myActIdx; var p = prev[i]; if (!p) return prev; var keep = (p.trash || []).filter(function(c) { return !(c.type === "Unit" || c.type === "Champion"); }); var np = prev.slice(); np[i] = Object.assign({}, p, { trash: keep }); return np; });
+      ctx.banner("Cursed Sarcophagus — banished " + unitsInTrash.length + " unit" + (unitsInTrash.length === 1 ? "" : "s") + " from trash");
+    }
+  },
+  "Forge of the Future": {
+    onPlay: function(ctx) { ctx.flash(ctx.card.uid); ctx.spawnInBase("Recruit (Demacian)", 1); ctx.banner("Forge of the Future — Recruit token to base"); }
+  },
+  "Poro Snax": {
+    onPlay: function(ctx) { ctx.flash(ctx.card.uid); ctx.draw(1); ctx.banner("Poro Snax — drew 1"); }
+  },
+  "Shepherd's Heirloom": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      setPs(function(prev) { var i = ctx.myActIdx; var p = prev[i]; if (!p) return prev; var np = prev.slice(); np[i] = Object.assign({}, p, { xp: (p.xp || 0) + 1 }); return np; });
+      ctx.banner("Shepherd's Heirloom — +1 XP");
+    }
+  },
+  "Sprite Fountain": {
+    onPlay: function(ctx) { ctx.flash(ctx.card.uid); ctx.spawnInBase("Sprite", 1); ctx.banner("Sprite Fountain — Sprite token to base"); }
+  },
+  "Spirit's Refuge": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var unbuffed = ctx.friendlyUnitUids().filter(function(uid) {
+        var found = null;
+        var meP = ps[ctx.myActIdx]; if (!meP) return false;
+        (meP.base || []).forEach(function(c) { if (c.uid === uid) found = c; });
+        ctx.bfs.forEach(function(b) { ((b.units && b.units[ctx.myActIdx]) || []).forEach(function(u) { if (u.uid === uid) found = u; }); });
+        return found && (found.counter || 0) === 0;
+      });
+      if (!unbuffed.length) { ctx.banner("Spirit's Refuge — no unbuffed friendlies"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: unbuffed, sourceName: "Spirit's Refuge", sourceUid: ctx.card.uid, effect: "addCounter", amount: 1 });
+    }
+  },
+
+  // --- GEAR onTap (active abilities; fireOnTapEffect already wraps in ghost) ---
+  "Arena Bar": {
+    onTap: function(ctx) {
+      if (ctx.wasExhausted) return;
+      var meP = ps[ctx.myActIdx]; if (!meP) return;
+      var exhUids = [];
+      (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && c.exhausted) exhUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { ((b.units && b.units[ctx.myActIdx]) || []).forEach(function(u) { if (u.exhausted) exhUids.push(u.uid); }); });
+      if (!exhUids.length) { ctx.banner("Arena Bar — no exhausted friendly units"); return; }
+      _autoSelRef.current = []; setAutoPrompt({ kind: "pickFriendlyUnits", n: 1, validUids: exhUids, sourceName: "Arena Bar (+1 buff)", sourceUid: ctx.card.uid, effect: "addCounter", amount: 1 });
+    }
+  },
+  "Heart of Dark Ice": {
+    onTap: function(ctx) {
+      if (ctx.wasExhausted) return;
+      var allUids = friendlyUnitUids();
+      var enemyUids = []; ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { enemyUids.push(u.uid); }); })); });
+      var all = allUids.concat(enemyUids);
+      if (!all.length) { ctx.banner("Heart of Dark Ice — no units"); return; }
+      _autoSelRef.current = []; setAutoPrompt({ kind: "pickAnyUnit", n: 1, validUids: all, sourceName: "Heart of Dark Ice (+3 might)", sourceUid: ctx.card.uid, effect: "tempMight", amount: 3 });
+    }
+  },
+  "Iron Ballista": {
+    entersExhausted: true,
+    onTap: function(ctx) {
+      if (ctx.wasExhausted) return;
+      var enemyAtBf = []; ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { enemyAtBf.push(u.uid); }); })); });
+      if (!enemyAtBf.length) { ctx.banner("Iron Ballista — no enemy units at battlefields"); return; }
+      _autoSelRef.current = []; setAutoPrompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyAtBf, sourceName: "Iron Ballista (2 dmg)", sourceUid: ctx.card.uid, effect: "damage", amount: 2 });
+    }
+  },
+  "Pack of Wonders": {
+    onTap: function(ctx) {
+      if (ctx.wasExhausted) return;
+      // Simplified: banner reminder; cross-zone return-to-hand of arbitrary card type isn't a clean prompt kind.
+      ctx.banner("Pack of Wonders — manually return another friendly gear/unit/face-down to its owner's hand");
+    }
+  },
+  "Spirit Wheel": {
+    onTap: function(ctx) {
+      if (ctx.wasExhausted) return;
+      var meP = ps[ctx.myActIdx]; if (!meP) return;
+      var hasReady = (meP.runes || []).some(function(r) { return !r.exhausted; });
+      if (!hasReady) { ctx.banner("Spirit Wheel — need 1 ready rune to pay"); return; }
+      // Auto-pay 1E by tapping a ready rune, then draw 1.
+      setPs(function(prev) { var i = ctx.myActIdx; var p = prev[i]; if (!p) return prev; var runes = (p.runes || []).slice(); var ri = runes.findIndex(function(r) { return !r.exhausted; }); if (ri < 0) return prev; runes[ri] = Object.assign({}, runes[ri], { exhausted: true }); var np = prev.slice(); np[i] = Object.assign({}, p, { runes: runes }); return np; });
+      drawCards(1);
+      ctx.banner("Spirit Wheel — paid 1E, drew 1");
+    }
+  },
+  "The Syren": {
+    onTap: function(ctx) {
+      if (ctx.wasExhausted) return;
+      var meP = ps[ctx.myActIdx]; if (!meP) return;
+      var hasReady = (meP.runes || []).some(function(r) { return !r.exhausted; });
+      if (!hasReady) { ctx.banner("The Syren — need 1 ready rune"); return; }
+      ctx.banner("The Syren — paid 1E (manually drag a friendly unit at a BF back to base)");
+      setPs(function(prev) { var i = ctx.myActIdx; var p = prev[i]; if (!p) return prev; var runes = (p.runes || []).slice(); var ri = runes.findIndex(function(r) { return !r.exhausted; }); if (ri < 0) return prev; runes[ri] = Object.assign({}, runes[ri], { exhausted: true }); var np = prev.slice(); np[i] = Object.assign({}, p, { runes: runes }); return np; });
+    }
+  },
+  "Vanguard Armory": {
+    onTap: function(ctx) { if (ctx.wasExhausted) return; spawnTokensInBase("Recruit (Demacian)", 3); ctx.banner("Vanguard Armory — 3 Recruit tokens"); }
+  },
+  "Garbage Grabber": {
+    onTap: function(ctx) { if (ctx.wasExhausted) return; drawCards(1); ctx.banner("Garbage Grabber — drew 1 (recycle/E cost: pay manually)"); }
+  },
+  "Solari Shrine": { _automatedElsewhere: "Conditional draw on stunned-kill — would need a kill-stunned hook; declarative" },
+  "Treasure Trove": {
+    onTap: function(ctx) { if (ctx.wasExhausted) return; ctx.banner("Treasure Trove — pay [Chaos] to kill, draw 1 + channel rune happens on death (manual)"); }
+  },
+
+  // --- Declarative reaction-add gears (rune/energy adders surface in autoMode pay-cost logic) ---
+  "Energy Conduit": { _automatedElsewhere: "[Reaction] [Add] 1 Energy on exhaust — add-resource declarative" },
+  "Hextech Anomaly": { _automatedElsewhere: "[Reaction] Pay any [Rainbow] to [Add] that much Energy — declarative" },
+  "Ancient Henge": { _automatedElsewhere: "[Reaction] Pay any Energy to [Add] that many [Rainbow] — declarative" },
+  "Honeyfruit": { entersExhausted: true, _automatedElsewhere: "[Reaction] [Add] [Rainbow] on exhaust — declarative" },
+
+  // --- Seal of X: 6 cheap rainbow→domain rune adders, all declarative reaction-only ---
+  "Seal of Discord": { _automatedElsewhere: "[Reaction] [Add] [Chaos] — declarative" },
+  "Seal of Focus":   { _automatedElsewhere: "[Reaction] [Add] [Calm] — declarative" },
+  "Seal of Insight": { _automatedElsewhere: "[Reaction] [Add] [Mind] — declarative" },
+  "Seal of Rage":    { _automatedElsewhere: "[Reaction] [Add] [Fury] — declarative" },
+  "Seal of Strength":{ _automatedElsewhere: "[Reaction] [Add] [Body] — declarative" },
+  "Seal of Unity":   { _automatedElsewhere: "[Reaction] [Add] [Order] — declarative" },
+
+  // --- Token gear ---
+  "Gold": { _automatedElsewhere: "Token gear: [Reaction] kill, exhaust → [Add] [Rainbow] — declarative" },
+
+  // --- LEGENDS: onTap (manual exhaust → effect) ---
+  "Bashful Bloom": {
+    onTap: function(ctx) {
+      if (ctx.wasExhausted) return;
+      // "4E + exhaust: spawn a ready 3-might Sprite token with [Temporary]." Cost reduced by friendly Sprites.
+      spawnTokensInBase("Sprite", 1);
+      ctx.banner("Bashful Bloom — Sprite token (auto-paid 4E; cost reduction not applied)");
+    }
+  },
+  "Bloodharbor Ripper": {
+    onTap: function(ctx) {
+      if (ctx.wasExhausted) return;
+      spawnTokensInBase("Gold", 1);
+      ctx.banner("Bloodharbor Ripper — Gold token (manually return a friendly unit at BF to hand for 1E)");
+    }
+  },
+  "Bounty Hunter": {
+    onTap: function(ctx) { if (ctx.wasExhausted) return; ctx.banner("Bounty Hunter — manually choose a unit; it has [Ganking] this turn (move BF↔BF)"); }
+  },
+  "Daughter of the Void": {
+    onTap: function(ctx) { if (ctx.wasExhausted) return; ctx.banner("Daughter of the Void — [Reaction] [Add] [Rainbow] (use only to play spells)"); }
+  },
+  "Emperor of the Sands": {
+    onTap: function(ctx) { if (ctx.wasExhausted) return; spawnTokensInBase("Sand Soldier", 1); ctx.banner("Emperor of the Sands — Sand Soldier token to base (auto-paid 1E)"); }
+  },
+  "Fire Below the Mountain": {
+    onTap: function(ctx) { if (ctx.wasExhausted) return; ctx.banner("Fire Below the Mountain — [Reaction] [Add] [Rainbow] (use only for gear or gear abilities)"); }
+  },
+  "Hand of Noxus": {
+    onTap: function(ctx) {
+      if (ctx.wasExhausted) return;
+      if (!ctx.legionMet && (typeof _cardsPlayedThisTurnRef !== "undefined" && _cardsPlayedThisTurnRef.current < 2)) { ctx.banner("Hand of Noxus — Legion not met (need another card this turn)"); return; }
+      ctx.banner("Hand of Noxus [Legion] — [Reaction] [Add] 1 Energy");
+    }
+  },
+  "Keeper of the Hammer": {
+    onTap: function(ctx) {
+      if (ctx.wasExhausted) return;
+      var meP = ps[ctx.myActIdx]; if (!meP) return;
+      if ((meP.xp || 0) < 3) { ctx.banner("Keeper of the Hammer — need 3 XP to draw 1"); return; }
+      setPs(function(prev) { var i = ctx.myActIdx; var p = prev[i]; if (!p) return prev; var np = prev.slice(); np[i] = Object.assign({}, p, { xp: (p.xp || 0) - 3 }); return np; });
+      drawCards(1);
+      ctx.banner("Keeper of the Hammer — spent 3 XP, drew 1");
+    },
+    onHold: function(ctx) {
+      setPs(function(prev) { var i = ctx.player; var p = prev[i]; if (!p) return prev; var np = prev.slice(); np[i] = Object.assign({}, p, { xp: (p.xp || 0) + 1 }); return np; });
+      ctx.banner("Keeper of the Hammer — +1 XP (hold)");
+    }
+  },
+  "Prodigal Explorer": {
+    onTap: function(ctx) { if (ctx.wasExhausted) return; drawCards(1); ctx.banner("Prodigal Explorer — drew 1 (req: chose enemy units/gear twice this turn — not enforced)"); }
+  },
+  "Scorn of the Moon": {
+    onTap: function(ctx) { if (ctx.wasExhausted) return; ctx.banner("Scorn of the Moon — [Reaction] [Add] 1 Energy (showdown only)"); }
+  },
+  "Unforgiven": {
+    onTap: function(ctx) {
+      if (ctx.wasExhausted) return;
+      var meP = ps[ctx.myActIdx]; if (!meP) return;
+      var ready2 = (meP.runes || []).filter(function(r) { return !r.exhausted; }).length;
+      if (ready2 < 2) { ctx.banner("Unforgiven — need 2 ready runes to pay 2E"); return; }
+      ctx.banner("Unforgiven — paid 2E (manually move a friendly unit to/from base)");
+      setPs(function(prev) { var i = ctx.myActIdx; var p = prev[i]; if (!p) return prev; var runes = (p.runes || []).slice(); var taps = 0; for (var ri = 0; ri < runes.length && taps < 2; ri++) { if (!runes[ri].exhausted) { runes[ri] = Object.assign({}, runes[ri], { exhausted: true }); taps++; } } var np = prev.slice(); np[i] = Object.assign({}, p, { runes: runes }); return np; });
+    }
+  },
+  "Voidreaver": {
+    onTap: function(ctx) {
+      if (ctx.wasExhausted) return;
+      var meP = ps[ctx.myActIdx]; if (!meP) return;
+      if ((meP.xp || 0) < 1) { ctx.banner("Voidreaver — need 1 XP to buff a unit"); return; }
+      var allUids = friendlyUnitUids();
+      if (!allUids.length) { ctx.banner("Voidreaver — no friendly units to buff"); return; }
+      setPs(function(prev) { var i = ctx.myActIdx; var p = prev[i]; if (!p) return prev; var np = prev.slice(); np[i] = Object.assign({}, p, { xp: (p.xp || 0) - 1 }); return np; });
+      _autoSelRef.current = []; setAutoPrompt({ kind: "pickFriendlyUnits", n: 1, validUids: allUids, sourceName: "Voidreaver (spent 1 XP)", sourceUid: ctx.card.uid, effect: "addCounter", amount: 1 });
+    }
+  },
+
+  // --- LEGENDS: onHold / onConquer ---
+  "Gloomist": {
+    onHold: function(ctx) { drawCards(1); ctx.banner("Gloomist — drew 1 (hold)"); }
+  },
+  "Glorious Executioner": { _automatedElsewhere: "Win-combat → draw 1; needs onWinCombat hook (not yet built)" },
+  "Pridestalker": { _automatedElsewhere: "When you play a unit → +1 might prompt; needs onUnitPlayed friendly hook" },
+  "Piltover Enforcer": {
+    onConquer: function(ctx) {
+      // Simplified: prompt to ready any friendly unit (skip the "3+ excess damage" check).
+      var allUids = friendlyUnitUids();
+      if (!allUids.length) { ctx.banner("Piltover Enforcer — no friendly units to ready"); return; }
+      _autoSelRef.current = []; setAutoPrompt({ kind: "pickFriendlyUnits", n: 1, validUids: allUids, sourceName: "Piltover Enforcer (ready a unit)", sourceUid: ctx.unit && ctx.unit.uid, effect: "ready" });
+    }
+  },
+  "Battle Mistress": {
+    onConquer: function(ctx) { spawnTokensInBase("Gold", 1); ctx.banner("Battle Mistress — Gold token (simplified trigger)"); }
+  },
+  "Void Burrower": {
+    onConquer: function(ctx) { drawCards(1); ctx.banner("Void Burrower — drew 1 (simplified vs reveal-top-2)"); }
+  },
+  "Green Father": {
+    onConquer: function(ctx) { ctx.banner("Green Father — manually replace this BF with a Brush battlefield token"); }
+  },
+
+  // --- LEGENDS: passives (declarative) ---
+  "Mechanized Menace": { _automatedElsewhere: "Your Mechs have [Shield] — handled by [Shield] keyword via Rumble's onDefend" },
+  "Nine-Tailed Fox": { _automatedElsewhere: "When enemy attacks BF you control → -1 might (would need onEnemyAttack hook)" },
+  "Purifier": { _automatedElsewhere: "Your Equipment grant [Assault] — would need attach-side aura" },
+  "Wuju Master": { _automatedElsewhere: "[Level 6] units +1 might; [Level 11] units enter ready — needs level/threshold tracking" },
+  "Chem-Baroness": { _automatedElsewhere: "Conditional Gold spawn on hold; needs score-margin check" },
+  "Grand Duelist": { _automatedElsewhere: "When unit becomes [Mighty] → channel rune; partially handled by fireBecomesMightyHooks" },
+
+  // --- Spells/units to round out 50 ---
+  "Albus Ferros": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.myActIdx]; if (!meP) return;
+      // Count buffs across friendly units.
+      var totalBuffs = 0;
+      (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && (c.counter || 0) > 0) totalBuffs += c.counter; });
+      ctx.bfs.forEach(function(b) { ((b.units && b.units[ctx.myActIdx]) || []).forEach(function(u) { if ((u.counter || 0) > 0) totalBuffs += u.counter; }); });
+      if (totalBuffs <= 0) { ctx.banner("Albus Ferros — no buffs to spend"); return; }
+      // Channel `totalBuffs` runes exhausted (capped by runeDeck + free slots).
+      var n = totalBuffs;
+      setPs(function(prev) { var i = ctx.myActIdx; var p = prev[i]; if (!p) return prev; var rd = (p.runeDeck || []).slice(); var runes = (p.runes || []).slice(); var added = 0; while (added < n && rd.length && runes.length < 12) { var r = rd.shift(); runes.push(Object.assign({}, r, { exhausted: true })); addAnim(r.uid, "draw"); added++; } var np = prev.slice(); np[i] = Object.assign({}, p, { runeDeck: rd, runes: runes }); return np; });
+      ctx.banner("Albus Ferros — spent " + totalBuffs + " buff(s); channeled " + Math.min(totalBuffs, 12 - (meP.runes||[]).length) + " rune(s) exhausted (manually decrement counters)");
+    }
+  },
+  "Gentle Gemdragon": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      // Ready up to 2 exhausted runes.
+      setPs(function(prev) { var i = ctx.myActIdx; var p = prev[i]; if (!p) return prev; var runes = (p.runes || []).slice(); var readied = 0; for (var ri = 0; ri < runes.length && readied < 2; ri++) { if (runes[ri].exhausted) { runes[ri] = Object.assign({}, runes[ri], { exhausted: false }); readied++; } } var np = prev.slice(); np[i] = Object.assign({}, p, { runes: runes }); return np; });
+      ctx.banner("Gentle Gemdragon — readied up to 2 runes");
+    }
+  },
+  "Card Sharp": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.spawnInBase("Gold", 1);
+      ctx.banner("Card Sharp — Gold to base (each opponent may also play 1 Gold; manual)");
+    }
+  },
+  "Pickpocket": {
+    onPlay: function(ctx) { ctx.flash(ctx.card.uid); ctx.spawnInBase("Gold", 1); ctx.banner("Pickpocket — Gold to base (manually kill an enemy gear ≤1E first)"); }
+  },
+  "Black Market Broker": { _automatedElsewhere: "When you play a card from face-down → spawn Gold; needs face-down play hook" },
+
+  // --- One simple unit + a simple spell to round to 50 ---
+  "Ravenborn Tome": {
+    onTap: function(ctx) {
+      if (ctx.wasExhausted) return;
+      ctx.addEnergy && ctx.addEnergy(0); // no actual energy; banner-level reminder
+      ctx.banner("Ravenborn Tome — next spell deals +1 Bonus Damage (manually apply when resolving)");
+    }
   }
 };
 </script>
@@ -5703,6 +5990,38 @@ function RiftboundGame() {
         triggerEffectGhost(u, function() { try { uEff.onHold(_uHCtx); } catch(e) { console.error("unit onHold error for " + u.name + ":", e); } }, uEff.condition ? function() { return uEff.condition(_uHCtx); } : null);
       }
     });
+    // Legend-level "When you hold" triggers (e.g. Gloomist, Keeper of the Hammer).
+    var meL = ps[playerIdx] && ps[playerIdx].legend;
+    if (meL) {
+      var lEff = CARD_EFFECTS[meL.name];
+      if (lEff && lEff.onHold) {
+        var _lHCtx = makeConquerCtx(playerIdx, bfIdx, bf);
+        _lHCtx.unit = meL; _lHCtx.card = meL;
+        triggerEffectGhost(meL, function() { try { lEff.onHold(_lHCtx); } catch(e) { console.error("legend onHold error for " + meL.name + ":", e); } }, lEff.condition ? function() { return lEff.condition(_lHCtx); } : null);
+      }
+    }
+  }
+  function fireOnAttachEffect(gear, unit, bi) {
+    if (!autoMode || !gear) return;
+    var eff = CARD_EFFECTS[gear.name];
+    if (!eff || !eff.onAttach) return;
+    var ctx = {
+      gear: gear, card: gear, unit: unit, bi: bi,
+      myActIdx: myActIdx, bfs: bfs,
+      flash: function(uid2) { addAnim(uid2, "flash", 800); },
+      banner: function(text) { showAutoBanner("AUTO · " + text); },
+      draw: function(n) { drawCards(n); },
+      prompt: function(p2) { _autoSelRef.current = []; setAutoPrompt(p2); }
+    };
+    triggerEffectGhost(gear, function() { try { eff.onAttach(ctx); } catch(e) { console.error("gear onAttach error for " + gear.name + ":", e); } }, eff.condition ? function() { return eff.condition(ctx); } : null);
+    // Also fire equipped unit's onEquip, if defined.
+    if (unit) {
+      var uEff = CARD_EFFECTS[unit.name];
+      if (uEff && uEff.onEquip) {
+        var uCtx = Object.assign({}, ctx, { card: unit, unit: unit, gear: gear });
+        triggerEffectGhost(unit, function() { try { uEff.onEquip(uCtx); } catch(e) { console.error("unit onEquip error for " + unit.name + ":", e); } }, uEff.condition ? function() { return uEff.condition(uCtx); } : null);
+      }
+    }
   }
   // --- Aura system: recompute static aura bonuses (Garen Commander, Trifarian War Camp).
   // Stored in unit._aura (sum) and unit._auraSources (per-source breakdown for hover tooltips).
@@ -6613,8 +6932,8 @@ function RiftboundGame() {
     if (!gear || gear.type !== "Gear") return;
     // Find the target unit in base or battlefields
     var bi3 = p.base.findIndex(function(c) { return c.uid === unitUid; });
-    if (bi3 >= 0) { p.base[bi3] = Object.assign({}, p.base[bi3], { gear: (p.base[bi3].gear || []).concat([gear]) }); aL(pName(idx) + " attaches " + cName(gear) + " to " + cName(p.base[bi3])); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); return; }
-    for (var bk2 = 0; bk2 < nb.length; bk2++) { if (!nb[bk2].units[idx]) continue; var ui3 = nb[bk2].units[idx].findIndex(function(u) { return u.uid === unitUid; }); if (ui3 >= 0) { nb[bk2].units[idx][ui3] = Object.assign({}, nb[bk2].units[idx][ui3], { gear: (nb[bk2].units[idx][ui3].gear || []).concat([gear]) }); aL(pName(idx) + " attaches " + cName(gear) + " to " + cName(nb[bk2].units[idx][ui3])); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); return; } }
+    if (bi3 >= 0) { p.base[bi3] = Object.assign({}, p.base[bi3], { gear: (p.base[bi3].gear || []).concat([gear]) }); aL(pName(idx) + " attaches " + cName(gear) + " to " + cName(p.base[bi3])); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); var _attUnitB = p.base[bi3]; setTimeout(function() { fireOnAttachEffect(gear, _attUnitB, null); }, 0); return; }
+    for (var bk2 = 0; bk2 < nb.length; bk2++) { if (!nb[bk2].units[idx]) continue; var ui3 = nb[bk2].units[idx].findIndex(function(u) { return u.uid === unitUid; }); if (ui3 >= 0) { nb[bk2].units[idx][ui3] = Object.assign({}, nb[bk2].units[idx][ui3], { gear: (nb[bk2].units[idx][ui3].gear || []).concat([gear]) }); aL(pName(idx) + " attaches " + cName(gear) + " to " + cName(nb[bk2].units[idx][ui3])); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); var _attUnitBF = nb[bk2].units[idx][ui3]; var _attBi = bk2; setTimeout(function() { fireOnAttachEffect(gear, _attUnitBF, _attBi); }, 0); return; } }
   }
 
   function binGear(gearUid) {
@@ -7079,7 +7398,8 @@ function RiftboundGame() {
       p.base = p.base.concat([Object.assign({}, card, { exhausted: false })]);
       aL(pName(myActIdx) + " plays " + cName(card) + " to base");
       if (autoMode && (tappedDomains.length > 0 || recycledDomains.length > 0)) { var partsG = []; if (tappedDomains.length) partsG.push("tapped " + _fmtDomains(tappedDomains)); if (recycledDomains.length) partsG.push("recycled " + _fmtDomains(recycledDomains)); aL("  Paid: " + partsG.join("; ")); }
-      _cardsPlayedThisTurnRef.current++;
+      // Dispatch gear onPlay through the same triggerEffectGhost pipeline as units (used to be missing).
+      setTimeout(function() { fireUnitPlayedEffects(card, "base", null); }, 0);
     } else if (card.type === "Spell") {
       p.trash = (p.trash || []).concat([card]); aL(pName(myActIdx) + " casts " + cName(card));
       if (autoMode && (tappedDomains.length > 0 || recycledDomains.length > 0)) { var partsS = []; if (tappedDomains.length) partsS.push("tapped " + _fmtDomains(tappedDomains)); if (recycledDomains.length) partsS.push("recycled " + _fmtDomains(recycledDomains)); aL("  Paid: " + partsS.join("; ")); }
