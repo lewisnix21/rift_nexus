@@ -3639,7 +3639,8 @@ var CARD_EFFECTS = {
       // Ready them all and let the player move whichever they target manually (move plumbing not in spell prompts).
       ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Ride the Wind (ready; move manually)", sourceUid: ctx.card.uid, effect: "ready" });
     }
-  }
+  },
+  "Factory Recall":     { _automatedElsewhere: "Return a gear to its owner's hand — no gear-bounce prompt kind in engine; resolve manually" }
 };
 </script>
 <script type="text/babel">
