@@ -3764,7 +3764,8 @@ var CARD_EFFECTS = {
       ctx.prompt({ kind: "pickFromTrash", n: 1, validUids: validUids, sourceName: "The Harrowing (return unit; replay manually, ignore E)", sourceUid: ctx.card.uid, effect: "returnToHand" });
     }
   },
-  "Katarina, Reckless": { _automatedElsewhere: "On-hide → ready; on-face-down-play → 2 dmg — Hidden hooks not built; resolve manually" }
+  "Katarina, Reckless": { _automatedElsewhere: "On-hide → ready; on-face-down-play → 2 dmg — Hidden hooks not built; resolve manually" },
+  "Battering Ram":      { _automatedElsewhere: "Cost-time -1E per card played this turn (min 1E) — dynamic cost reduction not modelled; resolve cost manually" }
 };
 </script>
 <script type="text/babel">
