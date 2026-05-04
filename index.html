@@ -3777,7 +3777,8 @@ var CARD_EFFECTS = {
       if (!allUids.length) { ctx.banner("Super Mega Death Rocket! — no units"); return; }
       ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Super Mega Death Rocket! (5 dmg; recover via discard manually)", sourceUid: ctx.card.uid, effect: "damage", amount: 5 });
     }
-  }
+  },
+  "Sabotage":           { _automatedElsewhere: "Reveal opponent's hand and recycle a non-unit — peek-opponent-hand UI not built; resolve manually" }
 };
 </script>
 <script type="text/babel">
