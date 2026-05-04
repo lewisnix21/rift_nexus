@@ -4005,7 +4005,10 @@ function RiftboundGame() {
       clearTimeout(_effectFadeTimer.current);
       _effectFadeTimer.current = setTimeout(function() {
         setEffectAnim(function(prev) { return prev ? Object.assign({}, prev, { fading: true }) : null; });
-        _effectFadeTimer.current = setTimeout(function() { setEffectAnim(null); }, 480);
+        _effectFadeTimer.current = setTimeout(function() {
+          setEffectAnim(null);
+          if (_ghostAfterFnRef.current) { var _af = _ghostAfterFnRef.current; _ghostAfterFnRef.current = null; _af(); }
+        }, 480);
       }, 350);
       return function() { clearTimeout(_effectFadeTimer.current); };
     }
@@ -4100,6 +4103,7 @@ function RiftboundGame() {
   // and the prompt modal is anchored just below the showcase.
   var _effectAnim = useState(null), effectAnim = _effectAnim[0], setEffectAnim = _effectAnim[1];
   var _effectFadeTimer = useRef(null);
+  var _ghostAfterFnRef = useRef(null);
   // Hovered hand card (auto-mode only). Used by rune rendering to highlight which runes
   // would be tapped (light-blue) vs recycled (red) to pay the cost of the hovered card.
   var _hoveredHandCard = useState(null), hoveredHandCard = _hoveredHandCard[0], setHoveredHandCard = _hoveredHandCard[1];
@@ -5765,7 +5769,7 @@ function RiftboundGame() {
     });
     uids.forEach(function(uid2) { addAnim(uid2, "flash", 800); });
   }
-  function fireUnitPlayedEffects(card, where, bi) {
+  function fireUnitPlayedEffects(card, where, bi, afterFn) {
     _cardsPlayedThisTurnRef.current++;
     if (!autoMode) return;
     var eff = CARD_EFFECTS[card.name];
@@ -5799,7 +5803,9 @@ function RiftboundGame() {
     }
     if (eff && eff.onPlay) {
       var _ctxOP = makeAutoCtx(card, where, bi);
-      triggerEffectGhost(card, function() { try { eff.onPlay(_ctxOP); } catch(e) { console.error("CARD_EFFECTS onPlay error for " + card.name + ":", e); } }, eff.condition ? function() { return eff.condition(_ctxOP); } : null);
+      triggerEffectGhost(card, function() { try { eff.onPlay(_ctxOP); } catch(e) { console.error("CARD_EFFECTS onPlay error for " + card.name + ":", e); } }, eff.condition ? function() { return eff.condition(_ctxOP); } : null, afterFn || null);
+    } else if (afterFn) {
+      afterFn();
     }
   }
   function applyTempMightToUids(uids, amount, source) {
@@ -7326,17 +7332,18 @@ function RiftboundGame() {
   }
   // Fly a ghost copy of the source card to the showcase, pulse the source, then run the effect after the ghost arrives.
   // Used so every triggered effect gets the same "card → showcase → resolve" cadence, including ones that don't open a prompt.
-  function triggerEffectGhost(card, fn, condition) {
+  function triggerEffectGhost(card, fn, condition, afterFn) {
     // If a condition predicate is provided and returns false, skip the ghost AND skip the effect
     // entirely — the card's trigger conditions weren't met (e.g. The Grand Plaza needs 7+ units).
     if (condition) {
       var _passed = true;
       try { _passed = !!condition(); } catch(e) { _passed = true; }
-      if (!_passed) return;
+      if (!_passed) { if (afterFn) afterFn(); return; }
     }
-    if (!autoMode || !card) { try { fn(); } catch(e) { console.error("triggerEffectGhost callback error:", e); } return; }
+    if (!autoMode || !card) { try { fn(); } catch(e) { console.error("triggerEffectGhost callback error:", e); } if (afterFn) afterFn(); return; }
     var srcEl = typeof document !== "undefined" ? document.querySelector('[data-uid="' + card.uid + '"]') : null;
-    if (!srcEl) { try { fn(); } catch(e) { console.error("triggerEffectGhost callback error:", e); } return; }
+    if (!srcEl) { try { fn(); } catch(e) { console.error("triggerEffectGhost callback error:", e); } if (afterFn) afterFn(); return; }
+    if (afterFn) _ghostAfterFnRef.current = afterFn;
     var rect = srcEl.getBoundingClientRect();
     var vw = typeof window !== "undefined" ? window.innerWidth : 1920;
     var vh = typeof window !== "undefined" ? window.innerHeight : 1080;
@@ -7358,7 +7365,10 @@ function RiftboundGame() {
       setTimeout(function() {
         if (autoPromptRef.current) return;
         setEffectAnim(function(prev) { return prev ? Object.assign({}, prev, { fading: true }) : null; });
-        setTimeout(function() { setEffectAnim(function(prev) { return prev && prev.fading ? null : prev; }); }, 480);
+        setTimeout(function() {
+          setEffectAnim(function(prev) { return prev && prev.fading ? null : prev; });
+          if (_ghostAfterFnRef.current) { var _af = _ghostAfterFnRef.current; _ghostAfterFnRef.current = null; _af(); }
+        }, 480);
       }, 2000);
     }, 1430);
   }
@@ -7541,13 +7551,17 @@ function RiftboundGame() {
     function _fmtDomainsBF(list) { if (!list || !list.length) return ""; var counts = {}; list.forEach(function(d) { counts[d] = (counts[d] || 0) + 1; }); return Object.keys(counts).map(function(d) { return counts[d] + " " + d; }).join(", "); }
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(x) { return x.slice(); }) }); });
     var _enterReadyBF = shouldEnterReady(card);
-    nb[bi].units[myActIdx].push(Object.assign({}, card, { exhausted: !_enterReadyBF }));
+    var _bfEff = CARD_EFFECTS[card.name];
+    var _deferBfExhaust = autoMode && !_enterReadyBF && _bfEff && _bfEff.onPlay;
+    nb[bi].units[myActIdx].push(Object.assign({}, card, { exhausted: _deferBfExhaust ? false : !_enterReadyBF }));
     aL(pName(myActIdx) + " deploys " + cName(card) + " to " + nb[bi].name);
     if (autoMode && (tappedDomainsBF.length > 0 || recycledDomainsBF.length > 0)) { var partsBF = []; if (tappedDomainsBF.length) partsBF.push("tapped " + _fmtDomainsBF(tappedDomainsBF)); if (recycledDomainsBF.length) partsBF.push("recycled " + _fmtDomainsBF(recycledDomainsBF)); aL("  Paid: " + partsBF.join("; ")); }
     var np = ps.slice(); np[myActIdx] = p; setPs(np); setBfs(nb);
     setTimeout(recalcAuras, 0);
     // Defer auto-mode play effects so they see the post-update state when reading ps/bfs.
-    var _bfBi = bi; setTimeout(function() { fireUnitPlayedEffects(card, "battlefield", _bfBi); }, 0);
+    var _bfBi = bi, _bfCardUid = card.uid, _bfActIdx = myActIdx;
+    var _bfAfterFn = _deferBfExhaust ? function() { setBfs(function(prev) { return prev.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu, pi) { return pi === _bfActIdx ? pu.map(function(u) { return u.uid === _bfCardUid ? Object.assign({}, u, { exhausted: true }) : u; }) : pu; }) }); }); }); } : null;
+    setTimeout(function() { fireUnitPlayedEffects(card, "battlefield", _bfBi, _bfAfterFn); }, 0);
     // Firming up an already-conquered battlefield (our units present, no enemy units) — no new showdown
     var _alreadyHeld = bfs[bi].units[myActIdx] && bfs[bi].units[myActIdx].length > 0;
     var _noEnemy = true;
@@ -7643,13 +7657,17 @@ function RiftboundGame() {
     function _fmtDomains(list) { if (!list || !list.length) return ""; var counts = {}; list.forEach(function(d) { counts[d] = (counts[d] || 0) + 1; }); return Object.keys(counts).map(function(d) { return counts[d] + " " + d; }).join(", "); }
     if (card.type === "Unit" || card.type === "Champion") {
       var _enterReady = shouldEnterReady(card);
-      p.base = p.base.concat([Object.assign({}, card, { exhausted: !_enterReady })]);
+      var _baseEff = CARD_EFFECTS[card.name];
+      var _deferBaseExhaust = autoMode && !_enterReady && _baseEff && _baseEff.onPlay;
+      p.base = p.base.concat([Object.assign({}, card, { exhausted: _deferBaseExhaust ? false : !_enterReady })]);
       if (isChamp) { p.championPlayed = true; p.champion = null; }
       aL(pName(myActIdx) + " plays " + cName(card));
       if (autoMode && (tappedDomains.length > 0 || recycledDomains.length > 0)) { var parts = []; if (tappedDomains.length) parts.push("tapped " + _fmtDomains(tappedDomains)); if (recycledDomains.length) parts.push("recycled " + _fmtDomains(recycledDomains)); aL("  Paid: " + parts.join("; ")); }
       if (/draw 1/i.test(card.text) && p.mainDeck.length > 0) { p.hand = p.hand.concat([p.mainDeck.shift()]); aL("  Draw 1"); }
       if (/draw 2/i.test(card.text)) { var d = p.mainDeck.splice(0, Math.min(2, p.mainDeck.length)); p.hand = p.hand.concat(d); }
-      setTimeout(function() { fireUnitPlayedEffects(card, "base", null); }, 0);
+      var _baseCardUid = card.uid, _baseActIdx = myActIdx;
+      var _baseAfterFn = _deferBaseExhaust ? function() { setPs(function(prev) { var idx = _baseActIdx; var p2 = prev[idx]; if (!p2) return prev; var np2 = prev.slice(); np2[idx] = Object.assign({}, p2, { base: p2.base.map(function(c) { return c.uid === _baseCardUid ? Object.assign({}, c, { exhausted: true }) : c; }) }); return np2; }); } : null;
+      setTimeout(function() { fireUnitPlayedEffects(card, "base", null, _baseAfterFn); }, 0);
       setTimeout(function() { fireOnMoveToBaseEffect(card); }, 0);
     } else if (card.type === "Gear") {
       p.base = p.base.concat([Object.assign({}, card, { exhausted: false })]);
