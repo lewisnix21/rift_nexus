@@ -3763,7 +3763,8 @@ var CARD_EFFECTS = {
       if (!validUids.length) { ctx.banner("The Harrowing — no units in trash"); return; }
       ctx.prompt({ kind: "pickFromTrash", n: 1, validUids: validUids, sourceName: "The Harrowing (return unit; replay manually, ignore E)", sourceUid: ctx.card.uid, effect: "returnToHand" });
     }
-  }
+  },
+  "Katarina, Reckless": { _automatedElsewhere: "On-hide → ready; on-face-down-play → 2 dmg — Hidden hooks not built; resolve manually" }
 };
 </script>
 <script type="text/babel">
