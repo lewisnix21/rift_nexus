@@ -3696,7 +3696,8 @@ var CARD_EFFECTS = {
   "Minotaur Reckoner":  { _automatedElsewhere: "Global static: units can't move to base — move-restriction rule not modelled, players honour manually" },
   "Jae Medarda":        { _automatedElsewhere: "Draw 1 when chosen by your spell — onChosenBySpell hook not built; resolve manually after target prompt" },
   "Noxus Saboteur":     { _automatedElsewhere: "Static: enemy [Hidden] cards can't be revealed at my BF — players honour the restriction manually" },
-  "Harpoon Squad":      { _automatedElsewhere: "On-self-move-from-BF → +2 might this turn — onMoveFromBattlefield hook not built; apply tempMight manually" }
+  "Harpoon Squad":      { _automatedElsewhere: "On-self-move-from-BF → +2 might this turn — onMoveFromBattlefield hook not built; apply tempMight manually" },
+  "Corrupt Enforcer":   { _automatedElsewhere: "On-move-to-BF discard 1 / on-win-combat draw 1 — onMove + onWinCombat hooks not built; resolve manually" }
 };
 </script>
 <script type="text/babel">
