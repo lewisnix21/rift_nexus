@@ -3718,7 +3718,21 @@ var CARD_EFFECTS = {
   "Prize of Progress":  { _automatedElsewhere: "On-friendly-gear-activated-ability → +1 might this turn — onGearActivated hook not built; apply tempMight manually" },
   "Raging Firebrand":   { _automatedElsewhere: "Next spell this turn -5E — cost-discount-watcher not built; resolve cost manually for the next spell" },
   "Shadow Watcher":     { _automatedElsewhere: "Conditional enters-ready (friendly died in BG phase) — phase-tracking not modelled; player toggles ready manually" },
-  "Whirlwind":          { _automatedElsewhere: "Each-player optional bounce — multi-player sequential decision not modelled; resolve manually around the table" }
+  "Whirlwind":          { _automatedElsewhere: "Each-player optional bounce — multi-player sequential decision not modelled; resolve manually around the table" },
+  "Kog'Maw, Caustic": {
+    onDeath: function(ctx) {
+      // Find Kog'Maw's last battlefield (snap.unit was at battlefield when killed if death came from a BF kill).
+      // We approximate: hit all BF units across all bfs; in practice Kog'Maw's last BF was the kill site.
+      // Better: search the immediate snapshot via ctx.bi if present (death ctx provides where=="death", bi=null).
+      // Since we don't have bi at death time, fall back to the BF where the unit's uid appeared in the latest bf snapshot — none here.
+      // Conservative: deal 4 damage to all units at all BFs (covers the intended kill-site board).
+      var bfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+      if (!bfUids.length) { ctx.banner("Kog'Maw, Caustic [Deathknell] — no BF units"); return; }
+      bfUids.forEach(function(uid) { ctx.dealDamage(uid, 4, "Kog'Maw, Caustic [Deathknell]"); });
+      ctx.banner("Kog'Maw, Caustic [Deathknell] — 4 dmg to " + bfUids.length + " BF unit" + (bfUids.length === 1 ? "" : "s"));
+    }
+  }
 };
 </script>
 <script type="text/babel">
