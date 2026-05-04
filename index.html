@@ -8256,8 +8256,7 @@ function RiftboundGame() {
   return (
     <div onClick={function(e) { if (settingsOpen) { setSettingsOpen(false); return; } if (drawingArrow) { var tgt = e.target.closest("[data-uid]"); if (tgt && tgt.getAttribute("data-uid") !== drawingArrow.fromUid) { setArrows(function(prev) { return prev.concat([{ fromUid: drawingArrow.fromUid, toUid: tgt.getAttribute("data-uid"), id: uid() }]); }); } setDrawingArrow(null); return; } var pingTgt = e.target.closest("[data-uid]"); if (pingTgt && !e.target.closest("button")) { doPing(pingTgt.getAttribute("data-uid"), e.altKey); } }} onMouseMove={drawingArrow ? function(e) { setDrawingArrow(function(prev) { return prev ? { fromUid: prev.fromUid, x: e.clientX, y: e.clientY } : null; }); } : undefined} style={{ height: "100vh", background: "transparent", color: "#ddd", fontFamily: "'Inter',sans-serif", display: "flex", flexDirection: "column", overflow: "hidden", cursor: drawingArrow ? "crosshair" : undefined }}>
 
-      {/* Auto-mode floating banner */}
-      {autoBanner && <div key={autoBanner.ts} className="auto-banner"><span className="auto-tag">AUTO MODE</span>{autoBanner.text.replace(/^AUTO · /, "")}</div>}
+      {/* Auto-mode floating banner removed */}
 
       {/* Auto-mode active watchers indicator */}
       {autoMode && autoWatchers.length > 0 && screen === "play" && <div style={{ position: "fixed", top: 14, right: 14, zIndex: 1400, display: "flex", flexDirection: "column", gap: 4, pointerEvents: "none" }}>
@@ -9272,28 +9271,28 @@ function RiftboundGame() {
         return <button onClick={endTurn} style={{ position: "fixed", bottom: 24, right: 24, padding: "12px 28px", borderRadius: 8, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70060,#FF8C0030)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif", zIndex: 950, boxShadow: "0 4px 16px #000c, 0 0 24px rgba(255,215,0,0.2)", letterSpacing: 1 }}>END TURN</button>;
       })()}
       {/* AUTO MODE: Bottom tabs (Log + Chat) */}
-      {autoMode && <div style={{ position: "fixed", bottom: 24, right: 220, zIndex: 900, display: "flex", flexDirection: "column", alignItems: "flex-end", pointerEvents: "auto" }}>
-        {bottomTab && <div style={{ width: 380, height: 240, background: "rgba(20,20,50,0.95)", border: "1px solid #ffffff20", borderBottom: "none", borderRadius: "6px 6px 0 0", padding: 8, display: "flex", flexDirection: "column" }}>
+      {autoMode && <div style={{ position: "fixed", bottom: 0, right: 220, zIndex: 900, display: "flex", flexDirection: "column", alignItems: "flex-end", pointerEvents: "auto" }}>
+        {bottomTab && <div style={{ width: 380, height: 240, background: "rgba(10,15,40,0.97)", border: "1px solid #60a5fa33", borderBottom: "none", borderRadius: "10px 10px 0 0", padding: 8, display: "flex", flexDirection: "column" }}>
           {bottomTab === "log" && <>
             <div ref={lr} style={{ flex: 1, overflow: "auto", padding: 4, fontSize: 12, lineHeight: 1.5 }}>
               {log.map(function(e, i) { return <div key={i} style={{ color: e.m.indexOf("===") >= 0 ? "#FFD700" : e.m.indexOf("wins") >= 0 ? "#FFD700" : e.m.indexOf("SHOWDOWN") >= 0 ? "#FF6B35" : e.m.indexOf("onquer") >= 0 || e.m.indexOf("holding point") >= 0 ? "#4ADE80" : "#667", marginBottom: 2, fontFamily: e.m.indexOf("===") >= 0 ? "Spectral,serif" : "inherit" }}>{e.m}</div>; })}
             </div>
-            <button onClick={function() { var txt = log.map(function(e) { return e.m; }).join("\n"); navigator.clipboard.writeText(txt); }} style={{ padding: "2px 6px", borderRadius: 3, border: "1px solid #ffffff15", background: "transparent", color: "#555", cursor: "pointer", fontSize: 10, marginTop: 4, alignSelf: "flex-start" }}>Copy Log</button>
+            <button onClick={function() { var txt = log.map(function(e) { return e.m; }).join("\n"); navigator.clipboard.writeText(txt); }} style={{ padding: "2px 6px", borderRadius: 3, border: "1px solid #60a5fa22", background: "transparent", color: "#555", cursor: "pointer", fontSize: 10, marginTop: 4, alignSelf: "flex-start" }}>Copy Log</button>
           </>}
           {bottomTab === "chat" && <>
             <div ref={chatRef} style={{ flex: 1, overflow: "auto", fontSize: 12, lineHeight: 1.4, padding: "2px 4px" }}>
               {chatMsgs.length === 0 && <div style={{ color: "#ffffff30", fontSize: 11, fontFamily: "Spectral,serif", textAlign: "center", marginTop: 8 }}>{roomCode ? "No messages yet" : "Chat available in online games"}</div>}
-              {chatMsgs.map(function(m, i) { var isMe = m.uid === myUid; return <div key={i} style={{ marginBottom: 2 }}><span style={{ color: isMe ? "#4ADE80" : "#FFD700", fontWeight: 700, fontSize: 11 }}>{m.name}: </span><span style={{ color: "#bbb" }}>{m.text}</span></div>; })}
+              {chatMsgs.map(function(m, i) { var isMe = m.uid === myUid; return <div key={i} style={{ marginBottom: 2 }}><span style={{ color: isMe ? "#4ADE80" : "#60a5fa", fontWeight: 700, fontSize: 11 }}>{m.name}: </span><span style={{ color: "#bbb" }}>{m.text}</span></div>; })}
             </div>
             {roomCode && <div style={{ display: "flex", gap: 3, marginTop: 4 }}>
-              <input value={chatInput} onChange={function(e) { setChatInput(e.target.value); }} onKeyDown={function(e) { if (e.key === "Enter") sendChat(); }} placeholder="Type a message..." style={{ flex: 1, padding: "4px 6px", borderRadius: 4, border: "1px solid #ffffff15", background: "rgba(255,255,255,0.05)", color: "#ddd", fontSize: 12, outline: "none", fontFamily: "Inter,sans-serif" }} />
-              <button onClick={sendChat} style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #FFD70033", background: "rgba(255,215,0,0.1)", color: "#FFD700", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Send</button>
+              <input value={chatInput} onChange={function(e) { setChatInput(e.target.value); }} onKeyDown={function(e) { if (e.key === "Enter") sendChat(); }} placeholder="Type a message..." style={{ flex: 1, padding: "4px 6px", borderRadius: 4, border: "1px solid #60a5fa22", background: "rgba(96,165,250,0.05)", color: "#ddd", fontSize: 12, outline: "none", fontFamily: "Inter,sans-serif" }} />
+              <button onClick={sendChat} style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #60a5fa44", background: "rgba(96,165,250,0.12)", color: "#60a5fa", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Send</button>
             </div>}
           </>}
         </div>}
-        <div style={{ display: "flex", gap: 0 }}>
-          <button onClick={function() { setBottomTab(bottomTab === "log" ? null : "log"); }} style={{ padding: "6px 16px", border: "1px solid #ffffff20", background: bottomTab === "log" ? "rgba(20,20,50,0.95)" : "rgba(0,0,0,0.6)", color: "#FFD700", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif", borderRadius: bottomTab === "log" ? "0 0 4px 4px" : 4, borderTop: bottomTab === "log" ? "1px solid rgba(20,20,50,0.95)" : "1px solid #ffffff20", letterSpacing: 1 }}>LOG</button>
-          <button onClick={function() { setBottomTab(bottomTab === "chat" ? null : "chat"); }} style={{ padding: "6px 16px", border: "1px solid #ffffff20", borderLeft: "none", background: bottomTab === "chat" ? "rgba(20,20,50,0.95)" : "rgba(0,0,0,0.6)", color: "#FFD700", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif", borderRadius: bottomTab === "chat" ? "0 0 4px 4px" : 4, borderTop: bottomTab === "chat" ? "1px solid rgba(20,20,50,0.95)" : "1px solid #ffffff20", letterSpacing: 1 }}>CHAT</button>
+        <div style={{ display: "flex", gap: 6, padding: "6px 0" }}>
+          <button onClick={function() { setBottomTab(bottomTab === "log" ? null : "log"); }} style={{ padding: "6px 20px", border: "1px solid " + (bottomTab === "log" ? "#60a5fa" : "#60a5fa44"), background: bottomTab === "log" ? "rgba(96,165,250,0.2)" : "rgba(10,15,40,0.85)", color: "#60a5fa", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif", borderRadius: 20, letterSpacing: 1, boxShadow: bottomTab === "log" ? "0 0 10px rgba(96,165,250,0.3)" : "none" }}>LOG</button>
+          <button onClick={function() { setBottomTab(bottomTab === "chat" ? null : "chat"); }} style={{ padding: "6px 20px", border: "1px solid " + (bottomTab === "chat" ? "#60a5fa" : "#60a5fa44"), background: bottomTab === "chat" ? "rgba(96,165,250,0.2)" : "rgba(10,15,40,0.85)", color: "#60a5fa", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif", borderRadius: 20, letterSpacing: 1, boxShadow: bottomTab === "chat" ? "0 0 10px rgba(96,165,250,0.3)" : "none" }}>CHAT</button>
         </div>
       </div>}
       {/* Centered point announcement (autoMode) */}
