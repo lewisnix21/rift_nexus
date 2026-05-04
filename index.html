@@ -3539,6 +3539,26 @@ var CARD_EFFECTS = {
       if (!_gearUids.length) { ctx.banner("Combat Chef [Weaponmaster] — no affordable gear in base"); return; }
       ctx.prompt({ kind: "weaponmasterGear", sourceName: "Combat Chef [Weaponmaster]", sourceUid: ctx.card.uid, gearUids: _gearUids, selectedGearUid: null });
     }
+  },
+  "Master Bingwen": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var _meP = window.ps && window.ps[window.myActIdx];
+      var _gearUids = [];
+      if (_meP) {
+        (_meP.base || []).forEach(function(c) {
+          if (c.type !== "Gear") return;
+          var _rc = (c.rc || []).slice(); var _en = c.energy || 0;
+          if (_rc.length > 0) { _rc.shift(); } else { _en = Math.max(0, _en - 1); }
+          var _runes = (_meP.runes || []).slice(); var _used = []; var _ok = true;
+          _rc.forEach(function(dom) { var f = _runes.find(function(r) { return r.domain === dom && _used.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = _runes.find(function(r) { return r.domain === dom && _used.indexOf(r.uid) < 0; }); if (f) { _used.push(f.uid); if (_en > 0) _en--; } else _ok = false; });
+          if (_ok && _en > 0) { var _av = _runes.filter(function(r) { return !r.exhausted && _used.indexOf(r.uid) < 0; }); if (_av.length < _en) _ok = false; }
+          if (_ok) _gearUids.push(c.uid);
+        });
+      }
+      if (!_gearUids.length) { ctx.banner("Master Bingwen [Weaponmaster] — no affordable gear in base"); return; }
+      ctx.prompt({ kind: "weaponmasterGear", sourceName: "Master Bingwen [Weaponmaster]", sourceUid: ctx.card.uid, gearUids: _gearUids, selectedGearUid: null });
+    }
   }
 };
 </script>
