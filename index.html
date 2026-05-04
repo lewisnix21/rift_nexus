@@ -1683,7 +1683,21 @@ var CARD_EFFECTS = {
   "Lucian, Merciless": {
     onPlay: function(ctx) {
       ctx.flash(ctx.card.uid);
-      ctx.banner("Lucian, Merciless [Weaponmaster] — may attach one of your gears for [rainbow] less (drag manually)");
+      var _meP = window.ps && window.ps[window.myActIdx];
+      var _gearUids = [];
+      if (_meP) {
+        (_meP.base || []).forEach(function(c) {
+          if (c.type !== "Gear") return;
+          var _rc = (c.rc || []).slice(); var _en = c.energy || 0;
+          if (_rc.length > 0) { _rc.shift(); } else { _en = Math.max(0, _en - 1); }
+          var _runes = (_meP.runes || []).slice(); var _used = []; var _ok = true;
+          _rc.forEach(function(dom) { var f = _runes.find(function(r) { return r.domain === dom && _used.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = _runes.find(function(r) { return r.domain === dom && _used.indexOf(r.uid) < 0; }); if (f) { _used.push(f.uid); if (_en > 0) _en--; } else _ok = false; });
+          if (_ok && _en > 0) { var _av = _runes.filter(function(r) { return !r.exhausted && _used.indexOf(r.uid) < 0; }); if (_av.length < _en) _ok = false; }
+          if (_ok) _gearUids.push(c.uid);
+        });
+      }
+      if (!_gearUids.length) { ctx.banner("Lucian, Merciless [Weaponmaster] — no affordable gear in base"); return; }
+      ctx.prompt({ kind: "weaponmasterGear", sourceName: "Lucian, Merciless [Weaponmaster]", sourceUid: ctx.card.uid, gearUids: _gearUids, selectedGearUid: null });
     },
     onConquer: function(ctx) {
       var key = turn + ":" + ctx.unit.uid;
@@ -1696,13 +1710,41 @@ var CARD_EFFECTS = {
   "Veteran Poro": {
     onPlay: function(ctx) {
       ctx.flash(ctx.card.uid);
-      ctx.banner("Veteran Poro [Weaponmaster] — may attach one of your gears for [rainbow] less (drag manually)");
+      var _meP = window.ps && window.ps[window.myActIdx];
+      var _gearUids = [];
+      if (_meP) {
+        (_meP.base || []).forEach(function(c) {
+          if (c.type !== "Gear") return;
+          var _rc = (c.rc || []).slice(); var _en = c.energy || 0;
+          if (_rc.length > 0) { _rc.shift(); } else { _en = Math.max(0, _en - 1); }
+          var _runes = (_meP.runes || []).slice(); var _used = []; var _ok = true;
+          _rc.forEach(function(dom) { var f = _runes.find(function(r) { return r.domain === dom && _used.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = _runes.find(function(r) { return r.domain === dom && _used.indexOf(r.uid) < 0; }); if (f) { _used.push(f.uid); if (_en > 0) _en--; } else _ok = false; });
+          if (_ok && _en > 0) { var _av = _runes.filter(function(r) { return !r.exhausted && _used.indexOf(r.uid) < 0; }); if (_av.length < _en) _ok = false; }
+          if (_ok) _gearUids.push(c.uid);
+        });
+      }
+      if (!_gearUids.length) { ctx.banner("Veteran Poro [Weaponmaster] — no affordable gear in base"); return; }
+      ctx.prompt({ kind: "weaponmasterGear", sourceName: "Veteran Poro [Weaponmaster]", sourceUid: ctx.card.uid, gearUids: _gearUids, selectedGearUid: null });
     }
   },
   "Yone, Blademaster": {
     onPlay: function(ctx) {
       ctx.flash(ctx.card.uid);
-      ctx.banner("Yone, Blademaster [Weaponmaster] — may attach one of your gears for [rainbow] less (drag manually)");
+      var _meP = window.ps && window.ps[window.myActIdx];
+      var _gearUids = [];
+      if (_meP) {
+        (_meP.base || []).forEach(function(c) {
+          if (c.type !== "Gear") return;
+          var _rc = (c.rc || []).slice(); var _en = c.energy || 0;
+          if (_rc.length > 0) { _rc.shift(); } else { _en = Math.max(0, _en - 1); }
+          var _runes = (_meP.runes || []).slice(); var _used = []; var _ok = true;
+          _rc.forEach(function(dom) { var f = _runes.find(function(r) { return r.domain === dom && _used.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = _runes.find(function(r) { return r.domain === dom && _used.indexOf(r.uid) < 0; }); if (f) { _used.push(f.uid); if (_en > 0) _en--; } else _ok = false; });
+          if (_ok && _en > 0) { var _av = _runes.filter(function(r) { return !r.exhausted && _used.indexOf(r.uid) < 0; }); if (_av.length < _en) _ok = false; }
+          if (_ok) _gearUids.push(c.uid);
+        });
+      }
+      if (!_gearUids.length) { ctx.banner("Yone, Blademaster [Weaponmaster] — no affordable gear in base"); return; }
+      ctx.prompt({ kind: "weaponmasterGear", sourceName: "Yone, Blademaster [Weaponmaster]", sourceUid: ctx.card.uid, gearUids: _gearUids, selectedGearUid: null });
     },
     onConquer: function(ctx) {
       // "When I conquer an open battlefield, deal damage equal to my Might to a unit at a battlefield."
@@ -3970,12 +4012,12 @@ function RiftboundGame() {
     // Showcase is positioned at right: 2%, top: 50%, transform: translateY(-50%). Compute its center in viewport coords.
     var scTargetX = vw - vw * 0.02 - scCardW / 2;
     var scTargetY = vh * 0.5;
-    setEffectAnim({ sourceCard: srcCard, fromX: rect.left + rect.width / 2, fromY: rect.top + rect.height / 2, toX: scTargetX, toY: scTargetY, w: scCardW, h: scCardH, ts: Date.now(), arrived: false, isBfSrc: _isBfSrcShow });
-    // Wait a beat after the card is played before starting the ghost-fly animation.
+    setEffectAnim({ sourceCard: srcCard, fromX: rect.left + rect.width / 2, fromY: rect.top + rect.height / 2, toX: scTargetX, toY: scTargetY, w: scCardW, h: scCardH, ts: Date.now(), arrived: false, expanding: true, isBfSrc: _isBfSrcShow });
+    var t0 = setTimeout(function() { setEffectAnim(function(prev) { return prev ? Object.assign({}, prev, { expanding: false }) : prev; }); }, 30);
     var t1 = setTimeout(function() {
       setEffectAnim(function(prev) { return prev ? Object.assign({}, prev, { arrived: true }) : prev; });
-    }, 500);
-    return function() { clearTimeout(t1); };
+    }, 450);
+    return function() { clearTimeout(t0); clearTimeout(t1); };
   }, [autoPrompt && autoPrompt.sourceUid, autoPrompt && autoPrompt.kind]);
   useEffect(function() {
     if (!autoPrompt) {
@@ -6827,6 +6869,12 @@ function RiftboundGame() {
       uids.forEach(function(u2) { addAnim(u2, "flash", 800); });
       showAutoBanner("AUTO · Highlander — shield applied (next would-die: heal+exhaust+recall)");
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+    } else if (p.effect === "weaponmasterAttach") {
+      if (uids.length && p._gearUid) {
+        attachGear(p._gearUid, uids[0]);
+        showAutoBanner("AUTO · " + p.sourceName + " — attached gear");
+        if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+      }
     }
     setAutoPrompt(null);
     _autoSelRef.current = [];
@@ -7402,20 +7450,22 @@ function RiftboundGame() {
     var scCardH = _isBfSrc ? Math.round(258 * vScale) : Math.round(361 * vScale);
     var scTargetX = vw - vw * 0.02 - scCardW / 2;
     var scTargetY = vh * 0.5;
-    setEffectAnim({ sourceCard: card, fromX: rect.left + rect.width / 2, fromY: rect.top + rect.height / 2, toX: scTargetX, toY: scTargetY, w: scCardW, h: scCardH, ts: Date.now(), arrived: false, isBfSrc: _isBfSrc });
+    setEffectAnim({ sourceCard: card, fromX: rect.left + rect.width / 2, fromY: rect.top + rect.height / 2, toX: scTargetX, toY: scTargetY, w: scCardW, h: scCardH, ts: Date.now(), arrived: false, expanding: true, isBfSrc: _isBfSrc });
     addAnim(card.uid, "flash", 800);
-    setTimeout(function() { setEffectAnim(function(prev) { return prev ? Object.assign({}, prev, { arrived: true }) : prev; }); }, 500);
-    // 500ms hold + 980ms flight = 1480ms before the ghost arrives. Pulse the card again on arrival, then run the effect.
+    // 30ms: clear expanding so the card grows from tiny to full-size at source
+    setTimeout(function() { setEffectAnim(function(prev) { return prev ? Object.assign({}, prev, { expanding: false }) : prev; }); }, 30);
+    // 450ms: launch flight to showcase (350ms expand + 100ms hold)
+    setTimeout(function() { setEffectAnim(function(prev) { return prev ? Object.assign({}, prev, { arrived: true }) : prev; }); }, 450);
+    // 1430ms: effect runs (450ms + 980ms flight)
     setTimeout(function() {
       addAnim(card.uid, "flash", 800);
       try { fn(); } catch(e) { console.error("triggerEffectGhost callback error:", e); }
-      // If the effect didn't open a prompt, dwell 2s at the showcase then fade the ghost out.
       setTimeout(function() {
-        if (autoPromptRef.current) return; // prompt-driven flow handles ghost lifetime
+        if (autoPromptRef.current) return;
         setEffectAnim(function(prev) { return prev ? Object.assign({}, prev, { fading: true }) : null; });
         setTimeout(function() { setEffectAnim(function(prev) { return prev && prev.fading ? null : prev; }); }, 480);
       }, 2000);
-    }, 1480);
+    }, 1430);
   }
   function fireOnMoveToBaseEffect(unit) {
     if (!autoMode) return;
@@ -8270,7 +8320,7 @@ function RiftboundGame() {
         var handShift = 0;
         if (!autoMode && handHovIdx >= 0 && i !== handHovIdx && total > 3) { handShift = i < handHovIdx ? -15 : 15; }
         var _handAct = (canMoveOwn && !tm && !fc && !c.hidden && playable) ? (c.type === "Spell" ? "Cast" : "Play") : undefined;
-        return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover" + (autoMode ? " auto-hand-card" : "") + animCls, draggable: isDraggable2, onDragStart: isDraggable2 ? function(e) { e.dataTransfer.setData("text/plain", "hand:" + c.uid); setDragUnit(c); } : undefined, onDragEnd: function() { setDragUnit(null); }, onClick: (canMoveOwn && playable) ? function() { if (tm || fc) return; if (c.type === "Unit" || c.type === "Champion" || c.type === "Gear") { onPlay(c); } else if (c.type === "Spell") { if (showcaseCard && showcaseCard.uid === c.uid) { setShowcaseCard(null); } else { var idx = myActIdx; var _me = ps[idx]; if (_me) { var sp = Object.assign({}, _me, { hand: _me.hand.filter(function(h) { return h.uid !== c.uid; }) }); if (autoMode) { var rcN = (c.rc || []).slice(); var eN = c.energy || 0; var _hasEager = (_me.base || []).some(function(u){return u.name==="Eager Apprentice";})||bfs.some(function(b){return((b.units&&b.units[idx])||[]).some(function(u){return u.name==="Eager Apprentice";});}); if(_hasEager&&eN>1)eN--; var _xEnergy=_extraEnergyRef.current; if(_xEnergy>0){_extraEnergyRef.current=0;eN=Math.max(0,eN-_xEnergy);} var aR = _me.runes.slice(); var recUids = []; rcN.forEach(function(dom) { var f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0; }); if (f) { recUids.push(f.uid); if (eN > 0) eN--; } }); var tapUids = []; if (eN > 0) { var av = aR.filter(function(r) { return !r.exhausted && recUids.indexOf(r.uid) < 0; }); av.slice(0, eN).forEach(function(r) { tapUids.push(r.uid); }); } sp.runes = _me.runes.filter(function(r) { return recUids.indexOf(r.uid) < 0; }).map(function(r) { return tapUids.indexOf(r.uid) >= 0 ? Object.assign({}, r, { exhausted: true }) : r; }); sp.runeDeck = shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); }))); } var np = ps.slice(); np[idx] = sp; setPs(np); pushShowcase(c); aL(pName(idx) + " casts " + cName(c)); if (autoMode) { setPendingSpell(c); setResolveAcceptors({}); } else { runAutoOnCast(c); } } } if (sd) markSdActed(); } } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { setHandHovIdx(i); if (autoMode) setHoveredHandCard(c); if (!autoMode && _setHoverCard && !c.hidden) _setHoverCard(c, e, true); }, onMouseLeave: function() { setHandCtxUid(null); if (_clearHoverCard) _clearHoverCard(); }, style: { width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: (autoMode && playable) ? "3px solid #3b82f6" : "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + (playable ? "55" : "20")), flexShrink: 0, cursor: isDraggable2 ? "grab" : (autoMode && !playable ? "default" : "pointer"), transform: "rotate(" + rot + "deg) translateY(" + ty + "px)" + (autoMode ? "" : " translateX(" + handShift + "px)"), transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (autoMode ? (total > 7 ? -45 : total > 5 ? -24 : 0) : (total > 7 ? -30 : total > 5 ? -16 : 0)), transition: autoMode ? "transform 200ms ease-out, box-shadow 0.2s ease, border 0.15s ease, filter 200ms ease-out" : "transform 0.12s ease, box-shadow 0.2s ease, border 0.15s ease", position: "relative", zIndex: i === handHovIdx ? 998 : i, boxShadow: (autoMode && playable) ? "0 0 22px rgba(59,130,246,1), 0 0 44px rgba(59,130,246,0.65), 0 4px 16px #000a" : "0 4px 16px #000a", opacity: 1, pointerEvents: autoMode ? "auto" : undefined } },
+        return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover" + (autoMode ? " auto-hand-card" : "") + animCls, draggable: isDraggable2, onDragStart: isDraggable2 ? function(e) { e.dataTransfer.setData("text/plain", "hand:" + c.uid); setDragUnit(c); } : undefined, onDragEnd: function() { setDragUnit(null); }, onClick: (canMoveOwn && playable) ? function() { if (tm || fc) return; if (c.type === "Unit" || c.type === "Champion" || c.type === "Gear") { onPlay(c); } else if (c.type === "Spell") { if (showcaseCard && showcaseCard.uid === c.uid) { setShowcaseCard(null); } else { if (autoMode && !canPlayCard(c)) return; var idx = myActIdx; var _me = ps[idx]; if (_me) { var sp = Object.assign({}, _me, { hand: _me.hand.filter(function(h) { return h.uid !== c.uid; }) }); if (autoMode) { var rcN = (c.rc || []).slice(); var eN = c.energy || 0; var _hasEager = (_me.base || []).some(function(u){return u.name==="Eager Apprentice";})||bfs.some(function(b){return((b.units&&b.units[idx])||[]).some(function(u){return u.name==="Eager Apprentice";});}); if(_hasEager&&eN>1)eN--; var _xEnergy=_extraEnergyRef.current; if(_xEnergy>0){_extraEnergyRef.current=0;eN=Math.max(0,eN-_xEnergy);} var aR = _me.runes.slice(); var recUids = []; rcN.forEach(function(dom) { var f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0; }); if (f) { recUids.push(f.uid); if (eN > 0) eN--; } }); var tapUids = []; if (eN > 0) { var av = aR.filter(function(r) { return !r.exhausted && recUids.indexOf(r.uid) < 0; }); av.slice(0, eN).forEach(function(r) { tapUids.push(r.uid); }); } sp.runes = _me.runes.filter(function(r) { return recUids.indexOf(r.uid) < 0; }).map(function(r) { return tapUids.indexOf(r.uid) >= 0 ? Object.assign({}, r, { exhausted: true }) : r; }); sp.runeDeck = shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); }))); } var np = ps.slice(); np[idx] = sp; setPs(np); pushShowcase(c); aL(pName(idx) + " casts " + cName(c)); if (autoMode) { setPendingSpell(c); setResolveAcceptors({}); } else { runAutoOnCast(c); } } } if (sd) markSdActed(); } } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { setHandHovIdx(i); if (autoMode) setHoveredHandCard(c); if (!autoMode && _setHoverCard && !c.hidden) _setHoverCard(c, e, true); }, onMouseLeave: function() { setHandCtxUid(null); if (_clearHoverCard) _clearHoverCard(); }, style: { width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: (autoMode && playable) ? "3px solid #3b82f6" : "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + (playable ? "55" : "20")), flexShrink: 0, cursor: isDraggable2 ? "grab" : (autoMode && !playable ? "default" : "pointer"), transform: "rotate(" + rot + "deg) translateY(" + ty + "px)" + (autoMode ? "" : " translateX(" + handShift + "px)"), transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (autoMode ? (total > 7 ? -45 : total > 5 ? -24 : 0) : (total > 7 ? -30 : total > 5 ? -16 : 0)), transition: autoMode ? "transform 200ms ease-out, box-shadow 0.2s ease, border 0.15s ease, filter 200ms ease-out" : "transform 0.12s ease, box-shadow 0.2s ease, border 0.15s ease", position: "relative", zIndex: i === handHovIdx ? 998 : i, boxShadow: (autoMode && playable) ? "0 0 22px rgba(59,130,246,1), 0 0 44px rgba(59,130,246,0.65), 0 4px 16px #000a" : "0 4px 16px #000a", opacity: 1, pointerEvents: autoMode ? "auto" : undefined } },
           c.hidden ? React.createElement("img", { src: CARD_BACK, style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : (c.img ? React.createElement("img", { src: imgSrc(c.img), style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : React.createElement("div", { style: { width: "100%", height: "100%", background: "linear-gradient(180deg," + (DOM[c.domain] || DOM.Colorless).c + "15,#0a0a18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#666", padding: 4, textAlign: "center" } }, c.name)),
           handCtxUid === c.uid ? React.createElement("button", { onClick: function(e) { e.stopPropagation(); toggleHide(c.uid); setHandCtxUid(null); }, style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 10, padding: "4px 12px", borderRadius: 4, border: "1.5px solid #ffffff40", background: "rgba(20,20,50,0.92)", color: "#ddd", fontSize: 12, cursor: "pointer", fontFamily: "Spectral,serif", fontWeight: 700, boxShadow: "0 4px 12px #000a", whiteSpace: "nowrap" } }, c.hidden ? "Reveal" : "Hide") : null
         );
@@ -8401,6 +8451,14 @@ function RiftboundGame() {
         <div style={{ fontSize: 14, color: "#93c5fd", fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center" }}>Pick a battlefield</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 5, width: "100%" }}>
           {autoPrompt.locations.map(function(loc) { return <button key={loc.key} onClick={function() { var p = autoPrompt; setAutoPrompt(null); if (p.effect === "damageAllEnemiesAtBf") { var enemyUids = []; var b = bfs[loc.bi]; if (b && b.units) b.units.forEach(function(pu, pi) { if (pi === myActIdx) return; (pu || []).forEach(function(u) { enemyUids.push(u.uid); }); }); enemyUids.forEach(function(uid) { dealDamageToUid(uid, p.amount, p.sourceName); }); showAutoBanner("AUTO · " + p.sourceName + " — " + p.amount + " damage to " + enemyUids.length + " enemy unit" + (enemyUids.length === 1 ? "" : "s") + " at " + (b ? b.name : "battlefield")); if (p.sourceUid) addAnim(p.sourceUid, "flash", 800); } }} style={{ padding: "6px 12px", borderRadius: 5, border: "1.5px solid #3b82f6", background: "rgba(59,130,246,0.18)", color: "#93c5fd", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif", textAlign: "left" }}>{loc.label}</button>; })}
+        </div>
+      </div>}
+      {autoPrompt && promptVisible && autoPrompt.kind === "weaponmasterGear" && <div style={{ position: "fixed", top: (autoMode && effectAnim) ? (effectAnim.toY + effectAnim.h / 2 + 16) : (autoMode ? "calc(50% + " + Math.round(301 * vScale * 0.5 + 18) + "px)" : 60), left: (autoMode && effectAnim) ? effectAnim.toX : "50%", transform: "translateX(-50%)", zIndex: 1450, padding: "10px 18px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #3b82f688", boxShadow: "0 8px 32px #000c, 0 0 24px #3b82f622", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 220, pointerEvents: "auto" }}>
+        <div style={{ fontSize: 11, color: "#93c5fd99", fontFamily: "Spectral,serif", letterSpacing: 3, textTransform: "uppercase" }}>AUTO · {autoPrompt.sourceName}</div>
+        <div style={{ fontSize: 13, color: "#93c5fd", fontFamily: "Spectral,serif", textAlign: "center" }}>{autoPrompt.selectedGearUid ? "Gear selected — confirm below" : "Click a glowing gear in your base"}</div>
+        <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
+          <button disabled={!autoPrompt.selectedGearUid} onClick={function() { var p = autoPrompt; var meP = ps[myActIdx]; var gearCard = meP && (meP.base || []).find(function(c) { return c.uid === p.selectedGearUid; }); var myUnitUids = []; bfs.forEach(function(b) { ((b && b.units && b.units[myActIdx]) || []).forEach(function(u) { myUnitUids.push(u.uid); }); }); (meP && meP.base || []).forEach(function(c) { if (c.type === "Unit") myUnitUids.push(c.uid); }); if (!myUnitUids.length) { setAutoPrompt(null); showAutoBanner("AUTO · " + p.sourceName + " — no units to attach gear to"); return; } _autoSelRef.current = []; setAutoPrompt({ kind: "pickFriendlyUnits", n: 1, validUids: myUnitUids, sourceName: p.sourceName, sourceUid: p.sourceUid, effect: "weaponmasterAttach", _gearUid: p.selectedGearUid }); }} style={{ padding: "6px 16px", borderRadius: 5, border: "1.5px solid " + (autoPrompt.selectedGearUid ? "#3b82f6" : "#3b82f644"), background: autoPrompt.selectedGearUid ? "rgba(59,130,246,0.22)" : "rgba(59,130,246,0.06)", color: autoPrompt.selectedGearUid ? "#93c5fd" : "#93c5fd55", cursor: autoPrompt.selectedGearUid ? "pointer" : "default", fontSize: 13, fontFamily: "Spectral,serif", fontWeight: 700, transition: "all 0.2s" }}>Attach Gear</button>
+          <button onClick={function() { setAutoPrompt(null); }} style={{ padding: "6px 14px", borderRadius: 5, border: "1px solid #555", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif" }}>Don't Attach</button>
         </div>
       </div>}
 
@@ -8919,7 +8977,7 @@ function RiftboundGame() {
               style={{ display: "flex", flexDirection: "row", gap: 3, padding: "3px 4px", borderRadius: 6, border: dragOverBase ? "2px solid #FFD700" : "1.5px solid #FFD70055", background: dragOverBase ? "rgba(255,215,0,0.08)" : "transparent", boxShadow: dragOverBase ? "0 0 16px rgba(255,215,0,0.3), inset 0 0 16px rgba(255,215,0,0.05)" : "none", alignItems: "center", flexWrap: "nowrap", flex: 9, height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H, overflow: "hidden", transition: "border 0.15s ease, background 0.15s ease, box-shadow 0.15s ease", position: "relative" }}>
               <div style={{ fontSize: 13, color: "#FFD70077", fontFamily: "Spectral,serif", letterSpacing: 1 }}>BASE</div>
               {myCur.base.map(function(u) {
-                return <Card key={u.uid} card={u} small isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow ? "base:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} selected={(sel && sel.uid === u.uid) || !!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0) || (autoMode && baseCardSelected === u.uid)} onClick={function() { if (autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0))) { toggleAutoSel(u.uid); return; } if (tm) { resTarget(u, myActIdx, null); return; } if (autoMode) { setBaseCardSelected(baseCardSelected === u.uid ? null : u.uid); return; } toggleTap(u.uid); }} actionLabel={autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0)) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (tm ? "Target" : (autoMode ? "Battlefield" : (u.exhausted ? "Untap" : "Tap")))} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} />;
+                var _wmGear = autoPrompt && autoPrompt.kind === "weaponmasterGear"; var _isAffGear = _wmGear && (autoPrompt.gearUids || []).indexOf(u.uid) >= 0; var _isSelGear = _wmGear && autoPrompt.selectedGearUid === u.uid; return <div key={u.uid} style={_isSelGear ? { borderRadius: 6, boxShadow: "0 0 20px #3b82f6ff, 0 0 0 2.5px #3b82f6", display: "inline-block" } : _isAffGear ? { borderRadius: 6, boxShadow: "0 0 12px #3b82f699, 0 0 0 1.5px #3b82f666", display: "inline-block" } : { display: "inline-block" }}><Card card={u} small isMine dragData={canMoveOwn && !fc && !tm && !drawingArrow && !_wmGear ? "base:" + u.uid : undefined} onDragStartCb={function() { setDragUnit(u); }} onDragEnd={function() { setDragUnit(null); }} selected={(sel && sel.uid === u.uid) || !!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0) || (autoMode && baseCardSelected === u.uid)} onClick={function() { if (_isAffGear) { setAutoPrompt(function(prev) { return Object.assign({}, prev, { selectedGearUid: prev.selectedGearUid === u.uid ? null : u.uid }); }); return; } if (autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0))) { toggleAutoSel(u.uid); return; } if (tm) { resTarget(u, myActIdx, null); return; } if (autoMode) { setBaseCardSelected(baseCardSelected === u.uid ? null : u.uid); return; } toggleTap(u.uid); }} actionLabel={_isAffGear ? (_isSelGear ? "Selected" : "Pick") : (autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0)) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (tm ? "Target" : (autoMode ? "Battlefield" : (u.exhausted ? "Untap" : "Tap"))))} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} /></div>;
               })}
             </div>
           </div>
@@ -9120,8 +9178,12 @@ function RiftboundGame() {
         var endW = effectAnim.w, endH = effectAnim.h;
         var dx = effectAnim.arrived ? (effectAnim.toX - effectAnim.fromX) : 0;
         var dy = effectAnim.arrived ? (effectAnim.toY - effectAnim.fromY) : 0;
-        var sc = effectAnim.arrived ? (endW / startW) : 1;
-        return <div style={{ position: "fixed", left: effectAnim.fromX - startW / 2, top: effectAnim.fromY - startH / 2, width: startW, height: startH, transform: "translate(" + dx + "px, " + dy + "px) scale(" + sc + ")", transformOrigin: "center center", transition: "transform 980ms cubic-bezier(0.22, 0.65, 0.28, 1), opacity 980ms ease-out", opacity: effectAnim.fading ? 0 : (effectAnim.arrived ? 0.92 : 1), zIndex: 1499, pointerEvents: "none", borderRadius: 6, overflow: "hidden", boxShadow: isBfSrc ? "0 0 28px rgba(255,215,0,0.7), 0 0 56px rgba(255,215,0,0.4), 0 8px 32px #000a" : "0 0 26px rgba(59,130,246,0.65), 0 8px 32px #000a", border: isBfSrc ? "2px solid #FFD700" : "2px solid #3b82f6" }}>
+        var sc = effectAnim.arrived ? (endW / startW) : (effectAnim.expanding ? 0.05 : 1);
+        var _ghostTrans = effectAnim.arrived
+          ? "transform 980ms cubic-bezier(0.22, 0.65, 0.28, 1), opacity 980ms ease-out"
+          : "transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 250ms ease-in";
+        var _ghostOpacity = effectAnim.fading ? 0 : (effectAnim.arrived ? 0.92 : (effectAnim.expanding ? 0 : 1));
+        return <div style={{ position: "fixed", left: effectAnim.fromX - startW / 2, top: effectAnim.fromY - startH / 2, width: startW, height: startH, transform: "translate(" + dx + "px, " + dy + "px) scale(" + sc + ")", transformOrigin: "center center", transition: _ghostTrans, opacity: _ghostOpacity, zIndex: 1499, pointerEvents: "none", borderRadius: 6, overflow: "hidden", boxShadow: isBfSrc ? "0 0 28px rgba(255,215,0,0.7), 0 0 56px rgba(255,215,0,0.4), 0 8px 32px #000a" : "0 0 26px rgba(59,130,246,0.65), 0 8px 32px #000a", border: isBfSrc ? "2px solid #FFD700" : "2px solid #3b82f6" }}>
           {imgUrl ? <img src={imgUrl} style={{ width: "100%", height: "100%", objectFit: "fill", display: "block" }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 12 }}>{card.name}</div>}
         </div>;
       })()}
