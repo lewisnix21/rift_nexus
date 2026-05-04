@@ -3579,7 +3579,8 @@ var CARD_EFFECTS = {
       if (!_gearUids.length) { ctx.banner("Sentinel Adept [Weaponmaster] — no affordable gear in base"); return; }
       ctx.prompt({ kind: "weaponmasterGear", sourceName: "Sentinel Adept [Weaponmaster]", sourceUid: ctx.card.uid, gearUids: _gearUids, selectedGearUid: null });
     }
-  }
+  },
+  "Rengar, Unseen":     { _automatedElsewhere: "[Accelerate] cost-time; [Assault 2] +2 might attacking via parseKeywordBonus; [Deflect] via isEnemyDeflect; [Ganking] via base→BF→BF moves" }
 };
 </script>
 <script type="text/babel">
