@@ -3595,7 +3595,38 @@ var CARD_EFFECTS = {
     }
   },
   "Time Warp":          { _automatedElsewhere: "Extra-turn (Banish self) — turn-order manipulation not modelled; player passes the spell through and skips opponent end manually" },
-  "Downwell":           { _automatedElsewhere: "Mass return-to-hand for units + gear — multi-owner board reset not modelled; resolve by manually returning everything" }
+  "Downwell":           { _automatedElsewhere: "Mass return-to-hand for units + gear — multi-owner board reset not modelled; resolve by manually returning everything" },
+  "Unchecked Power": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx;
+      var friendlyUidSet = {};
+      var meP = ps[idx];
+      if (meP) (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && !c.exhausted) friendlyUidSet[c.uid] = true; });
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if (!u.exhausted) friendlyUidSet[u.uid] = true; }); });
+      var fCount = Object.keys(friendlyUidSet).length;
+      // Exhaust friendly units in place (base + battlefields).
+      setPs(function(prev) {
+        var p = prev[idx]; if (!p) return prev;
+        var base = (p.base || []).map(function(c) { return friendlyUidSet[c.uid] ? Object.assign({}, c, { exhausted: true }) : c; });
+        var np = prev.slice(); np[idx] = Object.assign({}, p, { base: base }); return np;
+      });
+      setBfs(function(prev) {
+        return prev.map(function(b) {
+          if (!b || !b.units) return b;
+          var nu = b.units.map(function(pu, pi) {
+            if (pi !== idx) return pu;
+            return (pu || []).map(function(u) { return friendlyUidSet[u.uid] ? Object.assign({}, u, { exhausted: true }) : u; });
+          });
+          return Object.assign({}, b, { units: nu });
+        });
+      });
+      var bfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+      bfUids.forEach(function(uid) { ctx.dealDamage(uid, 12, "Unchecked Power"); });
+      ctx.banner("Unchecked Power — exhausted " + fCount + " friendly, 12 dmg to " + bfUids.length + " BF unit" + (bfUids.length === 1 ? "" : "s"));
+    }
+  }
 };
 </script>
 <script type="text/babel">
