@@ -3698,7 +3698,8 @@ var CARD_EFFECTS = {
   "Noxus Saboteur":     { _automatedElsewhere: "Static: enemy [Hidden] cards can't be revealed at my BF — players honour the restriction manually" },
   "Harpoon Squad":      { _automatedElsewhere: "On-self-move-from-BF → +2 might this turn — onMoveFromBattlefield hook not built; apply tempMight manually" },
   "Corrupt Enforcer":   { _automatedElsewhere: "On-move-to-BF discard 1 / on-win-combat draw 1 — onMove + onWinCombat hooks not built; resolve manually" },
-  "Ember Monk":         { _automatedElsewhere: "On-friendly-Hidden-play → +2 might this turn — onHiddenPlay hook not built; apply tempMight manually" }
+  "Ember Monk":         { _automatedElsewhere: "On-friendly-Hidden-play → +2 might this turn — onHiddenPlay hook not built; apply tempMight manually" },
+  "Jhin, Murderous Artist": { _automatedElsewhere: "[Deflect] via isEnemyDeflect; [Ganking] via base→BF→BF moves; on-move [Add] 1E + Rainbow — declarative add-resource (cost-time)" }
 };
 </script>
 <script type="text/babel">
