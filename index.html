@@ -3744,7 +3744,8 @@ var CARD_EFFECTS = {
       // Optional 1E paid → -1 might. Auto-pays the optional cost (assumes affordable).
       ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Icevale Archer (paid 1E)", sourceUid: ctx.unit.uid, effect: "tempMight", amount: -1 });
     }
-  }
+  },
+  "Towering Pairofant": { _automatedElsewhere: "[Assault] from parseKeywordBonus; conditional enters-ready (unit died this turn) — death-this-turn tracker not built; player toggles ready manually" }
 };
 </script>
 <script type="text/babel">
