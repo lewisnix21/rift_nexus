@@ -3647,7 +3647,16 @@ var CARD_EFFECTS = {
   "Vicious Snapjaws":   { _automatedElsewhere: "When another friendly unit dies → +1 XP — fires from dealDamageToUid kill path" },
   "Ruin Runner":        { _automatedElsewhere: "Cannot be chosen by enemy spells/abilities — wired by-name in isEnemyDeflect" },
   "Laurent Bladekeeper":{ _automatedElsewhere: "[Ganking] only — handled by base→BF→BF moves" },
-  "Rengar, Trophy Hunter": { _automatedElsewhere: "[Ambush] only — manual reaction-play timing" }
+  "Rengar, Trophy Hunter": { _automatedElsewhere: "[Ambush] only — manual reaction-play timing" },
+  "Ruined Rex": {
+    onDeath: function(ctx) {
+      var enemyUids = [];
+      bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { enemyUids.push(u.uid); }); }); });
+      ps.forEach(function(p, pi) { if (pi !== ctx.myActIdx && p) (p.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") enemyUids.push(c.uid); }); });
+      if (!enemyUids.length) { ctx.banner("Ruined Rex [Deathknell] — no enemy units"); return; }
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Ruined Rex [Deathknell] (4 dmg)", sourceUid: ctx.card.uid, effect: "damage", amount: 4 });
+    }
+  }
 };
 </script>
 <script type="text/babel">
