@@ -3728,6 +3728,13 @@ function RiftboundGame() {
   var _dbView = useState("list"), dbView = _dbView[0], setDbView = _dbView[1];
   var _diceRoll = useState(null), diceRoll = _diceRoll[0], setDiceRoll = _diceRoll[1];
   var _diceWinner = useState(null), diceWinner = _diceWinner[0], setDiceWinner = _diceWinner[1];
+  var _diceSeq = useState(null), diceSeq = _diceSeq[0], setDiceSeq = _diceSeq[1];
+  var _diceRoundIdx = useState(0), diceRoundIdx = _diceRoundIdx[0], setDiceRoundIdx = _diceRoundIdx[1];
+  var _diceShowSettled = useState(false), diceShowSettled = _diceShowSettled[0], setDiceShowSettled = _diceShowSettled[1];
+  var _diceEliminated = useState({}), diceEliminated = _diceEliminated[0], setDiceEliminated = _diceEliminated[1];
+  var _diceSpinTick = useState(0), diceSpinTick = _diceSpinTick[0], setDiceSpinTick = _diceSpinTick[1];
+  var _diceAnimDone = useState(false), diceAnimDone = _diceAnimDone[0], setDiceAnimDone = _diceAnimDone[1];
+  var _diceSeqLoadedRef = useRef(false);
   var _firstPlayerIdx = useState(0), firstPlayerIdx = _firstPlayerIdx[0], setFirstPlayerIdx = _firstPlayerIdx[1];
   // Multi-player spotlight: which non-self player is shown in the top enemy zone.
   // null = use the default (active player). Hover takes priority over click.
@@ -4179,6 +4186,41 @@ function RiftboundGame() {
     } catch(e) { console.error("Showcase sync error:", e); }
   }, [showcaseCard, showcaseHistory, showcaseAccepted, showcasePriority, showcaseActed, showcaseAcceptors]);
 
+  // Dice roll animation: spin → settle → eliminate losers → next round → final winner
+  useEffect(function() {
+    if (!diceSeq || !diceSeq.rounds || diceSeq.rounds.length === 0) return;
+    if (diceRoundIdx >= diceSeq.rounds.length) return;
+    var round = diceSeq.rounds[diceRoundIdx];
+    var isLastRound = diceRoundIdx === diceSeq.rounds.length - 1;
+    setDiceShowSettled(false);
+    // Spin: tick random values every 80ms for ~2s
+    var spinId = setInterval(function() { setDiceSpinTick(function(t) { return t + 1; }); }, 80);
+    var settleTimer = setTimeout(function() {
+      clearInterval(spinId);
+      setDiceShowSettled(true);
+    }, 2000);
+    var eliminateTimer = setTimeout(function() {
+      if (!isLastRound) {
+        var rMax = Math.max.apply(null, (round.active || []).map(function(u) { return round.rolls[u]; }));
+        setDiceEliminated(function(prev) {
+          var next = Object.assign({}, prev);
+          (round.active || []).forEach(function(u) { if (round.rolls[u] !== rMax) next[u] = true; });
+          return next;
+        });
+      }
+    }, 2050);
+    var advanceTimer = setTimeout(function() {
+      if (!isLastRound) { setDiceRoundIdx(function(i) { return i + 1; }); }
+      else { setDiceAnimDone(true); }
+    }, isLastRound ? 2600 : 3250);
+    return function() {
+      clearInterval(spinId);
+      clearTimeout(settleTimer);
+      clearTimeout(eliminateTimer);
+      clearTimeout(advanceTimer);
+    };
+  }, [diceSeq, diceRoundIdx]);
+
   // Listen for showcase from other players
   useEffect(function() {
     if (!roomCode || lobbyType === "test") return;
@@ -4478,14 +4520,20 @@ function RiftboundGame() {
         setScreen("wait"); setTurn(1); setAct(0);
         _gamePhaseRef.current = "diceroll";
       }
-      // Step 1b: Show dice rolls
-      if (gs.diceRolls && _gamePhaseRef.current === "diceroll") {
+      // Step 1b: Show dice rolls (new sequence format with reroll rounds)
+      if (gs.diceRollSeq && _gamePhaseRef.current === "diceroll" && !_diceSeqLoadedRef.current) {
+        _diceSeqLoadedRef.current = true;
         var diceSlots = gs.slots || [];
-        var rolls2 = diceSlots.map(function(s) { return { uid: s.uid, name: s.name, roll: gs.diceRolls[s.uid] || 0 }; });
+        var seq = gs.diceRollSeq;
+        var firstRound = (seq.rounds && seq.rounds[0]) || { rolls: {}, active: [] };
+        var rolls2 = diceSlots.map(function(s) { return { uid: s.uid, name: s.name, roll: firstRound.rolls[s.uid] || 0 }; });
         setDiceRoll(rolls2);
-        var sorted2 = rolls2.slice().sort(function(a, b) { return b.roll - a.roll; });
-        var winnerUid = sorted2[0].uid;
-        setDiceWinner(winnerUid);
+        setDiceSeq(seq);
+        setDiceRoundIdx(0);
+        setDiceShowSettled(false);
+        setDiceEliminated({});
+        setDiceAnimDone(false);
+        setDiceWinner(seq.winner);
       }
       // Step 2: Winner chose order → advance to bf
       if (gs.firstPlayer !== undefined && _gamePhaseRef.current === "diceroll") {
@@ -4495,6 +4543,12 @@ function RiftboundGame() {
         _gamePhaseRef.current = "bf";
         setScreen("bf");
         setDiceRoll(null);
+        setDiceSeq(null);
+        setDiceRoundIdx(0);
+        setDiceShowSettled(false);
+        setDiceEliminated({});
+        setDiceAnimDone(false);
+        _diceSeqLoadedRef.current = false;
         aL(slots[fpIdx] ? slots[fpIdx].name + " draws first." : "");
         // Update phase in Firebase so BF completion check works
         if (_roomNow) {
@@ -4969,22 +5023,25 @@ function RiftboundGame() {
             var nps = slotsData.map(function(s) { var pl = initPlayer(s.deck); pl.team = s.team || null; return pl; });
             setPs(nps);
             setTurn(1); setAct(0);
-            // Roll dice locally for host
-            var hostRolls = {};
-            slotsData.forEach(function(s) { hostRolls[s.uid] = Math.floor(Math.random() * 6) + 1; });
-            var hostUids = slotsData.map(function(s) { return s.uid; });
-            while (hostUids.length === 2 && hostRolls[hostUids[0]] === hostRolls[hostUids[1]]) {
-              hostUids.forEach(function(u) { hostRolls[u] = Math.floor(Math.random() * 6) + 1; });
+            // Roll dice locally for host — compute full sequence including reroll rounds for ties
+            var hostAllUids = slotsData.map(function(s) { return s.uid; });
+            var hostRounds = [];
+            var hostActive = hostAllUids.slice();
+            for (var _safe = 0; _safe < 20; _safe++) {
+              var rRolls = {};
+              hostActive.forEach(function(u) { rRolls[u] = Math.floor(Math.random() * 6) + 1; });
+              var rMax = Math.max.apply(null, hostActive.map(function(u) { return rRolls[u]; }));
+              var rWinners = hostActive.filter(function(u) { return rRolls[u] === rMax; });
+              hostRounds.push({ rolls: rRolls, active: hostActive.slice() });
+              if (rWinners.length === 1) { hostActive = rWinners; break; }
+              hostActive = rWinners;
             }
-            var hostRolls2 = slotsData.map(function(s) { return { uid: s.uid, name: s.name, roll: hostRolls[s.uid] || 0 }; });
-            var hostSorted = hostRolls2.slice().sort(function(a, b) { return b.roll - a.roll; });
-            setDiceRoll(hostRolls2);
-            setDiceWinner(hostSorted[0].uid);
+            var hostWinnerUid = hostActive[0];
             _gamePhaseRef.current = "diceroll";
             setScreen("wait");
             // Write to Firebase for other players
             fbDb.ref("lobbies/" + roomCode + "/settings/status").set("playing");
-            fbDb.ref("lobbies/" + roomCode + "/gameState").set({ phase: "diceroll", slots: slotsData, diceRolls: hostRolls });
+            fbDb.ref("lobbies/" + roomCode + "/gameState").set({ phase: "diceroll", slots: slotsData, diceRollSeq: { rounds: hostRounds, winner: hostWinnerUid } });
             // Write canonical ps
             _lastSyncVersion.current++;
             fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: nps, ver: _lastSyncVersion.current, by: myUid })));
@@ -8466,19 +8523,48 @@ function RiftboundGame() {
         </div>
       </div>}
       {/* Dice roll overlay */}
-      {diceRoll && <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20, zIndex: 1150 }}>
-        <h2 style={{ fontSize: 24, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700", letterSpacing: 3 }}>ROLLING FOR FIRST TURN</h2>
+      {diceRoll && (function() {
+        var _curRound = (diceSeq && diceSeq.rounds && diceSeq.rounds[diceRoundIdx]) || null;
+        var _curActive = _curRound ? (_curRound.active || []) : [];
+        var _curRolls = _curRound ? (_curRound.rolls || {}) : {};
+        return <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20, zIndex: 1150 }}>
+        <h2 style={{ fontSize: 24, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700", letterSpacing: 3 }}>{diceAnimDone ? "ROLLING FOR FIRST TURN" : (diceShowSettled ? "ROLLING FOR FIRST TURN" : "ROLLING...")}</h2>
         <div style={{ display: "flex", gap: 40, alignItems: "center" }}>
           {diceRoll.map(function(d) {
-            var isWinner = d.uid === diceWinner;
-            return <div key={d.uid} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-              <div style={{ fontSize: 18, fontFamily: "Spectral,serif", fontWeight: 700, color: d.uid === myUid ? "#4ADE80" : "#FFD700" }}>{d.name}</div>
-              <div className="anim-pulse" style={{ width: 80, height: 80, borderRadius: 12, background: isWinner ? "linear-gradient(135deg,#FFD70030,#FF8C0020)" : "#1a1a3a", border: isWinner ? "3px solid #FFD700" : "3px solid #ffffff20", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, fontWeight: 700, fontFamily: "Spectral,serif", color: isWinner ? "#FFD700" : "#ddd", boxShadow: isWinner ? "0 0 20px #FFD70044" : "none" }}>{d.roll}</div>
+            var isEliminated = !!diceEliminated[d.uid];
+            var isActiveThisRound = _curActive.indexOf(d.uid) >= 0;
+            var isWinner = diceAnimDone && d.uid === diceWinner;
+            var displayVal;
+            if (isEliminated) {
+              displayVal = d.roll;
+            } else if (isActiveThisRound && !diceShowSettled) {
+              // Spinning: pseudo-random based on tick + uid
+              var seed = (diceSpinTick * 31 + (d.uid.charCodeAt(0) || 0) + (d.uid.charCodeAt(d.uid.length - 1) || 0)) % 6;
+              displayVal = seed + 1;
+            } else if (isActiveThisRound && diceShowSettled) {
+              displayVal = _curRolls[d.uid] || 0;
+            } else {
+              displayVal = d.roll;
+            }
+            // Update d.roll for the round so eliminated/idle players retain the last shown value
+            if (isActiveThisRound && diceShowSettled) d.roll = displayVal;
+            var bg, border, color, shadow;
+            if (isEliminated) {
+              bg = "rgba(220,38,38,0.15)"; border = "3px solid #DC2626"; color = "#DC2626"; shadow = "none";
+            } else if (isWinner) {
+              bg = "linear-gradient(135deg,#FFD70030,#FF8C0020)"; border = "3px solid #FFD700"; color = "#FFD700"; shadow = "0 0 20px #FFD70044";
+            } else {
+              bg = "#1a1a3a"; border = "3px solid #ffffff20"; color = "#ddd"; shadow = "none";
+            }
+            return <div key={d.uid} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, opacity: isEliminated ? 0.55 : 1 }}>
+              <div style={{ fontSize: 18, fontFamily: "Spectral,serif", fontWeight: 700, color: isEliminated ? "#DC2626" : (d.uid === myUid ? "#4ADE80" : "#FFD700"), textDecoration: isEliminated ? "line-through" : "none" }}>{d.name}</div>
+              <div className={isActiveThisRound && !diceShowSettled ? "" : "anim-pulse"} style={{ width: 80, height: 80, borderRadius: 12, background: bg, border: border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, fontWeight: 700, fontFamily: "Spectral,serif", color: color, boxShadow: shadow, transition: "background 0.3s, border-color 0.3s, color 0.3s" }}>{displayVal}</div>
               {isWinner && <div style={{ fontSize: 14, color: "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700 }}>WINNER!</div>}
+              {isEliminated && <div style={{ fontSize: 12, color: "#DC2626", fontFamily: "Spectral,serif", fontWeight: 700 }}>OUT</div>}
             </div>;
           })}
         </div>
-        {diceWinner === myUid ? <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 10 }}>
+        {diceAnimDone ? (diceWinner === myUid ? <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 10 }}>
           <div style={{ fontSize: 16, color: "#ddd", fontFamily: "Spectral,serif" }}>You won the roll! Choose who goes first:</div>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
             {/* Always show "I'll go first" */}
@@ -8486,8 +8572,9 @@ function RiftboundGame() {
             {/* Per-player buttons for the other slots — works for any player count */}
             {diceRoll.map(function(d, k) { if (d.uid === myUid) return null; return <button key={d.uid} onClick={function() { if (roomCode) { fbDb.ref("lobbies/" + roomCode + "/gameState/firstPlayer").set(k); } }} style={{ padding: "10px 24px", borderRadius: 6, border: "2px solid #8B5CF6", background: "rgba(139,92,246,0.15)", color: "#8B5CF6", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif" }}>{d.name} first</button>; })}
           </div>
-        </div> : <div style={{ fontSize: 16, color: "#888", fontFamily: "Spectral,serif", marginTop: 10 }}>Waiting for {diceRoll.find(function(d) { return d.uid === diceWinner; }) ? diceRoll.find(function(d) { return d.uid === diceWinner; }).name : "winner"} to choose...</div>}
-      </div>}
+        </div> : <div style={{ fontSize: 16, color: "#888", fontFamily: "Spectral,serif", marginTop: 10 }}>Waiting for {diceRoll.find(function(d) { return d.uid === diceWinner; }) ? diceRoll.find(function(d) { return d.uid === diceWinner; }).name : "winner"} to choose...</div>) : null}
+      </div>;
+      })()}
       {/* Start game overlay */}
       {screen === "wait" && !awakenPhase && turn === 1 && act === 0 && (lobbyType === "test" || _gamePhaseRef.current === "playing") && <div style={{ position: "fixed", inset: 0, background: "#000a", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, zIndex: 1000 }}>
         {(lobbyType === "test" || isHost) ? <button onClick={function() {
