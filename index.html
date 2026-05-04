@@ -3778,7 +3778,8 @@ var CARD_EFFECTS = {
       ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Super Mega Death Rocket! (5 dmg; recover via discard manually)", sourceUid: ctx.card.uid, effect: "damage", amount: 5 });
     }
   },
-  "Sabotage":           { _automatedElsewhere: "Reveal opponent's hand and recycle a non-unit — peek-opponent-hand UI not built; resolve manually" }
+  "Sabotage":           { _automatedElsewhere: "Reveal opponent's hand and recycle a non-unit — peek-opponent-hand UI not built; resolve manually" },
+  "Vex, Mocking":       { _automatedElsewhere: "[Shield] from parseKeywordBonus; [Tank] manual; on-stun-enemy → optional self-relocate — onStun hook not built; resolve manually" }
 };
 </script>
 <script type="text/babel">
