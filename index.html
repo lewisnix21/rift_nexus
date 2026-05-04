@@ -3640,7 +3640,8 @@ var CARD_EFFECTS = {
       ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Ride the Wind (ready; move manually)", sourceUid: ctx.card.uid, effect: "ready" });
     }
   },
-  "Factory Recall":     { _automatedElsewhere: "Return a gear to its owner's hand — no gear-bounce prompt kind in engine; resolve manually" }
+  "Factory Recall":     { _automatedElsewhere: "Return a gear to its owner's hand — no gear-bounce prompt kind in engine; resolve manually" },
+  "Pit Crew":           { _automatedElsewhere: "Ready on friendly-gear-play — onFriendlyGearPlayed hook not built; player toggles ready manually" }
 };
 </script>
 <script type="text/babel">
