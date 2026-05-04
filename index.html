@@ -3754,7 +3754,16 @@ var CARD_EFFECTS = {
   "Miss Fortune, Buccaneer": { _automatedElsewhere: "Permission rule: friendly units can be played to open BFs — open-BF play targeting not gated; resolve manually" },
   "Perched Grimwyrm":   { _automatedElsewhere: "Restriction: play only to BF you conquered this turn — BF-play target gating not enforced; resolve manually" },
   "Divine Judgment":    { _automatedElsewhere: "Each-player keep-2-of-each-zone, recycle the rest — multi-zone player choice not modelled; resolve manually" },
-  "Imperial Decree":    { _automatedElsewhere: "Static: any unit damaged this turn dies — turn-scoped on-damage watcher not built; resolve manually each time damage is dealt" }
+  "Imperial Decree":    { _automatedElsewhere: "Static: any unit damaged this turn dies — turn-scoped on-damage watcher not built; resolve manually each time damage is dealt" },
+  "The Harrowing": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.myActIdx]; if (!meP) return;
+      var validUids = (meP.trash || []).filter(function(c) { return c && (c.type === "Unit" || c.type === "Champion"); }).map(function(c) { return c.uid; });
+      if (!validUids.length) { ctx.banner("The Harrowing — no units in trash"); return; }
+      ctx.prompt({ kind: "pickFromTrash", n: 1, validUids: validUids, sourceName: "The Harrowing (return unit; replay manually, ignore E)", sourceUid: ctx.card.uid, effect: "returnToHand" });
+    }
+  }
 };
 </script>
 <script type="text/babel">
