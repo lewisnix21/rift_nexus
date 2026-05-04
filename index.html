@@ -3767,7 +3767,17 @@ var CARD_EFFECTS = {
   "Katarina, Reckless": { _automatedElsewhere: "On-hide → ready; on-face-down-play → 2 dmg — Hidden hooks not built; resolve manually" },
   "Battering Ram":      { _automatedElsewhere: "Cost-time -1E per card played this turn (min 1E) — dynamic cost reduction not modelled; resolve cost manually" },
   "Noxus Hopeful":      { _automatedElsewhere: "[Legion] -2E if another card was played this turn — cost-time discount; resolve cost manually" },
-  "Imposing Challenger":{ _automatedElsewhere: "On-self-move → relocate weaker enemy — onMove hook + might-comparison move target not modelled; resolve manually" }
+  "Imposing Challenger":{ _automatedElsewhere: "On-self-move → relocate weaker enemy — onMove hook + might-comparison move target not modelled; resolve manually" },
+  "Super Mega Death Rocket!": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      ps.forEach(function(p) { (p && p.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); }); });
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+      if (!allUids.length) { ctx.banner("Super Mega Death Rocket! — no units"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Super Mega Death Rocket! (5 dmg; recover via discard manually)", sourceUid: ctx.card.uid, effect: "damage", amount: 5 });
+    }
+  }
 };
 </script>
 <script type="text/babel">
