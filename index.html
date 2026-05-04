@@ -5326,7 +5326,7 @@ function RiftboundGame() {
         var ctx = makeShowdownCtx(deployedCard, bf, atkIdx, bfIdx);
         var _depEff = CARD_EFFECTS[deployedCard.name];
         var _runDep = function() { try { _depEff.onAttack(ctx); } catch(e) { console.error("onAttack error for " + deployedCard.name + ":", e); } };
-        if (_depEff.ghost) triggerEffectGhost(deployedCard, _runDep); else _runDep();
+        triggerEffectGhost(deployedCard, _runDep, _depEff.condition ? function() { return _depEff.condition(ctx); } : null);
       }
       // Fire onAttack for ALL attackers (not just the deploying one) — needed for cards like Wielder of Water,
       // Raging Soul, Jinx Demolitionist that gain bonuses from being attackers regardless of who deployed.
@@ -5336,7 +5336,7 @@ function RiftboundGame() {
         if (aEff && aEff.onAttack) {
           var ctxA = makeShowdownCtx(u, bf, atkIdx, bfIdx);
           var _runA = function() { try { aEff.onAttack(ctxA); } catch(e) { console.error("onAttack error for " + u.name + ":", e); } };
-          if (aEff.ghost) triggerEffectGhost(u, _runA); else _runA();
+          triggerEffectGhost(u, _runA, aEff.condition ? function() { return aEff.condition(ctxA); } : null);
         }
       });
       // Fire onDefend for every defender at the battlefield (showdown is starting from their POV).
@@ -5347,7 +5347,7 @@ function RiftboundGame() {
           if (dEff && dEff.onDefend) {
             var ctxD = makeShowdownCtx(u, bf, atkIdx, bfIdx);
             var _runD = function() { try { dEff.onDefend(ctxD); } catch(e) { console.error("onDefend error for " + u.name + ":", e); } };
-            if (dEff.ghost) triggerEffectGhost(u, _runD); else _runD();
+            triggerEffectGhost(u, _runD, dEff.condition ? function() { return dEff.condition(ctxD); } : null);
           }
         });
       }
@@ -5500,7 +5500,8 @@ function RiftboundGame() {
     var eff = CARD_EFFECTS[card.name];
     if (eff && eff.onCast) {
       var ctx = makeAutoCtx(card, "spell", null);
-      try { eff.onCast(ctx); } catch(e) { console.error("CARD_EFFECTS onCast error for " + card.name + ":", e); }
+      var _runOnCast = function() { try { eff.onCast(ctx); } catch(e) { console.error("CARD_EFFECTS onCast error for " + card.name + ":", e); } };
+      triggerEffectGhost(card, _runOnCast, eff.condition ? function() { return eff.condition(ctx); } : null);
     }
     // Fire onSpellCast hook on every friendly unit in play (e.g. Ravenbloom Student gets +1 might).
     fireFriendlyOnSpellCast(card);
@@ -5521,7 +5522,8 @@ function RiftboundGame() {
         draw: function(n) { drawCards(n); },
         applyTempMightToUids: function(uids, amount, source) { applyTempMightToUids(uids, amount, source || u.name); }
       };
-      try { uEff.onSpellCast(ctx); } catch(e) { console.error("CARD_EFFECTS onSpellCast error for " + u.name + ":", e); }
+      var _runOSC = function() { try { uEff.onSpellCast(ctx); } catch(e) { console.error("CARD_EFFECTS onSpellCast error for " + u.name + ":", e); } };
+      triggerEffectGhost(u, _runOSC, uEff.condition ? function() { return uEff.condition(ctx); } : null);
     });
   }
   function resolveAutoPrompt(uids) {
@@ -6534,7 +6536,8 @@ function RiftboundGame() {
       banner: function(text) { showAutoBanner("AUTO · " + text); },
       flash: function(uid2) { addAnim(uid2, "flash", 800); }
     };
-    try { eff.onTap(ctx); } catch(e) { console.error("onTap error for " + card.name + ":", e); }
+    var _runOnTap = function() { try { eff.onTap(ctx); } catch(e) { console.error("onTap error for " + card.name + ":", e); } };
+    triggerEffectGhost(card, _runOnTap, eff.condition ? function() { return eff.condition(ctx); } : null);
   }
   function fireBecomesMightyHooks(unitUid, unitName) {
     if (!autoMode) return;
@@ -6572,7 +6575,8 @@ function RiftboundGame() {
       draw: function(n) { drawCards(n); },
       prompt: function(p2) { _autoSelRef.current = []; setAutoPrompt(p2); }
     };
-    try { eff.onDiscard(ctx); } catch(e) { console.error("onDiscard error for " + card.name + ":", e); }
+    var _runOnDiscard = function() { try { eff.onDiscard(ctx); } catch(e) { console.error("onDiscard error for " + card.name + ":", e); } };
+    triggerEffectGhost(card, _runOnDiscard, eff.condition ? function() { return eff.condition(ctx); } : null);
   }
   function toggleTap(cardUid) {
     if (drawingArrow) return;
