@@ -2468,6 +2468,295 @@ var CARD_EFFECTS = {
       if (allUids.length === 0) { ctx.banner("Heroic Charge — no friendly units to buff"); return; }
       ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: allUids, sourceName: "Heroic Charge", sourceUid: ctx.card.uid, effect: "tempMight", amount: 1 });
     }
+  },
+
+  // ============ Batch 12: 30 more cards ============
+
+  // --- Simple onPlay (no targeting) ---
+  "Demacian Diplomat": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      setPs(function(prev) { var i = ctx.myActIdx; var p = prev[i]; if (!p) return prev; var np = prev.slice(); np[i] = Object.assign({}, p, { xp: (p.xp || 0) + 1 }); return np; });
+      ctx.banner("Demacian Diplomat — +1 XP");
+    }
+  },
+  "Scrutinizing Sergeant": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var n = ctx.countFriendlyUnits ? ctx.countFriendlyUnits() : (ctx.friendlyUnitUids ? ctx.friendlyUnitUids().length : 0);
+      if (n <= 0) { ctx.banner("Scrutinizing Sergeant — no friendly units, no XP"); return; }
+      setPs(function(prev) { var i = ctx.myActIdx; var p = prev[i]; if (!p) return prev; var np = prev.slice(); np[i] = Object.assign({}, p, { xp: (p.xp || 0) + n }); return np; });
+      ctx.banner("Scrutinizing Sergeant — +" + n + " XP");
+    }
+  },
+  "Trove Golem": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.spawnInBase("Gold", 4);
+      ctx.banner("Trove Golem — 4 Gold tokens");
+    }
+  },
+  "Sett, Brawler": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      // "When I'm played and when I conquer, buff me. (If I don't have a buff, I get a +1 might buff.)"
+      if ((ctx.card.counter || 0) === 0) addCounter(ctx.card.uid, 1);
+      ctx.banner("Sett, Brawler — +1 buff");
+    },
+    onConquer: function(ctx) {
+      var meP = ps[ctx.player]; if (!meP) return;
+      // Find self at this BF.
+      var self = (ctx.bf && ctx.bf.units && ctx.bf.units[ctx.player] || []).find(function(u) { return u.name === "Sett, Brawler"; });
+      if (!self) return;
+      ctx.flash(self.uid);
+      if ((self.counter || 0) === 0) addCounter(self.uid, 1);
+      ctx.banner("Sett, Brawler — +1 buff (conquer)");
+    }
+  },
+  "Daisy!": { entersReady: true, banner: "Daisy! — enters ready" },
+  "Dropboarder": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.myActIdx]; if (!meP) return;
+      var gearCount = (meP.base || []).filter(function(c) { return c.type === "Gear"; }).length;
+      ctx.bfs.forEach(function(b) { ((b.units && b.units[ctx.myActIdx]) || []).forEach(function(u) { (u.gear || []).forEach(function(_) { gearCount++; }); }); });
+      if (gearCount >= 2) { readyUidsAcrossPsAndBfs([ctx.card.uid]); ctx.banner("Dropboarder — " + gearCount + " gear, readied self"); }
+      else { ctx.banner("Dropboarder — only " + gearCount + " gear, not readied"); }
+    }
+  },
+  "Poro Herder": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.myActIdx]; if (!meP) return;
+      var hasPoro = false;
+      (meP.base || []).forEach(function(c) { if ((c.keywords || []).indexOf("Poro") >= 0 && c.uid !== ctx.card.uid) hasPoro = true; });
+      ctx.bfs.forEach(function(b) { ((b.units && b.units[ctx.myActIdx]) || []).forEach(function(u) { if ((u.keywords || []).indexOf("Poro") >= 0 && u.uid !== ctx.card.uid) hasPoro = true; }); });
+      if (!hasPoro) { ctx.banner("Poro Herder — no other Poro, no buff"); return; }
+      if ((ctx.card.counter || 0) === 0) addCounter(ctx.card.uid, 1);
+      ctx.draw(1);
+      ctx.banner("Poro Herder — friendly Poro found, +1 buff & drew 1");
+    }
+  },
+  "Sea Monkey": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      // Optional 1E paid → buff me. Auto-pays the optional cost (assumes affordable).
+      if ((ctx.card.counter || 0) === 0) addCounter(ctx.card.uid, 1);
+      ctx.banner("Sea Monkey — paid optional, +1 buff");
+    }
+  },
+  "Trifarian Gloryseeker": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      if (!ctx.legionMet) { ctx.banner("Trifarian Gloryseeker — Legion not met (need another card played first)"); return; }
+      if ((ctx.card.counter || 0) === 0) addCounter(ctx.card.uid, 1);
+      ctx.banner("Trifarian Gloryseeker [Legion] — +1 buff");
+    }
+  },
+
+  // --- onPlay with targeting (single-unit) ---
+  "Solari Shieldbearer": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = ctx.friendlyUnitUids(ctx.card.uid).slice();
+      ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { allUids.push(u.uid); }); })); });
+      if (!allUids.length) { ctx.banner("Solari Shieldbearer — no units to stun"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Solari Shieldbearer", sourceUid: ctx.card.uid, effect: "stun" });
+    }
+  },
+  "Harnessed Dragon": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var enemyUids = []; ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { enemyUids.push(u.uid); }); })); });
+      if (!enemyUids.length) { ctx.banner("Harnessed Dragon — no enemy units to kill"); return; }
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Harnessed Dragon", sourceUid: ctx.card.uid, effect: "kill" });
+    }
+  },
+  "Sandshifter": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var enemyUids = []; ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { var eff = ((u.might || 0) + (u.tempMight || 0) + (u._aura || 0)); if (eff <= 3) enemyUids.push(u.uid); }); })); });
+      if (!enemyUids.length) { ctx.banner("Sandshifter — no enemy units with 3 might or less"); return; }
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Sandshifter (3 might or less)", sourceUid: ctx.card.uid, effect: "kill" });
+    }
+  },
+  "Whiteflame Protector": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [ctx.card.uid].concat(ctx.friendlyUnitUids(ctx.card.uid));
+      ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { allUids.push(u.uid); }); })); });
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Whiteflame Protector", sourceUid: ctx.card.uid, effect: "tempMight", amount: 8 });
+    }
+  },
+  "Riptide Rex": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var enemyUids = []; ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { enemyUids.push(u.uid); }); })); });
+      if (!enemyUids.length) { ctx.banner("Riptide Rex — no enemy units to damage"); return; }
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Riptide Rex (6 dmg)", sourceUid: ctx.card.uid, effect: "damage", amount: 6 });
+    }
+  },
+  "Solari Chief": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var enemyUids = []; ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { enemyUids.push(u.uid); }); })); });
+      if (!enemyUids.length) { ctx.banner("Solari Chief — no enemy units"); return; }
+      // Simplified: stun the chosen enemy. Player can manually kill it instead if it's already stunned.
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Solari Chief (stun, kill if already stunned — manual)", sourceUid: ctx.card.uid, effect: "stun" });
+    }
+  },
+  "Royal Entourage": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.myActIdx]; if (!meP || !meP.legend) { ctx.banner("Royal Entourage — no legend"); return; }
+      // Simplified: just ready your legend.
+      setPs(function(prev) { var i = ctx.myActIdx; var p = prev[i]; if (!p || !p.legend) return prev; var np = prev.slice(); np[i] = Object.assign({}, p, { legend: Object.assign({}, p.legend, { exhausted: false }) }); return np; });
+      addAnim(meP.legend.uid, "flash", 800);
+      ctx.banner("Royal Entourage — readied legend");
+    }
+  },
+
+  // --- onPlay multi-target ---
+  "Fae Dragon": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var unbuffedFriendly = [];
+      var meP = ps[ctx.myActIdx];
+      if (meP) (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && (c.counter || 0) === 0 && c.uid !== ctx.card.uid) unbuffedFriendly.push(c.uid); });
+      ctx.bfs.forEach(function(b) { ((b.units && b.units[ctx.myActIdx]) || []).forEach(function(u) { if ((u.counter || 0) === 0 && u.uid !== ctx.card.uid) unbuffedFriendly.push(u.uid); }); });
+      if (!unbuffedFriendly.length) { ctx.banner("Fae Dragon — no unbuffed friendly units"); return; }
+      var n = Math.min(4, unbuffedFriendly.length);
+      ctx.prompt({ kind: "pickFriendlyUnits", n: n, validUids: unbuffedFriendly, sourceName: "Fae Dragon (up to " + n + ")", sourceUid: ctx.card.uid, effect: "addCounter", amount: 1 });
+    }
+  },
+
+  // --- Token-spawning units ---
+  "Sprite Mother": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      if (ctx.where === "battlefield" && ctx.bi != null) { ctx.spawnInBattlefield("Sprite", 1); ctx.banner("Sprite Mother — Sprite token here"); }
+      else { ctx.spawnInBase("Sprite", 1); ctx.banner("Sprite Mother — Sprite token to base (not at BF)"); }
+    }
+  },
+  "Sprite Queen": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      // "When you play me or at the start of your Beginning Phase, play a ready 3 might Sprite token with [Temporary]"
+      if (ctx.where === "battlefield" && ctx.bi != null) { ctx.spawnInBattlefield("Sprite", 1); ctx.banner("Sprite Queen — Sprite token here"); }
+      else { ctx.spawnInBase("Sprite", 1); ctx.banner("Sprite Queen — Sprite token to base"); }
+    }
+  },
+
+  // --- Trash recovery ---
+  "Starhound": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.myActIdx]; if (!meP) return;
+      var validUids = (meP.trash || []).filter(function(c) {
+        if (!c || !c.keywords) return false;
+        return c.keywords.indexOf("Bird") >= 0 || c.keywords.indexOf("Cat") >= 0 || c.keywords.indexOf("Dog") >= 0 || c.keywords.indexOf("Poro") >= 0;
+      }).map(function(c) { return c.uid; });
+      if (!validUids.length) { ctx.banner("Starhound — no Bird/Cat/Dog/Poro in trash"); return; }
+      ctx.prompt({ kind: "pickFromTrash", n: 1, validUids: validUids, sourceName: "Starhound (return Bird/Cat/Dog/Poro)", sourceUid: ctx.card.uid, effect: "returnToHand" });
+    }
+  },
+  "Soulgorger": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.myActIdx]; if (!meP) return;
+      var validUids = (meP.trash || []).filter(function(c) { return c && (c.type === "Unit" || c.type === "Champion"); }).map(function(c) { return c.uid; });
+      if (!validUids.length) { ctx.banner("Soulgorger — no units in trash"); return; }
+      ctx.prompt({ kind: "pickFromTrash", n: 1, validUids: validUids, sourceName: "Soulgorger (return unit; replay manually, ignore E)", sourceUid: ctx.card.uid, effect: "returnToHand" });
+    }
+  },
+  "Spectral Matron": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.myActIdx]; if (!meP) return;
+      var validUids = (meP.trash || []).filter(function(c) { return c && (c.type === "Unit" || c.type === "Champion") && (c.energy || 0) <= 3; }).map(function(c) { return c.uid; });
+      if (!validUids.length) { ctx.banner("Spectral Matron — no units ≤3E in trash"); return; }
+      ctx.prompt({ kind: "pickFromTrash", n: 1, validUids: validUids, sourceName: "Spectral Matron (return unit ≤3E; replay manually)", sourceUid: ctx.card.uid, effect: "returnToHand" });
+    }
+  },
+
+  // --- Combat triggers (onAttack/onDefend) ---
+  "Yasuo, Remorseful": {
+    onAttack: function(ctx) {
+      var enemyUids = (ctx.enemyUnits() || []).map(function(u) { return u.uid; });
+      if (!enemyUids.length) { ctx.banner("Yasuo, Remorseful — no enemy units here"); return; }
+      var dmg = (ctx.unit.might || 0) + (ctx.unit.tempMight || 0) + (ctx.unit._aura || 0);
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Yasuo, Remorseful (" + dmg + " dmg)", sourceUid: ctx.unit.uid, effect: "damage", amount: dmg });
+    }
+  },
+  "Ezreal, Dashing": {
+    onAttack: function(ctx) {
+      var enemyUids = (ctx.enemyUnits() || []).map(function(u) { return u.uid; });
+      if (!enemyUids.length) { ctx.banner("Ezreal, Dashing — no enemy units here"); return; }
+      var dmg = (ctx.unit.might || 0) + (ctx.unit.tempMight || 0) + (ctx.unit._aura || 0);
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Ezreal, Dashing (" + dmg + " dmg)", sourceUid: ctx.unit.uid, effect: "damage", amount: dmg });
+    },
+    onDefend: function(ctx) {
+      var enemyUids = (ctx.enemyUnits() || []).map(function(u) { return u.uid; });
+      if (!enemyUids.length) { ctx.banner("Ezreal, Dashing — no enemy units here"); return; }
+      var dmg = (ctx.unit.might || 0) + (ctx.unit.tempMight || 0) + (ctx.unit._aura || 0);
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Ezreal, Dashing (" + dmg + " dmg)", sourceUid: ctx.unit.uid, effect: "damage", amount: dmg });
+    }
+  },
+  "Lucian, Gunslinger": {
+    onAttack: function(ctx) {
+      var bonus = parseKeywordBonus(ctx.unit.keywords, "Assault");
+      if (bonus <= 0) bonus = 1;
+      var enemyUids = (ctx.enemyUnits() || []).map(function(u) { return u.uid; });
+      if (!enemyUids.length) { ctx.banner("Lucian, Gunslinger — no enemy units here"); return; }
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Lucian, Gunslinger (Assault " + bonus + ")", sourceUid: ctx.unit.uid, effect: "damage", amount: bonus });
+    }
+  },
+  "Leona, Determined": {
+    onAttack: function(ctx) {
+      var enemyUids = (ctx.enemyUnits() || []).map(function(u) { return u.uid; });
+      if (!enemyUids.length) { ctx.banner("Leona, Determined — no enemy units here to stun"); return; }
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Leona, Determined", sourceUid: ctx.unit.uid, effect: "stun" });
+    }
+  },
+  "Volibear, Furious": {
+    onAttack: function(ctx) {
+      var enemyUids = (ctx.enemyUnits() || []).map(function(u) { return u.uid; });
+      if (!enemyUids.length) { ctx.banner("Volibear, Furious — no enemy units here to stun"); return; }
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Volibear, Furious", sourceUid: ctx.unit.uid, effect: "stun" });
+    }
+  },
+  "Warwick, Hunter": {
+    entersReady: true,
+    banner: "Warwick, Hunter — enters ready",
+    onAttack: function(ctx) {
+      var damaged = (ctx.enemyUnits() || []).filter(function(u) { return (u.damage || 0) > 0; });
+      if (!damaged.length) { ctx.banner("Warwick, Hunter — no damaged enemy units to kill"); return; }
+      damaged.forEach(function(u) { ctx.flash(u.uid); });
+      // Use the prompt resolver's "kill" effect with all uids preselected (n = damaged.length).
+      // Simpler: just use the addAnim-then-bin-immediate pattern via dealDamage with huge dmg.
+      damaged.forEach(function(u) { ctx.dealDamage(u.uid, 9999, "Warwick, Hunter (kill damaged)"); });
+      ctx.banner("Warwick, Hunter — killed " + damaged.length + " damaged enemy unit" + (damaged.length === 1 ? "" : "s"));
+    }
+  },
+  "Yuumi, Magical Cat": {
+    onAttack: function(ctx) {
+      var allyUids = (ctx.friendlyUnits() || []).filter(function(u) { return u.uid !== ctx.unit.uid; }).map(function(u) { return u.uid; });
+      if (!allyUids.length) { ctx.banner("Yuumi, Magical Cat — no other friendly units here"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: allyUids, sourceName: "Yuumi, Magical Cat (+3 might)", sourceUid: ctx.unit.uid, effect: "tempMight", amount: 3 });
+    },
+    onDefend: function(ctx) {
+      var allyUids = (ctx.friendlyUnits() || []).filter(function(u) { return u.uid !== ctx.unit.uid; }).map(function(u) { return u.uid; });
+      if (!allyUids.length) { ctx.banner("Yuumi, Magical Cat — no other friendly units here"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: allyUids, sourceName: "Yuumi, Magical Cat (+3 might)", sourceUid: ctx.unit.uid, effect: "tempMight", amount: 3 });
+    }
+  },
+  "Bewitching Spirit": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      // "When you play me, choose a player. They discard 1." Cross-player hand manipulation is complex —
+      // ghost + banner reminds the active player to ask the chosen opponent to manually drag a hand card to bin.
+      ctx.banner("Bewitching Spirit — choose a player; they discard 1 (manual drag to bin)");
+    }
   }
 };
 </script>
