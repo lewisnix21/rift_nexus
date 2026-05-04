@@ -3687,7 +3687,8 @@ var CARD_EFFECTS = {
       ctx.banner("LeBlanc, Fragmented [Deathknell] — drew 1 (Beginning-phase x2 not auto-detected)");
     }
   },
-  "Petal Pixie":        { _automatedElsewhere: "Conditional aura (+1 per friendly [Temporary] at my BF) — apply +might counter manually" }
+  "Petal Pixie":        { _automatedElsewhere: "Conditional aura (+1 per friendly [Temporary] at my BF) — apply +might counter manually" },
+  "Sona, Harmonious":   { _automatedElsewhere: "End of turn at BF — ready up to 4 runes — fires inline from endTurn" }
 };
 </script>
 <script type="text/babel">
@@ -7321,6 +7322,19 @@ function RiftboundGame() {
         p2.runes = p2.runes.map(function(r) { if (r.exhausted && _dcR < _dcN) { _dcR++; return Object.assign({}, r, { exhausted: false }); } return r; });
         np[meIdx] = p2;
         setTimeout(function() { showAutoBanner("AUTO · Dark Child — " + _dcN + " rune" + (_dcN === 1 ? "" : "s") + " readied at end of turn"); }, 300);
+      }
+    }
+    // Sona, Harmonious: end of turn at a BF — ready up to 4 friendly runes
+    if (autoMode) {
+      var _sonaAtBf = bfs.some(function(b) { return ((b.units && b.units[meIdx]) || []).some(function(u) { return u.name === "Sona, Harmonious"; }); });
+      if (_sonaAtBf) {
+        var _sEx = p2.runes.filter(function(r) { return r.exhausted; });
+        if (_sEx.length > 0) {
+          var _sN = Math.min(4, _sEx.length); var _sR = 0;
+          p2.runes = p2.runes.map(function(r) { if (r.exhausted && _sR < _sN) { _sR++; return Object.assign({}, r, { exhausted: false }); } return r; });
+          np[meIdx] = p2;
+          setTimeout(function() { showAutoBanner("AUTO · Sona, Harmonious — " + _sN + " rune" + (_sN === 1 ? "" : "s") + " readied at end of turn"); }, 310);
+        }
       }
     }
     // End-of-turn watchers (e.g. Targon's Peak: ready up to 2 runes at end of this turn)
