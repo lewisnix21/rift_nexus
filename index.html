@@ -3702,7 +3702,16 @@ var CARD_EFFECTS = {
   "Jhin, Murderous Artist": { _automatedElsewhere: "[Deflect] via isEnemyDeflect; [Ganking] via base→BF→BF moves; on-move [Add] 1E + Rainbow — declarative add-resource (cost-time)" },
   "Stealthy Pursuer":   { _automatedElsewhere: "Tag-along on friendly move — onFriendlyMove hook not built; player drags Pursuer along with the moving unit" },
   "Overzealous Fan":    { _automatedElsewhere: "On-defend optional self-kill → move attacker to base — sacrificial defender hook not modelled; resolve manually" },
-  "Void Drone":         { _automatedElsewhere: "Cost-time -2E from non-hand zones — non-hand-play not yet a discount path; resolve cost manually" }
+  "Void Drone":         { _automatedElsewhere: "Cost-time -2E from non-hand zones — non-hand-play not yet a discount path; resolve cost manually" },
+  "Guardian of the Passage": {
+    onHold: function(ctx) {
+      var meP = ps[ctx.player]; if (!meP) return;
+      var validUids = (meP.trash || []).filter(function(c) { return c && (c.type === "Unit" || c.type === "Champion" || c.type === "Gear"); }).map(function(c) { return c.uid; });
+      if (!validUids.length) { ctx.banner("Guardian of the Passage — no unit/gear in trash"); return; }
+      ctx.flash(ctx.card.uid);
+      ctx.prompt({ kind: "pickFromTrash", n: 1, validUids: validUids, sourceName: "Guardian of the Passage", sourceUid: ctx.card.uid, effect: "returnToHand" });
+    }
+  }
 };
 </script>
 <script type="text/babel">
