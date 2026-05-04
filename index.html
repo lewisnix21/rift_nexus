@@ -3343,7 +3343,155 @@ var CARD_EFFECTS = {
   "Ashe, Focused":     { onPlay: function(ctx) { ctx.flash(ctx.card.uid); ctx.banner("Ashe, Focused — choose opponent; manually reveal hand + banish a card"); } },
   "Mindsplitter":      { onPlay: function(ctx) { ctx.flash(ctx.card.uid); ctx.banner("Mindsplitter — choose opponent; manually reveal hand + discard a card"); } },
   "Brynhir Thundersong": { _automatedElsewhere: "Opponents can't play cards this turn — needs no-play watcher" },
-  "Insightful Investigator": { onPlay: function(ctx) { ctx.flash(ctx.card.uid); ctx.banner("Insightful Investigator — choose opponent; manually reveal hand + spend 2 XP to banish a card"); } }
+  "Insightful Investigator": { onPlay: function(ctx) { ctx.flash(ctx.card.uid); ctx.banner("Insightful Investigator — choose opponent; manually reveal hand + spend 2 XP to banish a card"); } },
+
+  // ============ Batch 15: 50 more cards (vanilla equip, runes, tokens, simple spells, hunt/deathknell units) ============
+
+  // --- Vanilla Equipment (just [Equip] X — handled by the equip system, no triggered ability) ---
+  "Boots of Swiftness":    { _vanilla: "[Equip] [Chaos] — attach via drag, no auto trigger" },
+  "Brutalizer":            { _vanilla: "[Equip] [Calm] — attach via drag, no auto trigger" },
+  "Cull":                  { _vanilla: "[Equip] [Chaos] — attach via drag, no auto trigger" },
+  "Doran's Ring":          { _vanilla: "[Equip] [Chaos] — attach via drag, no auto trigger" },
+  "Doran's Shield":        { _vanilla: "[Equip] [Calm] — attach via drag, no auto trigger" },
+  "Experimental Hexplate": { _vanilla: "[Equip] [Mind] — attach via drag, no auto trigger" },
+  "Eye of the Herald":     { _vanilla: "[Equip] [Order] — attach via drag, no auto trigger" },
+  "Guardian Angel":        { _vanilla: "[Equip] [Calm] — attach via drag, no auto trigger" },
+  "Hexdrinker":            { _vanilla: "[Equip] [Body] — attach via drag, no auto trigger" },
+  "Hunter's Machete":      { _vanilla: "[Equip] [Body] — attach via drag, no auto trigger" },
+  "Recurve Bow":           { _vanilla: "[Equip] [Fury] — attach via drag, no auto trigger" },
+  "Serrated Dirk":         { _vanilla: "[Equip] [Fury] — attach via drag, no auto trigger" },
+  "Soul Sword":            { _vanilla: "[Equip] [Calm] — attach via drag, no auto trigger" },
+  "Trinity Force":         { _vanilla: "[Equip] [Body] — attach via drag, no auto trigger" },
+  "World Atlas":           { _vanilla: "[Equip] [Mind] — attach via drag, no auto trigger" },
+  "Boneshiver":            { _vanilla: "[Equip] [1+Body] — attach via drag, no auto trigger" },
+  "Skyfall of Areion":     { _vanilla: "[Equip] [1+Fury] — attach via drag, no auto trigger" },
+  "Blighted Battleaxe":    { _vanilla: "[Equip] [1+Fury] — attach via drag, no auto trigger" },
+
+  // --- Vanilla units / token entries / runes ---
+  "Recruit (DE)":          { _vanilla: "Recruit (Demacian) gallery print — vanilla 1/1, no ability" },
+  "Recruit (NX)":          { _vanilla: "Recruit (Trifarian) gallery print — vanilla 1/1, no ability" },
+  "Recruit (ZN)":          { _vanilla: "Recruit (Automata) gallery print — vanilla 1/1, no ability" },
+  "Shipyard Skulker":      { _vanilla: "Vanilla 3/3 Pirate — no ability" },
+  "Determined Sentry":     { _vanilla: "\"I can't move to base\" — rule modifier on movement, no auto trigger" },
+  "Sprite":                { _automatedElsewhere: "[Temporary] — handled by start-of-Beginning Phase cleanup" },
+  "Body Rune":             { _vanilla: "Rune card — handled by rune zone" },
+  "Calm Rune":             { _vanilla: "Rune card — handled by rune zone" },
+  "Chaos Rune":            { _vanilla: "Rune card — handled by rune zone" },
+  "Fury Rune":             { _vanilla: "Rune card — handled by rune zone" },
+  "Mind Rune":             { _vanilla: "Rune card — handled by rune zone" },
+  "Order Rune":            { _vanilla: "Rune card — handled by rune zone" },
+
+  // --- Spells ---
+  "Right of Conquest": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx;
+      var bfsControlled = (ctx.bfs || []).filter(function(b) { return b && b.controller === idx; }).length;
+      var n = 1 + bfsControlled;
+      ctx.draw(n);
+      ctx.banner("Right of Conquest — drew " + n + " (1 + " + bfsControlled + " BF" + (bfsControlled === 1 ? "" : "s") + " controlled)");
+    }
+  },
+  "Spoils of War": {
+    onCast: function(ctx) { ctx.flash(ctx.card.uid); ctx.draw(2); ctx.banner("Spoils of War — drew 2"); }
+  },
+  "Downstage Dramatics": {
+    onCast: function(ctx) { ctx.flash(ctx.card.uid); ctx.draw(1); ctx.banner("Downstage Dramatics — drew 1 ([Repeat] manually for additional draws)"); }
+  },
+  "Wallop": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx;
+      var meP = ps[idx];
+      var exhUids = [];
+      if (meP) (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && c.exhausted) exhUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if (u.exhausted) exhUids.push(u.uid); }); });
+      if (!exhUids.length) { ctx.banner("Wallop — no exhausted friendly units to ready"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: exhUids, sourceName: "Wallop", sourceUid: ctx.card.uid, effect: "ready" });
+    }
+  },
+  "Shakedown": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx;
+      var enemyUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi !== idx) (pu || []).forEach(function(u) { enemyUids.push(u.uid); }); }); });
+      if (!enemyUids.length) { ctx.banner("Shakedown — no enemy units to target"); return; }
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Shakedown (deal 6, unless controller has you draw 2)", sourceUid: ctx.card.uid, effect: "damage", amount: 6 });
+    }
+  },
+  "Piercing Light": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+      if (!bfUids.length) { ctx.banner("Piercing Light — no units at battlefields"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Piercing Light (deal 2; may target a 2nd unit for another 2 manually)", sourceUid: ctx.card.uid, effect: "damage", amount: 2 });
+    }
+  },
+  "Bellows Breath": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+      if (!bfUids.length) { ctx.banner("Bellows Breath — no units at battlefields"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: Math.min(3, bfUids.length), upTo: true, validUids: bfUids, sourceName: "Bellows Breath", sourceUid: ctx.card.uid, effect: "damage", amount: 1 });
+    }
+  },
+  "Shadow's Call": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.draw(2);
+      var idx = ctx.myActIdx;
+      var bfFriendlyUids = [];
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if (!u._temporary) bfFriendlyUids.push(u.uid); }); });
+      if (!bfFriendlyUids.length) { ctx.banner("Shadow's Call — drew 2 (no eligible BF unit to mark Temporary)"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: bfFriendlyUids, sourceName: "Shadow's Call", sourceUid: ctx.card.uid, effect: "markTemporary" });
+    }
+  },
+  "Tactical Retreat": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx;
+      var friendlyUids = [];
+      var meP = ps[idx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") friendlyUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { friendlyUids.push(u.uid); }); });
+      if (!friendlyUids.length) { ctx.banner("Tactical Retreat — no friendly units"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Tactical Retreat", sourceUid: ctx.card.uid, effect: "highlanderShield" });
+    }
+  },
+  "Showstopper": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx;
+      var meP = ps[idx];
+      var baseUids = (meP && (meP.base || []).filter(function(c) { return c.type === "Unit" || c.type === "Champion"; }).map(function(c) { return c.uid; })) || [];
+      if (!baseUids.length) { ctx.banner("Showstopper — no friendly base units"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: baseUids, sourceName: "Showstopper (buff +1; move to BF manually)", sourceUid: ctx.card.uid, effect: "addCounter", amount: 1 });
+    }
+  },
+
+  // --- Units ---
+  "Voracious Gromp": {
+    onConquer: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 3;
+      ctx.banner("Voracious Gromp [Hunt 3] — gained 3 XP (now " + _xpRef.current[ctx.player] + ")");
+    },
+    onHold: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 3;
+      ctx.banner("Voracious Gromp [Hunt 3] — gained 3 XP (now " + _xpRef.current[ctx.player] + ")");
+    }
+  },
+  "Yi, Honed":          { entersReady: true, banner: "Yi, Honed enters ready", _automatedElsewhere: "[Ganking] handled by base→BF→BF moves" },
+  "Watchful Sentry":    { onDeath: function(ctx) { ctx.draw(1); ctx.banner("Watchful Sentry [Deathknell] — drew 1"); } },
+  "Loyal Pup":          { _automatedElsewhere: "When you defend at a BF, you may move me there — manual" },
+  "Treasure Hunter":    { _automatedElsewhere: "When I move, play a Gold gear token exhausted — onMove hook not modeled" },
+  "Renata Glasc, Industrialist": { _automatedElsewhere: "Your tokens enter ready — passive aura on tokens (manual ready toggle)" },
+  "Karthus, Eternal":   { _automatedElsewhere: "Your [Deathknell] effects trigger an additional time — manually re-fire onDeath" },
+  "Targonian Visionary": { _automatedElsewhere: "[Level 11] +4 might — XP-gated aura, apply +might counter manually when XP ≥ 11" },
+  "Trusty Ramhound":    { _automatedElsewhere: "Aura: +1 might while another friendly unit is here — apply +/- counter manually" },
+  "Spectral Centaur":   { _automatedElsewhere: "When another friendly unit dies → +2 might this turn — apply tempMight via +/- counter manually" }
 };
 </script>
 <script type="text/babel">
