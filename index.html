@@ -3674,40 +3674,16 @@ function RiftboundGame() {
     if (next && next.type === "Spell") {
       // Auto-resolve the popped chained spell — both players already accepted at the start of the
       // chain, so we don't make them click Resolve again for each layer.
-      if (lobbyType === "test") {
-        // Offline: directly run the spell + fizzle path (mirrors the offline Resolve button onClick).
-        // No useEffect handles offline spell resolve, so we kick off the same flow here.
-        var spellToResolve = next;
-        _resolveDidSomethingRef.current = false;
-        setPendingSpell(null); setResolveAcceptors({});
-        runAutoOnCast(spellToResolve);
-        function _autoFizzleAndContinue() {
-          if (autoPromptRef && autoPromptRef.current) { setTimeout(_autoFizzleAndContinue, 200); return; }
-          var _w = Math.max(1000, (_lastFizzleEndRef.current || 0) - Date.now() + 200);
-          setTimeout(function() {
-            if (autoPromptRef && autoPromptRef.current) { _autoFizzleAndContinue(); return; }
-            addAnim(spellToResolve.uid, "fizzle", 1700);
-            setTimeout(function() {
-              setPs(function(prev) { var i = myActIdx; var p = prev[i]; if (!p) return prev; var trash = (p.trash || []).slice(); if (!trash.some(function(c){return c.uid===spellToResolve.uid;})) trash.push(Object.assign({}, spellToResolve, { exhausted: false, gear: [] })); var np = prev.slice(); np[i] = Object.assign({}, p, { trash: trash }); return np; });
-              if (!_resolveDidSomethingRef.current) showAutoBanner("AUTO · " + (spellToResolve.name || "Spell") + " — fizzled (no valid effect)");
-              // Recurse into the next chained spell.
-              _resumeChainedSpellFromHistory();
-            }, 1700);
-          }, _w);
-        }
-        setTimeout(_autoFizzleAndContinue, 150);
-      } else {
-        // Online: pre-fill resolveAcceptors with every known player so the spell-resolve useEffect
-        // fires on the caster's machine immediately (no Resolve clicks needed for chained layers).
-        setPendingSpell(next);
-        var allAccepted = {};
-        Object.keys(lobbyPlayers || {}).forEach(function(uid) { allAccepted[uid] = true; });
-        if (Object.keys(allAccepted).length === 0) allAccepted[myUid] = true;
-        setResolveAcceptors(allAccepted);
-        // Force-publish so non-caster clients see the renewed + pre-accepted state immediately.
-        if (roomCode) {
-          try { fbDb.ref("lobbies/" + roomCode + "/spellResolve").set({ card: next, acceptors: allAccepted, by: myUid }); } catch(e) { /* ignore */ }
-        }
+      // Pre-fill resolveAcceptors with every known player so the spell-resolve useEffect
+      // fires on the caster's machine immediately (no Resolve clicks needed for chained layers).
+      setPendingSpell(next);
+      var allAccepted = {};
+      Object.keys(lobbyPlayers || {}).forEach(function(uid) { allAccepted[uid] = true; });
+      if (Object.keys(allAccepted).length === 0) allAccepted[myUid] = true;
+      setResolveAcceptors(allAccepted);
+      // Force-publish so non-caster clients see the renewed + pre-accepted state immediately.
+      if (roomCode) {
+        try { fbDb.ref("lobbies/" + roomCode + "/spellResolve").set({ card: next, acceptors: allAccepted, by: myUid }); } catch(e) { /* ignore */ }
       }
     }
   }
@@ -4180,7 +4156,7 @@ function RiftboundGame() {
   }, []);
 
   function syncGameState() {
-    if (!roomCode || lobbyType === "test") return;
+    if (!roomCode) return;
     _lastSyncVersion.current++;
     // Ensure all arrays are at least empty (Firebase removes null/undefined arrays)
     var cleanPs = ps.map(function(p) {
@@ -4196,7 +4172,7 @@ function RiftboundGame() {
 
   // Listen for live game state from the other player
   useEffect(function() {
-    if (!roomCode || lobbyType === "test") return;
+    if (!roomCode) return;
     var ref = fbDb.ref("lobbies/" + roomCode + "/liveState");
     var handler = ref.on("value", function(snap) {
       var state = snap.val();
@@ -4225,7 +4201,7 @@ function RiftboundGame() {
   var _scFromRemote = useRef(false);
   function serializeCard(c) { return c ? { name: c.name || "", img: c.img || "", domain: c.domain || "", type: c.type || "", energy: c.energy || 0, might: c.might || 0, text: c.text || "", uid: c.uid || "", counter: c.counter || 0, counter2: c.counter2 || 0 } : null; }
   useEffect(function() {
-    if (!roomCode || lobbyType === "test" || _scFromRemote.current) return;
+    if (!roomCode || _scFromRemote.current) return;
     if (_gamePhaseRef.current !== "playing") return;
     try {
       var scData = { card: serializeCard(showcaseCard), history: showcaseHistory.map(serializeCard), owner: showcaseOwner, accepted: showcaseAccepted, priority: showcasePriority, acted: showcaseActed, acceptors: showcaseAcceptors || {}, by: myUid };
@@ -4270,7 +4246,7 @@ function RiftboundGame() {
 
   // Listen for showcase from other players
   useEffect(function() {
-    if (!roomCode || lobbyType === "test") return;
+    if (!roomCode) return;
     var ref = fbDb.ref("lobbies/" + roomCode + "/showcase");
     var handler = ref.on("value", function(snap) {
       var data = snap.val();
@@ -4291,14 +4267,14 @@ function RiftboundGame() {
   // Sync conquerAcceptors to Firebase so all players see each other's Resolve state
   var _pcSyncFromRemote = useRef(false);
   useEffect(function() {
-    if (!roomCode || lobbyType === "test" || _pcSyncFromRemote.current) return;
+    if (!roomCode || _pcSyncFromRemote.current) return;
     if (_gamePhaseRef.current !== "playing") return;
     fbDb.ref("lobbies/" + roomCode + "/pendingConquer").set({ acceptors: conquerAcceptors, by: myUid });
   }, [conquerAcceptors]);
 
   // Listen for conquerAcceptors updates from other players
   useEffect(function() {
-    if (!roomCode || lobbyType === "test") return;
+    if (!roomCode) return;
     var ref = fbDb.ref("lobbies/" + roomCode + "/pendingConquer");
     var handler = ref.on("value", function(snap) {
       var val = snap.val();
@@ -4330,12 +4306,12 @@ function RiftboundGame() {
   // Sync damageAssignments to Firebase so all players see the showdown arrows
   var _daSyncFromRemote = useRef(false);
   useEffect(function() {
-    if (!roomCode || lobbyType === "test" || _daSyncFromRemote.current) return;
+    if (!roomCode || _daSyncFromRemote.current) return;
     if (_gamePhaseRef.current !== "playing") return;
     fbDb.ref("lobbies/" + roomCode + "/damageAssignments").set({ assignments: damageAssignments || {}, by: myUid });
   }, [damageAssignments]);
   useEffect(function() {
-    if (!roomCode || lobbyType === "test") return;
+    if (!roomCode) return;
     var ref = fbDb.ref("lobbies/" + roomCode + "/damageAssignments");
     var handler = ref.on("value", function(snap) {
       var val = snap.val();
@@ -4373,14 +4349,14 @@ function RiftboundGame() {
   // Sync pendingSpell + resolveAcceptors to Firebase so all players see the spell Resolve button
   var _srSyncFromRemote = useRef(false);
   useEffect(function() {
-    if (!roomCode || lobbyType === "test" || _srSyncFromRemote.current) return;
+    if (!roomCode || _srSyncFromRemote.current) return;
     if (_gamePhaseRef.current !== "playing") return;
     fbDb.ref("lobbies/" + roomCode + "/spellResolve").set({ card: pendingSpell || null, acceptors: resolveAcceptors, by: myUid });
   }, [pendingSpell, resolveAcceptors]);
 
   // Listen for spellResolve updates from other players
   useEffect(function() {
-    if (!roomCode || lobbyType === "test") return;
+    if (!roomCode) return;
     var ref = fbDb.ref("lobbies/" + roomCode + "/spellResolve");
     var handler = ref.on("value", function(snap) {
       var val = snap.val();
@@ -4432,7 +4408,7 @@ function RiftboundGame() {
 
   // Chat listener
   useEffect(function() {
-    if (!roomCode || lobbyType === "test") return;
+    if (!roomCode) return;
     var ref = fbDb.ref("lobbies/" + roomCode + "/chat").orderByChild("ts").limitToLast(50);
     var handler = ref.on("value", function(snap) {
       var val = snap.val();
@@ -4445,14 +4421,14 @@ function RiftboundGame() {
   }, [roomCode, lobbyType]);
 
   function sendChat() {
-    if (!chatInput.trim() || !roomCode || lobbyType === "test") return;
+    if (!chatInput.trim() || !roomCode) return;
     fbDb.ref("lobbies/" + roomCode + "/chat").push({ uid: myUid, name: myName, text: chatInput.trim(), ts: Date.now() });
     setChatInput("");
   }
 
   // Auto-sync game state when it changes — ONLY when it's our turn
   useEffect(function() {
-    if (!roomCode || lobbyType === "test" || _isReceivingSync.current) return;
+    if (!roomCode || _isReceivingSync.current) return;
     if (_gamePhaseRef.current !== "playing") return;
     if (screen === "play" || screen === "sd" || screen === "wait" || screen === "go") {
       if (_syncTimer.current) clearTimeout(_syncTimer.current);
@@ -4463,14 +4439,14 @@ function RiftboundGame() {
   // Sync arrows separately via dedicated path — both players can create/remove arrows anytime
   var _arrowSyncRef = useRef(false);
   useEffect(function() {
-    if (!roomCode || lobbyType === "test" || _arrowSyncRef.current) return;
+    if (!roomCode || _arrowSyncRef.current) return;
     if (_gamePhaseRef.current !== "playing") return;
     fbDb.ref("lobbies/" + roomCode + "/arrows").set(arrows || []);
   }, [arrows]);
 
   // Listen for arrow changes from other player
   useEffect(function() {
-    if (!roomCode || lobbyType === "test") return;
+    if (!roomCode) return;
     var ref = fbDb.ref("lobbies/" + roomCode + "/arrows");
     var handler = ref.on("value", function(snap) {
       var val = snap.val();
@@ -4483,7 +4459,7 @@ function RiftboundGame() {
 
   // Listen for continue playing votes
   useEffect(function() {
-    if (!roomCode || lobbyType === "test" || screen !== "go") return;
+    if (!roomCode || screen !== "go") return;
     var ref = fbDb.ref("lobbies/" + roomCode + "/continueVotes");
     var handler = ref.on("value", function(snap) {
       var val = snap.val() || {};
@@ -4499,7 +4475,7 @@ function RiftboundGame() {
 
   // Listen for pings from other player
   useEffect(function() {
-    if (!roomCode || lobbyType === "test") return;
+    if (!roomCode) return;
     var ref = fbDb.ref("lobbies/" + roomCode + "/pings");
     var handler = ref.on("child_added", function(snap) {
       var p = snap.val(); if (!p) return;
@@ -4518,7 +4494,7 @@ function RiftboundGame() {
     var id = uid();
     setPings(function(prev) { return prev.concat([{ cardUid: cardUid, id: id }]); });
     setTimeout(function() { setPings(function(prev) { return prev.filter(function(pp) { return pp.id !== id; }); }); }, 900);
-    if (roomCode && lobbyType !== "test") {
+    if (roomCode) {
       fbDb.ref("lobbies/" + roomCode + "/pings").push({ cardUid: cardUid, id: id });
     }
   }
@@ -5668,92 +5644,6 @@ function RiftboundGame() {
       {renderHoverPreview()}
     </div>
     );
-  }
-
-  if (screen === "bf" && ps[act] && lobbyType === "test") {
-    var isOnline = false;
-    var bfPlayer = isOnline ? mySlot : act;
-    var bfPs = ps[bfPlayer];
-    if (!bfPs) bfPs = ps[0];
-    return (
-    <div style={{ minHeight: "100vh", background: "#080818", color: "#ddd", fontFamily: "sans-serif", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20, overflow: "auto", padding: "40px 20px" }}>
-      <h2 style={{ fontSize: 26, fontFamily: "Spectral,serif", fontWeight: 700, background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{isOnline ? "Choose Your Battlefield" : "P" + (act + 1) + " - Choose Battlefield"}</h2>
-      <p style={{ color: "#888", fontSize: 15 }}>Select a battlefield to bring into the game</p>
-      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center" }}>
-        {(isOnline ? bfPs : ps[act]).battlefields.map(function(bf) {
-          var bfHash = CI[bf.name] || (PA[bf.name] ? PA_CDN + PA[bf.name] + ".webp" : null);
-          var bfUrl = bfHash ? imgSrc(bfHash) : "";
-          var isSelected = selectedBf && selectedBf.uid === bf.uid;
-          var isPA = bfUrl.indexOf("piltover") > -1;
-          return (
-            <div key={bf.uid} onClick={function() { setSelectedBf(isSelected ? null : bf); }} style={{ padding: 0, border: "3px solid " + (isSelected ? "#FFD700" : "#FFD70044"), borderRadius: 8, background: "#1a1a3a", cursor: "pointer", width: Math.round(642 * vScale), height: Math.round(459 * vScale), overflow: "hidden", boxShadow: isSelected ? "0 0 20px #FFD70044" : "none", opacity: selectedBf && !isSelected ? 0.5 : 1, transition: "opacity 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {bfUrl ? <img src={bfUrl} alt={bf.name} style={(bfUrl.indexOf("1038x744") > -1 || bfUrl.indexOf("1039x744") > -1 || bfUrl.indexOf("OGN-284") > -1 || bfUrl.indexOf("OGN-281") > -1 || bfUrl.indexOf("OGN-290") > -1) ? { width: "100%", height: "100%", objectFit: "fill" } : { width: Math.round(459 * vScale), height: Math.round(642 * vScale), objectFit: "fill", transform: "rotate(90deg)" }} /> : <div style={{ width: "100%", height: "100%", background: "linear-gradient(160deg,#1a1a3a,#0a0a1a)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 6 }}><span style={{ fontSize: 32, opacity: 0.2 }}>⚔</span><span style={{ color: "#FFD700", fontSize: 16, fontWeight: 700 }}>{bf.name}</span></div>}
-            </div>
-          );
-        })}
-      </div>
-      <p style={{ color: "#FFD700", fontSize: 16, fontFamily: "Spectral,serif", visibility: selectedBf ? "visible" : "hidden" }}>{selectedBf ? selectedBf.name : "\u00A0"}</p>
-      <button onClick={function() {
-        if (!selectedBf) return;
-        if (isOnline) {
-          // Write our choice to Firebase
-          fbDb.ref("lobbies/" + roomCode + "/gameState/bfChoices/" + myUid).set(selectedBf.name);
-          var np = ps.map(function(p) { return Object.assign({}, p); });
-          np[mySlot].chosenBf = selectedBf; setPs(np);
-          setSelectedBf(null);
-          aL("You chose " + selectedBf.name);
-          // Stay on bf screen but with a waiting overlay — handleLobbyUpdate will advance us
-        } else {
-          // Test: sequential pick
-          var np2 = ps.map(function(p) { return Object.assign({}, p); });
-          np2[act].chosenBf = selectedBf; setPs(np2);
-          setSelectedBf(null);
-          if (act < pc - 1) { setAct(act + 1); aL(pName(act) + " chose " + selectedBf.name); }
-          else {
-            var gb2 = np2.map(function(p) { return p.chosenBf; }).filter(Boolean).slice(0, numBfs).map(function(b) { return Object.assign({}, b, { controller: null, units: Array.from({ length: pc }, function() { return []; }), uid: uid() }); });
-            setBfs(gb2); setAct(0); setScreen("mull"); aL("P1 mulligan.");
-          }
-        }
-      }} disabled={!selectedBf} style={{ padding: "12px 36px", borderRadius: 6, border: "2px solid " + (selectedBf ? "#FFD700" : "#333"), background: selectedBf ? "linear-gradient(135deg,#FFD70040,#FF8C0020)" : "#111", color: selectedBf ? "#FFD700" : "#555", cursor: selectedBf ? "pointer" : "not-allowed", fontSize: 18, fontWeight: 700, fontFamily: "Spectral,serif", letterSpacing: 2 }}>CONFIRM</button>
-    </div>
-  );
-  }
-
-  if (screen === "mull" && lobbyType === "test") {
-    var isOnlineMull = false;
-    var mullPlayer = isOnlineMull ? mySlot : act;
-    var mullPs = ps[mullPlayer];
-    if (!mullPs) mullPs = ps[0];
-    return (
-    <div style={{ minHeight: "100vh", background: "#080818", color: "#ddd", fontFamily: "sans-serif", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, overflow: "auto", padding: "40px 20px" }}>
-      <h2 style={{ fontSize: 28, fontFamily: "Spectral,serif", fontWeight: 700, background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{isOnlineMull ? "Your Mulligan" : "P" + (act + 1) + " Mulligan"}</h2>
-      <p style={{ color: "#888", fontSize: 16 }}>Select up to 2 to replace</p>
-      <div style={{ display: "flex", gap: 8, flexWrap: "nowrap", justifyContent: "center", alignItems: "center", flexShrink: 0, transform: "scale(" + (0.9 * vScale) + ")", transformOrigin: "top center", marginBottom: 0 }}>
-        {mullPs.hand.map(function(c) { return <Card key={c.uid} card={c} selected={mc.indexOf(c.uid) >= 0} onClick={function() { setMc(function(p) { return p.indexOf(c.uid) >= 0 ? p.filter(function(x) { return x !== c.uid; }) : p.length < 2 ? p.concat([c.uid]) : p; }); }} zoomed />; })}
-      </div>
-      <button onClick={function() {
-        var pidx = isOnlineMull ? mySlot : act;
-        var p = Object.assign({}, ps[pidx], { hand: ps[pidx].hand.slice(), mainDeck: ps[pidx].mainDeck.slice() });
-        if (mc.length > 0) {
-          var kept = p.hand.filter(function(c) { return mc.indexOf(c.uid) < 0; });
-          var disc = p.hand.filter(function(c) { return mc.indexOf(c.uid) >= 0; });
-          p.mainDeck = shuffle(p.mainDeck.concat(disc));
-          p.hand = kept.concat(p.mainDeck.splice(0, disc.length));
-          aL(isOnlineMull ? "You mulled " + mc.length : pName(act) + " mulls " + mc.length);
-        } else { aL(isOnlineMull ? "You keep." : pName(act) + " keeps."); }
-        var np = ps.slice(); np[pidx] = p; setPs(np); setMc([]);
-        if (isOnlineMull) {
-          // Write mulligan done to Firebase — handleLobbyUpdate will advance when all done
-          if (roomCode) fbDb.ref("lobbies/" + roomCode + "/gameState/mulled/" + myUid).set(true);
-          // Stay on mull screen — it will show waiting message since our mulligan is done
-        } else {
-          // Test: sequential mulligan
-          if (act < pc - 1) { setAct(act + 1); aL(pName(act + 1) + " mulligan."); }
-          else { setAct(0); setScreen("wait"); setTurn(1); aL("Game on!"); }
-        }
-      }} style={{ padding: "12px 28px", borderRadius: 6, border: "2px solid #FFD700", background: "#FFD70040", color: "#FFD700", cursor: "pointer", fontSize: 18, fontWeight: 700, position: "relative", zIndex: 10 }}>{mc.length > 0 ? "MULLIGAN " + mc.length : "KEEP"}</button>
-    </div>
-  );
   }
 
   if (!myCur && !cur) return <div style={{ minHeight: "100vh", background: "#080818", color: "#666", display: "flex", alignItems: "center", justifyContent: "center" }}>Loading... (ps:{ps.length} act:{act} mySlot:{mySlot} screen:{screen} phase:{_gamePhaseRef.current})</div>;
@@ -7032,7 +6922,7 @@ function RiftboundGame() {
       _cardsPlayedThisTurnRef.current = 0;
       setTimeout(recalcAuras, 0);
       // Sync after turn start with explicit values
-      if (roomCode && lobbyType !== "test" && _gamePhaseRef.current === "playing") {
+      if (roomCode && _gamePhaseRef.current === "playing") {
         _lastSyncVersion.current++;
         var cleanPs2 = np2.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
         var cleanBfs2 = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
@@ -7118,7 +7008,7 @@ function RiftboundGame() {
     if (autoMode) { _discardsThisTurnRef.current[meIdx] = 0; }
     setScreen("wait");
     // Force sync with explicit new values (state updates are async)
-    if (roomCode && lobbyType !== "test" && _gamePhaseRef.current === "playing") {
+    if (roomCode && _gamePhaseRef.current === "playing") {
       _lastSyncVersion.current++;
       var cleanPs = np.map(function(p) { if (!p) return p; return Object.assign({}, p, { hand: p.hand || [], base: (p.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: p.trash || [], runes: p.runes || [], runeDeck: p.runeDeck || [], mainDeck: p.mainDeck || [], battlefields: p.battlefields || [] }); });
       var cleanBfs = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
@@ -7418,7 +7308,7 @@ function RiftboundGame() {
   }
 
   function _syncLive(npPs, npBfs) {
-    if (!roomCode || lobbyType === "test" || _gamePhaseRef.current !== "playing") return;
+    if (!roomCode || _gamePhaseRef.current !== "playing") return;
     _lastSyncVersion.current++;
     var cleanPs = (npPs || ps).map(function(p) { if (!p) return p; return Object.assign({}, p, { hand: p.hand || [], base: (p.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: p.trash || [], runes: p.runes || [], runeDeck: p.runeDeck || [], mainDeck: p.mainDeck || [], battlefields: p.battlefields || [] }); });
     var cleanBfs = (npBfs || bfs).map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
@@ -7669,7 +7559,7 @@ function RiftboundGame() {
       if (autoMode) {
         setPendingBeginConquer({ bi: bi, playerIdx: myActIdx, unitName: card.name, bfName: nb[bi].name, contested: _defPresent });
         showAutoBanner("AUTO · " + pName(myActIdx) + " moved to " + nb[bi].name + " — press " + (_defPresent ? "Start" : "Begin") + " Showdown");
-        if (roomCode && lobbyType !== "test") {
+        if (roomCode) {
           _lastSyncVersion.current++;
           var cleanPs4a = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
           var cleanBfs4a = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
@@ -7681,7 +7571,7 @@ function RiftboundGame() {
         setSd(newSd2);
         setScreen("sd");
         fireShowdownStartEffects(card, bi, myActIdx);
-        if (roomCode && lobbyType !== "test") {
+        if (roomCode) {
           _lastSyncVersion.current++;
           var cleanPs4 = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
           var cleanBfs4 = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
@@ -7690,7 +7580,7 @@ function RiftboundGame() {
       }
     } else if (_firmingUp && !sd) {
       // Push the state to other players without invoking showdown
-      if (roomCode && lobbyType !== "test") {
+      if (roomCode) {
         _lastSyncVersion.current++;
         var cleanPsFU = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
         var cleanBfsFU = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
@@ -7874,7 +7764,7 @@ function RiftboundGame() {
     if (autoMode && !sd) {
       setPendingBeginConquer({ bi: bi, playerIdx: idx, unitName: unit.name, bfName: _bfHere.name, contested: _defPresentAuto });
       showAutoBanner("AUTO · " + pName(idx) + " moved to " + _bfHere.name + " — press " + (_defPresentAuto ? "Start" : "Begin") + " Showdown");
-      if (roomCode && lobbyType !== "test") {
+      if (roomCode) {
         _lastSyncVersion.current++;
         var cleanPsMU = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
         var cleanBfsMU = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
@@ -7889,7 +7779,7 @@ function RiftboundGame() {
       setSd(newSd3);
       setScreen("sd");
       fireShowdownStartEffects(unit, bi, idx);
-      if (roomCode && lobbyType !== "test") {
+      if (roomCode) {
         _lastSyncVersion.current++;
         var cleanPs5 = np.map(function(pp) { if (!pp) return pp; return Object.assign({}, pp, { hand: pp.hand || [], base: (pp.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: pp.trash || [], runes: pp.runes || [], runeDeck: pp.runeDeck || [], mainDeck: pp.mainDeck || [], battlefields: pp.battlefields || [] }); });
         var cleanBfs5 = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
@@ -7950,7 +7840,7 @@ function RiftboundGame() {
     }
     setBfs(nb); setPs(np);
     setScreen("play"); setAct(savedSd.atkIdx);
-    if (roomCode && lobbyType !== "test") {
+    if (roomCode) {
       _lastSyncVersion.current++;
       var cleanPs3 = np.map(function(p) { if (!p) return p; return Object.assign({}, p, { hand: p.hand || [], base: (p.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: p.trash || [], runes: p.runes || [], runeDeck: p.runeDeck || [], mainDeck: p.mainDeck || [], battlefields: p.battlefields || [] }); });
       var cleanBfs3 = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
@@ -8103,7 +7993,7 @@ function RiftboundGame() {
         return np;
       });
       setTimeout(recalcAuras, 0);
-      if (roomCode && lobbyType !== "test") {
+      if (roomCode) {
         setTimeout(function() {
           _lastSyncVersion.current++;
           var cleanPsX = ps.map(function(p) { if (!p) return p; return Object.assign({}, p, { hand: p.hand || [], base: (p.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: p.trash || [], runes: p.runes || [], runeDeck: p.runeDeck || [], mainDeck: p.mainDeck || [], battlefields: p.battlefields || [] }); });
@@ -8140,7 +8030,7 @@ function RiftboundGame() {
       }
       setSd(newSd3);
       setAct(newSd3.priority);
-      if (roomCode && lobbyType !== "test") {
+      if (roomCode) {
         _lastSyncVersion.current++;
         var cleanPs3p = ps.map(function(p) { if (!p) return p; return Object.assign({}, p, { hand: p.hand || [], base: (p.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: p.trash || [], runes: p.runes || [], runeDeck: p.runeDeck || [], mainDeck: p.mainDeck || [], battlefields: p.battlefields || [] }); });
         var cleanBfs3p = bfs.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
@@ -8162,7 +8052,7 @@ function RiftboundGame() {
       setSd(newSd);
       setAct(nextP);
       // Explicit sync so the other player sees the priority change immediately
-      if (roomCode && lobbyType !== "test") {
+      if (roomCode) {
         _lastSyncVersion.current++;
         var cleanPs2 = ps.map(function(p) { if (!p) return p; return Object.assign({}, p, { hand: p.hand || [], base: (p.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: p.trash || [], runes: p.runes || [], runeDeck: p.runeDeck || [], mainDeck: p.mainDeck || [], battlefields: p.battlefields || [] }); });
         var cleanBfs2 = bfs.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
@@ -8523,7 +8413,7 @@ function RiftboundGame() {
           <div style={{ fontSize: 16, color: gameMsg === "__forfeit__" ? "#ff6666" : "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700, marginBottom: 12 }}>{gameMsg === "__forfeit__" ? "Are you sure you want to forfeit?" : gameMsg}</div>
           {gameMsg === "__forfeit__" ? (
             <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-              <button onClick={function() { setGameMsg(null); var forfeiter = myActIdx; var winner = 0; for (var fi = 0; fi < pc; fi++) { if (fi !== forfeiter) { winner = fi; break; } } setWin(winner); setScreen("go"); aL(pName(forfeiter) + " forfeits! " + pName(winner) + " wins!"); if (roomCode && lobbyType !== "test") { _lastSyncVersion.current++; var fnPs = ps.map(function(p) { if (!p) return p; return Object.assign({}, p, { hand: p.hand || [], base: (p.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: p.trash || [], runes: p.runes || [], runeDeck: p.runeDeck || [], mainDeck: p.mainDeck || [], battlefields: p.battlefields || [] }); }); var fnBfs = bfs.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); }); fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: fnPs, bfs: fnBfs, turn: turn, act: act, screen: "go", log: log.slice(-30).concat([{ m: pName(forfeiter) + " forfeits! " + pName(winner) + " wins!" }]), sd: null, win: winner, ver: _lastSyncVersion.current, by: myUid }))); } }} style={{ padding: "6px 20px", borderRadius: 5, border: "2px solid #ff4444", background: "rgba(255,50,50,0.15)", color: "#ff6666", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Spectral,serif" }}>FORFEIT</button>
+              <button onClick={function() { setGameMsg(null); var forfeiter = myActIdx; var winner = 0; for (var fi = 0; fi < pc; fi++) { if (fi !== forfeiter) { winner = fi; break; } } setWin(winner); setScreen("go"); aL(pName(forfeiter) + " forfeits! " + pName(winner) + " wins!"); if (roomCode) { _lastSyncVersion.current++; var fnPs = ps.map(function(p) { if (!p) return p; return Object.assign({}, p, { hand: p.hand || [], base: (p.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: p.trash || [], runes: p.runes || [], runeDeck: p.runeDeck || [], mainDeck: p.mainDeck || [], battlefields: p.battlefields || [] }); }); var fnBfs = bfs.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); }); fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: fnPs, bfs: fnBfs, turn: turn, act: act, screen: "go", log: log.slice(-30).concat([{ m: pName(forfeiter) + " forfeits! " + pName(winner) + " wins!" }]), sd: null, win: winner, ver: _lastSyncVersion.current, by: myUid }))); } }} style={{ padding: "6px 20px", borderRadius: 5, border: "2px solid #ff4444", background: "rgba(255,50,50,0.15)", color: "#ff6666", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Spectral,serif" }}>FORFEIT</button>
               <button onClick={function() { setGameMsg(null); }} style={{ padding: "6px 20px", borderRadius: 5, border: "1px solid #555", background: "transparent", color: "#888", cursor: "pointer", fontSize: 14, fontFamily: "Spectral,serif" }}>Cancel</button>
             </div>
           ) : (
@@ -8639,11 +8529,8 @@ function RiftboundGame() {
       </div>;
       })()}
       {/* Start game overlay */}
-      {screen === "wait" && !awakenPhase && turn === 1 && act === 0 && (lobbyType === "test" || (_gamePhaseRef.current === "playing" && !isHost)) && <div style={{ position: "fixed", inset: 0, background: "#000a", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, zIndex: 1000 }}>
-        {lobbyType === "test" ? <button onClick={function() {
-          doStartTurn();
-        }} style={{ padding: "10px 24px", borderRadius: 6, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0020)", color: "#FFD700", cursor: "pointer", fontSize: 18, fontWeight: 700, fontFamily: "Spectral,serif", letterSpacing: 2, boxShadow: "0 0 20px #FFD70022" }}>START GAME</button>
-        : <div style={{ fontSize: 18, color: "#FFD700aa", fontFamily: "Spectral,serif", letterSpacing: 2 }}>Waiting for host to start...</div>}
+      {screen === "wait" && !awakenPhase && turn === 1 && act === 0 && _gamePhaseRef.current === "playing" && !isHost && <div style={{ position: "fixed", inset: 0, background: "#000a", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, zIndex: 1000 }}>
+        <div style={{ fontSize: 18, color: "#FFD700aa", fontFamily: "Spectral,serif", letterSpacing: 2 }}>Waiting for host to start...</div>
       </div>}
       {/* Online battlefield selection overlay */}
       {screen === "bf" && (lobbyType === "host" || lobbyType === "join") && myCur && (function() {
@@ -9072,7 +8959,7 @@ function RiftboundGame() {
               <span style={{ fontWeight: 700, fontSize: 18, fontFamily: "Spectral,serif", background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Turn {turn}</span>
             </div>
             {tm && <div style={{ background: "#FFD70010", borderRadius: 4, padding: 5, fontSize: 13, color: "#FFD700", textAlign: "center", border: "1px solid #FFD70040" }}>{tm.ty === "buff" ? "Pick friendly" : tm.ty === "dmg" ? "Pick to damage" : tm.ty === "stun" ? "Pick enemy" : "Target"}<br /><button onClick={function() { setTm(null); }} style={{ marginTop: 3, padding: "1px 6px", border: "1px solid #333", background: "transparent", color: "#555", cursor: "pointer", fontSize: 11, borderRadius: 3 }}>cancel</button></div>}
-            {screen === "wait" && !awakenPhase && turn === 1 && act === 0 && (lobbyType === "test" || (_gamePhaseRef.current === "playing" && isHost)) && <button onClick={function() { doStartTurn(); }} style={{ padding: 10, borderRadius: 5, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0015)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>START GAME</button>}
+            {screen === "wait" && !awakenPhase && turn === 1 && act === 0 && _gamePhaseRef.current === "playing" && isHost && <button onClick={function() { doStartTurn(); }} style={{ padding: 10, borderRadius: 5, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0015)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>START GAME</button>}
             {awakenPhase && <div style={{ textAlign: "center", padding: 6, background: "#FFD70008", borderRadius: 4, border: "1px solid #FFD70040" }}><div className="anim-pulse" style={{ fontSize: 15, fontWeight: 700, fontFamily: "Spectral,serif", color: "#FFD700", textTransform: "uppercase", letterSpacing: 2 }}>New Turn</div></div>}
             {!awakenPhase && (function() { var isOnlineGame = lobbyType === "host" || lobbyType === "join"; if (isOnlineGame) { if (_gamePhaseRef.current !== "playing") return null; var isMyTurnO = act === mySlot; return isMyTurnO ? <button onClick={endTurn} style={{ padding: 10, borderRadius: 5, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0015)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>END TURN</button> : <div style={{ padding: 10, borderRadius: 5, border: "1px solid #ffffff20", background: "transparent", color: "#888", fontSize: 14, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif", textAlign: "center" }}>{pName(act) + "'s turn"}</div>; } else { if (screen !== "play") return null; return <button onClick={endTurn} style={{ padding: 10, borderRadius: 5, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0015)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>END TURN</button>; } })()}
             {sel && canAct && !tm && !fc && <div style={{ padding: 5, fontSize: 13, color: "#aaa", textAlign: "center", background: "#FFD70008", borderRadius: 4, border: "1px solid #FFD70040" }}>Selected: <b style={{ color: "#FFD700" }}>{sel.name}</b><br /><span style={{ fontSize: 12, color: "#888" }}>click a battlefield</span></div>}
@@ -9183,7 +9070,7 @@ function RiftboundGame() {
               {chatMsgs.length === 0 && <div style={{ color: "#ffffff15", fontSize: 11, fontFamily: "Spectral,serif", textAlign: "center", marginTop: 8 }}>{roomCode ? "No messages yet" : "Chat available in online games"}</div>}
               {chatMsgs.map(function(m, i) { var isMe = m.uid === myUid; return <div key={i} style={{ marginBottom: 2 }}><span style={{ color: isMe ? "#4ADE80" : "#FFD700", fontWeight: 700, fontSize: 11 }}>{m.name}: </span><span style={{ color: "#bbb" }}>{m.text}</span></div>; })}
             </div>
-            {roomCode && lobbyType !== "test" && <div style={{ display: "flex", gap: 3, marginTop: 3 }}>
+            {roomCode && <div style={{ display: "flex", gap: 3, marginTop: 3 }}>
               <input value={chatInput} onChange={function(e) { setChatInput(e.target.value); }} onKeyDown={function(e) { if (e.key === "Enter") sendChat(); }} placeholder="Type a message..." style={{ flex: 1, padding: "4px 6px", borderRadius: 4, border: "1px solid #ffffff15", background: "rgba(255,255,255,0.05)", color: "#ddd", fontSize: 12, outline: "none", fontFamily: "Inter,sans-serif" }} />
               <button onClick={sendChat} style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #FFD70033", background: "rgba(255,215,0,0.1)", color: "#FFD700", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Send</button>
             </div>}
@@ -9317,7 +9204,7 @@ function RiftboundGame() {
               showAutoBanner("AUTO · Showdown at " + pbc.bfName + " — all players Resolve to conquer");
               aL(pName(pbc.playerIdx) + " begins showdown at " + pbc.bfName);
             }
-            if (roomCode && lobbyType !== "test") {
+            if (roomCode) {
               _lastSyncVersion.current++;
               var cleanPsBC = ps.map(function(p) { if (!p) return p; return Object.assign({}, p, { hand: p.hand || [], base: (p.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: p.trash || [], runes: p.runes || [], runeDeck: p.runeDeck || [], mainDeck: p.mainDeck || [], battlefields: p.battlefields || [] }); });
               var cleanBfsBC = bfs.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
@@ -9398,7 +9285,7 @@ function RiftboundGame() {
               {chatMsgs.length === 0 && <div style={{ color: "#ffffff30", fontSize: 11, fontFamily: "Spectral,serif", textAlign: "center", marginTop: 8 }}>{roomCode ? "No messages yet" : "Chat available in online games"}</div>}
               {chatMsgs.map(function(m, i) { var isMe = m.uid === myUid; return <div key={i} style={{ marginBottom: 2 }}><span style={{ color: isMe ? "#4ADE80" : "#FFD700", fontWeight: 700, fontSize: 11 }}>{m.name}: </span><span style={{ color: "#bbb" }}>{m.text}</span></div>; })}
             </div>
-            {roomCode && lobbyType !== "test" && <div style={{ display: "flex", gap: 3, marginTop: 4 }}>
+            {roomCode && <div style={{ display: "flex", gap: 3, marginTop: 4 }}>
               <input value={chatInput} onChange={function(e) { setChatInput(e.target.value); }} onKeyDown={function(e) { if (e.key === "Enter") sendChat(); }} placeholder="Type a message..." style={{ flex: 1, padding: "4px 6px", borderRadius: 4, border: "1px solid #ffffff15", background: "rgba(255,255,255,0.05)", color: "#ddd", fontSize: 12, outline: "none", fontFamily: "Inter,sans-serif" }} />
               <button onClick={sendChat} style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #FFD70033", background: "rgba(255,215,0,0.1)", color: "#FFD700", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Send</button>
             </div>}
