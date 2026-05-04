@@ -4240,12 +4240,12 @@ function RiftboundGame() {
     var round = diceSeq.rounds[diceRoundIdx];
     var isLastRound = diceRoundIdx === diceSeq.rounds.length - 1;
     setDiceShowSettled(false);
-    // Spin: tick random values every 80ms for ~2s
+    // Spin: tick random values every 80ms for ~1s
     var spinId = setInterval(function() { setDiceSpinTick(function(t) { return t + 1; }); }, 80);
     var settleTimer = setTimeout(function() {
       clearInterval(spinId);
       setDiceShowSettled(true);
-    }, 2000);
+    }, 1000);
     var eliminateTimer = setTimeout(function() {
       if (!isLastRound) {
         var rMax = Math.max.apply(null, (round.active || []).map(function(u) { return round.rolls[u]; }));
@@ -4255,11 +4255,11 @@ function RiftboundGame() {
           return next;
         });
       }
-    }, 2050);
+    }, 1050);
     var advanceTimer = setTimeout(function() {
       if (!isLastRound) { setDiceRoundIdx(function(i) { return i + 1; }); }
       else { setDiceAnimDone(true); }
-    }, isLastRound ? 2600 : 3250);
+    }, isLastRound ? 1600 : 2250);
     return function() {
       clearInterval(spinId);
       clearTimeout(settleTimer);
