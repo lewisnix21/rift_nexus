@@ -3874,6 +3874,14 @@ function RiftboundGame() {
   var _hc = useState(null), hoverCard = _hc[0], setHoverCard = _hc[1];
   _setHoverCard = function(card, e, inHand) { if (e && e.currentTarget) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: card, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2, inHand: !!inHand }); } else if (e && e.clientX !== undefined) { setHoverCard({ card: card, left: e.clientX, right: e.clientX, top: e.clientY, bottom: e.clientY, cx: e.clientX, cy: e.clientY, inHand: !!inHand }); } else { setHoverCard(card ? { card: card, left: 0, right: 0, top: 0, bottom: 0, cx: 0, cy: 0, inHand: !!inHand } : null); } };
   _clearHoverCard = function() { setHoverCard(null); };
+  // When a card is played/moved, React unmounts the source DOM while the cursor is still "over" it,
+  // so onMouseLeave never fires and the hover bubble sticks. Clearing hoverCard on any in-game state
+  // change forces a re-hover, which is cheap and avoids the stuck-bubble bug. Lobby/deck-builder hovers
+  // are unaffected because ps is empty there.
+  useEffect(function() {
+    if (!hoverCard || !ps || ps.length === 0) return;
+    setHoverCard(null);
+  }, [ps, bfs]);
   // Floating hover preview block — usable from any screen (lobby, deck builder, in-game).
   // Uses the global _gvScale so it works even before HAND_W is defined inside the in-game render.
   function renderHoverPreview() {
