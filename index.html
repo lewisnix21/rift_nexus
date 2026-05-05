@@ -436,7 +436,6 @@ var CARD_EFFECTS = {
       var total = ctx.totalFriendlyMight ? ctx.totalFriendlyMight(ctx.card.uid) : 0;
       ctx.flash(ctx.card.uid);
       if (total >= 5) { ctx.draw(1); ctx.banner("Kinkou Initiate — drew 1 (other units total " + total + " might)"); }
-      else { ctx.banner("Kinkou Initiate — no draw (other units total " + total + ", need 5+)"); }
     }
   },
 
