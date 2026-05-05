@@ -5312,6 +5312,19 @@ function RiftboundGame() {
   var _mySlot = useState(0), mySlot = _mySlot[0], setMySlot = _mySlot[1];
   var _lobbyUnsub = useRef(null);
   var _soloTestRef = useRef(false);
+  // Audio refs hoisted above early returns to satisfy Rules of Hooks
+  var _musicAudio = useRef(null);
+  var _tokenBuffAudio = useRef(null);
+  var _entersReadyAudio = useRef(null);
+  var _damageAudio = useRef(null);
+  var _drawAudio = useRef(null);
+  useEffect(function() {
+    var a = _musicAudio.current;
+    if (!a) return;
+    a.volume = audioVol.master * audioVol.music;
+    if (screen === "play") { a.play().catch(function() {}); }
+    else { a.pause(); }
+  }, [screen, audioVol]);
 
   var _gamePhaseRef = useRef(null);
   var _syncTimer = useRef(null);
@@ -6883,23 +6896,13 @@ function RiftboundGame() {
     }
     return false;
   }
-  // --- Music ---
-  var _musicAudio = useRef(null);
+  // --- Audio init (refs hoisted above) ---
   if (typeof Audio !== "undefined" && !_musicAudio.current) {
     var _ma = new Audio("/music - open landscapes.mp3");
     _ma.loop = true;
     _ma.volume = audioVol.master * audioVol.music;
     _musicAudio.current = _ma;
   }
-  useEffect(function() {
-    var a = _musicAudio.current;
-    if (!a) return;
-    a.volume = audioVol.master * audioVol.music;
-    if (screen === "play") { a.play().catch(function() {}); }
-    else { a.pause(); }
-  }, [screen, audioVol]);
-  // --- Token / buff sound ---
-  var _tokenBuffAudio = useRef(null);
   if (typeof Audio !== "undefined" && !_tokenBuffAudio.current) {
     var _tba = new Audio("/sound effect - token or buff.mp3");
     _tokenBuffAudio.current = _tba;
@@ -6911,15 +6914,11 @@ function RiftboundGame() {
     a.currentTime = 0;
     a.play().catch(function() {});
   }
-  // --- entersReady ghost animation ---
-  var _entersReadyAudio = useRef(null);
   if (typeof Audio !== "undefined" && !_entersReadyAudio.current) {
     var _era = new Audio("/sound effect - ready swoosh.mp3");
     _entersReadyAudio.current = _era;
   }
   if (_entersReadyAudio.current) _entersReadyAudio.current.volume = audioVol.master * audioVol.sfx;
-  // --- Damage sound ---
-  var _damageAudio = useRef(null);
   if (typeof Audio !== "undefined" && !_damageAudio.current) {
     var _dma = new Audio("/sound effect - damage.mp3");
     _damageAudio.current = _dma;
@@ -6931,8 +6930,6 @@ function RiftboundGame() {
     a.currentTime = 0;
     a.play().catch(function() {});
   }
-  // --- Draw card sound ---
-  var _drawAudio = useRef(null);
   if (typeof Audio !== "undefined" && !_drawAudio.current) {
     var _da = new Audio("/sound effect - draw card main or rune or grave.mp3");
     _drawAudio.current = _da;
