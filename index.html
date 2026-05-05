@@ -4191,7 +4191,8 @@ var CARD_EFFECTS = {
         ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Noxian Guillotine (kill on next damage; resolve manually)", sourceUid: ctx.card.uid, effect: "tempMight", amount: -1 });
       }
     }
-  }
+  },
+  "Overt Operation":    { _automatedElsewhere: "[Action] spend each buff → ready unit, then buff all friendlies — buff-as-cost mass action not modelled; resolve manually" }
 };
 </script>
 <script type="text/babel">
