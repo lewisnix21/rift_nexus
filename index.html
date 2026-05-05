@@ -3949,7 +3949,8 @@ var CARD_EFFECTS = {
       ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Star-Crossed (friendly to bounce; cast again to bounce enemy)", sourceUid: ctx.card.uid, effect: "bounceToHand" });
     }
   },
-  "Alpha Wildclaw":     { _automatedElsewhere: "[Tank] manual; weaker friendlies here untargetable — might-comparison untargetable aura not in isEnemyDeflect; resolve manually" }
+  "Alpha Wildclaw":     { _automatedElsewhere: "[Tank] manual; weaker friendlies here untargetable — might-comparison untargetable aura not in isEnemyDeflect; resolve manually" },
+  "Call to Battle":     { _automatedElsewhere: "Move-friendly-to-controlled-BF then opponent-must-move — multi-player ordered move not modelled; resolve manually" }
 };
 </script>
 <script type="text/babel">
