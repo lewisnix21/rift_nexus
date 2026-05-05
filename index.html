@@ -3835,7 +3835,20 @@ var CARD_EFFECTS = {
   "Wily Newtfish":      { _automatedElsewhere: "Self-aura: +1 might + [Ganking] if XP gained this turn — XP-this-turn flag not tracked; apply manually" },
   "Dusk Rose Lab":      { _automatedElsewhere: "BF BG-phase optional sacrifice friendly here for draw 1 — phase-time prompt not built; resolve manually" },
   "Isolate":            { _automatedElsewhere: "Move enemy BF→base, conditional draw 1 — non-self move + post-state check not modelled in spell prompt; resolve manually" },
-  "Sett, Kingpin":      { _automatedElsewhere: "[Tank] manual; self-aura: +1 might per buffed friendly at my BF — buffed-count aura not modelled; apply +/- counter manually" }
+  "Sett, Kingpin":      { _automatedElsewhere: "[Tank] manual; self-aura: +1 might per buffed friendly at my BF — buffed-count aura not modelled; apply +/- counter manually" },
+  "Undertitan": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx;
+      var meP = ps[idx];
+      var uids = [];
+      if (meP) (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && c.uid !== ctx.card.uid) uids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if (u.uid !== ctx.card.uid) uids.push(u.uid); }); });
+      if (!uids.length) { ctx.banner("Undertitan — no other friendly units to buff"); return; }
+      ctx.applyTempMightToUids(uids, 2, "Undertitan");
+      ctx.banner("Undertitan — +2 might to " + uids.length + " other friendly unit" + (uids.length === 1 ? "" : "s") + " (Add 2E on reveal-from-deck handled manually)");
+    }
+  }
 };
 </script>
 <script type="text/babel">
