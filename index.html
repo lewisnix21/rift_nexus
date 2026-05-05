@@ -4067,7 +4067,17 @@ var CARD_EFFECTS = {
   "Hextech Gauntlets":  { _automatedElsewhere: "[Equip] 3E+Rainbow, reduced by chosen unit's might — variable equip cost not modelled; resolve manually" },
   "Temptation":         { _automatedElsewhere: "[Repeat] 2E; move enemy to a location where there's a lower-might unit — repeat-cost + might-comparison move target not modelled; resolve manually" },
   "Arcane Shift":       { _automatedElsewhere: "[Action] banish friendly + replay free + 3 dmg to enemy at BF — banish/recast pipeline not modelled; resolve manually (do dmg part)" },
-  "Forgotten Library":  { _automatedElsewhere: "BF while controlled: friendly 4E+ spell → [Predict] — Predict UI not built; resolve manually (peek deck top)" }
+  "Forgotten Library":  { _automatedElsewhere: "BF while controlled: friendly 4E+ spell → [Predict] — Predict UI not built; resolve manually (peek deck top)" },
+  "Grim Apothecary": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx;
+      var bfFriendlyUids = [];
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if (u.uid !== ctx.card.uid) bfFriendlyUids.push(u.uid); }); });
+      if (!bfFriendlyUids.length) { ctx.banner("Grim Apothecary [Ambush] — no friendly BF unit to bounce"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: bfFriendlyUids, sourceName: "Grim Apothecary [Ambush]", sourceUid: ctx.card.uid, effect: "bounceToHand" });
+    }
+  }
 };
 </script>
 <script type="text/babel">
