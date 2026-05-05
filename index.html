@@ -4939,7 +4939,7 @@ function RiftboundGame() {
   // When an auto-mode prompt opens with a sourceUid, animate a ghost copy of that card from its
   // on-board position to the showcase location. The prompt modal anchors just below the showcase.
   useEffect(function() {
-    if (!autoMode || !autoPrompt || !autoPrompt.sourceUid) { setEffectAnim(null); return; }
+    if (!autoMode || !autoPrompt || !autoPrompt.sourceUid) { setEffectAnim(function(prev) { return (prev && prev.reversing) ? prev : null; }); return; }
     // If a manual ghost is already airborne for this source, leave it alone — the prompt will appear once it arrives.
     if (effectAnim && effectAnim.sourceCard && effectAnim.sourceCard.uid === autoPrompt.sourceUid) return;
     var srcEl = typeof document !== "undefined" ? document.querySelector('[data-uid="' + autoPrompt.sourceUid + '"]') : null;
@@ -7537,10 +7537,24 @@ function RiftboundGame() {
       if (p.andDraw) drawCards(p.andDraw);
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
     } else if (p.effect === "ready") {
-      readyUidsAcrossPsAndBfs(uids);
-      showAutoBanner("AUTO · " + p.sourceName + " — readied " + uids.length + " unit" + (uids.length === 1 ? "" : "s"));
-      if (p.andDraw) drawCards(p.andDraw);
-      if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
+      var _ea = effectAnim;
+      var _capturedUids = uids.slice();
+      var _capturedAndDraw = p.andDraw;
+      if (_ea && _ea.arrived) {
+        setEffectAnim(Object.assign({}, _ea, { reversing: true }));
+        setTimeout(function() {
+          setEffectAnim(null);
+          readyUidsAcrossPsAndBfs(_capturedUids);
+          _capturedUids.forEach(function(uid2) { addAnim(uid2, "flash", 800); });
+          _playEntersReadySound();
+          if (_capturedAndDraw) drawCards(_capturedAndDraw);
+        }, 580);
+      } else {
+        readyUidsAcrossPsAndBfs(_capturedUids);
+        _capturedUids.forEach(function(uid2) { addAnim(uid2, "flash", 800); });
+        _playEntersReadySound();
+        if (_capturedAndDraw) drawCards(_capturedAndDraw);
+      }
     } else if (p.effect === "addCounter") {
       // Persistent buff token (the green +N badge), e.g. Pit Rookie's "buff" mechanic.
       _playTokenBuffSound();
@@ -10223,13 +10237,15 @@ function RiftboundGame() {
           : (card.img ? imgSrc(card.img) : "");
         var startW = isBfSrc ? HAND_H : HAND_W, startH = isBfSrc ? HAND_W : HAND_H;
         var endW = effectAnim.w, endH = effectAnim.h;
-        var dx = effectAnim.arrived ? (effectAnim.toX - effectAnim.fromX) : 0;
-        var dy = effectAnim.arrived ? (effectAnim.toY - effectAnim.fromY) : 0;
-        var sc = effectAnim.arrived ? (endW / startW) : (effectAnim.expanding ? 0.05 : 1);
-        var _ghostTrans = effectAnim.arrived
-          ? "transform 980ms cubic-bezier(0.22, 0.65, 0.28, 1), opacity 980ms ease-out"
-          : "transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 250ms ease-in";
-        var _ghostOpacity = effectAnim.fading ? 0 : (effectAnim.arrived ? 0.92 : (effectAnim.expanding ? 0 : 1));
+        var dx = (effectAnim.arrived && !effectAnim.reversing) ? (effectAnim.toX - effectAnim.fromX) : 0;
+        var dy = (effectAnim.arrived && !effectAnim.reversing) ? (effectAnim.toY - effectAnim.fromY) : 0;
+        var sc = (effectAnim.arrived && !effectAnim.reversing) ? (endW / startW) : (effectAnim.expanding ? 0.05 : 1);
+        var _ghostTrans = effectAnim.reversing
+          ? "transform 400ms cubic-bezier(0.22, 0.65, 0.28, 1), opacity 200ms ease-out"
+          : effectAnim.arrived
+            ? "transform 980ms cubic-bezier(0.22, 0.65, 0.28, 1), opacity 980ms ease-out"
+            : "transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 250ms ease-in";
+        var _ghostOpacity = effectAnim.fading ? 0 : ((effectAnim.arrived && !effectAnim.reversing) ? 0.92 : (effectAnim.expanding ? 0 : 1));
         return <div style={{ position: "fixed", left: effectAnim.fromX - startW / 2, top: effectAnim.fromY - startH / 2, width: startW, height: startH, transform: "translate(" + dx + "px, " + dy + "px) scale(" + sc + ")", transformOrigin: "center center", transition: _ghostTrans, opacity: _ghostOpacity, zIndex: 1499, pointerEvents: "none", borderRadius: 6, overflow: "hidden", boxShadow: isBfSrc ? "0 0 28px rgba(255,215,0,0.7), 0 0 56px rgba(255,215,0,0.4), 0 8px 32px #000a" : "0 0 26px rgba(59,130,246,0.65), 0 8px 32px #000a", border: isBfSrc ? "2px solid #FFD700" : "2px solid #3b82f6" }}>
           {imgUrl ? <img src={imgUrl} style={{ width: "100%", height: "100%", objectFit: "fill", display: "block" }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 12 }}>{card.name}</div>}
         </div>;
