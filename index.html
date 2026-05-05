@@ -355,7 +355,6 @@ var CARD_EFFECTS = {
     }
   },
   "Dune Drake": {
-    reverseOnArrive: true,
     onAttack: function(ctx) {
       var hasReadyEnemy = ctx.enemyUnits().some(function(u) { return !u.exhausted; });
       if (!hasReadyEnemy) return;
@@ -7002,7 +7001,7 @@ function RiftboundGame() {
     }
     if (eff && eff.onPlay) {
       var _ctxOP = makeAutoCtx(card, where, bi);
-      triggerEffectGhost(card, function() { try { eff.onPlay(_ctxOP); } catch(e) { console.error("CARD_EFFECTS onPlay error for " + card.name + ":", e); } }, eff.condition ? function() { return eff.condition(_ctxOP); } : null, afterFn || null);
+      triggerEffectGhost(card, function() { try { eff.onPlay(_ctxOP); } catch(e) { console.error("CARD_EFFECTS onPlay error for " + card.name + ":", e); } }, eff.condition ? function() { return eff.condition(_ctxOP); } : null, afterFn || null, { reverseOnArrive: false });
     } else if (afterFn) {
       afterFn();
     }
@@ -7366,7 +7365,7 @@ function RiftboundGame() {
         var ctx = makeShowdownCtx(deployedCard, bf, atkIdx, bfIdx);
         var _depEff = CARD_EFFECTS[deployedCard.name];
         var _runDep = function() { try { _depEff.onAttack(ctx); } catch(e) { console.error("onAttack error for " + deployedCard.name + ":", e); } };
-        triggerEffectGhost(deployedCard, _runDep, _depEff.condition ? function() { return _depEff.condition(ctx); } : null, null, _depEff.reverseOnArrive ? { reverseOnArrive: true } : null);
+        triggerEffectGhost(deployedCard, _runDep, _depEff.condition ? function() { return _depEff.condition(ctx); } : null);
       }
       // Fire onAttack for ALL attackers (not just the deploying one) — needed for cards like Wielder of Water,
       // Raging Soul, Jinx Demolitionist that gain bonuses from being attackers regardless of who deployed.
@@ -7376,7 +7375,7 @@ function RiftboundGame() {
         if (aEff && aEff.onAttack) {
           var ctxA = makeShowdownCtx(u, bf, atkIdx, bfIdx);
           var _runA = function() { try { aEff.onAttack(ctxA); } catch(e) { console.error("onAttack error for " + u.name + ":", e); } };
-          triggerEffectGhost(u, _runA, aEff.condition ? function() { return aEff.condition(ctxA); } : null, null, aEff.reverseOnArrive ? { reverseOnArrive: true } : null);
+          triggerEffectGhost(u, _runA, aEff.condition ? function() { return aEff.condition(ctxA); } : null);
         }
       });
       // Fire onDefend for every defender at the battlefield (showdown is starting from their POV).
@@ -8622,7 +8621,7 @@ function RiftboundGame() {
     // 1430ms: effect runs (450ms + 980ms flight)
     setTimeout(function() {
       addAnim(card.uid, "flash", 800);
-      if (opts && opts.reverseOnArrive) {
+      if (!opts || opts.reverseOnArrive !== false) {
         setEffectAnim(function(prev) { return prev ? Object.assign({}, prev, { reversing: true }) : prev; });
         setTimeout(function() {
           setEffectAnim(null);
@@ -8653,7 +8652,7 @@ function RiftboundGame() {
       draw: function(n) { drawCards(n); },
       prompt: function(p2) { if (p2 && p2.validUids) p2 = Object.assign({}, p2, { validUids: p2.validUids.filter(function(uid) { return !isEnemyDeflect(uid); }) }); _autoSelRef.current = []; setAutoPrompt(p2); }
     };
-    triggerEffectGhost(unit, function() { try { eff.onMoveToBase(ctx); } catch(e) { console.error("onMoveToBase error for " + unit.name + ":", e); } }, eff.condition ? function() { return eff.condition(ctx); } : null);
+    triggerEffectGhost(unit, function() { try { eff.onMoveToBase(ctx); } catch(e) { console.error("onMoveToBase error for " + unit.name + ":", e); } }, eff.condition ? function() { return eff.condition(ctx); } : null, null, { reverseOnArrive: false });
   }
   function fireOnMoveToHandEffect(unit) {
     if (!autoMode) return;
@@ -8666,7 +8665,7 @@ function RiftboundGame() {
       draw: function(n) { drawCards(n); },
       prompt: function(p2) { if (p2 && p2.validUids) p2 = Object.assign({}, p2, { validUids: p2.validUids.filter(function(uid) { return !isEnemyDeflect(uid); }) }); _autoSelRef.current = []; setAutoPrompt(p2); }
     };
-    triggerEffectGhost(unit, function() { try { eff.onMoveToHand(ctx); } catch(e) { console.error("onMoveToHand error for " + unit.name + ":", e); } }, eff.condition ? function() { return eff.condition(ctx); } : null);
+    triggerEffectGhost(unit, function() { try { eff.onMoveToHand(ctx); } catch(e) { console.error("onMoveToHand error for " + unit.name + ":", e); } }, eff.condition ? function() { return eff.condition(ctx); } : null, null, { reverseOnArrive: false });
   }
   function fireOnTapEffect(card, wasExhausted) {
     if (!autoMode) return;
@@ -8721,7 +8720,7 @@ function RiftboundGame() {
       prompt: function(p2) { _autoSelRef.current = []; setAutoPrompt(p2); }
     };
     var _runOnDiscard = function() { try { eff.onDiscard(ctx); } catch(e) { console.error("onDiscard error for " + card.name + ":", e); } };
-    triggerEffectGhost(card, _runOnDiscard, eff.condition ? function() { return eff.condition(ctx); } : null);
+    triggerEffectGhost(card, _runOnDiscard, eff.condition ? function() { return eff.condition(ctx); } : null, null, { reverseOnArrive: false });
   }
   function toggleTap(cardUid) {
     if (drawingArrow) return;
