@@ -4010,7 +4010,19 @@ var CARD_EFFECTS = {
   "Skyward Strike":     { _automatedElsewhere: "Move enemy + [Level 6] stun an enemy — XP-gated effect-add not modelled; resolve manually (apply stun if XP ≥ 6)" },
   "Irelia, Fervent":    { _automatedElsewhere: "[Deflect] via isEnemyDeflect; on-choose/ready-self → +1 might — onChosenBySpell + onReady self-hook not built; apply tempMight manually" },
   "The Academy":        { _automatedElsewhere: "BF on-hold: next spell this turn gains [Repeat] — spell-augment watcher not built; resolve manually" },
-  "Ornn, Blacksmith":   { _automatedElsewhere: "On-play/on-hold: peek-4 + draw-gear-from-among + recycle rest — top-of-deck peek + filtered-draw not modelled; resolve manually" }
+  "Ornn, Blacksmith":   { _automatedElsewhere: "On-play/on-hold: peek-4 + draw-gear-from-among + recycle rest — top-of-deck peek + filtered-draw not modelled; resolve manually" },
+  "Retreat": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx;
+      var friendlyUids = [];
+      var meP = ps[idx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") friendlyUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { friendlyUids.push(u.uid); }); });
+      if (!friendlyUids.length) { ctx.banner("Retreat — no friendly units"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Retreat (channel exhausted rune separately)", sourceUid: ctx.card.uid, effect: "bounceToHand" });
+    }
+  }
 };
 </script>
 <script type="text/babel">
