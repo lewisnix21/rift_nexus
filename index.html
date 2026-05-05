@@ -4155,7 +4155,18 @@ var CARD_EFFECTS = {
   "Emperor's Divide":   { _automatedElsewhere: "[Hidden][Action] mass-friendly-move-to-one-BF — multi-target relocate not modelled; resolve manually" },
   "Sumpworks Map":      { _automatedElsewhere: "[Reaction][Temporary] gear with on-play effect — gear-Temporary tag + on-play not modelled; resolve manually" },
   "Swift Scout":        { _automatedElsewhere: "Legend hide-cost-substitution + Teemo-tutor activated — alt-cost-time + tutor-by-name not modelled; resolve manually" },
-  "Poppy, Paragon":     { _automatedElsewhere: "[Deflect] via isEnemyDeflect; on-play conditional buff (opp near Victory) — score-based onPlay condition not modelled; apply +1 counter manually" }
+  "Poppy, Paragon":     { _automatedElsewhere: "[Deflect] via isEnemyDeflect; on-play conditional buff (opp near Victory) — score-based onPlay condition not modelled; apply +1 counter manually" },
+  "Gustwalker": {
+    onConquer: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 2;
+      ctx.banner("Gustwalker [Hunt 2] — +2 XP (now " + _xpRef.current[ctx.player] + ")");
+    },
+    onHold: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 2;
+      ctx.banner("Gustwalker [Hunt 2] — +2 XP (now " + _xpRef.current[ctx.player] + ")");
+    },
+    _automatedElsewhere: "[Level 3] +1 might + [Ganking] — XP-gated keyword + buff aura, apply manually when XP ≥ 3"
+  }
 };
 </script>
 <script type="text/babel">
