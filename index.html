@@ -4149,7 +4149,8 @@ var CARD_EFFECTS = {
       ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: bfWeakUids, sourceName: "Windsinger (≤3 might)", sourceUid: ctx.card.uid, effect: "bounceToHand" });
     }
   },
-  "Thousand-Tailed Watcher": { _automatedElsewhere: "[Accelerate]; on-play give all enemy units -3 might this turn — mass-debuff onPlay; resolve manually (use pickEnemyUnit prompts repeatedly)" }
+  "Thousand-Tailed Watcher": { _automatedElsewhere: "[Accelerate]; on-play give all enemy units -3 might this turn — mass-debuff onPlay; resolve manually (use pickEnemyUnit prompts repeatedly)" },
+  "Undying Loyalty":    { _automatedElsewhere: "Conditional cost-discount; play ≤2E unit from hand free — tag-conditional cost + free-cast not modelled; resolve manually" }
 };
 </script>
 <script type="text/babel">
