@@ -4198,7 +4198,16 @@ var CARD_EFFECTS = {
   "Petricite Monument": { _automatedElsewhere: "[Temporary] gear + [Deflect] aura on friendlies — gear-Temporary tag + keyword aura not modelled; resolve manually" },
   "Thwonk!":            { _automatedElsewhere: "[Action][Repeat] 2E stun-attacker — repeat-cost showdown-aware spell not modelled; resolve manually" },
   "Unlicensed Armory":  { _automatedElsewhere: "Activated discard+exhaust → grant Highlander on next-die — discard-cost activated ability not modelled; apply _highlanderShield manually" },
-  "Kato the Arm":       { _automatedElsewhere: "[Deflect] via isEnemyDeflect; on-move-to-BF buff another friendly — onMove buff hook not built; apply +1 counter manually" }
+  "Kato the Arm":       { _automatedElsewhere: "[Deflect] via isEnemyDeflect; on-move-to-BF buff another friendly — onMove buff hook not built; apply +1 counter manually" },
+  "Zenith Blade": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var enemyUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi === ctx.myActIdx) return; (pu || []).forEach(function(u) { enemyUids.push(u.uid); }); }); });
+      if (!enemyUids.length) { ctx.banner("Zenith Blade — no enemy at BF"); return; }
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Zenith Blade (stun; move friendly manually)", sourceUid: ctx.card.uid, effect: "stun" });
+    }
+  }
 };
 </script>
 <script type="text/babel">
