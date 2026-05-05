@@ -4023,7 +4023,8 @@ var CARD_EFFECTS = {
       ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Retreat (channel exhausted rune separately)", sourceUid: ctx.card.uid, effect: "bounceToHand" });
     }
   },
-  "Draven, Vanquisher": { _automatedElsewhere: "On-win-combat → Gold token; on-attack/defend optional Fury → +2 might — onWinCombat hook + paid combat trigger not built; resolve manually" }
+  "Draven, Vanquisher": { _automatedElsewhere: "On-win-combat → Gold token; on-attack/defend optional Fury → +2 might — onWinCombat hook + paid combat trigger not built; resolve manually" },
+  "Allay, Eager Admirer": { _automatedElsewhere: "[Deflect] via isEnemyDeflect; aura: other friendlies here have [Deflect] — keyword-grant aura not built; resolve manually" }
 };
 </script>
 <script type="text/babel">
