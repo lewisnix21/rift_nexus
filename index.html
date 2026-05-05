@@ -337,8 +337,8 @@ var CARD_EFFECTS = {
       // bfs is captured via the helper closures inside ctx; we build locations via a hint:
       ctx._buildPlacementLocations && ctx._buildPlacementLocations(locations);
       if (locations.length === 1) {
-        ctx.spawnInBase("Recruit (Demacian)", 4);
-        ctx.banner("Recruit the Vanguard — 4 Recruit tokens to base");
+        ctx.markEffect();
+        setTimeout(function() { spawnTokensInBase("Recruit (Demacian)", 4); }, 2800);
       } else {
         ctx.prompt({ kind: "placeTokens", tokenName: "Recruit (Demacian)", total: 4, locations: locations, sourceName: "Recruit the Vanguard", sourceUid: ctx.card.uid });
       }
@@ -7020,6 +7020,7 @@ function RiftboundGame() {
       bi: (bi != null) ? bi : null,
       bfName: (bi != null && bfs[bi]) ? bfs[bi].name : null,
       flash: function(uid2) { addAnim(uid2, "flash", 800); },
+      markEffect: function() { _resolveDidSomethingRef.current = true; },
       banner: function(text) { showAutoBanner("AUTO · " + text); },
       addWatcher: function(w) { _resolveDidSomethingRef.current = true; setAutoWatchers(function(prev) { return prev.concat([w]); }); },
       prompt: function(p2) {
