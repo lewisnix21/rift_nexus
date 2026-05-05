@@ -3934,7 +3934,21 @@ var CARD_EFFECTS = {
     _automatedElsewhere: "Activated 3-XP onAttack might-dmg — XP-cost activated abilities not auto-prompted; resolve manually"
   },
   "Loyal Poro":         { _automatedElsewhere: "[Deathknell] draw 1 if not alone at death-site — alone-at-death detection not modelled; resolve manually" },
-  "Dragon's Rage":      { _automatedElsewhere: "Move enemy then enemy-vs-enemy might-fight at destination — multi-step move + mutual damage not modelled; resolve manually" }
+  "Dragon's Rage":      { _automatedElsewhere: "Move enemy then enemy-vs-enemy might-fight at destination — multi-step move + mutual damage not modelled; resolve manually" },
+  "Star-Crossed": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var idx = ctx.myActIdx;
+      var friendlyUids = []; var enemyUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { (pu || []).forEach(function(u) { if (pi === idx) friendlyUids.push(u.uid); else enemyUids.push(u.uid); }); }); });
+      var meP = ps[idx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") friendlyUids.push(c.uid); });
+      ps.forEach(function(p, pi) { if (pi !== idx && p) (p.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") enemyUids.push(c.uid); }); });
+      if (!friendlyUids.length || !enemyUids.length) { ctx.banner("Star-Crossed — needs both a friendly and an enemy unit"); return; }
+      // Two prompts back-to-back: bounce 1 friendly then 1 enemy. We use a single combined prompt where both must be selected — simplified to friendly-first.
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Star-Crossed (friendly to bounce; cast again to bounce enemy)", sourceUid: ctx.card.uid, effect: "bounceToHand" });
+    }
+  }
 };
 </script>
 <script type="text/babel">
