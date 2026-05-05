@@ -3860,6 +3860,17 @@ var CARD_EFFECTS = {
       ctx.banner("Crowd Favorite [Hunt] — +1 XP (now " + _xpRef.current[ctx.player] + ")");
     },
     _automatedElsewhere: "Activated 2-XP self-buff — XP-cost activated abilities resolved manually"
+  },
+  "Enthralling Protector": {
+    onConquer: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 1;
+      ctx.banner("Enthralling Protector [Hunt] — +1 XP (now " + _xpRef.current[ctx.player] + ")");
+    },
+    onHold: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 1;
+      ctx.banner("Enthralling Protector [Hunt] — +1 XP (now " + _xpRef.current[ctx.player] + ")");
+    },
+    _automatedElsewhere: "Activated 2-XP self-buff — XP-cost activated abilities resolved manually"
   }
 };
 </script>
