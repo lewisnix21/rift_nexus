@@ -4090,7 +4090,8 @@ var CARD_EFFECTS = {
       if (!validUids.length) { ctx.banner("Glasc Mixologist [Deathknell] — no unit ≤3E in trash"); return; }
       ctx.prompt({ kind: "pickFromTrash", n: 1, validUids: validUids, sourceName: "Glasc Mixologist [Deathknell] (return unit ≤3E; replay manually)", sourceUid: ctx.card.uid, effect: "returnToHand" });
     }
-  }
+  },
+  "Pyke, Dockside Butcher": { _automatedElsewhere: "[Hidden][Ganking]; optional Fury cost-time → enter ready + +1 might — alt-cost-time path not modelled; resolve manually" }
 };
 </script>
 <script type="text/babel">
