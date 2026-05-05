@@ -257,8 +257,10 @@ return{name:c.n,type:c.t,domain:c.d,domains:c.ds,energy:c.e,might:c.m,keywords:c
 function _ahriInquisitiveDebuff(ctx) {
   var enemies = ctx.enemyUnits();
   if (enemies.length === 0) return;
-  ctx.flash(ctx.unit.uid);
-  ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemies.map(function(u) { return u.uid; }), sourceName: "Ahri, Inquisitive", sourceUid: ctx.unit.uid, effect: "tempMight", amount: -2 });
+  var _ctx = ctx; var _enemies = enemies;
+  triggerEffectGhost(ctx.unit, function() {
+    _ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: _enemies.map(function(u) { return u.uid; }), sourceName: "Ahri, Inquisitive", sourceUid: _ctx.unit.uid, effect: "tempMight", amount: -2 });
+  });
 }
 
 function _effMight(u) { return _effMight(u) + (u.counter || 0) + (u.gear || []).reduce(function(s,g){return s+(g.might||0);},0); }
@@ -475,9 +477,11 @@ var CARD_EFFECTS = {
     onAttack: function(ctx) {
       var enemies = ctx.enemyUnits();
       if (enemies.length === 0) return;
-      ctx.flash(ctx.unit.uid);
-      enemies.forEach(function(u) { ctx.dealDamage(u.uid, 3); });
-      ctx.banner("Anivia, Primal — 3 dmg to " + enemies.length + " enemy unit" + (enemies.length === 1 ? "" : "s"));
+      var _ctx = ctx; var _enemies = enemies;
+      triggerEffectGhost(ctx.unit, function() {
+        _enemies.forEach(function(u) { _ctx.dealDamage(u.uid, 3); });
+        _ctx.banner("Anivia, Primal — 3 dmg to " + _enemies.length + " enemy unit" + (_enemies.length === 1 ? "" : "s"));
+      });
     }
   },
 
@@ -488,35 +492,40 @@ var CARD_EFFECTS = {
 
   "Ahri, Alluring": {
     onHold: function(ctx) {
-      ctx.incrementScore(1);
-      ctx.banner("Ahri, Alluring — +1 score for holding " + ctx.bfName);
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.unit, function() {
+        _ctx.incrementScore(1);
+        _ctx.banner("Ahri, Alluring — +1 score for holding " + _ctx.bfName);
+      });
     }
   },
 
   "Cannon Barrage": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
       if (!ctx.sd) return;
       var bf = ctx.bfs[ctx.sd.bfIdx]; if (!bf) return;
-      // "Enemy units in combat" = units at the showdown's battlefield that aren't the caster's.
       var enemies = []; for (var pi = 0; pi < bf.units.length; pi++) { if (pi === ctx.myActIdx) continue; (bf.units[pi] || []).forEach(function(u) { enemies.push(u); }); }
       if (enemies.length === 0) return;
-      enemies.forEach(function(u) { ctx.dealDamage(u.uid, 2, "Cannon Barrage"); });
-      ctx.banner("Cannon Barrage — 2 dmg to " + enemies.length + " enemy unit" + (enemies.length === 1 ? "" : "s") + " in combat");
+      var _ctx = ctx; var _enemies = enemies;
+      triggerEffectGhost(ctx.card, function() {
+        _enemies.forEach(function(u) { _ctx.dealDamage(u.uid, 2, "Cannon Barrage"); });
+        _ctx.banner("Cannon Barrage — 2 dmg to " + _enemies.length + " enemy unit" + (_enemies.length === 1 ? "" : "s") + " in combat");
+      }, null, null, { reverseOnArrive: false });
     }
   },
 
   "Combat Experience": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      // "Give a unit +1 might this turn" — any unit (friendly or enemy).
       var allUids = [];
       var idx = ctx.myActIdx;
       var meP = ps[idx];
       if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
       ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
       if (allUids.length === 0) return;
-      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Combat Experience", sourceUid: ctx.card.uid, effect: "tempMight", amount: 1 });
+      var _ctx = ctx; var _allUids = allUids;
+      triggerEffectGhost(ctx.card, function() {
+        _ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: _allUids, sourceName: "Combat Experience", sourceUid: _ctx.card.uid, effect: "tempMight", amount: 1 });
+      }, null, null, { reverseOnArrive: false });
     }
   },
 
@@ -524,24 +533,23 @@ var CARD_EFFECTS = {
 
   "Pit Rookie": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       var ids = ctx.friendlyUnitUids(ctx.card.uid);
       if (ids.length === 0) return;
-      // "Buff" mechanic: attach a persistent +1 counter token rather than a turn-end-clearing tempMight.
       ctx.prompt({ kind: "pickFriendlyUnits", n: 1, excludeUid: ctx.card.uid, sourceName: "Pit Rookie", sourceUid: ctx.card.uid, effect: "addCounter", amount: 1 });
     }
   },
 
   "Ravenbloom Student": {
     onSpellCast: function(ctx) {
-      ctx.flash(ctx.unit.uid);
-      ctx.applyTempMightToUids([ctx.unit.uid], 1, "Ravenbloom Student");
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.unit, function() {
+        _ctx.applyTempMightToUids([_ctx.unit.uid], 1, "Ravenbloom Student");
+      });
     }
   },
 
   "Tibbers": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       var allBfUids = [];
       ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allBfUids.push(u.uid); }); }); });
       if (allBfUids.length === 0) return;
@@ -552,31 +560,37 @@ var CARD_EFFECTS = {
 
   "Disintegrate": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
       var bfUids = [];
       ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
       if (bfUids.length === 0) return;
-      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Disintegrate", sourceUid: ctx.card.uid, effect: "damage", amount: 3, andDrawOnKill: 1 });
+      var _ctx = ctx; var _bfUids = bfUids;
+      triggerEffectGhost(ctx.card, function() {
+        _ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: _bfUids, sourceName: "Disintegrate", sourceUid: _ctx.card.uid, effect: "damage", amount: 3, andDrawOnKill: 1 });
+      }, null, null, { reverseOnArrive: false });
     }
   },
 
   "Incinerate": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
       var bfUids = [];
       ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
       if (bfUids.length === 0) return;
-      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Incinerate", sourceUid: ctx.card.uid, effect: "damage", amount: 2 });
+      var _ctx = ctx; var _bfUids = bfUids;
+      triggerEffectGhost(ctx.card, function() {
+        _ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: _bfUids, sourceName: "Incinerate", sourceUid: _ctx.card.uid, effect: "damage", amount: 2 });
+      }, null, null, { reverseOnArrive: false });
     }
   },
 
   "Falling Comet": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
       var bfUids = [];
       ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
       if (bfUids.length === 0) return;
-      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Falling Comet", sourceUid: ctx.card.uid, effect: "damage", amount: 6 });
+      var _ctx = ctx; var _bfUids = bfUids;
+      triggerEffectGhost(ctx.card, function() {
+        _ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: _bfUids, sourceName: "Falling Comet", sourceUid: _ctx.card.uid, effect: "damage", amount: 6 });
+      }, null, null, { reverseOnArrive: false });
     }
   },
 
@@ -7863,25 +7877,36 @@ function RiftboundGame() {
       if (p.andDraw) drawCards(p.andDraw);
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
     } else if (p.effect === "returnToHand") {
-      var pickedName = "card";
-      var _retToHand = [];
-      uids.forEach(function(u2) {
-        setPs(function(prev) {
-          var idx = myActIdx; var pp = prev[idx]; if (!pp) return prev;
-          var trash = (pp.trash || []).slice();
-          var ti = trash.findIndex(function(c) { return c.uid === u2; });
-          if (ti < 0) return prev;
-          var card = trash.splice(ti, 1)[0]; pickedName = card.name || pickedName;
-          var hand = (pp.hand || []).slice(); hand.push(card);
-          _retToHand.push(card);
-          var np = prev.slice(); np[idx] = Object.assign({}, pp, { trash: trash, hand: hand });
-          addAnim(card.uid, "draw");
-          return np;
+      var _rth_p = p; var _rth_uids = uids.slice(); var _rth_myIdx = myActIdx;
+      function _doReturnToHand() {
+        var pickedName = "card"; var _retToHand = [];
+        _rth_uids.forEach(function(u2) {
+          setPs(function(prev) {
+            var idx = _rth_myIdx; var pp = prev[idx]; if (!pp) return prev;
+            var trash = (pp.trash || []).slice();
+            var ti = trash.findIndex(function(c) { return c.uid === u2; });
+            if (ti < 0) return prev;
+            var card = trash.splice(ti, 1)[0]; pickedName = card.name || pickedName;
+            var hand = (pp.hand || []).slice(); hand.push(card);
+            _retToHand.push(card);
+            var np = prev.slice(); np[_rth_myIdx] = Object.assign({}, pp, { trash: trash, hand: hand });
+            addAnim(card.uid, "draw");
+            return np;
+          });
         });
-      });
-      showAutoBanner("AUTO · " + p.sourceName + " — returned " + (uids.length === 1 ? pickedName : (uids.length + " cards")) + " from bin");
-      if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
-      _retToHand.forEach(function(c) { fireOnMoveToHandEffect(c); });
+        showAutoBanner("AUTO · " + _rth_p.sourceName + " — returned " + (_rth_uids.length === 1 ? pickedName : (_rth_uids.length + " cards")) + " from bin");
+        _retToHand.forEach(function(c) { fireOnMoveToHandEffect(c); });
+      }
+      if (p.sourceUid) {
+        var _rth_src = null;
+        var _rth_mp = ps[myActIdx];
+        if (_rth_mp) {
+          _rth_src = (_rth_mp.base || []).find(function(c) { return c.uid === p.sourceUid; });
+          if (!_rth_src) bfs.forEach(function(b) { if (!b || !b.units || _rth_src) return; (_rth_src = (_rth_src || (b.units[myActIdx] || []).find(function(u) { return u.uid === p.sourceUid; }))); });
+        }
+        if (_rth_src) { triggerEffectGhost(_rth_src, _doReturnToHand); return; }
+      }
+      _doReturnToHand();
     } else if (p.effect === "returnToBase") {
       // Move a BF unit back to its owner's base (exhausted). E.g. Maddened Marauder, Fight or Flight.
       uids.forEach(function(u2) {
