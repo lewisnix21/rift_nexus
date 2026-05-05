@@ -4207,7 +4207,8 @@ var CARD_EFFECTS = {
       if (!enemyUids.length) { ctx.banner("Zenith Blade — no enemy at BF"); return; }
       ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Zenith Blade (stun; move friendly manually)", sourceUid: ctx.card.uid, effect: "stun" });
     }
-  }
+  },
+  "Fizz, Trickster":    { _automatedElsewhere: "On-play free-cast ≤3E spell from trash + recycle — trash-cast-and-recycle pipeline not modelled; resolve manually" }
 };
 </script>
 <script type="text/babel">
