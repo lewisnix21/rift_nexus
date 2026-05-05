@@ -4208,7 +4208,16 @@ var CARD_EFFECTS = {
       ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Zenith Blade (stun; move friendly manually)", sourceUid: ctx.card.uid, effect: "stun" });
     }
   },
-  "Fizz, Trickster":    { _automatedElsewhere: "On-play free-cast ≤3E spell from trash + recycle — trash-cast-and-recycle pipeline not modelled; resolve manually" }
+  "Fizz, Trickster":    { _automatedElsewhere: "On-play free-cast ≤3E spell from trash + recycle — trash-cast-and-recycle pipeline not modelled; resolve manually" },
+  "Sudden Storm": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var allUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+      if (!allUids.length) { ctx.banner("Sudden Storm — no BF units"); return; }
+      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Sudden Storm (2 dmg, again to a 2nd target manually)", sourceUid: ctx.card.uid, effect: "damage", amount: 2 });
+    }
+  }
 };
 </script>
 <script type="text/babel">
