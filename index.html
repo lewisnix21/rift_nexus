@@ -3891,7 +3891,8 @@ var CARD_EFFECTS = {
       setPs(function(prev) { var i = ctx.player; var p = prev[i]; if (!p) return prev; var rd = (p.runeDeck || []).slice(); if (!rd.length || (p.runes || []).length >= 12) return prev; var r = rd.shift(); var runes = (p.runes || []).concat([Object.assign({}, r, { exhausted: true })]); addAnim(r.uid, "draw"); var np = prev.slice(); np[i] = Object.assign({}, p, { runeDeck: rd, runes: runes }); return np; });
       ctx.banner("Black Rose Dignitary [Deathknell] — channeled 1 rune exhausted");
     }
-  }
+  },
+  "Pyke, Returned":     { _automatedElsewhere: "[Hidden][Backline]; once-per-turn on-enemy-death-at-my-BF → spawn Gold — onEnemyDeathAtMyBF hook + once-per-turn gate not built; resolve manually" }
 };
 </script>
 <script type="text/babel">
