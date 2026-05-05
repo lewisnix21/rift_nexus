@@ -4035,7 +4035,14 @@ var CARD_EFFECTS = {
   "Thrill of the Hunt": { _automatedElsewhere: "[Reaction] banish friendly + replay free to any BF — banish/recast pipeline not modelled; resolve manually" },
   "Dazzling Aurora":    { _automatedElsewhere: "EOT reveal-until-unit-then-banish-and-play free + recycle rest — end-of-turn deck-search + free-cast not modelled; resolve manually" },
   "Defy":               { _automatedElsewhere: "[Reaction] counter spell with cost ≤4E and ≤1 Power — counter pipeline not modelled; resolve manually" },
-  "Blitzcrank, Impassive": { _automatedElsewhere: "[Tank] manual; on-play-to-BF optional pull-enemy; on-hold return self to hand — onPlayAtBF pull + on-hold-bounce-self not modelled; resolve manually" }
+  "Blitzcrank, Impassive": { _automatedElsewhere: "[Tank] manual; on-play-to-BF optional pull-enemy; on-hold return self to hand — onPlayAtBF pull + on-hold-bounce-self not modelled; resolve manually" },
+  "Counter Strike": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.draw(1);
+      ctx.banner("Counter Strike — drew 1 (next damage to chosen unit prevented manually)");
+    }
+  }
 };
 </script>
 <script type="text/babel">
