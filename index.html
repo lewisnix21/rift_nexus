@@ -3871,6 +3871,17 @@ var CARD_EFFECTS = {
       ctx.banner("Enthralling Protector [Hunt] — +1 XP (now " + _xpRef.current[ctx.player] + ")");
     },
     _automatedElsewhere: "Activated 2-XP self-buff — XP-cost activated abilities resolved manually"
+  },
+  "Gemhand Hunter": {
+    onConquer: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 1;
+      ctx.banner("Gemhand Hunter [Hunt] — +1 XP (now " + _xpRef.current[ctx.player] + ")");
+    },
+    onHold: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 1;
+      ctx.banner("Gemhand Hunter [Hunt] — +1 XP (now " + _xpRef.current[ctx.player] + ")");
+    },
+    _automatedElsewhere: "[Level 6] +1 might — XP-gated aura, apply +might counter manually when XP ≥ 6"
   }
 };
 </script>
