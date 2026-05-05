@@ -3948,7 +3948,8 @@ var CARD_EFFECTS = {
       // Two prompts back-to-back: bounce 1 friendly then 1 enemy. We use a single combined prompt where both must be selected — simplified to friendly-first.
       ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Star-Crossed (friendly to bounce; cast again to bounce enemy)", sourceUid: ctx.card.uid, effect: "bounceToHand" });
     }
-  }
+  },
+  "Alpha Wildclaw":     { _automatedElsewhere: "[Tank] manual; weaker friendlies here untargetable — might-comparison untargetable aura not in isEnemyDeflect; resolve manually" }
 };
 </script>
 <script type="text/babel">
