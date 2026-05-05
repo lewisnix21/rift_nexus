@@ -4139,7 +4139,16 @@ var CARD_EFFECTS = {
   "Needlessly Large Yordle": { _automatedElsewhere: "[Shield 5][Tank]; cost-time -2E-Calm per opp's point — opp-score-based cost reduction not modelled; resolve cost manually" },
   "Chakram Dancer":     { _automatedElsewhere: "[Ambush]; on-play other friendlies here gain [Shield] this turn — turn-scoped keyword grant not modelled; resolve manually" },
   "Repulse":            { _automatedElsewhere: "[Reaction] counter enemy spell/ability targeting chosen friendly — counter pipeline not modelled; resolve manually" },
-  "Switcheroo":         { _automatedElsewhere: "[Hidden][Action] swap two units' Might — set-might swap not modelled; resolve manually" }
+  "Switcheroo":         { _automatedElsewhere: "[Hidden][Action] swap two units' Might — set-might swap not modelled; resolve manually" },
+  "Windsinger": {
+    onPlay: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      var bfWeakUids = [];
+      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi === ctx.myActIdx) return; (pu || []).forEach(function(u) { if (u.uid !== ctx.card.uid && _effMight(u) <= 3) bfWeakUids.push(u.uid); }); }); });
+      if (!bfWeakUids.length) { ctx.banner("Windsinger — no ≤3 might enemy at BF"); return; }
+      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: bfWeakUids, sourceName: "Windsinger (≤3 might)", sourceUid: ctx.card.uid, effect: "bounceToHand" });
+    }
+  }
 };
 </script>
 <script type="text/babel">
