@@ -3921,7 +3921,18 @@ var CARD_EFFECTS = {
     }
   },
   "Stormbringer":       { _automatedElsewhere: "Move-base-friendly + deal might-dmg to all enemies at target BF — multi-step move-then-AoE chain not modelled; resolve manually" },
-  "Void Gate":          { _automatedElsewhere: "BF: spell/ability damage to units here +1 — bonus-damage replacement at BF not modelled; resolve manually (use larger amounts)" }
+  "Void Gate":          { _automatedElsewhere: "BF: spell/ability damage to units here +1 — bonus-damage replacement at BF not modelled; resolve manually (use larger amounts)" },
+  "Kha'Zix, Evolving Hunter": {
+    onConquer: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 1;
+      ctx.banner("Kha'Zix [Hunt] — +1 XP (now " + _xpRef.current[ctx.player] + ")");
+    },
+    onHold: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 1;
+      ctx.banner("Kha'Zix [Hunt] — +1 XP (now " + _xpRef.current[ctx.player] + ")");
+    },
+    _automatedElsewhere: "Activated 3-XP onAttack might-dmg — XP-cost activated abilities not auto-prompted; resolve manually"
+  }
 };
 </script>
 <script type="text/babel">
