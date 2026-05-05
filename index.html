@@ -6654,7 +6654,7 @@ function RiftboundGame() {
   var myActIdx = isOnlineGame ? mySlot : act;
   var myPs = ps[myActIdx] || null;
 
-  function addAnim(id, type, dur) { var d = dur || 300; var ts = Date.now(); if (type === "fizzle") { _lastFizzleEndRef.current = Math.max(_lastFizzleEndRef.current || 0, ts + d); } setAnims(function(prev) { return prev.concat([{ id: id, type: type, ts: ts }]); }); setTimeout(function() { setAnims(function(prev) { return prev.filter(function(a) { return !(a.id === id && a.ts === ts); }); }); }, d); }
+  function addAnim(id, type, dur, opts) { var d = dur || 300; var ts = Date.now(); if (type === "fizzle") { _lastFizzleEndRef.current = Math.max(_lastFizzleEndRef.current || 0, ts + d); } if (type === "draw" && !(opts && opts.noDrawSound)) { _playDrawSound(); } setAnims(function(prev) { return prev.concat([{ id: id, type: type, ts: ts }]); }); setTimeout(function() { setAnims(function(prev) { return prev.filter(function(a) { return !(a.id === id && a.ts === ts); }); }); }, d); }
   function showAutoBanner(text) { /* banners disabled */ }
   function shouldEnterReady(card) {
     if (!autoMode) return false;
@@ -6707,6 +6707,19 @@ function RiftboundGame() {
     _entersReadyAudio.current = _era;
   }
   if (_entersReadyAudio.current) _entersReadyAudio.current.volume = audioVol.master * audioVol.sfx;
+  // --- Draw card sound ---
+  var _drawAudio = useRef(null);
+  if (typeof Audio !== "undefined" && !_drawAudio.current) {
+    var _da = new Audio("/sound effect - draw card main or rune or grave.mp3");
+    _drawAudio.current = _da;
+  }
+  if (_drawAudio.current) _drawAudio.current.volume = audioVol.master * audioVol.sfx;
+  function _playDrawSound() {
+    var a = _drawAudio.current;
+    if (!a || !a.src) return;
+    a.currentTime = 0;
+    a.play().catch(function() {});
+  }
   function _playEntersReadySound() {
     var a = _entersReadyAudio.current;
     if (!a || !a.src) return;
@@ -6808,7 +6821,7 @@ function RiftboundGame() {
       var idx = myActIdx; var p = prev[idx]; if (!p) return prev;
       var base = (p.base || []).slice();
       var exh = !(opts && opts.ready);
-      for (var i = 0; i < count; i++) { var tk = mkToken(tokenName); if (tk) { base.push(Object.assign({}, tk, { exhausted: exh, counter: 0 })); addAnim(tk.uid, "draw"); } }
+      for (var i = 0; i < count; i++) { var tk = mkToken(tokenName); if (tk) { base.push(Object.assign({}, tk, { exhausted: exh, counter: 0 })); addAnim(tk.uid, "draw", 300, { noDrawSound: true }); } }
       var np = prev.slice(); np[idx] = Object.assign({}, p, { base: base });
       return np;
     });
@@ -6820,7 +6833,7 @@ function RiftboundGame() {
       var idx = myActIdx;
       var nb = prev.slice();
       var b = Object.assign({}, nb[bi], { units: nb[bi].units.map(function(pu) { return pu.slice(); }) });
-      for (var i = 0; i < count; i++) { var tk = mkToken(tokenName); if (tk) { b.units[idx].push(Object.assign({}, tk, { exhausted: true, counter: 0 })); addAnim(tk.uid, "draw"); } }
+      for (var i = 0; i < count; i++) { var tk = mkToken(tokenName); if (tk) { b.units[idx].push(Object.assign({}, tk, { exhausted: true, counter: 0 })); addAnim(tk.uid, "draw", 300, { noDrawSound: true }); } }
       nb[bi] = b;
       return nb;
     });
