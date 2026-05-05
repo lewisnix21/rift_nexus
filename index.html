@@ -4077,7 +4077,8 @@ var CARD_EFFECTS = {
       if (!bfFriendlyUids.length) { ctx.banner("Grim Apothecary [Ambush] — no friendly BF unit to bounce"); return; }
       ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: bfFriendlyUids, sourceName: "Grim Apothecary [Ambush]", sourceUid: ctx.card.uid, effect: "bounceToHand" });
     }
-  }
+  },
+  "Vex, Cheerless":     { _automatedElsewhere: "While I'm in combat: friendly spells -1E-Rainbow (min 1E), enemy spells +1E+Rainbow — combat-time global cost adjust not modelled; resolve cost manually" }
 };
 </script>
 <script type="text/babel">
