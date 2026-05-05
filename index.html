@@ -3965,6 +3965,13 @@ var CARD_EFFECTS = {
       ctx.banner("Scorchclaw [Hunt 2] — +2 XP (now " + _xpRef.current[ctx.player] + ")");
     },
     _automatedElsewhere: "[Level 3] +1 might + enters ready — XP-gated keyword + condition aura, apply manually when XP ≥ 3"
+  },
+  "Diana, No Longer Human": {
+    onSpellCast: function(ctx) {
+      ctx.flash(ctx.unit.uid);
+      ctx.applyTempMightToUids([ctx.unit.uid], 2, "Diana, No Longer Human");
+      ctx.banner("Diana, No Longer Human — +2 might (friendly spell cast)");
+    }
   }
 };
 </script>
