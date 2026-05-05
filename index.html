@@ -324,9 +324,8 @@ var CARD_EFFECTS = {
   "Decisive Strike": {
     onCast: function(ctx) {
       ctx.flash(ctx.card.uid);
-      var n = ctx.applyTempMightToAllFriendly(2, "Decisive Strike");
-      if (n > 0) ctx.banner("Decisive Strike — +2 might to " + n + " friendly unit" + (n === 1 ? "" : "s"));
-      else ctx.banner("Decisive Strike — no friendly units to buff");
+      ctx.applyTempMightToAllFriendly(2, "Decisive Strike");
+      ctx.addWatcher({ kind: "friendlyEntersGetsTempMight", source: ctx.card.uid, sourceName: "Decisive Strike", amount: 2 });
     }
   },
 
@@ -6826,6 +6825,41 @@ function RiftboundGame() {
       }, 1300);
     }, 60);
   }
+  function triggerWatcherBuffAnim(sourceUid, sourceName, targetUid, amount) {
+    if (!autoMode) return;
+    var capturedTargetUid = targetUid; var capturedAmount = amount; var capturedSource = sourceName;
+    var capturedVScale = vScale;
+    setTimeout(function() {
+      var srcEl = typeof document !== "undefined" ? document.querySelector('[data-uid="' + sourceUid + '"]') : null;
+      if (!srcEl) {
+        applyTempMightToUids([capturedTargetUid], capturedAmount, capturedSource);
+        addAnim(capturedTargetUid, "flash", 800);
+        _playTokenBuffSound();
+        return;
+      }
+      var rect = srcEl.getBoundingClientRect();
+      var vw = typeof window !== "undefined" ? window.innerWidth : 1920;
+      var vh = typeof window !== "undefined" ? window.innerHeight : 1080;
+      var startW = rect.width; var startH = rect.height;
+      var scW = Math.round(258 * capturedVScale); var scH = Math.round(361 * capturedVScale);
+      var fromX = rect.left + startW / 2; var fromY = rect.top + startH / 2;
+      var toX = vw - vw * 0.02 - scW / 2; var toY = vh * 0.5;
+      var ts = Date.now();
+      var sourceCard = getCard(sourceName) || { name: sourceName };
+      setReadyGhostAnim({ card: sourceCard, fromX: fromX, fromY: fromY, startW: startW, startH: startH, toX: toX, toY: toY, scW: scW, scH: scH, phase: "hold", ts: ts });
+      requestAnimationFrame(function() { requestAnimationFrame(function() {
+        setReadyGhostAnim(function(p) { return p && p.ts === ts ? Object.assign({}, p, { phase: "slide-to" }) : p; });
+      }); });
+      setTimeout(function() { setReadyGhostAnim(function(p) { return p && p.ts === ts ? Object.assign({}, p, { phase: "pulse" }) : p; }); }, 430);
+      setTimeout(function() { setReadyGhostAnim(function(p) { return p && p.ts === ts ? Object.assign({}, p, { phase: "fade-out" }) : p; }); }, 780);
+      setTimeout(function() {
+        setReadyGhostAnim(function(p) { return p && p.ts === ts ? null : p; });
+        applyTempMightToUids([capturedTargetUid], capturedAmount, capturedSource);
+        addAnim(capturedTargetUid, "flash", 800);
+        _playTokenBuffSound();
+      }, 1000);
+    }, 60);
+  }
   // --- Auto-mode helper functions (used inside CARD_EFFECTS via ctx) ---
   function drawCards(n) {
     setPs(function(prev) {
@@ -6919,10 +6953,8 @@ function RiftboundGame() {
       if (w.kind === "ownUnitEntersReady") {
         triggerWatcherReadyAnim(w.source, w.sourceName, card.uid, myActIdx);
       }
-      // Grand Strategem watcher — buff friendly units played AFTER the spell this turn.
       if (w.kind === "friendlyEntersGetsTempMight" && (card.type === "Unit" || card.type === "Champion")) {
-        applyTempMightToUids([card.uid], w.amount, w.sourceName);
-        addAnim(w.source, "flash", 800);
+        triggerWatcherBuffAnim(w.source, w.sourceName, card.uid, w.amount);
       }
     });
     // Mech-Vision aura: if you control Forecaster, your Mechs have [Vision] (peek + recycle prompt).
@@ -10312,7 +10344,7 @@ function RiftboundGame() {
         var rg = readyGhostAnim;
         var card = rg.card;
         var imgUrl = card.img ? imgSrc(card.img) : (CI[card.name] ? imgSrc(CI[card.name]) : (PA[card.name] ? PA_CDN + PA[card.name] + ".webp" : ""));
-        var atShowcase = rg.phase === "pulse" || rg.phase === "slide-to";
+        var atShowcase = rg.phase === "pulse" || rg.phase === "slide-to" || rg.phase === "fade-out";
         var atCard = rg.phase === "hold" || rg.phase === "slide-back" || rg.phase === "done";
         var destX = atShowcase ? rg.toX : rg.fromX;
         var destY = atShowcase ? rg.toY : rg.fromY;
@@ -10322,7 +10354,7 @@ function RiftboundGame() {
         var destH = atShowcase ? rg.scH : rg.startH;
         var sc2 = destW / rg.startW;
         var _trans = rg.phase === "hold" ? "none" : "transform 400ms cubic-bezier(0.22, 0.65, 0.28, 1), opacity 250ms ease";
-        var _opacity = rg.phase === "done" ? 0 : 0.93;
+        var _opacity = (rg.phase === "done" || rg.phase === "fade-out") ? 0 : 0.93;
         var _pulse = rg.phase === "pulse" ? "readyGhostPulse 350ms ease-in-out 1" : "none";
         return <div style={{ position: "fixed", left: rg.fromX - rg.startW / 2, top: rg.fromY - rg.startH / 2, width: rg.startW, height: rg.startH, transform: "translate(" + dx2 + "px," + dy2 + "px) scale(" + sc2 + ")", transformOrigin: "center center", transition: _trans, opacity: _opacity, zIndex: 1500, pointerEvents: "none", borderRadius: 6, overflow: "hidden", boxShadow: "0 0 28px rgba(96,165,250,0.8), 0 8px 32px #000c", border: "2px solid #60a5fa" }}>
           <div style={{ width: "100%", height: "100%", animation: _pulse, transformOrigin: "center center" }}>
