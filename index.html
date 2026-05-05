@@ -4121,6 +4121,16 @@ var CARD_EFFECTS = {
       ctx.draw(1);
       ctx.banner("Tasty Faefolk [Deathknell] — channeled 2 runes exhausted + drew 1");
     }
+  },
+  "Kha'Zix, Mutating Horror": {
+    onAttack: function(ctx) {
+      var enemies = ctx.enemyUnits() || [];
+      if (enemies.length === 1) { ctx.flash(ctx.unit.uid); ctx.applyTempMightToUids([ctx.unit.uid], 2, "Kha'Zix, Mutating Horror"); ctx.banner("Kha'Zix, Mutating Horror — +2 might (lone enemy)"); }
+    },
+    onDefend: function(ctx) {
+      var enemies = ctx.enemyUnits() || [];
+      if (enemies.length === 1) { ctx.flash(ctx.unit.uid); ctx.applyTempMightToUids([ctx.unit.uid], 2, "Kha'Zix, Mutating Horror"); ctx.banner("Kha'Zix, Mutating Horror — +2 might (lone enemy)"); }
+    }
   }
 };
 </script>
