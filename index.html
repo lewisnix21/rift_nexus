@@ -3898,7 +3898,8 @@ var CARD_EFFECTS = {
   "Star Spring":        { _automatedElsewhere: "BF once-per-turn first-non-token-played → optional move-friendly-to-base — first-each-turn-played BF hook not built; resolve manually" },
   "Vanguard Helm":      { _automatedElsewhere: "On-buffed-friendly-death → buff another friendly — buffed-death-pass-down hook not built; apply +1 counter manually" },
   "Lonely Poro":        { _automatedElsewhere: "[Deathknell] draw 1 if alone at death-site — alone-at-death detection not modelled; resolve manually" },
-  "Crescent Guardian":  { _automatedElsewhere: "Conditional optional Chaos cost-time → enter ready (after spell played this turn) — alt-cost-time path not modelled; resolve manually" }
+  "Crescent Guardian":  { _automatedElsewhere: "Conditional optional Chaos cost-time → enter ready (after spell played this turn) — alt-cost-time path not modelled; resolve manually" },
+  "Dr. Mundo, Expert":  { _automatedElsewhere: "Self-aura: +1 might per card in trash — fires from computeAuraSources; BG-phase recycle 3 from trash resolved manually" }
 };
 </script>
 <script type="text/babel">
@@ -6901,6 +6902,11 @@ function RiftboundGame() {
     if (unit.name === "Draven, Showboat") {
       var _pts = (ps[myActIdx] && ps[myActIdx].score) || 0;
       if (_pts > 0) sources.push({ source: "Draven, Showboat (score)", amount: _pts });
+    }
+    // Dr. Mundo, Expert: my might += number of cards in my owner's trash.
+    if (unit.name === "Dr. Mundo, Expert") {
+      var _trashN = (ps[myActIdx] && ps[myActIdx].trash && ps[myActIdx].trash.length) || 0;
+      if (_trashN > 0) sources.push({ source: "Dr. Mundo, Expert (trash)", amount: _trashN });
     }
     return sources;
   }
