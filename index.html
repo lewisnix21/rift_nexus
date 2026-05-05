@@ -364,8 +364,20 @@ var CARD_EFFECTS = {
     }
   },
 
-  // --- Aura units (handled by recalcAuras / computeAuraForUnit; no per-card hook needed) ---
-  "Garen, Commander": { _automatedElsewhere: "Aura: other friendly units +1 might at this BF / base — fires from computeAuraSources" },
+  // --- Aura units ---
+  "Garen, Commander": {
+    reverseOnPlay: true,
+    onPlay: function(ctx) {
+      if (ctx.where !== "battlefield" || ctx.bi == null) return;
+      var bf = ctx.bfs[ctx.bi]; if (!bf) return;
+      var unitUids = ((bf.units && bf.units[ctx.myActIdx]) || [])
+        .filter(function(u) { return u.uid !== ctx.card.uid; })
+        .map(function(u) { return u.uid; });
+      if (unitUids.length === 0) return;
+      ctx.applyTempMightToUids(unitUids, 1, "Garen, Commander");
+      ctx.banner("Garen, Commander — aura +1 might to " + unitUids.length + " unit" + (unitUids.length === 1 ? "" : "s") + " at " + (bf.name || "battlefield"));
+    }
+  },
 
   // --- Vanilla / passive-keyword units (Assault/Shield handled generically by parseKeywordBonus
   //     in fireShowdownStartEffects). Registered so the engine knows the card is recognized. ---
@@ -6852,6 +6864,42 @@ function RiftboundGame() {
       }, 1300);
     }, 60);
   }
+  function triggerWatcherReverseBuffAnim(sourceUid, sourceName, targetUid, amount) {
+    if (!autoMode) return;
+    var capturedTargetUid = targetUid; var capturedAmount = amount; var capturedSource = sourceName;
+    var capturedVScale = vScale;
+    setTimeout(function() {
+      var srcEl = typeof document !== "undefined" ? document.querySelector('[data-uid="' + sourceUid + '"]') : null;
+      if (!srcEl) {
+        applyTempMightToUids([capturedTargetUid], capturedAmount, capturedSource);
+        addAnim(capturedTargetUid, "flash", 800);
+        _playTokenBuffSound();
+        return;
+      }
+      var rect = srcEl.getBoundingClientRect();
+      var vw = typeof window !== "undefined" ? window.innerWidth : 1920;
+      var vh = typeof window !== "undefined" ? window.innerHeight : 1080;
+      var startW = rect.width; var startH = rect.height;
+      var scW = Math.round(258 * capturedVScale); var scH = Math.round(361 * capturedVScale);
+      var fromX = rect.left + startW / 2; var fromY = rect.top + startH / 2;
+      var toX = vw - vw * 0.02 - scW / 2; var toY = vh * 0.5;
+      var ts = Date.now();
+      var sourceCard = getCard(sourceName) || { name: sourceName };
+      setReadyGhostAnim({ card: sourceCard, fromX: fromX, fromY: fromY, startW: startW, startH: startH, toX: toX, toY: toY, scW: scW, scH: scH, phase: "hold", ts: ts });
+      requestAnimationFrame(function() { requestAnimationFrame(function() {
+        setReadyGhostAnim(function(p) { return p && p.ts === ts ? Object.assign({}, p, { phase: "slide-to" }) : p; });
+      }); });
+      setTimeout(function() { setReadyGhostAnim(function(p) { return p && p.ts === ts ? Object.assign({}, p, { phase: "pulse" }) : p; }); }, 430);
+      setTimeout(function() { setReadyGhostAnim(function(p) { return p && p.ts === ts ? Object.assign({}, p, { phase: "slide-back" }) : p; }); }, 730);
+      setTimeout(function() { setReadyGhostAnim(function(p) { return p && p.ts === ts ? Object.assign({}, p, { phase: "done" }) : p; }); }, 1130);
+      setTimeout(function() {
+        setReadyGhostAnim(function(p) { return p && p.ts === ts ? null : p; });
+        applyTempMightToUids([capturedTargetUid], capturedAmount, capturedSource);
+        addAnim(capturedTargetUid, "flash", 800);
+        _playTokenBuffSound();
+      }, 1300);
+    }, 60);
+  }
   function triggerWatcherBuffAnim(sourceUid, sourceName, targetUid, amount) {
     if (!autoMode) return;
     var capturedTargetUid = targetUid; var capturedAmount = amount; var capturedSource = sourceName;
@@ -6984,6 +7032,14 @@ function RiftboundGame() {
         triggerWatcherBuffAnim(w.source, w.sourceName, card.uid, w.amount);
       }
     });
+    // Garen, Commander aura: any friendly unit entering a BF where Garen is gets +1 might (persists across turns).
+    if (where === "battlefield" && bi != null && (card.type === "Unit" || card.type === "Champion")) {
+      var _garenBf = bfs[bi];
+      if (_garenBf) {
+        var _garenCard = ((_garenBf.units && _garenBf.units[myActIdx]) || []).find(function(u) { return u.name === "Garen, Commander" && u.uid !== card.uid; });
+        if (_garenCard) triggerWatcherReverseBuffAnim(_garenCard.uid, "Garen, Commander", card.uid, 1);
+      }
+    }
     // Mech-Vision aura: if you control Forecaster, your Mechs have [Vision] (peek + recycle prompt).
     if (card && (card.keywords || []).indexOf("Mech") >= 0 && card.name !== "Forecaster") {
       var _idx = myActIdx; var _meP = ps[_idx];
@@ -7001,7 +7057,7 @@ function RiftboundGame() {
     }
     if (eff && eff.onPlay) {
       var _ctxOP = makeAutoCtx(card, where, bi);
-      triggerEffectGhost(card, function() { try { eff.onPlay(_ctxOP); } catch(e) { console.error("CARD_EFFECTS onPlay error for " + card.name + ":", e); } }, eff.condition ? function() { return eff.condition(_ctxOP); } : null, afterFn || null, { reverseOnArrive: false });
+      triggerEffectGhost(card, function() { try { eff.onPlay(_ctxOP); } catch(e) { console.error("CARD_EFFECTS onPlay error for " + card.name + ":", e); } }, eff.condition ? function() { return eff.condition(_ctxOP); } : null, afterFn || null, { reverseOnArrive: !!eff.reverseOnPlay });
     } else if (afterFn) {
       afterFn();
     }
