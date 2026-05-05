@@ -3884,7 +3884,14 @@ var CARD_EFFECTS = {
     _automatedElsewhere: "[Level 6] +1 might — XP-gated aura, apply +might counter manually when XP ≥ 6"
   },
   "Power Nexus":        { _automatedElsewhere: "BF on-hold optional 4-Rainbow → +1 score — paid-rune-on-hold prompt not built; resolve manually" },
-  "Shard of Undoing":   { _automatedElsewhere: "Once-per-turn: first BG-phase friendly death → each opponent kills a unit — phase-gated death-watcher across opponents not built; resolve manually" }
+  "Shard of Undoing":   { _automatedElsewhere: "Once-per-turn: first BG-phase friendly death → each opponent kills a unit — phase-gated death-watcher across opponents not built; resolve manually" },
+  "Black Rose Dignitary": {
+    onDeath: function(ctx) {
+      // Channel 1 rune exhausted — pull from runeDeck.
+      setPs(function(prev) { var i = ctx.player; var p = prev[i]; if (!p) return prev; var rd = (p.runeDeck || []).slice(); if (!rd.length || (p.runes || []).length >= 12) return prev; var r = rd.shift(); var runes = (p.runes || []).concat([Object.assign({}, r, { exhausted: true })]); addAnim(r.uid, "draw"); var np = prev.slice(); np[i] = Object.assign({}, p, { runeDeck: rd, runes: runes }); return np; });
+      ctx.banner("Black Rose Dignitary [Deathknell] — channeled 1 rune exhausted");
+    }
+  }
 };
 </script>
 <script type="text/babel">
