@@ -3973,7 +3973,17 @@ var CARD_EFFECTS = {
       ctx.banner("Diana, No Longer Human — +2 might (friendly spell cast)");
     }
   },
-  "Zilean, Time Mage":  { _automatedElsewhere: "Once-per-turn replacement: token-play makes 2 — replacement-effect engine + once-per-turn gate not built; resolve manually" }
+  "Zilean, Time Mage":  { _automatedElsewhere: "Once-per-turn replacement: token-play makes 2 — replacement-effect engine + once-per-turn gate not built; resolve manually" },
+  "Qiyana, Victorious": {
+    onConquer: function(ctx) {
+      // Choose draw 1 (default) — channel rune is alternative resolved manually.
+      ctx.flash(ctx.card.uid);
+      var meP = ps[ctx.player]; if (!meP) return;
+      // Approximation: just draw 1; player can opt to channel-rune manually instead.
+      drawCards(1);
+      ctx.banner("Qiyana, Victorious — drew 1 (or channel rune manually instead)");
+    }
+  }
 };
 </script>
 <script type="text/babel">
