@@ -6671,6 +6671,19 @@ function RiftboundGame() {
     }
     return false;
   }
+  // --- Token / buff sound ---
+  var _tokenBuffAudio = useRef(null);
+  if (typeof Audio !== "undefined" && !_tokenBuffAudio.current) {
+    var _tba = new Audio("/sound effect - token or buff.mp3");
+    _tba.volume = 0.6;
+    _tokenBuffAudio.current = _tba;
+  }
+  function _playTokenBuffSound() {
+    var a = _tokenBuffAudio.current;
+    if (!a || !a.src) return;
+    a.currentTime = 0;
+    a.play().catch(function() {});
+  }
   // --- entersReady ghost animation ---
   var _entersReadyAudio = useRef(null);
   if (typeof Audio !== "undefined" && !_entersReadyAudio.current) {
@@ -6776,6 +6789,7 @@ function RiftboundGame() {
     });
   }
   function spawnTokensInBase(tokenName, count, opts) {
+    _playTokenBuffSound();
     setPs(function(prev) {
       var idx = myActIdx; var p = prev[idx]; if (!p) return prev;
       var base = (p.base || []).slice();
@@ -6786,6 +6800,7 @@ function RiftboundGame() {
     });
   }
   function spawnTokensInBattlefield(tokenName, count, bi) {
+    _playTokenBuffSound();
     setBfs(function(prev) {
       if (bi == null || bi < 0 || bi >= prev.length) return prev;
       var idx = myActIdx;
@@ -7514,6 +7529,7 @@ function RiftboundGame() {
       if (p.sourceUid) addAnim(p.sourceUid, "flash", 800);
     } else if (p.effect === "addCounter") {
       // Persistent buff token (the green +N badge), e.g. Pit Rookie's "buff" mechanic.
+      _playTokenBuffSound();
       uids.forEach(function(u2) { addCounter(u2, p.amount || 1); addAnim(u2, "flash", 800); });
       // Stand United watcher: units freshly buffed this turn also gain +1 might.
       var suWatcher = autoWatchers.find(function(w) { return w.kind === "friendlyBuffedGetsExtraMight"; });
