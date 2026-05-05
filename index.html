@@ -284,7 +284,7 @@ var CARD_EFFECTS = {
       var exhUids = [];
       (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && c.uid !== ctx.card.uid && c.exhausted) exhUids.push(c.uid); });
       bfs.forEach(function(b) { ((b.units && b.units[ctx.myActIdx]) || []).forEach(function(c) { if (c.uid !== ctx.card.uid && c.exhausted) exhUids.push(c.uid); }); });
-      if (exhUids.length === 0) { ctx.banner("First Mate — no exhausted friendly units to ready"); return; }
+      if (exhUids.length === 0) return;
       ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: exhUids, excludeUid: ctx.card.uid, sourceName: "First Mate", sourceUid: ctx.card.uid, effect: "ready" });
     }
   },
@@ -8917,6 +8917,9 @@ function RiftboundGame() {
     nb[bi].units[idx].push(Object.assign({}, unit, { exhausted: true }));
     aL(pName(idx) + " moves " + cName(unit) + " to " + nb[bi].name);
     var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); setSel(null);
+    if (autoMode && unit.name === "Noxian Drummer") {
+      setTimeout(function() { spawnTokensInBattlefield("Recruit (Demacian)", 1, bi); aL("  Noxian Drummer — Recruit token at " + nb[bi].name); }, 0);
+    }
     setTimeout(recalcAuras, 0);
     // Auto-mode: if the BF is unconquered (no controller, no enemy presence), defer to a player-resolved conquer.
     // Otherwise fall through to the existing showdown trigger.
