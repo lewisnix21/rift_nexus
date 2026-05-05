@@ -4222,7 +4222,18 @@ var CARD_EFFECTS = {
   "Draven, Audacious":  { _automatedElsewhere: "[Deflect] via isEnemyDeflect; first-win-combat-each-turn → +1 score — onWinCombat first-each-turn hook not built; resolve manually" },
   "Jax, Unmatched":     { _automatedElsewhere: "[Deflect] via isEnemyDeflect; aura: friendly Equipment everywhere have [Quick-Draw] — global keyword grant on a card type not modelled; resolve manually (treat equipment as Quick-Draw)" },
   "Jayce, Man of Progress": { _automatedElsewhere: "On-play optional kill friendly gear → play ≤7E gear free this turn — sacrificial-cost free-cast gear not modelled; resolve manually" },
-  "Relentless Pursuit": { _automatedElsewhere: "[Action] move-friendly + attach Equipment + +1 might — chained move/equip/buff not modelled; resolve manually" }
+  "Relentless Pursuit": { _automatedElsewhere: "[Action] move-friendly + attach Equipment + +1 might — chained move/equip/buff not modelled; resolve manually" },
+  "Arachnoid Horror": {
+    onConquer: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 2;
+      ctx.banner("Arachnoid Horror [Hunt 2] — +2 XP");
+    },
+    onHold: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 2;
+      ctx.banner("Arachnoid Horror [Hunt 2] — +2 XP");
+    },
+    _automatedElsewhere: "Lone-enemy play permission + friendly token-play permission — play-target gating not enforced; resolve manually"
+  }
 };
 </script>
 <script type="text/babel">
