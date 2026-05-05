@@ -3954,7 +3954,18 @@ var CARD_EFFECTS = {
   "Taric, Protector":   { _automatedElsewhere: "[Shield][Tank]; aura: other friendlies here have [Shield] — keyword-grant aura not built; resolve manually" },
   "Undying Legion":     { _automatedElsewhere: "[Legion] alt-play from trash for 3E+Fury — trash-cast cost path not modelled; resolve manually" },
   "Ava Achiever":       { _automatedElsewhere: "On-attack optional Mind → play [Hidden] from hand free — paid-trigger free-play not modelled; resolve manually" },
-  "Deadbloom Predator": { _automatedElsewhere: "[Deflect] via isEnemyDeflect; permission to play onto occupied enemy BF — play-target gating relaxation not modelled; resolve manually" }
+  "Deadbloom Predator": { _automatedElsewhere: "[Deflect] via isEnemyDeflect; permission to play onto occupied enemy BF — play-target gating relaxation not modelled; resolve manually" },
+  "Scorchclaw": {
+    onConquer: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 2;
+      ctx.banner("Scorchclaw [Hunt 2] — +2 XP (now " + _xpRef.current[ctx.player] + ")");
+    },
+    onHold: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 2;
+      ctx.banner("Scorchclaw [Hunt 2] — +2 XP (now " + _xpRef.current[ctx.player] + ")");
+    },
+    _automatedElsewhere: "[Level 3] +1 might + enters ready — XP-gated keyword + condition aura, apply manually when XP ≥ 3"
+  }
 };
 </script>
 <script type="text/babel">
