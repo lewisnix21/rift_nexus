@@ -4056,7 +4056,14 @@ var CARD_EFFECTS = {
   "Temporal Portal":    { _automatedElsewhere: "Activated Rainbow+exhaust → next spell gains [Repeat] (cost) — gear spell-augment watcher not built; resolve manually" },
   "Gearhead":           { _automatedElsewhere: "[Accelerate]; equipment attached to me grants double its base might — equip-might-double aura not modelled; apply +might counter manually" },
   "Bard, Mercurial":    { _automatedElsewhere: "Additional cost: exhaust legend; on-paid → move any number of friendly units to one location — exhaust-legend cost + multi-target relocate not modelled; resolve manually" },
-  "Deceiver":           { _automatedElsewhere: "Legend on-conquer/hold optional discard+exhaust → spawn Reflection copy of unit there — copy-target token not modelled; resolve manually" }
+  "Deceiver":           { _automatedElsewhere: "Legend on-conquer/hold optional discard+exhaust → spawn Reflection copy of unit there — copy-target token not modelled; resolve manually" },
+  "Guards!": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.spawnInBase("Sand Soldier", 1);
+      ctx.banner("Guards! — Sand Soldier token to base (optional Order +1 manual)");
+    }
+  }
 };
 </script>
 <script type="text/babel">
