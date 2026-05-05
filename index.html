@@ -397,7 +397,14 @@ var CARD_EFFECTS = {
   },
 
   // --- Battlefields ---
-  "Trifarian War Camp": { _automatedElsewhere: "Units here +1 might — fires from computeAuraSources" },
+  "Trifarian War Camp": {
+    onConquer: function(ctx) {
+      var unitUids = ctx.friendlyUnitsHere().map(function(u) { return u.uid; });
+      if (unitUids.length === 0) return;
+      ctx.applyTempMightToUids(unitUids, 1, "Trifarian War Camp");
+      ctx.banner("Trifarian War Camp — aura +1 might to " + unitUids.length + " unit" + (unitUids.length === 1 ? "" : "s"));
+    }
+  },
   "The Grand Plaza": {
     condition: function(ctx) { return (ctx.friendlyUnitsHere ? ctx.friendlyUnitsHere().length : 0) >= 7; },
     onHold: function(ctx) {
@@ -7032,12 +7039,15 @@ function RiftboundGame() {
         triggerWatcherBuffAnim(w.source, w.sourceName, card.uid, w.amount);
       }
     });
-    // Garen, Commander aura: any friendly unit entering a BF where Garen is gets +1 might (persists across turns).
+    // On-field aura checks: fire when a unit enters a BF that has a persistent aura source.
     if (where === "battlefield" && bi != null && (card.type === "Unit" || card.type === "Champion")) {
-      var _garenBf = bfs[bi];
-      if (_garenBf) {
-        var _garenCard = ((_garenBf.units && _garenBf.units[myActIdx]) || []).find(function(u) { return u.name === "Garen, Commander" && u.uid !== card.uid; });
+      var _auraBf = bfs[bi];
+      if (_auraBf) {
+        // Garen, Commander: other friendly units here get +1 might.
+        var _garenCard = ((_auraBf.units && _auraBf.units[myActIdx]) || []).find(function(u) { return u.name === "Garen, Commander" && u.uid !== card.uid; });
         if (_garenCard) triggerWatcherReverseBuffAnim(_garenCard.uid, "Garen, Commander", card.uid, 1);
+        // Trifarian War Camp: units here get +1 might.
+        if (_auraBf.name === "Trifarian War Camp") triggerWatcherReverseBuffAnim(_auraBf.uid, "Trifarian War Camp", card.uid, 1);
       }
     }
     // Mech-Vision aura: if you control Forecaster, your Mechs have [Vision] (peek + recycle prompt).
@@ -7355,7 +7365,8 @@ function RiftboundGame() {
           var np = prev.slice(); np[playerIdx] = Object.assign({}, p, { score: (p.score || 0) + (amount || 0) });
           return np;
         });
-      }
+      },
+      applyTempMightToUids: function(uids, amount, source) { applyTempMightToUids(uids, amount, source); }
     };
   }
   function fireShowdownStartEffects(deployedCard, bfIdx, atkIdx) {
