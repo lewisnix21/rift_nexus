@@ -7363,32 +7363,37 @@ function RiftboundGame() {
     // Use a small delay so setBfs from the deploy has settled.
     setTimeout(function() {
       var bf = bfs[bfIdx]; if (!bf) return;
-      var assaultBuffs = []; var shieldBuffs = [];
-      // Apply [Assault N] to all attackers
+      // Apply [Assault N] to all attackers — ghost→pulse→reverse→buff for keyword-only units;
+      // units with an explicit onAttack hook get the bonus applied silently (their hook animates).
       (bf.units[atkIdx] || []).forEach(function(u) {
         var bonus = parseKeywordBonus(u.keywords, "Assault");
-        if (bonus > 0) { assaultBuffs.push({ uid: u.uid, name: u.name, n: bonus }); addAnim(u.uid, "flash", 800); }
+        if (bonus <= 0) return;
+        var _u = u; var _bonus = bonus;
+        if (CARD_EFFECTS[_u.name] && CARD_EFFECTS[_u.name].onAttack) {
+          applyTempMightToUids([_u.uid], _bonus, "[Assault]");
+        } else {
+          triggerEffectGhost(_u, function() {
+            applyTempMightToUids([_u.uid], _bonus, "[Assault]");
+            showAutoBanner("AUTO · " + _u.name + " [Assault" + (_bonus > 1 ? " " + _bonus : "") + "] — +" + _bonus + " might this combat");
+          });
+        }
       });
-      if (assaultBuffs.length > 0) {
-        // Apply each unique bonus level via separate calls (since amounts may differ)
-        var byN = {};
-        assaultBuffs.forEach(function(b2) { (byN[b2.n] = byN[b2.n] || []).push(b2.uid); });
-        Object.keys(byN).forEach(function(k) { applyTempMightToUids(byN[k], parseInt(k, 10), "[Assault]"); });
-        showAutoBanner("AUTO · Assault — " + assaultBuffs.length + " attacker" + (assaultBuffs.length === 1 ? "" : "s") + " buffed");
-      }
-      // Apply [Shield N] to all defenders
+      // Apply [Shield N] to all defenders — same ghost pattern for keyword-only units.
       for (var pi = 0; pi < bf.units.length; pi++) {
         if (pi === atkIdx) continue;
         (bf.units[pi] || []).forEach(function(u) {
           var bonus = parseKeywordBonus(u.keywords, "Shield");
-          if (bonus > 0) { shieldBuffs.push({ uid: u.uid, name: u.name, n: bonus }); addAnim(u.uid, "flash", 800); }
+          if (bonus <= 0) return;
+          var _u = u; var _bonus = bonus;
+          if (CARD_EFFECTS[_u.name] && CARD_EFFECTS[_u.name].onDefend) {
+            applyTempMightToUids([_u.uid], _bonus, "[Shield]");
+          } else {
+            triggerEffectGhost(_u, function() {
+              applyTempMightToUids([_u.uid], _bonus, "[Shield]");
+              showAutoBanner("AUTO · " + _u.name + " [Shield" + (_bonus > 1 ? " " + _bonus : "") + "] — +" + _bonus + " might this combat");
+            });
+          }
         });
-      }
-      if (shieldBuffs.length > 0) {
-        var byNS = {};
-        shieldBuffs.forEach(function(b2) { (byNS[b2.n] = byNS[b2.n] || []).push(b2.uid); });
-        Object.keys(byNS).forEach(function(k) { applyTempMightToUids(byNS[k], parseInt(k, 10), "[Shield]"); });
-        showAutoBanner("AUTO · Shield — " + shieldBuffs.length + " defender" + (shieldBuffs.length === 1 ? "" : "s") + " buffed");
       }
       // Mask of Foresight aura: when a friendly unit attacks/defends ALONE on its side, give it +1 might this turn.
       // Owner = controller of Mask of Foresight (in their base or BF).
