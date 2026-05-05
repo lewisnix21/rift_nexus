@@ -4025,7 +4025,8 @@ var CARD_EFFECTS = {
   },
   "Draven, Vanquisher": { _automatedElsewhere: "On-win-combat → Gold token; on-attack/defend optional Fury → +2 might — onWinCombat hook + paid combat trigger not built; resolve manually" },
   "Allay, Eager Admirer": { _automatedElsewhere: "[Deflect] via isEnemyDeflect; aura: other friendlies here have [Deflect] — keyword-grant aura not built; resolve manually" },
-  "Immortal Phoenix":   { _automatedElsewhere: "[Assault 2] from parseKeywordBonus; on-spell-kill in-trash → optional 1E+Fury self-replay — onSpellKillFromTrash hook not built; resolve manually" }
+  "Immortal Phoenix":   { _automatedElsewhere: "[Assault 2] from parseKeywordBonus; on-spell-kill in-trash → optional 1E+Fury self-replay — onSpellKillFromTrash hook not built; resolve manually" },
+  "Leona, Zealot":      { _automatedElsewhere: "Conditional enters-ready (opponent within 3 of Victory); stunned-enemy here have -8 might (min 1) — score-based ready + stunned-debuff aura not modelled; resolve manually" }
 };
 </script>
 <script type="text/babel">
