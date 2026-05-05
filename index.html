@@ -4541,6 +4541,7 @@ function RiftboundGame() {
   var _hs = useState("drawn"), handSort = _hs[0], setHandSort = _hs[1];
   var _hovSize = useState(function() { try { var v = parseFloat(localStorage.getItem("riftNexusHoverSize")); return isFinite(v) && v >= 1.5 && v <= 5.5 ? v : 3.5; } catch(e) { return 3.5; } }), hoverSize = _hovSize[0], setHoverSize = _hovSize[1];
   useEffect(function() { try { localStorage.setItem("riftNexusHoverSize", String(hoverSize)); } catch(e) {} }, [hoverSize]);
+  var _audioVol = useState(function() { try { var v = JSON.parse(localStorage.getItem("riftNexusAudio")); return (v && typeof v.master === "number") ? v : { master: 0.8, sfx: 1.0, music: 0.5 }; } catch(e) { return { master: 0.8, sfx: 1.0, music: 0.5 }; } }), audioVol = _audioVol[0], setAudioVol = _audioVol[1];
   // Mighty-transition detector — fires "becomes Mighty" hooks (Fiora Worthy, Fiora Grand Duelist).
   // A unit is Mighty while its effective might (might + tempMight + _aura) is >= 5.
   useEffect(function() {
@@ -6671,13 +6672,28 @@ function RiftboundGame() {
     }
     return false;
   }
+  // --- Music ---
+  var _musicAudio = useRef(null);
+  if (typeof Audio !== "undefined" && !_musicAudio.current) {
+    var _ma = new Audio("/music - open landscapes.mp3");
+    _ma.loop = true;
+    _ma.volume = audioVol.master * audioVol.music;
+    _musicAudio.current = _ma;
+  }
+  useEffect(function() {
+    var a = _musicAudio.current;
+    if (!a) return;
+    a.volume = audioVol.master * audioVol.music;
+    if (screen === "play") { a.play().catch(function() {}); }
+    else { a.pause(); }
+  }, [screen, audioVol]);
   // --- Token / buff sound ---
   var _tokenBuffAudio = useRef(null);
   if (typeof Audio !== "undefined" && !_tokenBuffAudio.current) {
     var _tba = new Audio("/sound effect - token or buff.mp3");
-    _tba.volume = 0.6;
     _tokenBuffAudio.current = _tba;
   }
+  if (_tokenBuffAudio.current) _tokenBuffAudio.current.volume = audioVol.master * audioVol.sfx;
   function _playTokenBuffSound() {
     var a = _tokenBuffAudio.current;
     if (!a || !a.src) return;
@@ -6687,12 +6703,10 @@ function RiftboundGame() {
   // --- entersReady ghost animation ---
   var _entersReadyAudio = useRef(null);
   if (typeof Audio !== "undefined" && !_entersReadyAudio.current) {
-    // Replace the src below with a direct-hosted audio file URL (mp3/ogg).
-    // The Epidemic Sound link is a webpage — export/download the file and host it, then paste the URL here.
     var _era = new Audio("/sound effect - ready swoosh.mp3");
-    _era.volume = 0.7;
     _entersReadyAudio.current = _era;
   }
+  if (_entersReadyAudio.current) _entersReadyAudio.current.volume = audioVol.master * audioVol.sfx;
   function _playEntersReadySound() {
     var a = _entersReadyAudio.current;
     if (!a || !a.src) return;
@@ -9767,6 +9781,16 @@ function RiftboundGame() {
                     <input type="range" min="1.5" max="5.5" step="0.5" value={hoverSize} onChange={function(e) { setHoverSize(parseFloat(e.target.value)); }} style={{ flex: 1, cursor: "pointer", accentColor: "#888" }} />
                     <span style={{ fontSize: 12, color: "#aaa", fontFamily: "Spectral,serif", minWidth: 24, textAlign: "center" }}>{hoverSize.toFixed(1)}x</span>
                   </div>
+                </div>
+                <div style={{ padding: "4px 10px 6px", borderBottom: "1px solid #ffffff10", marginBottom: 4 }}>
+                  <div style={{ fontSize: 11, color: "#777", fontFamily: "Spectral,serif", letterSpacing: 0.3, marginBottom: 5 }}>AUDIO</div>
+                  {[{ label: "Master", key: "master" }, { label: "Music", key: "music" }, { label: "SFX", key: "sfx" }].map(function(item) {
+                    return <div key={item.key} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+                      <span style={{ fontSize: 11, color: "#aaa", fontFamily: "Spectral,serif", minWidth: 40 }}>{item.label}</span>
+                      <input type="range" min="0" max="1" step="0.05" value={audioVol[item.key]} onChange={function(e) { var next = Object.assign({}, audioVol); next[item.key] = parseFloat(e.target.value); setAudioVol(next); try { localStorage.setItem("riftNexusAudio", JSON.stringify(next)); } catch(ex) {} }} style={{ flex: 1, cursor: "pointer", accentColor: "#FFD700" }} />
+                      <span style={{ fontSize: 11, color: "#aaa", fontFamily: "Spectral,serif", minWidth: 30, textAlign: "right" }}>{Math.round(audioVol[item.key] * 100)}%</span>
+                    </div>;
+                  })}
                 </div>
                 <button onClick={function() { setEditingName(true); }} style={{ display: "block", width: "100%", padding: "6px 10px", borderRadius: 4, border: "none", background: "transparent", color: "#ddd", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif", textAlign: "left" }}>Change Name</button>
                 <button onClick={function() { setAltPing(!altPing); }} style={{ display: "flex", width: "100%", padding: "6px 10px", borderRadius: 4, border: "none", background: "transparent", color: "#ddd", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif", textAlign: "left", alignItems: "center", gap: 6 }}>
