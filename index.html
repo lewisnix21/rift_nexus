@@ -4786,7 +4786,7 @@ function RiftboundGame() {
       if (showcaseCard) leftovers.push(showcaseCard);
       leftovers = leftovers.concat(showcaseHistory);
       var prevOwnerIdx = myActIdx;
-      var isOnlineGame2 = lobbyType === "host" || lobbyType === "join";
+      var isOnlineGame2 = (lobbyType === "host" || lobbyType === "join") && !_soloTestRef.current;
       if (showcaseOwner && isOnlineGame2 && lobbyPlayers[showcaseOwner] && typeof lobbyPlayers[showcaseOwner].slot === "number") {
         prevOwnerIdx = lobbyPlayers[showcaseOwner].slot;
       }
@@ -5311,6 +5311,7 @@ function RiftboundGame() {
   var _lobbyErr = useState(null), lobbyErr = _lobbyErr[0], setLobbyErr = _lobbyErr[1];
   var _mySlot = useState(0), mySlot = _mySlot[0], setMySlot = _mySlot[1];
   var _lobbyUnsub = useRef(null);
+  var _soloTestRef = useRef(false);
 
   var _gamePhaseRef = useRef(null);
   var _syncTimer = useRef(null);
@@ -5822,8 +5823,8 @@ function RiftboundGame() {
   useEffect(function() { if (lr.current) lr.current.scrollTop = lr.current.scrollHeight; }, [log]);
   useEffect(function() {
     if (screen !== "wait" || awakenPhase) return;
-    var isOnlineGame2 = lobbyType === "host" || lobbyType === "join";
-    // For test mode, skip first turn (show Start Game button); also guard turn===0 to avoid spurious fire during mulligan batch
+    var isOnlineGame2 = (lobbyType === "host" || lobbyType === "join") && !_soloTestRef.current;
+    // For local/solo-test mode, skip first turn (show Start Game button); also guard turn===0 to avoid spurious fire during mulligan batch
     if (!isOnlineGame2 && (turn === 0 || (turn === 1 && act === 0))) return;
     // For online, must be in playing phase and our turn
     if (isOnlineGame2) {
@@ -5841,7 +5842,7 @@ function RiftboundGame() {
   // refs don't trigger re-runs), retry doStartTurn shortly after to break the stall.
   useEffect(function() {
     if (screen !== "wait" || awakenPhase) return;
-    var isOnlineGameRetry = lobbyType === "host" || lobbyType === "join";
+    var isOnlineGameRetry = (lobbyType === "host" || lobbyType === "join") && !_soloTestRef.current;
     if (!isOnlineGameRetry) return;
     if (act !== mySlot) return;
     var t = setTimeout(function() {
@@ -5925,7 +5926,7 @@ function RiftboundGame() {
     return function() { ref.off("value", handler); };
   }, [authUser]);
 
-  var isOnlineGame = lobbyType === "host" || lobbyType === "join";
+  var isOnlineGame = (lobbyType === "host" || lobbyType === "join") && !_soloTestRef.current;
   var viewSlot = isOnlineGame ? mySlot : act;
   // Compute the effective spotlight enemy index — the player shown in the top enemy zone.
   // Default order: active player (if not me) → last spotlight (when it's my turn) → first non-self.
@@ -6018,6 +6019,8 @@ function RiftboundGame() {
       });
     }
     var allLobbyReady = roomCode && lpArr.length >= (lobbySettings ? lobbySettings.pc : 2) && lpArr.every(function(p) { return p.deck && p.name && p.name.trim() && p.ready && (!_isDoublesLobby || p.team); }) && _doublesIssues.length === 0;
+    var _myLobbyP = lpArr.find(function(p) { return p.uid === myUid; });
+    var soloTestReady = isHost && roomCode && lpArr.length === 1 && !!(_myLobbyP && _myLobbyP.deck && DECKS[_myLobbyP.deck] && _myLobbyP.name && _myLobbyP.name.trim() && _myLobbyP.ready);
     return (
     <div style={{ height: "100vh", maxHeight: "100vh", background: "linear-gradient(180deg, #2a2a50 0%, #333368 30%, #3d3d7a 50%, #333368 70%, #2a2a50 100%)", color: "#ddd", fontFamily: "sans-serif", display: "flex", flexDirection: "column", alignItems: "center", overflow: "hidden", padding: 0, position: "relative" }}>
       {/* Top header bar */}
@@ -6252,6 +6255,24 @@ function RiftboundGame() {
           }} disabled={!allLobbyReady} style={{ flex: 1, padding: "10px 24px", borderRadius: 6, border: "2px solid #FFD700", background: allLobbyReady ? "linear-gradient(135deg,#FFD70040,#FF8C0020)" : "#222", color: allLobbyReady ? "#FFD700" : "#555", cursor: allLobbyReady ? "pointer" : "not-allowed", fontSize: 16, fontWeight: 700, fontFamily: "Inter,sans-serif" }}>START GAME</button>
           <button onClick={function() { leaveLobby(); }} style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #ff444466", background: "transparent", color: "#ff6666", cursor: "pointer", fontSize: 13, fontFamily: "Inter,sans-serif" }}>Close</button>
           </div>
+          {soloTestReady && <button onClick={function() {
+            try {
+              dbSavedDecks.forEach(function(deck) { registerCustomDeck(deck); });
+              var deckName = _myLobbyP.deck;
+              var t = DECKS[deckName];
+              if (!t) { alert("Deck not found: " + deckName); return; }
+              var nps = [initPlayer(deckName), initPlayer(deckName)];
+              var bfNames = t.bfs || [];
+              var makeBf = function(name) { if (!name) return null; var bfCard = mkC(name); if (!bfCard) return null; return Object.assign({}, bfCard, { controller: null, units: [[], []], uid: uid() }); };
+              var gb = [makeBf(bfNames[0] || null), makeBf(bfNames[1] || bfNames[0] || null)].filter(Boolean);
+              if (!gb.length) { alert("No battlefields in deck."); return; }
+              setPc(2); setMySlot(0); setPs(nps); setBfs(gb);
+              setTurn(1); setAct(0); setFirstPlayerIdx(0);
+              _gamePhaseRef.current = "playing";
+              _soloTestRef.current = true;
+              setScreen("wait");
+            } catch(err) { alert("Solo test error: " + (err && err.message ? err.message : err)); }
+          }} style={{ width: "100%", padding: "8px 16px", borderRadius: 6, border: "1px solid #8B5CF666", background: "rgba(139,92,246,0.08)", color: "#8B5CF6", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter,sans-serif" }}>Test Solo (your deck vs itself)</button>}
         </div>
       </div>}
 
@@ -8526,7 +8547,7 @@ function RiftboundGame() {
   // (The useRef + useEffect are declared at the top of the component to satisfy hook rules.)
   endTurnKeyRef.current = function() {
     if (awakenPhase || sd || tm || fc || scryMode || showcaseCard) return;
-    var isOnlineGameKey = lobbyType === "host" || lobbyType === "join";
+    var isOnlineGameKey = (lobbyType === "host" || lobbyType === "join") && !_soloTestRef.current;
     if (isOnlineGameKey) {
       if (_gamePhaseRef.current !== "playing") return;
       if (act !== mySlot) return;
@@ -10135,7 +10156,7 @@ function RiftboundGame() {
 
       <div style={{ flex: 1, minHeight: 0, display: "flex", overflow: "visible", background: "linear-gradient(180deg, #2a2a50 0%, #333368 30%, #3d3d7a 50%, #333368 70%, #2a2a50 100%)" }}>
         {/* Active player score - left edge */}
-        {function() { var isOnlineGame = lobbyType === "host" || lobbyType === "join"; var isMyTurn = isOnlineGame ? act === mySlot : true; return (
+        {function() { var isOnlineGame = (lobbyType === "host" || lobbyType === "join") && !_soloTestRef.current; var isMyTurn = isOnlineGame ? act === mySlot : true; return (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, width: Math.round(70 * vScale), background: "rgba(255,215,0,0.03)", borderRight: "1px solid #FFD70025", padding: "8px 4px", overflow: "visible", position: "relative", zIndex: 25 }}>
           {/* Settings gear */}
           <div style={{ position: "relative", width: "100%", display: "flex", justifyContent: "center", marginBottom: 4 }}>
@@ -10432,7 +10453,7 @@ function RiftboundGame() {
           </div>{/* end PLAYER ZONE wrapper */}
         </div>
         {/* Enemy score - right edge */}
-        {function() { var isOnlineGame = lobbyType === "host" || lobbyType === "join"; return (
+        {function() { var isOnlineGame = (lobbyType === "host" || lobbyType === "join") && !_soloTestRef.current; return (
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-start", alignItems: "center", flexShrink: 0, width: Math.round(70 * vScale), background: "rgba(255,215,0,0.03)", borderLeft: "1px solid #FFD70025", padding: "8px 4px" }}>
           {ps.filter(function(_, i) { return isOnlineGame ? i !== mySlot : i !== act; }).map(function(enemy, ei) {
             var eIdx = ps.indexOf(enemy);
@@ -10480,7 +10501,7 @@ function RiftboundGame() {
             {tm && <div style={{ background: "#FFD70010", borderRadius: 4, padding: 5, fontSize: 13, color: "#FFD700", textAlign: "center", border: "1px solid #FFD70040" }}>{tm.ty === "buff" ? "Pick friendly" : tm.ty === "dmg" ? "Pick to damage" : tm.ty === "stun" ? "Pick enemy" : "Target"}<br /><button onClick={function() { setTm(null); }} style={{ marginTop: 3, padding: "1px 6px", border: "1px solid #333", background: "transparent", color: "#555", cursor: "pointer", fontSize: 11, borderRadius: 3 }}>cancel</button></div>}
             {screen === "wait" && !awakenPhase && turn === 1 && act === 0 && _gamePhaseRef.current === "playing" && isHost && <button onClick={function() { doStartTurn(); }} style={{ padding: 10, borderRadius: 5, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0015)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>START GAME</button>}
             {awakenPhase && <div style={{ textAlign: "center", padding: 6, background: "#FFD70008", borderRadius: 4, border: "1px solid #FFD70040" }}><div className="anim-pulse" style={{ fontSize: 15, fontWeight: 700, fontFamily: "Spectral,serif", color: "#FFD700", textTransform: "uppercase", letterSpacing: 2 }}>New Turn</div></div>}
-            {!awakenPhase && (function() { var isOnlineGame = lobbyType === "host" || lobbyType === "join"; if (isOnlineGame) { if (_gamePhaseRef.current !== "playing") return null; var isMyTurnO = act === mySlot; return isMyTurnO ? <button onClick={endTurn} style={{ padding: 10, borderRadius: 5, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0015)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>END TURN</button> : <div style={{ padding: 10, borderRadius: 5, border: "1px solid #ffffff20", background: "transparent", color: "#888", fontSize: 14, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif", textAlign: "center" }}>{pName(act) + "'s turn"}</div>; } else { if (screen !== "play") return null; return <button onClick={endTurn} style={{ padding: 10, borderRadius: 5, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0015)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>END TURN</button>; } })()}
+            {!awakenPhase && (function() { var isOnlineGame = (lobbyType === "host" || lobbyType === "join") && !_soloTestRef.current; if (isOnlineGame) { if (_gamePhaseRef.current !== "playing") return null; var isMyTurnO = act === mySlot; return isMyTurnO ? <button onClick={endTurn} style={{ padding: 10, borderRadius: 5, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0015)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>END TURN</button> : <div style={{ padding: 10, borderRadius: 5, border: "1px solid #ffffff20", background: "transparent", color: "#888", fontSize: 14, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif", textAlign: "center" }}>{pName(act) + "'s turn"}</div>; } else { if (screen !== "play") return null; return <button onClick={endTurn} style={{ padding: 10, borderRadius: 5, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0015)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>END TURN</button>; } })()}
             {sel && canAct && !tm && !fc && <div style={{ padding: 5, fontSize: 13, color: "#aaa", textAlign: "center", background: "#FFD70008", borderRadius: 4, border: "1px solid #FFD70040" }}>Selected: <b style={{ color: "#FFD700" }}>{sel.name}</b><br /><span style={{ fontSize: 12, color: "#888" }}>click a battlefield</span></div>}
           </div>
           {/* Chat log — upper half */}
@@ -10811,7 +10832,7 @@ function RiftboundGame() {
       })()}
       {/* AUTO MODE: Floating END TURN button (bottom-right) — only when no showdown and no pending spell-resolve chain */}
       {autoMode && screen === "play" && !awakenPhase && !sd && !pendingSpell && !pendingBeginConquer && !autoPrompt && !showcaseCard && (function() {
-        var isOnlineGame = lobbyType === "host" || lobbyType === "join";
+        var isOnlineGame = (lobbyType === "host" || lobbyType === "join") && !_soloTestRef.current;
         if (isOnlineGame) { if (_gamePhaseRef.current !== "playing") return null; if (act !== mySlot) return null; }
         return <button onClick={endTurn} style={{ position: "fixed", bottom: 24, right: 24, padding: "12px 28px", borderRadius: 8, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70060,#FF8C0030)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif", zIndex: 950, boxShadow: "0 4px 16px #000c, 0 0 24px rgba(255,215,0,0.2)", letterSpacing: 1 }}>END TURN</button>;
       })()}
