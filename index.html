@@ -4217,7 +4217,8 @@ var CARD_EFFECTS = {
       if (!allUids.length) { ctx.banner("Sudden Storm — no BF units"); return; }
       ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Sudden Storm (2 dmg, again to a 2nd target manually)", sourceUid: ctx.card.uid, effect: "damage", amount: 2 });
     }
-  }
+  },
+  "Janna, Savior":      { _automatedElsewhere: "[Reaction]; on-play heal all friendly units (clear damage) — heal-many not modelled; resolve manually (clear damage on each)" }
 };
 </script>
 <script type="text/babel">
