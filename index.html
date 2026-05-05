@@ -10478,12 +10478,6 @@ function RiftboundGame() {
             >
               <div className={scorePulseIdx === eIdx ? "anim-score-pulse" : ""} style={{ width: Math.round(50 * vScale), height: Math.round(50 * vScale), borderRadius: "50%", border: "3px solid " + (isSpotlightTab ? "#FFD700" : "#FFD70055"), background: isSpotlightTab ? "rgba(255,215,0,0.10)" : "rgba(255,215,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, color: isSpotlightTab ? "#FFD700" : "#FFD70088", fontFamily: "Spectral,serif" }}>{(enemy.score || 0) + (continuePlaying ? "" : (lobbySettings && lobbySettings.mode === "Doubles" ? "/11" : "/8"))}</div>
               <div className={isEnemyTurn ? "anim-name-glow" : ""} style={{ writingMode: "vertical-rl", textOrientation: "mixed", fontSize: 18, fontFamily: "Spectral,serif", fontWeight: 700, color: isEnemyTurn ? "#FFD700" : isSpotlightTab ? "#FFD700cc" : "#FFD70055", letterSpacing: 2, marginTop: 4, transition: "color 0.3s ease" }}>{pName(eIdx)}</div>
-              {/* Enemy graveyard — auto-mode only; in manual mode the bin is reachable via the spotlight panel */}
-              {(function() { var _eTrash = (enemy.trash || []); var _eTop = _eTrash.length ? _eTrash[_eTrash.length - 1] : null; var _eImg = _eTop && _eTop.img ? imgSrc(_eTop.img) : ""; return <div onClick={function(e) { e.stopPropagation(); setShowEnemyBin({name: pName(eIdx), cards: _eTrash}); }} title={pName(eIdx) + "'s graveyard — click to view"} style={{ width: Math.round(54 * vScale), minHeight: Math.round(68 * vScale), borderRadius: 6, background: _eImg ? "#0a0a14" : "linear-gradient(160deg,#2a1010,#1a0808)", border: "2px solid #cc555555", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, position: "relative", overflow: "hidden", padding: "4px 2px", marginTop: 6 }}>
-                {_eImg && <img src={_eImg} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "fill", opacity: 0.35, filter: "saturate(0.7)" }} />}
-                <span style={{ fontSize: 10, color: "#ffaaaa99", fontFamily: "Spectral,serif", letterSpacing: 1, zIndex: 1, marginTop: "auto" }}>GRAVE</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#fff", fontFamily: "Spectral,serif", zIndex: 1, textShadow: "0 0 4px #000c" }}>{_eTrash.length}</span>
-              </div>; })()}
             </div>;
           })}
           <div style={{ flex: 1 }} />
