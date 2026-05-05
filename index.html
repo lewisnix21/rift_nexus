@@ -6789,6 +6789,43 @@ function RiftboundGame() {
       }, 1300);
     }, 60);
   }
+  function triggerWatcherReadyAnim(sourceUid, sourceName, targetUid, targetOwnerIdx) {
+    if (!autoMode) return;
+    var capturedIdx = typeof targetOwnerIdx === "number" ? targetOwnerIdx : myActIdx;
+    var capturedTargetUid = targetUid;
+    var capturedVScale = vScale;
+    setTimeout(function() {
+      var srcEl = typeof document !== "undefined" ? document.querySelector('[data-uid="' + sourceUid + '"]') : null;
+      if (!srcEl) {
+        _readyCardById(capturedIdx, capturedTargetUid);
+        addAnim(capturedTargetUid, "flash", 800);
+        _playEntersReadySound();
+        return;
+      }
+      var rect = srcEl.getBoundingClientRect();
+      var vw = typeof window !== "undefined" ? window.innerWidth : 1920;
+      var vh = typeof window !== "undefined" ? window.innerHeight : 1080;
+      var startW = rect.width; var startH = rect.height;
+      var scW = Math.round(258 * capturedVScale); var scH = Math.round(361 * capturedVScale);
+      var fromX = rect.left + startW / 2; var fromY = rect.top + startH / 2;
+      var toX = vw - vw * 0.02 - scW / 2; var toY = vh * 0.5;
+      var ts = Date.now();
+      var sourceCard = getCard(sourceName) || { name: sourceName };
+      setReadyGhostAnim({ card: sourceCard, fromX: fromX, fromY: fromY, startW: startW, startH: startH, toX: toX, toY: toY, scW: scW, scH: scH, phase: "hold", ts: ts });
+      requestAnimationFrame(function() { requestAnimationFrame(function() {
+        setReadyGhostAnim(function(p) { return p && p.ts === ts ? Object.assign({}, p, { phase: "slide-to" }) : p; });
+      }); });
+      setTimeout(function() { setReadyGhostAnim(function(p) { return p && p.ts === ts ? Object.assign({}, p, { phase: "pulse" }) : p; }); }, 430);
+      setTimeout(function() { setReadyGhostAnim(function(p) { return p && p.ts === ts ? Object.assign({}, p, { phase: "slide-back" }) : p; }); }, 730);
+      setTimeout(function() { setReadyGhostAnim(function(p) { return p && p.ts === ts ? Object.assign({}, p, { phase: "done" }) : p; }); }, 1130);
+      setTimeout(function() {
+        setReadyGhostAnim(function(p) { return p && p.ts === ts ? null : p; });
+        _readyCardById(capturedIdx, capturedTargetUid);
+        addAnim(capturedTargetUid, "flash", 800);
+        _playEntersReadySound();
+      }, 1300);
+    }, 60);
+  }
   // --- Auto-mode helper functions (used inside CARD_EFFECTS via ctx) ---
   function drawCards(n) {
     setPs(function(prev) {
@@ -6880,7 +6917,7 @@ function RiftboundGame() {
     var eff = CARD_EFFECTS[card.name];
     autoWatchers.forEach(function(w) {
       if (w.kind === "ownUnitEntersReady") {
-        addAnim(w.source, "flash", 800);
+        triggerWatcherReadyAnim(w.source, w.sourceName, card.uid, myActIdx);
       }
       // Grand Strategem watcher — buff friendly units played AFTER the spell this turn.
       if (w.kind === "friendlyEntersGetsTempMight" && (card.type === "Unit" || card.type === "Champion")) {
@@ -8713,10 +8750,11 @@ function RiftboundGame() {
     function _fmtDomainsBF(list) { if (!list || !list.length) return ""; var counts = {}; list.forEach(function(d) { counts[d] = (counts[d] || 0) + 1; }); return Object.keys(counts).map(function(d) { return counts[d] + " " + d; }).join(", "); }
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(x) { return x.slice(); }) }); });
     var _hasEntersReadyBF = autoMode && CARD_EFFECTS[card.name] && CARD_EFFECTS[card.name].entersReady;
-    var _enterReadyBF = _hasEntersReadyBF ? false : shouldEnterReady(card);
+    var _watcherEntersReadyBF = !_hasEntersReadyBF && autoMode && autoWatchers.some(function(w) { return w.kind === "ownUnitEntersReady"; });
+    var _enterReadyBF = (_hasEntersReadyBF || _watcherEntersReadyBF) ? false : shouldEnterReady(card);
     var _bfEff = CARD_EFFECTS[card.name];
-    var _deferBfExhaust = autoMode && !_enterReadyBF && !_hasEntersReadyBF && _bfEff && _bfEff.onPlay;
-    nb[bi].units[myActIdx].push(Object.assign({}, card, { exhausted: _hasEntersReadyBF ? true : (_deferBfExhaust ? false : !_enterReadyBF) }));
+    var _deferBfExhaust = autoMode && !_enterReadyBF && !_hasEntersReadyBF && !_watcherEntersReadyBF && _bfEff && _bfEff.onPlay;
+    nb[bi].units[myActIdx].push(Object.assign({}, card, { exhausted: (_hasEntersReadyBF || _watcherEntersReadyBF) ? true : (_deferBfExhaust ? false : !_enterReadyBF) }));
     aL(pName(myActIdx) + " deploys " + cName(card) + " to " + nb[bi].name);
     if (autoMode && (tappedDomainsBF.length > 0 || recycledDomainsBF.length > 0)) { var partsBF = []; if (tappedDomainsBF.length) partsBF.push("tapped " + _fmtDomainsBF(tappedDomainsBF)); if (recycledDomainsBF.length) partsBF.push("recycled " + _fmtDomainsBF(recycledDomainsBF)); aL("  Paid: " + partsBF.join("; ")); }
     var np = ps.slice(); np[myActIdx] = p; setPs(np); setBfs(nb);
@@ -8809,10 +8847,11 @@ function RiftboundGame() {
     function _fmtDomains(list) { if (!list || !list.length) return ""; var counts = {}; list.forEach(function(d) { counts[d] = (counts[d] || 0) + 1; }); return Object.keys(counts).map(function(d) { return counts[d] + " " + d; }).join(", "); }
     if (card.type === "Unit" || card.type === "Champion") {
       var _hasEntersReady = autoMode && CARD_EFFECTS[card.name] && CARD_EFFECTS[card.name].entersReady;
-      var _enterReady = _hasEntersReady ? false : shouldEnterReady(card);
+      var _watcherEntersReady = !_hasEntersReady && autoMode && autoWatchers.some(function(w) { return w.kind === "ownUnitEntersReady"; });
+      var _enterReady = (_hasEntersReady || _watcherEntersReady) ? false : shouldEnterReady(card);
       var _baseEff = CARD_EFFECTS[card.name];
-      var _deferBaseExhaust = autoMode && !_enterReady && !_hasEntersReady && _baseEff && _baseEff.onPlay;
-      p.base = p.base.concat([Object.assign({}, card, { exhausted: _hasEntersReady ? true : (_deferBaseExhaust ? false : !_enterReady) })]);
+      var _deferBaseExhaust = autoMode && !_enterReady && !_hasEntersReady && !_watcherEntersReady && _baseEff && _baseEff.onPlay;
+      p.base = p.base.concat([Object.assign({}, card, { exhausted: (_hasEntersReady || _watcherEntersReady) ? true : (_deferBaseExhaust ? false : !_enterReady) })]);
       if (isChamp) { p.championPlayed = true; p.champion = null; }
       aL(pName(myActIdx) + " plays " + cName(card));
       if (autoMode && (tappedDomains.length > 0 || recycledDomains.length > 0)) { var parts = []; if (tappedDomains.length) parts.push("tapped " + _fmtDomains(tappedDomains)); if (recycledDomains.length) parts.push("recycled " + _fmtDomains(recycledDomains)); aL("  Paid: " + parts.join("; ")); }
@@ -8854,8 +8893,9 @@ function RiftboundGame() {
     var card = fc;
     if (card.type === "Unit" || card.type === "Champion") {
       var _hasEntersReady2 = autoMode && CARD_EFFECTS[card.name] && CARD_EFFECTS[card.name].entersReady;
-      var _enterReady2 = _hasEntersReady2 ? false : shouldEnterReady(card);
-      p.base = p.base.concat([Object.assign({}, card, { exhausted: _hasEntersReady2 ? true : !_enterReady2 })]);
+      var _watcherEntersReady2 = !_hasEntersReady2 && autoMode && autoWatchers.some(function(w) { return w.kind === "ownUnitEntersReady"; });
+      var _enterReady2 = (_hasEntersReady2 || _watcherEntersReady2) ? false : shouldEnterReady(card);
+      p.base = p.base.concat([Object.assign({}, card, { exhausted: (_hasEntersReady2 || _watcherEntersReady2) ? true : !_enterReady2 })]);
       if (isChamp) { p.championPlayed = true; p.champion = null; }
       aL(pName(idx) + " plays " + cName(card));
       if (/draw 1/i.test(card.text) && p.mainDeck.length > 0) { p.hand = p.hand.concat([p.mainDeck.shift()]); aL("  Draw 1"); }
