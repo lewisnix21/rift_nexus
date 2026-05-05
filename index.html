@@ -4091,7 +4091,20 @@ var CARD_EFFECTS = {
       ctx.prompt({ kind: "pickFromTrash", n: 1, validUids: validUids, sourceName: "Glasc Mixologist [Deathknell] (return unit ≤3E; replay manually)", sourceUid: ctx.card.uid, effect: "returnToHand" });
     }
   },
-  "Pyke, Dockside Butcher": { _automatedElsewhere: "[Hidden][Ganking]; optional Fury cost-time → enter ready + +1 might — alt-cost-time path not modelled; resolve manually" }
+  "Pyke, Dockside Butcher": { _automatedElsewhere: "[Hidden][Ganking]; optional Fury cost-time → enter ready + +1 might — alt-cost-time path not modelled; resolve manually" },
+  "Find Your Center": {
+    onCast: function(ctx) {
+      ctx.flash(ctx.card.uid);
+      ctx.draw(1);
+      var idx = ctx.myActIdx;
+      var friendlyUids = [];
+      var meP = ps[idx];
+      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") friendlyUids.push(c.uid); });
+      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { friendlyUids.push(u.uid); }); });
+      if (!friendlyUids.length) { ctx.banner("Find Your Center — drew 1 (no friendly units to buff)"); return; }
+      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Find Your Center", sourceUid: ctx.card.uid, effect: "tempMight", amount: 2 });
+    }
+  }
 };
 </script>
 <script type="text/babel">
