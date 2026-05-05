@@ -4218,7 +4218,8 @@ var CARD_EFFECTS = {
       ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Sudden Storm (2 dmg, again to a 2nd target manually)", sourceUid: ctx.card.uid, effect: "damage", amount: 2 });
     }
   },
-  "Janna, Savior":      { _automatedElsewhere: "[Reaction]; on-play heal all friendly units (clear damage) — heal-many not modelled; resolve manually (clear damage on each)" }
+  "Janna, Savior":      { _automatedElsewhere: "[Reaction]; on-play heal all friendly units (clear damage) — heal-many not modelled; resolve manually (clear damage on each)" },
+  "Draven, Audacious":  { _automatedElsewhere: "[Deflect] via isEnemyDeflect; first-win-combat-each-turn → +1 score — onWinCombat first-each-turn hook not built; resolve manually" }
 };
 </script>
 <script type="text/babel">
