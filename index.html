@@ -273,7 +273,6 @@ var CARD_EFFECTS = {
 
   "Faithful Manufactor": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       ctx.spawnHere("Recruit (Demacian)", 1);
       ctx.banner("Faithful Manufactor — Recruit token " + (ctx.where === "battlefield" ? "at " + (ctx.bfName || "battlefield") : "to base"));
     }
@@ -281,7 +280,6 @@ var CARD_EFFECTS = {
 
   "First Mate": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       var meP = ps[ctx.myActIdx]; if (!meP) return;
       var exhUids = [];
       (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && c.uid !== ctx.card.uid && c.exhausted) exhUids.push(c.uid); });
@@ -297,7 +295,6 @@ var CARD_EFFECTS = {
       // the play-direct-to-battlefield case (the most common); manual moves between battlefields
       // would need an on-move hook (not yet implemented).
       if (ctx.where !== "battlefield") return;
-      ctx.flash(ctx.card.uid);
       ctx.spawnInBattlefield("Recruit (Demacian)", 1);
       ctx.banner("Noxian Drummer — Recruit token at " + (ctx.bfName || "battlefield"));
     }
@@ -306,10 +303,12 @@ var CARD_EFFECTS = {
   // --- Spells ---
   "Confront": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      ctx.banner("Confront — your units enter ready this turn, draw 1");
-      ctx.addWatcher({ kind: "ownUnitEntersReady", source: ctx.card.uid, sourceName: "Confront" });
-      ctx.draw(1);
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        _ctx.banner("Confront — your units enter ready this turn, draw 1");
+        _ctx.addWatcher({ kind: "ownUnitEntersReady", source: _ctx.card.uid, sourceName: "Confront" });
+        _ctx.draw(1);
+      }, null, null, { reverseOnArrive: false });
     }
   },
 
@@ -317,33 +316,38 @@ var CARD_EFFECTS = {
     onCast: function(ctx) {
       var friendly = ctx.countFriendlyUnits();
       if (friendly <= 0) return;
-      var n = Math.min(2, friendly);
-      ctx.flash(ctx.card.uid);
-      ctx.prompt({ kind: "pickFriendlyUnits", n: n, sourceName: "Back to Back", sourceUid: ctx.card.uid, effect: "tempMight", amount: 2, scope: "thisTurn" });
+      var _ctx = ctx; var n = Math.min(2, friendly);
+      triggerEffectGhost(ctx.card, function() {
+        _ctx.prompt({ kind: "pickFriendlyUnits", n: n, sourceName: "Back to Back", sourceUid: _ctx.card.uid, effect: "tempMight", amount: 2, scope: "thisTurn" });
+      }, null, null, { reverseOnArrive: false });
     }
   },
 
   "Decisive Strike": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      ctx.applyTempMightToAllFriendly(2, "Decisive Strike");
-      ctx.addWatcher({ kind: "friendlyEntersGetsTempMight", source: ctx.card.uid, sourceName: "Decisive Strike", amount: 2 });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        _ctx.applyTempMightToAllFriendly(2, "Decisive Strike");
+        _ctx.addWatcher({ kind: "friendlyEntersGetsTempMight", source: _ctx.card.uid, sourceName: "Decisive Strike", amount: 2 });
+      }, null, null, { reverseOnArrive: false });
     }
   },
 
   "Recruit the Vanguard": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      // If the player controls any battlefields, prompt for placement; otherwise dump to base.
-      var locations = [{ key: "base", label: "Base" }];
-      // bfs is captured via the helper closures inside ctx; we build locations via a hint:
-      ctx._buildPlacementLocations && ctx._buildPlacementLocations(locations);
-      if (locations.length === 1) {
-        ctx.markEffect();
-        setTimeout(function() { spawnTokensInBase("Recruit (Demacian)", 4); }, 2800);
-      } else {
-        ctx.prompt({ kind: "placeTokens", tokenName: "Recruit (Demacian)", total: 4, locations: locations, sourceName: "Recruit the Vanguard", sourceUid: ctx.card.uid });
-      }
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        // If the player controls any battlefields, prompt for placement; otherwise dump to base.
+        var locations = [{ key: "base", label: "Base" }];
+        // bfs is captured via the helper closures inside ctx; we build locations via a hint:
+        _ctx._buildPlacementLocations && _ctx._buildPlacementLocations(locations);
+        if (locations.length === 1) {
+          _ctx.markEffect();
+          setTimeout(function() { spawnTokensInBase("Recruit (Demacian)", 4); }, 2800);
+        } else {
+          _ctx.prompt({ kind: "placeTokens", tokenName: "Recruit (Demacian)", total: 4, locations: locations, sourceName: "Recruit the Vanguard", sourceUid: _ctx.card.uid });
+        }
+      }, null, null, { reverseOnArrive: false });
     }
   },
 
@@ -352,17 +356,21 @@ var CARD_EFFECTS = {
     onAttack: function(ctx) {
       var enemies = ctx.enemyUnits();
       if (enemies.length === 0) return;
-      ctx.flash(ctx.unit.uid);
-      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemies.map(function(u) { return u.uid; }), sourceName: "Crackshot Corsair", sourceUid: ctx.unit.uid, effect: "damage", amount: 1 });
+      var _ctx = ctx; var _enemies = enemies;
+      triggerEffectGhost(ctx.unit, function() {
+        _ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: _enemies.map(function(u) { return u.uid; }), sourceName: "Crackshot Corsair", sourceUid: _ctx.unit.uid, effect: "damage", amount: 1 });
+      });
     }
   },
   "Dune Drake": {
     onAttack: function(ctx) {
       var hasReadyEnemy = ctx.enemyUnits().some(function(u) { return !u.exhausted; });
       if (!hasReadyEnemy) return;
-      ctx.flash(ctx.unit.uid);
-      ctx.applyTempMightToUids([ctx.unit.uid], 2, "Dune Drake");
-      ctx.banner("Dune Drake — +2 might (ready enemy here)");
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.unit, function() {
+        _ctx.applyTempMightToUids([_ctx.unit.uid], 2, "Dune Drake");
+        _ctx.banner("Dune Drake — +2 might (ready enemy here)");
+      });
     }
   },
 
@@ -427,7 +435,6 @@ var CARD_EFFECTS = {
 
   "Lecturing Yordle": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       ctx.draw(1);
       ctx.banner("Lecturing Yordle — drew 1");
     }
@@ -436,14 +443,12 @@ var CARD_EFFECTS = {
   "Kinkou Initiate": {
     onPlay: function(ctx) {
       var total = ctx.totalFriendlyMight ? ctx.totalFriendlyMight(ctx.card.uid) : 0;
-      ctx.flash(ctx.card.uid);
       if (total >= 5) { ctx.draw(1); ctx.banner("Kinkou Initiate — drew 1 (other units total " + total + " might)"); }
     }
   },
 
   "Annie, Stubborn": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       var spells = ctx.trashByType ? ctx.trashByType("Spell") : [];
       if (spells.length === 0) return;
       ctx.prompt({ kind: "pickFromTrash", n: 1, label: "spell", validUids: spells.map(function(c) { return c.uid; }), cardsSnap: spells, sourceName: "Annie, Stubborn", sourceUid: ctx.card.uid, effect: "returnToHand" });
@@ -452,7 +457,6 @@ var CARD_EFFECTS = {
 
   "Aspiring Engineer": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       var gears = ctx.trashByType ? ctx.trashByType("Gear") : [];
       if (gears.length === 0) return;
       ctx.prompt({ kind: "pickFromTrash", n: 1, label: "gear", validUids: gears.map(function(c) { return c.uid; }), cardsSnap: gears, sourceName: "Aspiring Engineer", sourceUid: ctx.card.uid, effect: "returnToHand" });
@@ -461,7 +465,6 @@ var CARD_EFFECTS = {
 
   "Vanguard Captain": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       if (!ctx.legionMet) return;
       if (ctx.where === "battlefield") {
         ctx.spawnInBattlefield("Recruit (Demacian)", 2);
@@ -3155,7 +3158,6 @@ var CARD_EFFECTS = {
   // --- Spells/units to round out 50 ---
   "Albus Ferros": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       var meP = ps[ctx.myActIdx]; if (!meP) return;
       // Count buffs across friendly units.
       var totalBuffs = 0;
@@ -3170,7 +3172,6 @@ var CARD_EFFECTS = {
   },
   "Gentle Gemdragon": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       // Ready up to 2 exhausted runes.
       setPs(function(prev) { var i = ctx.myActIdx; var p = prev[i]; if (!p) return prev; var runes = (p.runes || []).slice(); var readied = 0; for (var ri = 0; ri < runes.length && readied < 2; ri++) { if (runes[ri].exhausted) { runes[ri] = Object.assign({}, runes[ri], { exhausted: false }); readied++; } } var np = prev.slice(); np[i] = Object.assign({}, p, { runes: runes }); return np; });
       ctx.banner("Gentle Gemdragon — readied up to 2 runes");
@@ -3178,13 +3179,12 @@ var CARD_EFFECTS = {
   },
   "Card Sharp": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       ctx.spawnInBase("Gold", 1);
       ctx.banner("Card Sharp — Gold to base (each opponent may also play 1 Gold; manual)");
     }
   },
   "Pickpocket": {
-    onPlay: function(ctx) { ctx.flash(ctx.card.uid); ctx.spawnInBase("Gold", 1); ctx.banner("Pickpocket — Gold to base (manually kill an enemy gear ≤1E first)"); }
+    onPlay: function(ctx) { ctx.spawnInBase("Gold", 1); ctx.banner("Pickpocket — Gold to base (manually kill an enemy gear ≤1E first)"); }
   },
   "Black Market Broker": { _automatedElsewhere: "When you play a card from face-down → spawn Gold; needs face-down play hook" },
 
@@ -3259,139 +3259,175 @@ var CARD_EFFECTS = {
   // --- Spells (single-target prompts, simple stat ops) ---
   "Friendship": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var allUids = friendlyUnitUids().slice();
-      ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { allUids.push(u.uid); }); })); });
-      if (!allUids.length) { return; }
-      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Friendship (+1 might per Bird/Cat/Dog/Poro friendly)", sourceUid: ctx.card.uid, effect: "tempMight", amount: 1 });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var allUids = friendlyUnitUids().slice();
+        _ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== _ctx.myActIdx) (pu || []).forEach(function(u) { allUids.push(u.uid); }); })); });
+        if (!allUids.length) { return; }
+        _ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Friendship (+1 might per Bird/Cat/Dog/Poro friendly)", sourceUid: _ctx.card.uid, effect: "tempMight", amount: 1 });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Defiant Dance": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var allUids = friendlyUnitUids().slice();
-      ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { allUids.push(u.uid); }); })); });
-      if (!allUids.length) { return; }
-      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Defiant Dance (+2 might; manually -2 to another)", sourceUid: ctx.card.uid, effect: "tempMight", amount: 2 });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var allUids = friendlyUnitUids().slice();
+        _ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== _ctx.myActIdx) (pu || []).forEach(function(u) { allUids.push(u.uid); }); })); });
+        if (!allUids.length) { return; }
+        _ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Defiant Dance (+2 might; manually -2 to another)", sourceUid: _ctx.card.uid, effect: "tempMight", amount: 2 });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Grim Resolve": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var fUids = friendlyUnitUids();
-      if (!fUids.length) { return; }
-      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: fUids, sourceName: "Grim Resolve (+3 might; +2 XP on win)", sourceUid: ctx.card.uid, effect: "tempMight", amount: 3 });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var fUids = friendlyUnitUids();
+        if (!fUids.length) { return; }
+        _ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: fUids, sourceName: "Grim Resolve (+3 might; +2 XP on win)", sourceUid: _ctx.card.uid, effect: "tempMight", amount: 3 });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Soul Harvest": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var enemyAtBf = []; ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { var eff = _effMight(u); if (eff <= 3) enemyAtBf.push(u.uid); }); })); });
-      if (!enemyAtBf.length) { return; }
-      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyAtBf, sourceName: "Soul Harvest", sourceUid: ctx.card.uid, effect: "kill" });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var enemyAtBf = []; _ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== _ctx.myActIdx) (pu || []).forEach(function(u) { var eff = _effMight(u); if (eff <= 3) enemyAtBf.push(u.uid); }); })); });
+        if (!enemyAtBf.length) { return; }
+        _ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyAtBf, sourceName: "Soul Harvest", sourceUid: _ctx.card.uid, effect: "kill" });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Rune Prison": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var allUids = friendlyUnitUids().slice();
-      ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { allUids.push(u.uid); }); })); });
-      if (!allUids.length) { return; }
-      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Rune Prison", sourceUid: ctx.card.uid, effect: "stun" });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var allUids = friendlyUnitUids().slice();
+        _ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== _ctx.myActIdx) (pu || []).forEach(function(u) { allUids.push(u.uid); }); })); });
+        if (!allUids.length) { return; }
+        _ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Rune Prison", sourceUid: _ctx.card.uid, effect: "stun" });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Salvage": {
-    onCast: function(ctx) { ctx.flash(ctx.card.uid); ctx.draw(1); ctx.banner("Salvage — drew 1 (manually kill up to 1 gear)"); }
+    onCast: function(ctx) {
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() { _ctx.draw(1); _ctx.banner("Salvage — drew 1 (manually kill up to 1 gear)"); }, null, null, { reverseOnArrive: false });
+    }
   },
   "Rebuke": {
-    onCast: function(ctx) { ctx.flash(ctx.card.uid); ctx.banner("Rebuke — manually return a unit at a BF to its owner's hand"); }
+    onCast: function(ctx) {
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() { _ctx.banner("Rebuke — manually return a unit at a BF to its owner's hand"); }, null, null, { reverseOnArrive: false });
+    }
   },
   "Sky Splitter": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var allUids = friendlyUnitUids().slice();
-      ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { allUids.push(u.uid); }); })); });
-      if (!allUids.length) { return; }
-      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Sky Splitter (5 dmg)", sourceUid: ctx.card.uid, effect: "damage", amount: 5 });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var allUids = friendlyUnitUids().slice();
+        _ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== _ctx.myActIdx) (pu || []).forEach(function(u) { allUids.push(u.uid); }); })); });
+        if (!allUids.length) { return; }
+        _ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Sky Splitter (5 dmg)", sourceUid: _ctx.card.uid, effect: "damage", amount: 5 });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Smite": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var enemyAtBf = []; ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { enemyAtBf.push(u.uid); }); })); });
-      if (!enemyAtBf.length) { return; }
-      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyAtBf, sourceName: "Smite (3 dmg)", sourceUid: ctx.card.uid, effect: "damage", amount: 3 });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var enemyAtBf = []; _ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== _ctx.myActIdx) (pu || []).forEach(function(u) { enemyAtBf.push(u.uid); }); })); });
+        if (!enemyAtBf.length) { return; }
+        _ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyAtBf, sourceName: "Smite (3 dmg)", sourceUid: _ctx.card.uid, effect: "damage", amount: 3 });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Stacked Deck": {
-    onCast: function(ctx) { ctx.flash(ctx.card.uid); ctx.draw(1); ctx.banner("Stacked Deck — drew 1 (peek-3 simplified)"); }
+    onCast: function(ctx) { var _ctx = ctx; triggerEffectGhost(ctx.card, function() { _ctx.draw(1); _ctx.banner("Stacked Deck — drew 1 (peek-3 simplified)"); }, null, null, { reverseOnArrive: false }); }
   },
   "Sprite Burst": {
-    onCast: function(ctx) { ctx.flash(ctx.card.uid); spawnTokensInBase("Sprite", 2); ctx.banner("Sprite Burst — 2 Sprite tokens"); }
+    onCast: function(ctx) { var _ctx = ctx; triggerEffectGhost(ctx.card, function() { spawnTokensInBase("Sprite", 2); _ctx.banner("Sprite Burst — 2 Sprite tokens"); }, null, null, { reverseOnArrive: false }); }
   },
   "Thermo Beam": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      // Kill all gear (friendly + enemy + attached). Iterate everything and bin gear cards.
-      ctx.banner("Thermo Beam — manually kill all gear (auto-kill across multi-zone is complex)");
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        // Kill all gear (friendly + enemy + attached). Iterate everything and bin gear cards.
+        _ctx.banner("Thermo Beam — manually kill all gear (auto-kill across multi-zone is complex)");
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Upstage Comedy": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var fUids = friendlyUnitUids();
-      if (!fUids.length) { return; }
-      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: fUids, sourceName: "Upstage Comedy", sourceUid: ctx.card.uid, effect: "ready" });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var fUids = friendlyUnitUids();
+        if (!fUids.length) { return; }
+        _ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: fUids, sourceName: "Upstage Comedy", sourceUid: _ctx.card.uid, effect: "ready" });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Wind Wall": { _automatedElsewhere: "Counter a spell — counter system declarative" },
   "Square Up": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var fUids = friendlyUnitUids();
-      if (!fUids.length) { return; }
-      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: fUids, sourceName: "Square Up [Assault 4]", sourceUid: ctx.card.uid, effect: "tempMight", amount: 4 });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var fUids = friendlyUnitUids();
+        if (!fUids.length) { return; }
+        _ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: fUids, sourceName: "Square Up [Assault 4]", sourceUid: _ctx.card.uid, effect: "tempMight", amount: 4 });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Last Breath": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var fUids = friendlyUnitUids();
-      if (!fUids.length) { return; }
-      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: fUids, sourceName: "Last Breath (ready, then deal might dmg manually)", sourceUid: ctx.card.uid, effect: "ready" });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var fUids = friendlyUnitUids();
+        if (!fUids.length) { return; }
+        _ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: fUids, sourceName: "Last Breath (ready, then deal might dmg manually)", sourceUid: _ctx.card.uid, effect: "ready" });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Vault Breaker": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var fUids = friendlyUnitUids();
-      if (!fUids.length) { return; }
-      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: fUids, sourceName: "Vault Breaker [Assault 2] [Ganking]", sourceUid: ctx.card.uid, effect: "tempMight", amount: 2 });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var fUids = friendlyUnitUids();
+        if (!fUids.length) { return; }
+        _ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: fUids, sourceName: "Vault Breaker [Assault 2] [Ganking]", sourceUid: _ctx.card.uid, effect: "tempMight", amount: 2 });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Deadly Flourish": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var enemyUids = []; ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { enemyUids.push(u.uid); }); })); });
-      if (!enemyUids.length) { return; }
-      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Deadly Flourish (3 dmg + Gold on death)", sourceUid: ctx.card.uid, effect: "damage", amount: 3 });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var enemyUids = []; _ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== _ctx.myActIdx) (pu || []).forEach(function(u) { enemyUids.push(u.uid); }); })); });
+        if (!enemyUids.length) { return; }
+        _ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Deadly Flourish (3 dmg + Gold on death)", sourceUid: _ctx.card.uid, effect: "damage", amount: 3 });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Deathgrip": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var fUids = friendlyUnitUids();
-      if (!fUids.length) { return; }
-      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: fUids, sourceName: "Deathgrip (kill, +might to other)", sourceUid: ctx.card.uid, effect: "kill" });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var fUids = friendlyUnitUids();
+        if (!fUids.length) { return; }
+        _ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: fUids, sourceName: "Deathgrip (kill, +might to other)", sourceUid: _ctx.card.uid, effect: "kill" });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Clash of Giants": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var allUids = friendlyUnitUids().slice();
-      ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== ctx.myActIdx) (pu || []).forEach(function(u) { allUids.push(u.uid); }); })); });
-      if (allUids.length < 2) { return; }
-      ctx.banner("Clash of Giants — manually pick 2 units; they deal might-dmg to each other (auto: too complex)");
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var allUids = friendlyUnitUids().slice();
+        _ctx.bfs.forEach(function(b) { ((b.units || []).forEach(function(pu, pi) { if (pi !== _ctx.myActIdx) (pu || []).forEach(function(u) { allUids.push(u.uid); }); })); });
+        if (allUids.length < 2) { return; }
+        _ctx.banner("Clash of Giants — manually pick 2 units; they deal might-dmg to each other (auto: too complex)");
+      }, null, null, { reverseOnArrive: false });
     }
   },
 
@@ -3447,10 +3483,10 @@ var CARD_EFFECTS = {
   "Captain Farron":    { _automatedElsewhere: "Other friendly units here have [Assault] — passive aura" },
   "Apprentice Smith":  { _automatedElsewhere: "When I move → reveal top, draw if gear — needs onMove hook" },
   "Eclipse Herald":    { _automatedElsewhere: "When you stun → ready + buff me — needs onStun hook" },
-  "Ashe, Focused":     { onPlay: function(ctx) { ctx.flash(ctx.card.uid); ctx.banner("Ashe, Focused — choose opponent; manually reveal hand + banish a card"); } },
-  "Mindsplitter":      { onPlay: function(ctx) { ctx.flash(ctx.card.uid); ctx.banner("Mindsplitter — choose opponent; manually reveal hand + discard a card"); } },
+  "Ashe, Focused":     { onPlay: function(ctx) { ctx.banner("Ashe, Focused — choose opponent; manually reveal hand + banish a card"); } },
+  "Mindsplitter":      { onPlay: function(ctx) { ctx.banner("Mindsplitter — choose opponent; manually reveal hand + discard a card"); } },
   "Brynhir Thundersong": { _automatedElsewhere: "Opponents can't play cards this turn — needs no-play watcher" },
-  "Insightful Investigator": { onPlay: function(ctx) { ctx.flash(ctx.card.uid); ctx.banner("Insightful Investigator — choose opponent; manually reveal hand + spend 2 XP to banish a card"); } },
+  "Insightful Investigator": { onPlay: function(ctx) { ctx.banner("Insightful Investigator — choose opponent; manually reveal hand + spend 2 XP to banish a card"); } },
 
   // ============ Batch 15: 50 more cards (vanilla equip, runes, tokens, simple spells, hunt/deathknell units) ============
 
@@ -3491,91 +3527,107 @@ var CARD_EFFECTS = {
   // --- Spells ---
   "Right of Conquest": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var idx = ctx.myActIdx;
-      var bfsControlled = (ctx.bfs || []).filter(function(b) { return b && b.controller === idx; }).length;
-      var n = 1 + bfsControlled;
-      ctx.draw(n);
-      ctx.banner("Right of Conquest — drew " + n + " (1 + " + bfsControlled + " BF" + (bfsControlled === 1 ? "" : "s") + " controlled)");
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var idx = _ctx.myActIdx;
+        var bfsControlled = (_ctx.bfs || []).filter(function(b) { return b && b.controller === idx; }).length;
+        var n = 1 + bfsControlled;
+        _ctx.draw(n);
+        _ctx.banner("Right of Conquest — drew " + n + " (1 + " + bfsControlled + " BF" + (bfsControlled === 1 ? "" : "s") + " controlled)");
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Spoils of War": {
-    onCast: function(ctx) { ctx.flash(ctx.card.uid); ctx.draw(2); ctx.banner("Spoils of War — drew 2"); }
+    onCast: function(ctx) { var _ctx = ctx; triggerEffectGhost(ctx.card, function() { _ctx.draw(2); _ctx.banner("Spoils of War — drew 2"); }, null, null, { reverseOnArrive: false }); }
   },
   "Downstage Dramatics": {
-    onCast: function(ctx) { ctx.flash(ctx.card.uid); ctx.draw(1); ctx.banner("Downstage Dramatics — drew 1 ([Repeat] manually for additional draws)"); }
+    onCast: function(ctx) { var _ctx = ctx; triggerEffectGhost(ctx.card, function() { _ctx.draw(1); _ctx.banner("Downstage Dramatics — drew 1 ([Repeat] manually for additional draws)"); }, null, null, { reverseOnArrive: false }); }
   },
   "Wallop": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var idx = ctx.myActIdx;
-      var meP = ps[idx];
-      var exhUids = [];
-      if (meP) (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && c.exhausted) exhUids.push(c.uid); });
-      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if (u.exhausted) exhUids.push(u.uid); }); });
-      if (!exhUids.length) { return; }
-      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: exhUids, sourceName: "Wallop", sourceUid: ctx.card.uid, effect: "ready" });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var idx = _ctx.myActIdx;
+        var meP = ps[idx];
+        var exhUids = [];
+        if (meP) (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && c.exhausted) exhUids.push(c.uid); });
+        _ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if (u.exhausted) exhUids.push(u.uid); }); });
+        if (!exhUids.length) { return; }
+        _ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: exhUids, sourceName: "Wallop", sourceUid: _ctx.card.uid, effect: "ready" });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Shakedown": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var idx = ctx.myActIdx;
-      var enemyUids = [];
-      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi !== idx) (pu || []).forEach(function(u) { enemyUids.push(u.uid); }); }); });
-      if (!enemyUids.length) { return; }
-      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Shakedown (deal 6, unless controller has you draw 2)", sourceUid: ctx.card.uid, effect: "damage", amount: 6 });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var idx = _ctx.myActIdx;
+        var enemyUids = [];
+        _ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi !== idx) (pu || []).forEach(function(u) { enemyUids.push(u.uid); }); }); });
+        if (!enemyUids.length) { return; }
+        _ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Shakedown (deal 6, unless controller has you draw 2)", sourceUid: _ctx.card.uid, effect: "damage", amount: 6 });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Piercing Light": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var bfUids = [];
-      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
-      if (!bfUids.length) { return; }
-      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Piercing Light (deal 2; may target a 2nd unit for another 2 manually)", sourceUid: ctx.card.uid, effect: "damage", amount: 2 });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var bfUids = [];
+        _ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+        if (!bfUids.length) { return; }
+        _ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: bfUids, sourceName: "Piercing Light (deal 2; may target a 2nd unit for another 2 manually)", sourceUid: _ctx.card.uid, effect: "damage", amount: 2 });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Bellows Breath": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var bfUids = [];
-      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
-      if (!bfUids.length) { return; }
-      ctx.prompt({ kind: "pickAnyUnit", n: Math.min(3, bfUids.length), upTo: true, validUids: bfUids, sourceName: "Bellows Breath", sourceUid: ctx.card.uid, effect: "damage", amount: 1 });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var bfUids = [];
+        _ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+        if (!bfUids.length) { return; }
+        _ctx.prompt({ kind: "pickAnyUnit", n: Math.min(3, bfUids.length), upTo: true, validUids: bfUids, sourceName: "Bellows Breath", sourceUid: _ctx.card.uid, effect: "damage", amount: 1 });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Shadow's Call": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      ctx.draw(2);
-      var idx = ctx.myActIdx;
-      var bfFriendlyUids = [];
-      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if (!u._temporary) bfFriendlyUids.push(u.uid); }); });
-      if (!bfFriendlyUids.length) { ctx.banner("Shadow's Call — drew 2 (no eligible BF unit to mark Temporary)"); return; }
-      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: bfFriendlyUids, sourceName: "Shadow's Call", sourceUid: ctx.card.uid, effect: "markTemporary" });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        _ctx.draw(2);
+        var idx = _ctx.myActIdx;
+        var bfFriendlyUids = [];
+        _ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if (!u._temporary) bfFriendlyUids.push(u.uid); }); });
+        if (!bfFriendlyUids.length) { _ctx.banner("Shadow's Call — drew 2 (no eligible BF unit to mark Temporary)"); return; }
+        _ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: bfFriendlyUids, sourceName: "Shadow's Call", sourceUid: _ctx.card.uid, effect: "markTemporary" });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Tactical Retreat": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var idx = ctx.myActIdx;
-      var friendlyUids = [];
-      var meP = ps[idx];
-      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") friendlyUids.push(c.uid); });
-      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { friendlyUids.push(u.uid); }); });
-      if (!friendlyUids.length) { return; }
-      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Tactical Retreat", sourceUid: ctx.card.uid, effect: "highlanderShield" });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var idx = _ctx.myActIdx;
+        var friendlyUids = [];
+        var meP = ps[idx];
+        if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") friendlyUids.push(c.uid); });
+        _ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { friendlyUids.push(u.uid); }); });
+        if (!friendlyUids.length) { return; }
+        _ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Tactical Retreat", sourceUid: _ctx.card.uid, effect: "highlanderShield" });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Showstopper": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var idx = ctx.myActIdx;
-      var meP = ps[idx];
-      var baseUids = (meP && (meP.base || []).filter(function(c) { return c.type === "Unit" || c.type === "Champion"; }).map(function(c) { return c.uid; })) || [];
-      if (!baseUids.length) { return; }
-      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: baseUids, sourceName: "Showstopper (buff +1; move to BF manually)", sourceUid: ctx.card.uid, effect: "addCounter", amount: 1 });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var idx = _ctx.myActIdx;
+        var meP = ps[idx];
+        var baseUids = (meP && (meP.base || []).filter(function(c) { return c.type === "Unit" || c.type === "Champion"; }).map(function(c) { return c.uid; })) || [];
+        if (!baseUids.length) { return; }
+        _ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: baseUids, sourceName: "Showstopper (buff +1; move to BF manually)", sourceUid: _ctx.card.uid, effect: "addCounter", amount: 1 });
+      }, null, null, { reverseOnArrive: false });
     }
   },
 
@@ -3609,7 +3661,6 @@ var CARD_EFFECTS = {
   "Legion Rearguard":   { _automatedElsewhere: "[Accelerate] only — cost-time alt-pay handled at play (1E + Fury → enter ready)" },
   "Armed Assailant": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       var _meP = window.ps && window.ps[window.myActIdx];
       var _gearUids = [];
       if (_meP) {
@@ -3629,7 +3680,6 @@ var CARD_EFFECTS = {
   },
   "Combat Chef": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       var _meP = window.ps && window.ps[window.myActIdx];
       var _gearUids = [];
       if (_meP) {
@@ -3649,7 +3699,6 @@ var CARD_EFFECTS = {
   },
   "Master Bingwen": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       var _meP = window.ps && window.ps[window.myActIdx];
       var _gearUids = [];
       if (_meP) {
@@ -3669,7 +3718,6 @@ var CARD_EFFECTS = {
   },
   "Sentinel Adept": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       var _meP = window.ps && window.ps[window.myActIdx];
       var _gearUids = [];
       if (_meP) {
@@ -3692,59 +3740,65 @@ var CARD_EFFECTS = {
   "Reflection":         { _automatedElsewhere: "Copy-on-play — token mechanic with no automated copy resolution; player picks the copy target manually" },
   "The Ruination": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var allUids = [];
-      ps.forEach(function(p) { (p && p.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); }); });
-      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
-      if (!allUids.length) { return; }
-      allUids.forEach(function(uid) { ctx.dealDamage(uid, 9999, "The Ruination"); });
-      ctx.banner("The Ruination — killed " + allUids.length + " unit" + (allUids.length === 1 ? "" : "s"));
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var allUids = [];
+        ps.forEach(function(p) { (p && p.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); }); });
+        _ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+        if (!allUids.length) { return; }
+        allUids.forEach(function(uid) { _ctx.dealDamage(uid, 9999, "The Ruination"); });
+        _ctx.banner("The Ruination — killed " + allUids.length + " unit" + (allUids.length === 1 ? "" : "s"));
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Time Warp":          { _automatedElsewhere: "Extra-turn (Banish self) — turn-order manipulation not modelled; player passes the spell through and skips opponent end manually" },
   "Downwell":           { _automatedElsewhere: "Mass return-to-hand for units + gear — multi-owner board reset not modelled; resolve by manually returning everything" },
   "Unchecked Power": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var idx = ctx.myActIdx;
-      var friendlyUidSet = {};
-      var meP = ps[idx];
-      if (meP) (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && !c.exhausted) friendlyUidSet[c.uid] = true; });
-      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if (!u.exhausted) friendlyUidSet[u.uid] = true; }); });
-      var fCount = Object.keys(friendlyUidSet).length;
-      // Exhaust friendly units in place (base + battlefields).
-      setPs(function(prev) {
-        var p = prev[idx]; if (!p) return prev;
-        var base = (p.base || []).map(function(c) { return friendlyUidSet[c.uid] ? Object.assign({}, c, { exhausted: true }) : c; });
-        var np = prev.slice(); np[idx] = Object.assign({}, p, { base: base }); return np;
-      });
-      setBfs(function(prev) {
-        return prev.map(function(b) {
-          if (!b || !b.units) return b;
-          var nu = b.units.map(function(pu, pi) {
-            if (pi !== idx) return pu;
-            return (pu || []).map(function(u) { return friendlyUidSet[u.uid] ? Object.assign({}, u, { exhausted: true }) : u; });
-          });
-          return Object.assign({}, b, { units: nu });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var idx = _ctx.myActIdx;
+        var friendlyUidSet = {};
+        var meP = ps[idx];
+        if (meP) (meP.base || []).forEach(function(c) { if ((c.type === "Unit" || c.type === "Champion") && !c.exhausted) friendlyUidSet[c.uid] = true; });
+        _ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if (!u.exhausted) friendlyUidSet[u.uid] = true; }); });
+        var fCount = Object.keys(friendlyUidSet).length;
+        // Exhaust friendly units in place (base + battlefields).
+        setPs(function(prev) {
+          var p = prev[idx]; if (!p) return prev;
+          var base = (p.base || []).map(function(c) { return friendlyUidSet[c.uid] ? Object.assign({}, c, { exhausted: true }) : c; });
+          var np = prev.slice(); np[idx] = Object.assign({}, p, { base: base }); return np;
         });
-      });
-      var bfUids = [];
-      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
-      bfUids.forEach(function(uid) { ctx.dealDamage(uid, 12, "Unchecked Power"); });
-      ctx.banner("Unchecked Power — exhausted " + fCount + " friendly, 12 dmg to " + bfUids.length + " BF unit" + (bfUids.length === 1 ? "" : "s"));
+        setBfs(function(prev) {
+          return prev.map(function(b) {
+            if (!b || !b.units) return b;
+            var nu = b.units.map(function(pu, pi) {
+              if (pi !== idx) return pu;
+              return (pu || []).map(function(u) { return friendlyUidSet[u.uid] ? Object.assign({}, u, { exhausted: true }) : u; });
+            });
+            return Object.assign({}, b, { units: nu });
+          });
+        });
+        var bfUids = [];
+        _ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+        bfUids.forEach(function(uid) { _ctx.dealDamage(uid, 12, "Unchecked Power"); });
+        _ctx.banner("Unchecked Power — exhausted " + fCount + " friendly, 12 dmg to " + bfUids.length + " BF unit" + (bfUids.length === 1 ? "" : "s"));
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Ride the Wind": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var idx = ctx.myActIdx;
-      var meP = ps[idx];
-      var friendlyUids = [];
-      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") friendlyUids.push(c.uid); });
-      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { friendlyUids.push(u.uid); }); });
-      if (!friendlyUids.length) { return; }
-      // Ready them all and let the player move whichever they target manually (move plumbing not in spell prompts).
-      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Ride the Wind (ready; move manually)", sourceUid: ctx.card.uid, effect: "ready" });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var idx = _ctx.myActIdx;
+        var meP = ps[idx];
+        var friendlyUids = [];
+        if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") friendlyUids.push(c.uid); });
+        _ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { friendlyUids.push(u.uid); }); });
+        if (!friendlyUids.length) { return; }
+        // Ready them all and let the player move whichever they target manually (move plumbing not in spell prompts).
+        _ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Ride the Wind (ready; move manually)", sourceUid: _ctx.card.uid, effect: "ready" });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Factory Recall":     { _automatedElsewhere: "Return a gear to its owner's hand — no gear-bounce prompt kind in engine; resolve manually" },
@@ -3766,7 +3820,6 @@ var CARD_EFFECTS = {
   },
   "Zaunite Bouncer": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       var bfUids = [];
       ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { if (u.uid !== ctx.card.uid) bfUids.push(u.uid); }); }); });
       if (!bfUids.length) { return; }
@@ -3775,7 +3828,6 @@ var CARD_EFFECTS = {
   },
   "Herald of Spring": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       setPs(function(prev) { var i = ctx.myActIdx; var p = prev[i]; if (!p) return prev; var np = prev.slice(); np[i] = Object.assign({}, p, { xp: (p.xp || 0) + 2 }); return np; });
       ctx.banner("Herald of Spring — +2 XP");
     },
@@ -3815,8 +3867,10 @@ var CARD_EFFECTS = {
       var meP = ps[ctx.player]; if (!meP) return;
       var validUids = (meP.trash || []).filter(function(c) { return c && (c.type === "Unit" || c.type === "Champion" || c.type === "Gear"); }).map(function(c) { return c.uid; });
       if (!validUids.length) { return; }
-      ctx.flash(ctx.card.uid);
-      ctx.prompt({ kind: "pickFromTrash", n: 1, validUids: validUids, sourceName: "Guardian of the Passage", sourceUid: ctx.card.uid, effect: "returnToHand" });
+      var _ctx = ctx; var _validUids = validUids;
+      triggerEffectGhost(ctx.card, function() {
+        _ctx.prompt({ kind: "pickFromTrash", n: 1, validUids: _validUids, sourceName: "Guardian of the Passage", sourceUid: _ctx.card.uid, effect: "returnToHand" });
+      });
     }
   },
   "Irelia, Graceful":   { _automatedElsewhere: "Cost reduction for spells choosing me — cost-time discount applied per-spell not yet modelled; resolve cost manually" },
@@ -3847,9 +3901,11 @@ var CARD_EFFECTS = {
     onAttack: function(ctx) {
       var enemyUids = (ctx.enemyUnits() || []).map(function(u) { return u.uid; });
       if (!enemyUids.length) { return; }
-      ctx.flash(ctx.unit.uid);
-      // Optional 1E paid → -1 might. Auto-pays the optional cost (assumes affordable).
-      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Icevale Archer (paid 1E)", sourceUid: ctx.unit.uid, effect: "tempMight", amount: -1 });
+      var _ctx = ctx; var _enemyUids = enemyUids;
+      triggerEffectGhost(ctx.unit, function() {
+        // Optional 1E paid → -1 might. Auto-pays the optional cost (assumes affordable).
+        _ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: _enemyUids, sourceName: "Icevale Archer (paid 1E)", sourceUid: _ctx.unit.uid, effect: "tempMight", amount: -1 });
+      });
     }
   },
   "Towering Pairofant": { _automatedElsewhere: "[Assault] from parseKeywordBonus; conditional enters-ready (unit died this turn) — death-this-turn tracker not built; player toggles ready manually" },
@@ -3864,11 +3920,13 @@ var CARD_EFFECTS = {
   "Imperial Decree":    { _automatedElsewhere: "Static: any unit damaged this turn dies — turn-scoped on-damage watcher not built; resolve manually each time damage is dealt" },
   "The Harrowing": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var meP = ps[ctx.myActIdx]; if (!meP) return;
-      var validUids = (meP.trash || []).filter(function(c) { return c && (c.type === "Unit" || c.type === "Champion"); }).map(function(c) { return c.uid; });
-      if (!validUids.length) { return; }
-      ctx.prompt({ kind: "pickFromTrash", n: 1, validUids: validUids, sourceName: "The Harrowing (return unit; replay manually, ignore E)", sourceUid: ctx.card.uid, effect: "returnToHand" });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var meP = ps[_ctx.myActIdx]; if (!meP) return;
+        var validUids = (meP.trash || []).filter(function(c) { return c && (c.type === "Unit" || c.type === "Champion"); }).map(function(c) { return c.uid; });
+        if (!validUids.length) { return; }
+        _ctx.prompt({ kind: "pickFromTrash", n: 1, validUids: validUids, sourceName: "The Harrowing (return unit; replay manually, ignore E)", sourceUid: _ctx.card.uid, effect: "returnToHand" });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Katarina, Reckless": { _automatedElsewhere: "On-hide → ready; on-face-down-play → 2 dmg — Hidden hooks not built; resolve manually" },
@@ -3877,12 +3935,14 @@ var CARD_EFFECTS = {
   "Imposing Challenger":{ _automatedElsewhere: "On-self-move → relocate weaker enemy — onMove hook + might-comparison move target not modelled; resolve manually" },
   "Super Mega Death Rocket!": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var allUids = [];
-      ps.forEach(function(p) { (p && p.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); }); });
-      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
-      if (!allUids.length) { return; }
-      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Super Mega Death Rocket! (5 dmg; recover via discard manually)", sourceUid: ctx.card.uid, effect: "damage", amount: 5 });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var allUids = [];
+        ps.forEach(function(p) { (p && p.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); }); });
+        _ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+        if (!allUids.length) { return; }
+        _ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Super Mega Death Rocket! (5 dmg; recover via discard manually)", sourceUid: _ctx.card.uid, effect: "damage", amount: 5 });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Sabotage":           { _automatedElsewhere: "Reveal opponent's hand and recycle a non-unit — peek-opponent-hand UI not built; resolve manually" },
@@ -3904,12 +3964,14 @@ var CARD_EFFECTS = {
   "Ripper's Bay":       { _automatedElsewhere: "BF on-unit-bounced-from-here → optional 1E to channel rune exhausted — onBounceFromBF hook + activated-channel not modelled; resolve manually" },
   "Flurry of Blades": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var bfUids = [];
-      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
-      if (!bfUids.length) { return; }
-      bfUids.forEach(function(uid) { ctx.dealDamage(uid, 1, "Flurry of Blades"); });
-      ctx.banner("Flurry of Blades — 1 dmg to " + bfUids.length + " BF unit" + (bfUids.length === 1 ? "" : "s"));
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var bfUids = [];
+        _ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { bfUids.push(u.uid); }); }); });
+        if (!bfUids.length) { return; }
+        bfUids.forEach(function(uid) { _ctx.dealDamage(uid, 1, "Flurry of Blades"); });
+        _ctx.banner("Flurry of Blades — 1 dmg to " + bfUids.length + " BF unit" + (bfUids.length === 1 ? "" : "s"));
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Turn to Dust":       { _automatedElsewhere: "Give a gear [Temporary] — gear-Temporary tag + BG-phase auto-kill not modelled; resolve manually (kill on owner's BG)" },
@@ -3918,7 +3980,6 @@ var CARD_EFFECTS = {
   "Last Rites":         { _automatedElsewhere: "[Equip] cost (Chaos + recycle 2 from trash) — trash-recycle equip cost not modelled; resolve manually" },
   "Scrapyard Champion": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       if (!ctx.legionMet) { return; }
       ctx.draw(2);
       ctx.banner("Scrapyard Champion [Legion] — drew 2 (discard 2 manually)");
@@ -3945,7 +4006,6 @@ var CARD_EFFECTS = {
   "Sett, Kingpin":      { _automatedElsewhere: "[Tank] manual; self-aura: +1 might per buffed friendly at my BF — buffed-count aura not modelled; apply +/- counter manually" },
   "Undertitan": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       var idx = ctx.myActIdx;
       var meP = ps[idx];
       var uids = [];
@@ -4022,7 +4082,6 @@ var CARD_EFFECTS = {
   "Sun Disc":           { _automatedElsewhere: "Activated [Legion]: next unit this turn enters ready — gear-activated next-unit watcher not built; resolve manually" },
   "Teemo, Scout": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       ctx.applyTempMightToUids([ctx.card.uid], 3, "Teemo, Scout");
       ctx.banner("Teemo, Scout — +3 might this turn");
     }
@@ -4044,16 +4103,18 @@ var CARD_EFFECTS = {
   "Dragon's Rage":      { _automatedElsewhere: "Move enemy then enemy-vs-enemy might-fight at destination — multi-step move + mutual damage not modelled; resolve manually" },
   "Star-Crossed": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var idx = ctx.myActIdx;
-      var friendlyUids = []; var enemyUids = [];
-      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { (pu || []).forEach(function(u) { if (pi === idx) friendlyUids.push(u.uid); else enemyUids.push(u.uid); }); }); });
-      var meP = ps[idx];
-      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") friendlyUids.push(c.uid); });
-      ps.forEach(function(p, pi) { if (pi !== idx && p) (p.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") enemyUids.push(c.uid); }); });
-      if (!friendlyUids.length || !enemyUids.length) { return; }
-      // Two prompts back-to-back: bounce 1 friendly then 1 enemy. We use a single combined prompt where both must be selected — simplified to friendly-first.
-      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Star-Crossed (friendly to bounce; cast again to bounce enemy)", sourceUid: ctx.card.uid, effect: "bounceToHand" });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var idx = _ctx.myActIdx;
+        var friendlyUids = []; var enemyUids = [];
+        _ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { (pu || []).forEach(function(u) { if (pi === idx) friendlyUids.push(u.uid); else enemyUids.push(u.uid); }); }); });
+        var meP = ps[idx];
+        if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") friendlyUids.push(c.uid); });
+        ps.forEach(function(p, pi) { if (pi !== idx && p) (p.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") enemyUids.push(c.uid); }); });
+        if (!friendlyUids.length || !enemyUids.length) { return; }
+        // Two prompts back-to-back: bounce 1 friendly then 1 enemy. We use a single combined prompt where both must be selected — simplified to friendly-first.
+        _ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Star-Crossed (friendly to bounce; cast again to bounce enemy)", sourceUid: _ctx.card.uid, effect: "bounceToHand" });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Alpha Wildclaw":     { _automatedElsewhere: "[Tank] manual; weaker friendlies here untargetable — might-comparison untargetable aura not in isEnemyDeflect; resolve manually" },
@@ -4075,20 +4136,24 @@ var CARD_EFFECTS = {
   },
   "Diana, No Longer Human": {
     onSpellCast: function(ctx) {
-      ctx.flash(ctx.unit.uid);
-      ctx.applyTempMightToUids([ctx.unit.uid], 2, "Diana, No Longer Human");
-      ctx.banner("Diana, No Longer Human — +2 might (friendly spell cast)");
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.unit, function() {
+        _ctx.applyTempMightToUids([_ctx.unit.uid], 2, "Diana, No Longer Human");
+        _ctx.banner("Diana, No Longer Human — +2 might (friendly spell cast)");
+      });
     }
   },
   "Zilean, Time Mage":  { _automatedElsewhere: "Once-per-turn replacement: token-play makes 2 — replacement-effect engine + once-per-turn gate not built; resolve manually" },
   "Qiyana, Victorious": {
     onConquer: function(ctx) {
       // Choose draw 1 (default) — channel rune is alternative resolved manually.
-      ctx.flash(ctx.card.uid);
       var meP = ps[ctx.player]; if (!meP) return;
-      // Approximation: just draw 1; player can opt to channel-rune manually instead.
-      drawCards(1);
-      ctx.banner("Qiyana, Victorious — drew 1 (or channel rune manually instead)");
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        // Approximation: just draw 1; player can opt to channel-rune manually instead.
+        drawCards(1);
+        _ctx.banner("Qiyana, Victorious — drew 1 (or channel rune manually instead)");
+      });
     }
   },
   "Forgefire Cape":     { _automatedElsewhere: "[Unique] [Equip] Rainbow — vanilla equipment, equip cost handled by gear-attach UI" },
@@ -4100,7 +4165,6 @@ var CARD_EFFECTS = {
   "Mister Root": {
     onPlay: function(ctx) {
       if (ctx.where !== "battlefield") return;
-      ctx.flash(ctx.card.uid);
       _xpRef.current[ctx.myActIdx] = (_xpRef.current[ctx.myActIdx] || 0) + 2;
       ctx.banner("Mister Root — +2 XP (moved to BF)");
     }
@@ -4120,14 +4184,16 @@ var CARD_EFFECTS = {
   "Ornn, Blacksmith":   { _automatedElsewhere: "On-play/on-hold: peek-4 + draw-gear-from-among + recycle rest — top-of-deck peek + filtered-draw not modelled; resolve manually" },
   "Retreat": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var idx = ctx.myActIdx;
-      var friendlyUids = [];
-      var meP = ps[idx];
-      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") friendlyUids.push(c.uid); });
-      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { friendlyUids.push(u.uid); }); });
-      if (!friendlyUids.length) { return; }
-      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Retreat (channel exhausted rune separately)", sourceUid: ctx.card.uid, effect: "bounceToHand" });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var idx = _ctx.myActIdx;
+        var friendlyUids = [];
+        var meP = ps[idx];
+        if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") friendlyUids.push(c.uid); });
+        _ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { friendlyUids.push(u.uid); }); });
+        if (!friendlyUids.length) { return; }
+        _ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Retreat (channel exhausted rune separately)", sourceUid: _ctx.card.uid, effect: "bounceToHand" });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Draven, Vanquisher": { _automatedElsewhere: "On-win-combat → Gold token; on-attack/defend optional Fury → +2 might — onWinCombat hook + paid combat trigger not built; resolve manually" },
@@ -4145,9 +4211,8 @@ var CARD_EFFECTS = {
   "Blitzcrank, Impassive": { _automatedElsewhere: "[Tank] manual; on-play-to-BF optional pull-enemy; on-hold return self to hand — onPlayAtBF pull + on-hold-bounce-self not modelled; resolve manually" },
   "Counter Strike": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      ctx.draw(1);
-      ctx.banner("Counter Strike — drew 1 (next damage to chosen unit prevented manually)");
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() { _ctx.draw(1); _ctx.banner("Counter Strike — drew 1 (next damage to chosen unit prevented manually)"); }, null, null, { reverseOnArrive: false });
     }
   },
   "Disposal Order":     { _automatedElsewhere: "[Reaction] choose-one: recycle 3 from opponents' trashes OR draw 1 — multi-mode + opponent-trash-recycle not modelled; resolve manually" },
@@ -4166,9 +4231,8 @@ var CARD_EFFECTS = {
   "Deceiver":           { _automatedElsewhere: "Legend on-conquer/hold optional discard+exhaust → spawn Reflection copy of unit there — copy-target token not modelled; resolve manually" },
   "Guards!": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      ctx.spawnInBase("Sand Soldier", 1);
-      ctx.banner("Guards! — Sand Soldier token to base (optional Order +1 manual)");
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() { _ctx.spawnInBase("Sand Soldier", 1); _ctx.banner("Guards! — Sand Soldier token to base (optional Order +1 manual)"); }, null, null, { reverseOnArrive: false });
     }
   },
   "Hextech Gauntlets":  { _automatedElsewhere: "[Equip] 3E+Rainbow, reduced by chosen unit's might — variable equip cost not modelled; resolve manually" },
@@ -4177,7 +4241,6 @@ var CARD_EFFECTS = {
   "Forgotten Library":  { _automatedElsewhere: "BF while controlled: friendly 4E+ spell → [Predict] — Predict UI not built; resolve manually (peek deck top)" },
   "Grim Apothecary": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       var idx = ctx.myActIdx;
       var bfFriendlyUids = [];
       ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { if (u.uid !== ctx.card.uid) bfFriendlyUids.push(u.uid); }); });
@@ -4201,15 +4264,17 @@ var CARD_EFFECTS = {
   "Pyke, Dockside Butcher": { _automatedElsewhere: "[Hidden][Ganking]; optional Fury cost-time → enter ready + +1 might — alt-cost-time path not modelled; resolve manually" },
   "Find Your Center": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      ctx.draw(1);
-      var idx = ctx.myActIdx;
-      var friendlyUids = [];
-      var meP = ps[idx];
-      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") friendlyUids.push(c.uid); });
-      ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { friendlyUids.push(u.uid); }); });
-      if (!friendlyUids.length) { ctx.banner("Find Your Center — drew 1 (no friendly units to buff)"); return; }
-      ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Find Your Center", sourceUid: ctx.card.uid, effect: "tempMight", amount: 2 });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        _ctx.draw(1);
+        var idx = _ctx.myActIdx;
+        var friendlyUids = [];
+        var meP = ps[idx];
+        if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") friendlyUids.push(c.uid); });
+        _ctx.bfs.forEach(function(b) { ((b && b.units && b.units[idx]) || []).forEach(function(u) { friendlyUids.push(u.uid); }); });
+        if (!friendlyUids.length) { _ctx.banner("Find Your Center — drew 1 (no friendly units to buff)"); return; }
+        _ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Find Your Center", sourceUid: _ctx.card.uid, effect: "tempMight", amount: 2 });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Safety Inspector":   { _automatedElsewhere: "Each-player kill 1 unit; optional 3-XP cost → you skip — multi-player kill + conditional opt-out not modelled; resolve manually" },
@@ -4232,11 +4297,11 @@ var CARD_EFFECTS = {
   "Kha'Zix, Mutating Horror": {
     onAttack: function(ctx) {
       var enemies = ctx.enemyUnits() || [];
-      if (enemies.length === 1) { ctx.flash(ctx.unit.uid); ctx.applyTempMightToUids([ctx.unit.uid], 2, "Kha'Zix, Mutating Horror"); ctx.banner("Kha'Zix, Mutating Horror — +2 might (lone enemy)"); }
+      if (enemies.length === 1) { var _ctx = ctx; triggerEffectGhost(ctx.unit, function() { _ctx.applyTempMightToUids([_ctx.unit.uid], 2, "Kha'Zix, Mutating Horror"); _ctx.banner("Kha'Zix, Mutating Horror — +2 might (lone enemy)"); }); }
     },
     onDefend: function(ctx) {
       var enemies = ctx.enemyUnits() || [];
-      if (enemies.length === 1) { ctx.flash(ctx.unit.uid); ctx.applyTempMightToUids([ctx.unit.uid], 2, "Kha'Zix, Mutating Horror"); ctx.banner("Kha'Zix, Mutating Horror — +2 might (lone enemy)"); }
+      if (enemies.length === 1) { var _ctx = ctx; triggerEffectGhost(ctx.unit, function() { _ctx.applyTempMightToUids([_ctx.unit.uid], 2, "Kha'Zix, Mutating Horror"); _ctx.banner("Kha'Zix, Mutating Horror — +2 might (lone enemy)"); }); }
     }
   },
   "Renata Glasc, Mastermind": { _automatedElsewhere: "Activated 1E+Mind → draw 1; 4E+4Mind+exhaust → +1 score — paid activated abilities not auto-prompted; resolve manually" },
@@ -4249,7 +4314,6 @@ var CARD_EFFECTS = {
   "Switcheroo":         { _automatedElsewhere: "[Hidden][Action] swap two units' Might — set-might swap not modelled; resolve manually" },
   "Windsinger": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       var bfWeakUids = [];
       ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi === ctx.myActIdx) return; (pu || []).forEach(function(u) { if (u.uid !== ctx.card.uid && _effMight(u) <= 3) bfWeakUids.push(u.uid); }); }); });
       if (!bfWeakUids.length) { return; }
@@ -4284,19 +4348,21 @@ var CARD_EFFECTS = {
   "Malzahar, Fanatic":  { _automatedElsewhere: "Activated kill-friendly+exhaust → [Add] Rainbow² — sacrificial activated add-resource not modelled; resolve manually" },
   "Noxian Guillotine": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var allUids = [];
-      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
-      var meP = ps[ctx.myActIdx];
-      if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
-      ps.forEach(function(p, pi) { if (pi !== ctx.myActIdx && p) (p.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); }); });
-      if (!allUids.length) { return; }
-      // [Legion] met → kill now; else mark with delayed-kill manually.
-      if (ctx.legionMet) {
-        ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Noxian Guillotine [Legion] (kill now)", sourceUid: ctx.card.uid, effect: "kill" });
-      } else {
-        ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Noxian Guillotine (kill on next damage; resolve manually)", sourceUid: ctx.card.uid, effect: "tempMight", amount: -1 });
-      }
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var allUids = [];
+        _ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+        var meP = ps[_ctx.myActIdx];
+        if (meP) (meP.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); });
+        ps.forEach(function(p, pi) { if (pi !== _ctx.myActIdx && p) (p.base || []).forEach(function(c) { if (c.type === "Unit" || c.type === "Champion") allUids.push(c.uid); }); });
+        if (!allUids.length) { return; }
+        // [Legion] met → kill now; else mark with delayed-kill manually.
+        if (_ctx.legionMet) {
+          _ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Noxian Guillotine [Legion] (kill now)", sourceUid: _ctx.card.uid, effect: "kill" });
+        } else {
+          _ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Noxian Guillotine (kill on next damage; resolve manually)", sourceUid: _ctx.card.uid, effect: "tempMight", amount: -1 });
+        }
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Overt Operation":    { _automatedElsewhere: "[Action] spend each buff → ready unit, then buff all friendlies — buff-as-cost mass action not modelled; resolve manually" },
@@ -4308,21 +4374,25 @@ var CARD_EFFECTS = {
   "Kato the Arm":       { _automatedElsewhere: "[Deflect] via isEnemyDeflect; on-move-to-BF buff another friendly — onMove buff hook not built; apply +1 counter manually" },
   "Zenith Blade": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var enemyUids = [];
-      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi === ctx.myActIdx) return; (pu || []).forEach(function(u) { enemyUids.push(u.uid); }); }); });
-      if (!enemyUids.length) { return; }
-      ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Zenith Blade (stun; move friendly manually)", sourceUid: ctx.card.uid, effect: "stun" });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var enemyUids = [];
+        _ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu, pi) { if (pi === _ctx.myActIdx) return; (pu || []).forEach(function(u) { enemyUids.push(u.uid); }); }); });
+        if (!enemyUids.length) { return; }
+        _ctx.prompt({ kind: "pickEnemyUnit", n: 1, validUids: enemyUids, sourceName: "Zenith Blade (stun; move friendly manually)", sourceUid: _ctx.card.uid, effect: "stun" });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Fizz, Trickster":    { _automatedElsewhere: "On-play free-cast ≤3E spell from trash + recycle — trash-cast-and-recycle pipeline not modelled; resolve manually" },
   "Sudden Storm": {
     onCast: function(ctx) {
-      ctx.flash(ctx.card.uid);
-      var allUids = [];
-      ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
-      if (!allUids.length) { return; }
-      ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Sudden Storm (2 dmg, again to a 2nd target manually)", sourceUid: ctx.card.uid, effect: "damage", amount: 2 });
+      var _ctx = ctx;
+      triggerEffectGhost(ctx.card, function() {
+        var allUids = [];
+        _ctx.bfs.forEach(function(b) { if (!b || !b.units) return; b.units.forEach(function(pu) { (pu || []).forEach(function(u) { allUids.push(u.uid); }); }); });
+        if (!allUids.length) { return; }
+        _ctx.prompt({ kind: "pickAnyUnit", n: 1, validUids: allUids, sourceName: "Sudden Storm (2 dmg, again to a 2nd target manually)", sourceUid: _ctx.card.uid, effect: "damage", amount: 2 });
+      }, null, null, { reverseOnArrive: false });
     }
   },
   "Janna, Savior":      { _automatedElsewhere: "[Reaction]; on-play heal all friendly units (clear damage) — heal-many not modelled; resolve manually (clear damage on each)" },
@@ -4346,7 +4416,6 @@ var CARD_EFFECTS = {
   "Angle Shot":         { _automatedElsewhere: "[Reaction] re-attach equipment + +2 might — gear re-attach + buff not modelled; resolve manually" },
   "Jax, Unrelenting": {
     onPlay: function(ctx) {
-      ctx.flash(ctx.card.uid);
       var _meP = window.ps && window.ps[window.myActIdx];
       var _gearUids = [];
       if (_meP) {
