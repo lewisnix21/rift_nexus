@@ -4104,7 +4104,8 @@ var CARD_EFFECTS = {
       if (!friendlyUids.length) { ctx.banner("Find Your Center — drew 1 (no friendly units to buff)"); return; }
       ctx.prompt({ kind: "pickFriendlyUnits", n: 1, validUids: friendlyUids, sourceName: "Find Your Center", sourceUid: ctx.card.uid, effect: "tempMight", amount: 2 });
     }
-  }
+  },
+  "Safety Inspector":   { _automatedElsewhere: "Each-player kill 1 unit; optional 3-XP cost → you skip — multi-player kill + conditional opt-out not modelled; resolve manually" }
 };
 </script>
 <script type="text/babel">
