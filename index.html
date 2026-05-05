@@ -3849,7 +3849,18 @@ var CARD_EFFECTS = {
       ctx.banner("Undertitan — +2 might to " + uids.length + " other friendly unit" + (uids.length === 1 ? "" : "s") + " (Add 2E on reveal-from-deck handled manually)");
     }
   },
-  "Unyielding Spirit":  { _automatedElsewhere: "[Reaction] prevent all spell/ability damage this turn — turn-scoped damage replacement watcher not built; resolve manually (skip damage)" }
+  "Unyielding Spirit":  { _automatedElsewhere: "[Reaction] prevent all spell/ability damage this turn — turn-scoped damage replacement watcher not built; resolve manually (skip damage)" },
+  "Crowd Favorite": {
+    onConquer: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 1;
+      ctx.banner("Crowd Favorite [Hunt] — +1 XP (now " + _xpRef.current[ctx.player] + ")");
+    },
+    onHold: function(ctx) {
+      _xpRef.current[ctx.player] = (_xpRef.current[ctx.player] || 0) + 1;
+      ctx.banner("Crowd Favorite [Hunt] — +1 XP (now " + _xpRef.current[ctx.player] + ")");
+    },
+    _automatedElsewhere: "Activated 2-XP self-buff — XP-cost activated abilities resolved manually"
+  }
 };
 </script>
 <script type="text/babel">
