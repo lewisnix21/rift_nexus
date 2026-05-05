@@ -3848,7 +3848,8 @@ var CARD_EFFECTS = {
       ctx.applyTempMightToUids(uids, 2, "Undertitan");
       ctx.banner("Undertitan — +2 might to " + uids.length + " other friendly unit" + (uids.length === 1 ? "" : "s") + " (Add 2E on reveal-from-deck handled manually)");
     }
-  }
+  },
+  "Unyielding Spirit":  { _automatedElsewhere: "[Reaction] prevent all spell/ability damage this turn — turn-scoped damage replacement watcher not built; resolve manually (skip damage)" }
 };
 </script>
 <script type="text/babel">
