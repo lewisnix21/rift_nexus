@@ -4519,54 +4519,65 @@ function SilhouetteIcon({ size }) {
   </svg>;
 }
 
-// Rotated-square diamond badge for score / XP overlays. Hover reveals +/- buttons.
+// Rotated-square diamond badge for score / XP overlays. Solid dark fill so it visibly
+// "covers" the circle behind it. Hover reveals +/- buttons (interactive owners only).
 function DiamondBadge({ value, color, size, onInc, onDec, label }) {
-  size = size || 30;
+  size = size || 36;
   var _hov = useState(false), hov = _hov[0], setHov = _hov[1];
   var interactive = !!(onInc || onDec);
   return <div style={{ position: "relative", width: size + 4, height: size + 4, flexShrink: 0, pointerEvents: "auto" }}
     onMouseEnter={interactive ? function() { setHov(true); } : undefined}
     onMouseLeave={interactive ? function() { setHov(false); } : undefined}
     title={label}>
-    <div style={{ width: size, height: size, transform: "rotate(45deg)", border: "2px solid " + color, background: "linear-gradient(135deg," + color + "55," + color + "20)", borderRadius: 3, position: "absolute", top: 2, left: 2, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px #000a" }}>
-      <span style={{ transform: "rotate(-45deg)", fontSize: 11, fontWeight: 700, color: color, fontFamily: "Inter,sans-serif", lineHeight: 1, whiteSpace: "nowrap" }}>{(hov && interactive) ? "" : value}</span>
+    <div style={{ width: size, height: size, transform: "rotate(45deg)", border: "2px solid " + color, background: "linear-gradient(135deg, #1c1c38, #0c0c1c)", borderRadius: 4, position: "absolute", top: 2, left: 2, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px #000c, 0 0 8px " + color + "44" }}>
+      <span style={{ transform: "rotate(-45deg)", fontSize: 13, fontWeight: 700, color: color, fontFamily: "Inter,sans-serif", lineHeight: 1, whiteSpace: "nowrap", letterSpacing: 0.5 }}>{(hov && interactive) ? "" : value}</span>
     </div>
     {hov && interactive && <>
-      <button onClick={onInc} style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", width: 18, height: 18, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.7)", color: color, fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 2 }}>+</button>
-      <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: 12, fontWeight: 700, color: color, fontFamily: "Inter,sans-serif", pointerEvents: "none", zIndex: 1 }}>{value}</div>
-      <button onClick={onDec} style={{ position: "absolute", bottom: -8, left: "50%", transform: "translateX(-50%)", width: 18, height: 18, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.7)", color: color, fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 2 }}>−</button>
+      <button onClick={onInc} style={{ position: "absolute", top: -10, left: "50%", transform: "translateX(-50%)", width: 20, height: 20, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.85)", color: color, fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 2 }}>+</button>
+      <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: 14, fontWeight: 700, color: color, fontFamily: "Inter,sans-serif", pointerEvents: "none", zIndex: 1 }}>{value}</div>
+      <button onClick={onDec} style={{ position: "absolute", bottom: -10, left: "50%", transform: "translateX(-50%)", width: 20, height: 20, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.85)", color: color, fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 2 }}>−</button>
     </>}
   </div>;
 }
 
-// PlayerAvatar: circle with photo/silhouette, name arced above, XP + Score diamonds at the bottom.
+// PlayerAvatar: circle with photo/silhouette, name arced *tightly* above, XP + Score
+// diamonds layered over the bottom. The arc radius is `circleRadius + arcGap` so the
+// name visually hugs the circle outline.
 var _avatarArcCounter = 0;
 function PlayerAvatar({ photoURL, name, score, xp, scoreMax, size, isActive, isMine, onPhotoClick, onScoreInc, onScoreDec, onXpInc, onXpDec, scorePulse, dataUid }) {
-  size = size || 96;
+  size = size || 120;
   var _idRef = useRef(null);
   if (!_idRef.current) _idRef.current = "name-arc-" + (++_avatarArcCounter);
   var arcId = _idRef.current;
-  var color = isActive ? "#FFD700" : "#FFD70066";
-  var nameColor = isActive ? "#FFD700" : "#FFD700aa";
-  var halo = size + 30;
-  var arcRadius = halo / 2 - 5;
-  var arcCY = halo / 2 - 4;
-  var arcD = "M 5 " + arcCY + " A " + arcRadius + " " + arcRadius + " 0 0 1 " + (halo - 5) + " " + arcCY;
+  var color = isActive ? "#FFD700" : "#FFD70077";
+  var nameColor = isActive ? "#FFD700" : "#FFD700cc";
+  // Tight name arc: small clearance from circle, so the name wraps right against the outline.
+  var arcGap = 3;
+  var arcR = size / 2 + arcGap;
+  var textPad = 18; // headroom above the arc for the text glyphs
+  var svgW = 2 * arcR + 4;
+  var svgH = arcR + textPad + 4;
+  // Top-half arc concentric with the circle; start on the left at the circle's vertical
+  // centre, sweep up across the top, end on the right at the circle's vertical centre.
+  var arcD = "M 2 " + (textPad + arcR) + " A " + arcR + " " + arcR + " 0 0 1 " + (svgW - 2) + " " + (textPad + arcR);
+  // Position the SVG so its arc start/end points sit exactly on the circle's vertical centre.
+  var svgTop = size / 2 - textPad - arcR;
+  var svgLeft = -arcGap - 2;
   return <div style={{ position: "relative", width: size, height: size, flexShrink: 0, pointerEvents: "auto" }}>
-    <svg width={halo} height={halo / 2} style={{ position: "absolute", top: -halo / 2 + 8, left: (size - halo) / 2, overflow: "visible", pointerEvents: "none" }}>
+    <svg width={svgW} height={svgH} style={{ position: "absolute", left: svgLeft, top: svgTop, overflow: "visible", pointerEvents: "none" }}>
       <defs>
         <path id={arcId} d={arcD} fill="none" />
       </defs>
-      <text fontSize="11" fontFamily="Spectral, serif" fontWeight="700" letterSpacing="2" fill={nameColor} style={{ textTransform: "uppercase" }}>
+      <text fontSize={Math.max(11, Math.round(size * 0.11))} fontFamily="Spectral, serif" fontWeight="700" letterSpacing="1.5" fill={nameColor} style={{ textTransform: "uppercase" }}>
         <textPath href={"#" + arcId} startOffset="50%" textAnchor="middle">{name || ""}</textPath>
       </text>
     </svg>
-    <div data-uid={dataUid} onClick={onPhotoClick} className={scorePulse ? "anim-score-pulse" : ""} style={{ width: size, height: size, borderRadius: "50%", overflow: "hidden", border: "3px solid " + color, background: "linear-gradient(160deg, #2a2a50, #15152a)", cursor: onPhotoClick ? "pointer" : "default", boxShadow: isActive ? "0 0 18px rgba(255,215,0,0.5), 0 4px 16px #000a" : "0 4px 12px #0008", transition: "border 0.3s ease, box-shadow 0.3s ease", position: "relative" }}>
+    <div data-uid={dataUid} onClick={onPhotoClick} className={scorePulse ? "anim-score-pulse" : ""} style={{ width: size, height: size, borderRadius: "50%", overflow: "hidden", border: "3px solid " + color, background: "linear-gradient(160deg, #2a2a50, #15152a)", cursor: onPhotoClick ? "pointer" : "default", boxShadow: isActive ? "0 0 22px rgba(255,215,0,0.55), 0 4px 18px #000c" : "0 4px 14px #000a", transition: "border 0.3s ease, box-shadow 0.3s ease", position: "relative" }}>
       {photoURL ? <img src={photoURL} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} /> : <SilhouetteIcon size={size} />}
     </div>
-    <div style={{ position: "absolute", bottom: -10, left: -8, right: -8, display: "flex", justifyContent: "space-between", pointerEvents: "auto" }}>
-      <DiamondBadge value={xp || 0} color="#4ADE80" size={28} onInc={isMine ? onXpInc : null} onDec={isMine ? onXpDec : null} label="XP" />
-      <DiamondBadge value={(score || 0) + (scoreMax ? "/" + scoreMax : "")} color="#FFD700" size={28} onInc={isMine ? onScoreInc : null} onDec={isMine ? onScoreDec : null} label="Score" />
+    <div style={{ position: "absolute", bottom: -Math.round(size * 0.12), left: -Math.round(size * 0.05), right: -Math.round(size * 0.05), display: "flex", justifyContent: "space-between", pointerEvents: "auto" }}>
+      <DiamondBadge value={xp || 0} color="#4ADE80" size={Math.round(size * 0.32)} onInc={isMine ? onXpInc : null} onDec={isMine ? onXpDec : null} label="XP" />
+      <DiamondBadge value={(score || 0) + (scoreMax ? "/" + scoreMax : "")} color="#FFD700" size={Math.round(size * 0.32)} onInc={isMine ? onScoreInc : null} onDec={isMine ? onScoreDec : null} label="Score" />
     </div>
   </div>;
 }
@@ -10613,15 +10624,17 @@ function RiftboundGame() {
               var enemyP = lobbyPlayers && Object.keys(lobbyPlayers).map(function(k) { return lobbyPlayers[k]; }).find(function(p) { return p && p.slot === enemySlot; });
               var enemyPhoto = (enemyP && enemyP.photoURL) || "";
               return <div key={"ehand"} style={{ position: "relative", width: "100%", height: "100%", overflow: "visible" }}>
-                {/* Enemy avatar — centered at the bottom of this row, just south of the enemy's fanned hand */}
-                <div style={{ position: "absolute", bottom: -8, left: "50%", transform: "translateX(-50%)", zIndex: 970, pointerEvents: "auto" }}>
+                {/* Enemy avatar — fixed mirror of the self-avatar: anchored just south of the
+                    enemy's fanned hand (which is itself fixed at the viewport top) so the circle
+                    always sits in the gap between the enemy hand and their base/runes banner. */}
+                <div style={{ position: "fixed", top: Math.round(HAND_H * 1.5 * 0.5 + 16), left: "50%", transform: "translateX(-50%)", zIndex: 970, pointerEvents: "auto" }}>
                   <PlayerAvatar
                     photoURL={enemyPhoto}
                     name={pName(enemySlot)}
                     score={enemy.score || 0}
                     xp={enemy.xp || 0}
                     scoreMax={continuePlaying ? null : (lobbySettings && lobbySettings.mode === "Doubles" ? "11" : "8")}
-                    size={84}
+                    size={130}
                     isActive={act === enemySlot}
                     isMine={false}
                     scorePulse={scorePulseIdx === enemySlot}
@@ -10794,15 +10807,17 @@ function RiftboundGame() {
 
           {/* ROW 5: PLAYER HAND — hand spans full row width and centers; champ/legend/rune & bin float on the edges via absolute positioning so they don't push the hand off-center. The PlayerAvatar sits centered at the top of this row, just north of the hand cards. */}
           <div style={{ position: "relative", alignItems: "flex-end", flexShrink: 0, overflow: "visible", padding: "2px 6px 4px", height: HAND_H + Math.round(26 * vScale), minHeight: HAND_H + Math.round(26 * vScale), maxHeight: HAND_H + Math.round(26 * vScale) }}>
-            {/* Self-avatar — centered above the hand cards, with name arced over the top + XP/Score diamonds at the bottom of the circle */}
-            <div style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", zIndex: 970, pointerEvents: "auto" }}>
+            {/* Self-avatar — fixed at a known offset above the hand cards (which are themselves
+                fixed at viewport bottom), so the circle always sits in the gap between the
+                runes/base banner and the topmost hand card regardless of viewport size. */}
+            <div style={{ position: "fixed", bottom: Math.round(HAND_H * 1.5 * 0.65 + 24), left: "50%", transform: "translateX(-50%)", zIndex: 970, pointerEvents: "auto" }}>
               <PlayerAvatar
                 photoURL={(lobbyPlayers && lobbyPlayers[myUid] && lobbyPlayers[myUid].photoURL) || userPhotoURL || myPhotoURL}
                 name={pName(isOnlineGame ? mySlot : act)}
                 score={myCur.score}
                 xp={myCur.xp || 0}
                 scoreMax={continuePlaying ? null : (lobbySettings && lobbySettings.mode === "Doubles" ? "11" : "8")}
-                size={84}
+                size={130}
                 isActive={isMyTurnOnline}
                 isMine={true}
                 onScoreInc={function() { var idx = myActIdx; var np = ps.slice(); np[idx] = Object.assign({}, np[idx], { score: np[idx].score + 1 }); setPs(np); _syncLive(np, null); }}
