@@ -10717,7 +10717,7 @@ function RiftboundGame() {
               onClick={!autoMode && pendingZonePlay && pendingZonePlay.card ? function(e) { if (pendingZonePlay.fromBf !== undefined || pendingZonePlay.fromBase) { returnToHand(pendingZonePlay.card.uid); } setPendingZonePlay(null); } : undefined}>
               <FannedHand hand={handSort === "type" ? myCur.hand.slice().sort(function(a, b) { var order = { Champion: 0, Unit: 1, Gear: 2, Spell: 3 }; return (order[a.type] || 9) - (order[b.type] || 9); }) : handSort === "energy" ? myCur.hand.slice().sort(function(a, b) { return (a.energy || 0) - (b.energy || 0); }) : myCur.hand} isEnemy={false} onPlay={function(card) { if (pendingZonePlay && pendingZonePlay.card && (pendingZonePlay.fromBf !== undefined || pendingZonePlay.fromBase)) { returnToHand(pendingZonePlay.card.uid); setPendingZonePlay(null); return; } setPendingZonePlay({ card: card }); }} onZoom={setZoom} />
             </div>
-            {!autoMode && <div style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", display: "flex", gap: 3, alignItems: "flex-start", padding: "4px 2px", zIndex: 960 }}>
+            {!autoMode && <div style={{ position: "absolute", right: 200, top: "50%", transform: "translateY(-50%)", display: "flex", gap: 3, alignItems: "flex-start", padding: "4px 2px", zIndex: 960 }}>
               {/* Main deck (non-auto) */}
           <div style={{ position: "relative" }} onDragOver={canMoveOwn ? function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } : undefined} onDrop={canMoveOwn ? function(e) { e.preventDefault(); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts.length > 1 ? parts[1] : parts[0]; var idx = myActIdx; var _me = ps[idx]; if (!_me) return; var p = Object.assign({}, _me, { hand: _me.hand.slice(), base: _me.base.slice(), mainDeck: _me.mainDeck.slice() }); var card = null; if (type === "hand") { var hi = p.hand.findIndex(function(c) { return c.uid === uid2; }); if (hi >= 0) card = p.hand.splice(hi, 1)[0]; } else if (type === "base") { var bi2 = p.base.findIndex(function(c) { return c.uid === uid2; }); if (bi2 >= 0) card = p.base.splice(bi2, 1)[0]; } else if (type === "bf") { var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); }); for (var bk = 0; bk < nb.length; bk++) { if (!nb[bk].units[idx]) continue; var ui = nb[bk].units[idx].findIndex(function(u) { return u.uid === uid2; }); if (ui >= 0) { card = nb[bk].units[idx].splice(ui, 1)[0]; setBfs(nb); break; } } } if (card) { p.mainDeck.push(Object.assign({}, card, { exhausted: false })); aL(pName(idx) + " recycles " + cName(card) + " to deck"); var np = ps.slice(); np[idx] = p; setPs(np); } } : undefined}>
             <div data-uid={"slot-" + mySlot + "-deck"} onClick={canMoveOwn && myCur.mainDeck.length > 0 ? function() { var idx = myActIdx; var _me = ps[idx]; if (!_me) return; if (sd) markSdActed(); var p = Object.assign({}, _me, { mainDeck: _me.mainDeck.slice(), hand: _me.hand.slice() }); var c = p.mainDeck.shift(); p.hand.push(c); addAnim(c.uid, "draw"); aL(pName(idx) + " draws 1 card"); var np = ps.slice(); np[idx] = p; setPs(np); } : undefined} style={{ cursor: canMoveOwn && myCur.mainDeck.length > 0 ? "pointer" : "default" }}><CardBack w={HAND_W} h={HAND_H} count={myCur.mainDeck.length} label="DECK" /></div>
@@ -10772,7 +10772,7 @@ function RiftboundGame() {
         </div>); }()}
 
         {/* Right panel removed — showcase, log, chat, and END TURN now float in the bottom-right in both auto and manual modes. */}
-        {screen === "wait" && !awakenPhase && turn === 1 && act === 0 && _gamePhaseRef.current === "playing" && isHost && <button onClick={function() { doStartTurn(); }} style={{ position: "fixed", bottom: 24, right: 24, padding: "12px 28px", borderRadius: 8, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70060,#FF8C0030)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif", zIndex: 950, boxShadow: "0 4px 16px #000c, 0 0 24px rgba(255,215,0,0.2)", letterSpacing: 1 }}>START GAME</button>}
+        {screen === "wait" && !awakenPhase && turn === 1 && act === 0 && _gamePhaseRef.current === "playing" && isHost && <button onClick={function() { doStartTurn(); }} style={{ position: "fixed", bottom: 80, right: 24, padding: "12px 28px", borderRadius: 8, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70060,#FF8C0030)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif", zIndex: 950, boxShadow: "0 4px 16px #000c, 0 0 24px rgba(255,215,0,0.2)", letterSpacing: 1 }}>START GAME</button>}
         {/* Manual-mode targeting/selection hint — replaces the side panel's tm/sel hint blocks. Floats top-center so it doesn't crowd the bottom-right action stack. */}
         {tm && <div style={{ position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 940, padding: "8px 14px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #FFD70066", color: "#FFD700", fontSize: 13, fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center", boxShadow: "0 4px 16px #000a", display: "flex", alignItems: "center", gap: 10, pointerEvents: "auto" }}>
           <span>{tm.ty === "buff" ? "Pick friendly" : tm.ty === "dmg" ? "Pick to damage" : tm.ty === "stun" ? "Pick enemy" : "Target"}</span>
@@ -10864,7 +10864,7 @@ function RiftboundGame() {
               </div>
             </div>
           </div>;
-        })() : <div style={{ width: Math.round(258 * vScale), height: Math.round(361 * vScale), border: "2px dashed #FFD70066", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD70088", fontSize: 12, fontFamily: "Spectral,serif", background: "rgba(255,215,0,0.05)" }}>Drop here</div>}
+        })() : <div style={{ width: Math.round(258 * vScale), height: Math.round(361 * vScale) }} />}
       </div>}
       {/* Spell chain Resolve button — floating bottom-right in both modes */}
       {pendingSpell && (function() {
@@ -10873,7 +10873,7 @@ function RiftboundGame() {
         var allUids = isOnline ? Object.keys(lobbyPlayers || {}) : [myUid];
         var pending = allUids.filter(function(u) { return !resolveAcceptors[u]; });
         var pendingNames = pending.map(function(u) { var sl = lobbyPlayers && lobbyPlayers[u] && typeof lobbyPlayers[u].slot === "number" ? lobbyPlayers[u].slot : -1; return sl >= 0 ? pName(sl) : (lobbyPlayers && lobbyPlayers[u] && lobbyPlayers[u].name) || "?"; });
-        return <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+        return <div style={{ position: "fixed", bottom: 80, right: 24, zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
           <span style={{ fontSize: 12, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>{pendingSpell.name || "Spell"}</span>
           <button onClick={function(e) {
             e.stopPropagation();
@@ -10910,7 +10910,7 @@ function RiftboundGame() {
           {isOnline && pending.length > 0 && pendingNames.length > 0 && <span style={{ fontSize: 11, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Awaiting: {pendingNames.join(", ")}</span>}
         </div>;
       })()}
-      {spellResolving && !pendingSpell && <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+      {spellResolving && !pendingSpell && <div style={{ position: "fixed", bottom: 80, right: 24, zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
         <span style={{ fontSize: 12, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>{spellResolving}</span>
         <button disabled style={{ padding: "12px 28px", borderRadius: 8, border: "2px solid #60a5fa44", background: "rgba(96,165,250,0.07)", color: "#60a5fa66", fontSize: 15, fontWeight: 700, fontFamily: "Spectral,serif", cursor: "not-allowed", letterSpacing: 1.5, boxShadow: "0 4px 16px #000c", textTransform: "uppercase" }}>Resolving…</button>
       </div>}
@@ -10920,7 +10920,7 @@ function RiftboundGame() {
         var isAttacker = isOnline ? pendingBeginConquer.playerIdx === mySlot : true;
         if (!isAttacker) return null;
         var pbcContested = !!pendingBeginConquer.contested;
-        return <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+        return <div style={{ position: "fixed", bottom: 80, right: 24, zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
           <span style={{ fontSize: 12, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>{pendingBeginConquer.bfName} — {pbcContested ? "contested" : "uncontested"}</span>
           <button onClick={function(e) {
             e.stopPropagation();
@@ -10961,7 +10961,7 @@ function RiftboundGame() {
         var allReadyFL = pending.length === 0;
         var _isWaitingFL = meReady && !allReadyFL;
         var _flBorderColor = allReadyFL ? "#4ADE80" : "#60a5fa";
-        return <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, animation: resolvedPhase === "sd" ? "resolvedBoxFadeOut 2.2s ease-out forwards" : undefined }}>
+        return <div style={{ position: "fixed", bottom: 80, right: 24, zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, animation: resolvedPhase === "sd" ? "resolvedBoxFadeOut 2.2s ease-out forwards" : undefined }}>
           <span style={{ fontSize: 12, color: allReadyFL ? "#4ADE8099" : "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Showdown: {bfLabel}</span>
           <button onClick={function(e) {
             e.stopPropagation();
@@ -10994,7 +10994,7 @@ function RiftboundGame() {
         var canPress = allAssigned && !meReady;
         var allReadyCFL = pending.length === 0;
         var _cflBorderColor = allReadyCFL ? "#4ADE80" : canPress ? "#60a5fa" : meReady ? "#60a5fa" : "#444";
-        return <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, animation: resolvedPhase === "sd" ? "resolvedBoxFadeOut 2.2s ease-out forwards" : undefined }}>
+        return <div style={{ position: "fixed", bottom: 80, right: 24, zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, animation: resolvedPhase === "sd" ? "resolvedBoxFadeOut 2.2s ease-out forwards" : undefined }}>
           <span style={{ fontSize: 12, color: allReadyCFL ? "#4ADE8099" : "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Contested: {bfLabel}</span>
           <button onClick={function(e) {
             e.stopPropagation();
@@ -11011,33 +11011,34 @@ function RiftboundGame() {
       {screen === "play" && !awakenPhase && !sd && !pendingSpell && !pendingBeginConquer && !autoPrompt && !showcaseCard && !tm && !fc && (function() {
         var isOnlineGame = (lobbyType === "host" || lobbyType === "join") && !_soloTestRef.current;
         if (isOnlineGame) { if (_gamePhaseRef.current !== "playing") return null; if (act !== mySlot) return null; }
-        return <button onClick={endTurn} style={{ position: "fixed", bottom: 24, right: 24, padding: "12px 28px", borderRadius: 8, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70060,#FF8C0030)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif", zIndex: 950, boxShadow: "0 4px 16px #000c, 0 0 24px rgba(255,215,0,0.2)", letterSpacing: 1 }}>END TURN</button>;
+        return <button onClick={endTurn} style={{ position: "fixed", bottom: 80, right: 24, padding: "12px 28px", borderRadius: 8, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70060,#FF8C0030)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif", zIndex: 950, boxShadow: "0 4px 16px #000c, 0 0 24px rgba(255,215,0,0.2)", letterSpacing: 1 }}>END TURN</button>;
       })()}
-      {/* Bottom tabs (Log + Chat) — both modes */}
-      <div style={{ position: "fixed", bottom: 0, right: 220, zIndex: 900, display: "flex", flexDirection: "column", alignItems: "flex-end", pointerEvents: "auto" }}>
-        {bottomTab && <div style={{ width: 380, height: 240, background: "rgba(10,15,40,0.97)", border: "1px solid #60a5fa33", borderBottom: "none", borderRadius: "10px 10px 0 0", padding: 8, display: "flex", flexDirection: "column" }}>
-          {bottomTab === "log" && <>
-            <div ref={lr} style={{ flex: 1, overflow: "auto", padding: 4, fontSize: 12, lineHeight: 1.5 }}>
-              {log.map(function(e, i) { return <div key={i} style={{ color: e.m.indexOf("===") >= 0 ? "#FFD700" : e.m.indexOf("wins") >= 0 ? "#FFD700" : e.m.indexOf("SHOWDOWN") >= 0 ? "#FF6B35" : e.m.indexOf("onquer") >= 0 || e.m.indexOf("holding point") >= 0 ? "#4ADE80" : "#667", marginBottom: 2, fontFamily: e.m.indexOf("===") >= 0 ? "Spectral,serif" : "inherit" }}>{e.m}</div>; })}
-            </div>
-            <button onClick={function() { var txt = log.map(function(e) { return e.m; }).join("\n"); navigator.clipboard.writeText(txt); }} style={{ padding: "2px 6px", borderRadius: 3, border: "1px solid #60a5fa22", background: "transparent", color: "#555", cursor: "pointer", fontSize: 10, marginTop: 4, alignSelf: "flex-start" }}>Copy Log</button>
-          </>}
-          {bottomTab === "chat" && <>
-            <div ref={chatRef} style={{ flex: 1, overflow: "auto", fontSize: 12, lineHeight: 1.4, padding: "2px 4px" }}>
-              {chatMsgs.length === 0 && <div style={{ color: "#ffffff30", fontSize: 11, fontFamily: "Spectral,serif", textAlign: "center", marginTop: 8 }}>{roomCode ? "No messages yet" : "Chat available in online games"}</div>}
-              {chatMsgs.map(function(m, i) { var isMe = m.uid === myUid; return <div key={i} style={{ marginBottom: 2 }}><span style={{ color: isMe ? "#4ADE80" : "#60a5fa", fontWeight: 700, fontSize: 11 }}>{m.name}: </span><span style={{ color: "#bbb" }}>{m.text}</span></div>; })}
-            </div>
-            {roomCode && <div style={{ display: "flex", gap: 3, marginTop: 4 }}>
-              <input value={chatInput} onChange={function(e) { setChatInput(e.target.value); }} onKeyDown={function(e) { if (e.key === "Enter") sendChat(); }} placeholder="Type a message..." style={{ flex: 1, padding: "4px 6px", borderRadius: 4, border: "1px solid #60a5fa22", background: "rgba(96,165,250,0.05)", color: "#ddd", fontSize: 12, outline: "none", fontFamily: "Inter,sans-serif" }} />
-              <button onClick={sendChat} style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #60a5fa44", background: "rgba(96,165,250,0.12)", color: "#60a5fa", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Send</button>
-            </div>}
-          </>}
-        </div>}
+      {/* Bottom tabs (Log + Chat) — anchored bottom-right under the action button (END TURN etc.) */}
+      <div style={{ position: "fixed", bottom: 0, right: 24, zIndex: 900, display: "flex", flexDirection: "column", alignItems: "flex-end", pointerEvents: "auto" }}>
         <div style={{ display: "flex", gap: 6, padding: "6px 0" }}>
           <button onClick={function() { setBottomTab(bottomTab === "log" ? null : "log"); }} style={{ padding: "6px 20px", border: "1px solid " + (bottomTab === "log" ? "#60a5fa" : "#60a5fa44"), background: bottomTab === "log" ? "rgba(96,165,250,0.2)" : "rgba(10,15,40,0.85)", color: "#60a5fa", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif", borderRadius: 20, letterSpacing: 1, boxShadow: bottomTab === "log" ? "0 0 10px rgba(96,165,250,0.3)" : "none" }}>LOG</button>
           <button onClick={function() { setBottomTab(bottomTab === "chat" ? null : "chat"); }} style={{ padding: "6px 20px", border: "1px solid " + (bottomTab === "chat" ? "#60a5fa" : "#60a5fa44"), background: bottomTab === "chat" ? "rgba(96,165,250,0.2)" : "rgba(10,15,40,0.85)", color: "#60a5fa", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif", borderRadius: 20, letterSpacing: 1, boxShadow: bottomTab === "chat" ? "0 0 10px rgba(96,165,250,0.3)" : "none" }}>CHAT</button>
         </div>
       </div>
+      {/* Tab popup — anchored ABOVE the action button so the END TURN never gets covered. */}
+      {bottomTab && <div style={{ position: "fixed", bottom: 140, right: 24, width: 380, height: 240, background: "rgba(10,15,40,0.97)", border: "1px solid #60a5fa33", borderRadius: 10, padding: 8, display: "flex", flexDirection: "column", zIndex: 905, boxShadow: "0 -4px 16px #000a" }}>
+        {bottomTab === "log" && <>
+          <div ref={lr} style={{ flex: 1, overflow: "auto", padding: 4, fontSize: 12, lineHeight: 1.5 }}>
+            {log.map(function(e, i) { return <div key={i} style={{ color: e.m.indexOf("===") >= 0 ? "#FFD700" : e.m.indexOf("wins") >= 0 ? "#FFD700" : e.m.indexOf("SHOWDOWN") >= 0 ? "#FF6B35" : e.m.indexOf("onquer") >= 0 || e.m.indexOf("holding point") >= 0 ? "#4ADE80" : "#667", marginBottom: 2, fontFamily: e.m.indexOf("===") >= 0 ? "Spectral,serif" : "inherit" }}>{e.m}</div>; })}
+          </div>
+          <button onClick={function() { var txt = log.map(function(e) { return e.m; }).join("\n"); navigator.clipboard.writeText(txt); }} style={{ padding: "2px 6px", borderRadius: 3, border: "1px solid #60a5fa22", background: "transparent", color: "#555", cursor: "pointer", fontSize: 10, marginTop: 4, alignSelf: "flex-start" }}>Copy Log</button>
+        </>}
+        {bottomTab === "chat" && <>
+          <div ref={chatRef} style={{ flex: 1, overflow: "auto", fontSize: 12, lineHeight: 1.4, padding: "2px 4px" }}>
+            {chatMsgs.length === 0 && <div style={{ color: "#ffffff30", fontSize: 11, fontFamily: "Spectral,serif", textAlign: "center", marginTop: 8 }}>{roomCode ? "No messages yet" : "Chat available in online games"}</div>}
+            {chatMsgs.map(function(m, i) { var isMe = m.uid === myUid; return <div key={i} style={{ marginBottom: 2 }}><span style={{ color: isMe ? "#4ADE80" : "#60a5fa", fontWeight: 700, fontSize: 11 }}>{m.name}: </span><span style={{ color: "#bbb" }}>{m.text}</span></div>; })}
+          </div>
+          {roomCode && <div style={{ display: "flex", gap: 3, marginTop: 4 }}>
+            <input value={chatInput} onChange={function(e) { setChatInput(e.target.value); }} onKeyDown={function(e) { if (e.key === "Enter") sendChat(); }} placeholder="Type a message..." style={{ flex: 1, padding: "4px 6px", borderRadius: 4, border: "1px solid #60a5fa22", background: "rgba(96,165,250,0.05)", color: "#ddd", fontSize: 12, outline: "none", fontFamily: "Inter,sans-serif" }} />
+            <button onClick={sendChat} style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #60a5fa44", background: "rgba(96,165,250,0.12)", color: "#60a5fa", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Send</button>
+          </div>}
+        </>}
+      </div>}
       {/* Centered point announcement — fires on conquer/hold (auto-mode flow only by data path; harmless render guard otherwise) */}
       {pointMessage && <div key={pointMessage.ts} className="anim-point-msg" style={{ position: "fixed", top: "40%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 1600, padding: "20px 44px", borderRadius: 10, background: "linear-gradient(135deg,rgba(255,215,0,0.18),rgba(255,140,0,0.10))", border: "2px solid #FFD700", color: "#FFD700", fontFamily: "Spectral,serif", fontSize: 28, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", textShadow: "0 0 14px #FFD700aa, 0 0 36px #FFD70066", boxShadow: "0 0 36px rgba(255,215,0,0.45), 0 0 72px rgba(255,215,0,0.25), 0 12px 36px #000c", pointerEvents: "none" }}>{pointMessage.text}</div>}
       {/* Ping effects */}
