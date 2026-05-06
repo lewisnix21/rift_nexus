@@ -5659,7 +5659,9 @@ function RiftboundGame() {
     if (!allUIDs.every(function(u) { return resolveAcceptors[u]; })) return;
     var spellToResolve = pendingSpell;
     _resolveDidSomethingRef.current = false;
-    setResolvedPhase("spell");
+    // Only show the green RESOLVED flash on the LAST spell in the chain so a
+    // multi-spell chain doesn't blink RESOLVED for every layer.
+    if (showcaseHistory.length === 0) setResolvedPhase("spell");
     if (_rdTimer.current) clearTimeout(_rdTimer.current);
     _rdTimer.current = setTimeout(function() {
       setResolvedPhase(null);
@@ -5690,7 +5692,8 @@ function RiftboundGame() {
     var _allUidsSR = _isOnlineSR ? Object.keys(lobbyPlayers || {}) : [myUid];
     if (_allUidsSR.length === 0) return;
     if (!_allUidsSR.every(function(u) { return resolveAcceptors[u]; })) return;
-    setResolvedPhase("spell");
+    // Only show the green RESOLVED flash on the LAST spell in the chain.
+    if (showcaseHistory.length === 0) setResolvedPhase("spell");
     if (_rdTimer.current) clearTimeout(_rdTimer.current);
     _rdTimer.current = setTimeout(function() { setResolvedPhase(null); setPendingSpell(null); setResolveAcceptors({}); setSpellResolving(null); }, 2200);
   }, [pendingSpell, resolveAcceptors, lobbyPlayers, lobbyType, autoMode, resolvedPhase]);
