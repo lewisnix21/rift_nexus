@@ -10610,57 +10610,7 @@ function RiftboundGame() {
       </div>}
 
       <div style={{ flex: 1, minHeight: 0, display: "flex", overflow: "visible", background: "linear-gradient(180deg, #2a2a50 0%, #333368 30%, #3d3d7a 50%, #333368 70%, #2a2a50 100%)" }}>
-        {/* Floating settings gear — top-left of viewport (replaces the old left score column) */}
-        <div style={{ position: "fixed", top: 12, left: 12, zIndex: 970 }}>
-          <div style={{ position: "relative" }}>
-            <button onClick={function() { setSettingsOpen(!settingsOpen); setEditingName(false); }} style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #ffffff20", background: settingsOpen ? "rgba(255,255,255,0.10)" : "rgba(20,20,40,0.6)", color: "#aaa", cursor: "pointer", fontSize: 22, lineHeight: 1, boxShadow: "0 2px 8px #000a" }}>&#9881;</button>
-            {settingsOpen && <div onClick={function(e) { e.stopPropagation(); }} style={{ position: "absolute", top: 0, left: "100%", marginLeft: 6, background: "#1a1a3a", border: "1px solid #ffffff20", borderRadius: 6, padding: 4, zIndex: 200, minWidth: 210, boxShadow: "0 8px 24px #000a" }}>
-              {editingName ? <div style={{ padding: "4px 6px" }}>
-                <input autoFocus value={nameInput} onChange={function(e) { setNameInput(e.target.value); }} onKeyDown={function(e) { if (e.key === "Enter" && nameInput.trim()) { myName = nameInput.trim(); localStorage.setItem("riftNexusName", myName); if (roomCode) fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/name").set(myName); if (fbAuth.currentUser) { fbAuth.currentUser.updateProfile({ displayName: myName }); fbDb.ref("users/" + fbAuth.currentUser.uid + "/name").set(myName); } setEditingName(false); } }} style={{ width: "100%", padding: "4px 6px", borderRadius: 4, border: "1px solid #FFD70044", background: "#ffffff08", color: "#FFD700", fontSize: 13, outline: "none", fontFamily: "Spectral,serif", textAlign: "center" }} />
-                <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
-                  <button onClick={function() { if (nameInput.trim()) { myName = nameInput.trim(); localStorage.setItem("riftNexusName", myName); if (roomCode) fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/name").set(myName); if (fbAuth.currentUser) { fbAuth.currentUser.updateProfile({ displayName: myName }); fbDb.ref("users/" + fbAuth.currentUser.uid + "/name").set(myName); } } setEditingName(false); }} style={{ flex: 1, padding: "3px 6px", borderRadius: 3, border: "1px solid #4ADE8044", background: "rgba(74,222,128,0.1)", color: "#4ADE80", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Save</button>
-                  <button onClick={function() { setNameInput(myName); setEditingName(false); }} style={{ flex: 1, padding: "3px 6px", borderRadius: 3, border: "1px solid #ffffff15", background: "transparent", color: "#666", cursor: "pointer", fontSize: 11, fontFamily: "Spectral,serif" }}>Cancel</button>
-                </div>
-              </div> : <>
-                <div style={{ padding: "4px 10px 6px", borderBottom: "1px solid #ffffff10", marginBottom: 4 }}>
-                  <div style={{ fontSize: 11, color: "#777", fontFamily: "Spectral,serif", letterSpacing: 0.3, marginBottom: 3 }}>SORT BY</div>
-                  <select value={handSort} onChange={function(e) { setHandSort(e.target.value); }} style={{ fontSize: 13, padding: "3px 5px", borderRadius: 4, border: "1px solid #ffffff15", background: "rgba(255,255,255,0.06)", color: "#aaa", cursor: "pointer", fontFamily: "Spectral,serif", outline: "none", width: "100%" }}>
-                    <option value="drawn" style={{ background: "#2a2a50" }}>Drawn Order</option>
-                    <option value="type" style={{ background: "#2a2a50" }}>Card Type</option>
-                    <option value="energy" style={{ background: "#2a2a50" }}>Energy Cost</option>
-                  </select>
-                </div>
-                <div style={{ padding: "4px 10px 6px", borderBottom: "1px solid #ffffff10", marginBottom: 4 }}>
-                  <div style={{ fontSize: 11, color: "#777", fontFamily: "Spectral,serif", letterSpacing: 0.3, marginBottom: 3 }}>HOVER SIZE</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    <input type="range" min="1.5" max="5.5" step="0.5" value={hoverSize} onChange={function(e) { setHoverSize(parseFloat(e.target.value)); }} style={{ flex: 1, cursor: "pointer", accentColor: "#888" }} />
-                    <span style={{ fontSize: 12, color: "#aaa", fontFamily: "Spectral,serif", minWidth: 24, textAlign: "center" }}>{hoverSize.toFixed(1)}x</span>
-                  </div>
-                </div>
-                <div style={{ padding: "4px 10px 6px", borderBottom: "1px solid #ffffff10", marginBottom: 4 }}>
-                  <div style={{ fontSize: 11, color: "#777", fontFamily: "Spectral,serif", letterSpacing: 0.3, marginBottom: 5 }}>AUDIO</div>
-                  {[{ label: "Master", key: "master" }, { label: "Music", key: "music" }, { label: "SFX", key: "sfx" }].map(function(item) {
-                    return <div key={item.key} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
-                      <span style={{ fontSize: 11, color: "#aaa", fontFamily: "Spectral,serif", minWidth: 40 }}>{item.label}</span>
-                      <input type="range" min="0" max="1" step="0.05" value={audioVol[item.key]} onChange={function(e) { var next = Object.assign({}, audioVol); next[item.key] = parseFloat(e.target.value); setAudioVol(next); try { localStorage.setItem("riftNexusAudio", JSON.stringify(next)); } catch(ex) {} }} style={{ flex: 1, cursor: "pointer", accentColor: "#FFD700" }} />
-                      <span style={{ fontSize: 11, color: "#aaa", fontFamily: "Spectral,serif", minWidth: 30, textAlign: "right" }}>{Math.round(audioVol[item.key] * 100)}%</span>
-                    </div>;
-                  })}
-                </div>
-                {!autoMode && <button onClick={function() { var next = !autoPay; setAutoPay(next); try { localStorage.setItem("riftNexusAutoPay", JSON.stringify(next)); } catch(ex) {} }} style={{ display: "flex", width: "100%", padding: "6px 10px", borderRadius: 4, border: "none", background: "transparent", color: "#ddd", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif", textAlign: "left", alignItems: "center", gap: 6 }}>
-                  <div style={{ width: 28, height: 16, borderRadius: 8, background: autoPay ? "#60a5fa" : "#333", position: "relative", transition: "background 0.2s ease", flexShrink: 0 }}><div style={{ width: 12, height: 12, borderRadius: "50%", background: autoPay ? "#fff" : "#666", position: "absolute", top: 2, left: autoPay ? 14 : 2, transition: "left 0.2s ease" }} /></div>
-                  Auto pay
-                </button>}
-                <button onClick={function() { setEditingName(true); }} style={{ display: "block", width: "100%", padding: "6px 10px", borderRadius: 4, border: "none", background: "transparent", color: "#ddd", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif", textAlign: "left" }}>Change Name</button>
-                <button onClick={function() { setAltPing(!altPing); }} style={{ display: "flex", width: "100%", padding: "6px 10px", borderRadius: 4, border: "none", background: "transparent", color: "#ddd", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif", textAlign: "left", alignItems: "center", gap: 6 }}>
-                  <div style={{ width: 28, height: 16, borderRadius: 8, background: altPing ? "#FFD700" : "#333", position: "relative", transition: "background 0.2s ease", flexShrink: 0 }}><div style={{ width: 12, height: 12, borderRadius: "50%", background: altPing ? "#000" : "#666", position: "absolute", top: 2, left: altPing ? 14 : 2, transition: "left 0.2s ease" }} /></div>
-                  Alt-click to ping
-                </button>
-                <button onClick={function() { setSettingsOpen(false); setGameMsg("__forfeit__"); }} style={{ display: "block", width: "100%", padding: "6px 10px", borderRadius: 4, border: "none", background: "transparent", color: "#ff6666", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif", textAlign: "left" }}>Forfeit</button>
-              </>}
-            </div>}
-          </div>
-        </div>
+        {/* Floating settings gear moved into the bottom-right LOG / CHAT / SETTINGS panel below. */}
         {/* Main column — all rows fixed height, content centered vertically with equal dead space top/bottom */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", overflow: "hidden", position: "relative" }}>
 
@@ -11178,15 +11128,63 @@ function RiftboundGame() {
         if (isOnlineGame) { if (_gamePhaseRef.current !== "playing") return null; if (act !== mySlot) return null; }
         return <button onClick={endTurn} style={{ position: "fixed", bottom: 80, right: 24, padding: "12px 28px", borderRadius: 8, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70060,#FF8C0030)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif", zIndex: 950, boxShadow: "0 4px 16px #000c, 0 0 24px rgba(255,215,0,0.2)", letterSpacing: 1 }}>END TURN</button>;
       })()}
-      {/* Bottom tabs (Log + Chat) — anchored bottom-right under the action button (END TURN etc.) */}
-      <div style={{ position: "fixed", bottom: 0, right: 24, zIndex: 900, display: "flex", flexDirection: "column", alignItems: "flex-end", pointerEvents: "auto" }}>
-        <div style={{ display: "flex", gap: 6, padding: "6px 0" }}>
-          <button onClick={function() { setBottomTab(bottomTab === "log" ? null : "log"); }} style={{ padding: "6px 20px", border: "1px solid " + (bottomTab === "log" ? "#60a5fa" : "#60a5fa44"), background: bottomTab === "log" ? "rgba(96,165,250,0.2)" : "rgba(10,15,40,0.85)", color: "#60a5fa", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif", borderRadius: 20, letterSpacing: 1, boxShadow: bottomTab === "log" ? "0 0 10px rgba(96,165,250,0.3)" : "none" }}>LOG</button>
-          <button onClick={function() { setBottomTab(bottomTab === "chat" ? null : "chat"); }} style={{ padding: "6px 20px", border: "1px solid " + (bottomTab === "chat" ? "#60a5fa" : "#60a5fa44"), background: bottomTab === "chat" ? "rgba(96,165,250,0.2)" : "rgba(10,15,40,0.85)", color: "#60a5fa", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif", borderRadius: 20, letterSpacing: 1, boxShadow: bottomTab === "chat" ? "0 0 10px rgba(96,165,250,0.3)" : "none" }}>CHAT</button>
+      {/* Bottom tabs (Log + Chat + Settings) — anchored bottom-right under the action button (END TURN etc.). All three buttons share the same grey palette so the panel reads as a single joined unit along the bottom. The settings popup is `position: absolute` relative to the gear so it hangs upward from this panel; the LOG/CHAT popup is `position: fixed` and right-shifts to sit above its own button. */}
+      <div style={{ position: "fixed", bottom: 0, right: 24, zIndex: 970, display: "flex", flexDirection: "column", alignItems: "flex-end", pointerEvents: "auto" }}>
+        <div style={{ display: "flex", gap: 6, padding: "6px 0", alignItems: "center" }}>
+          <button onClick={function() { setBottomTab(bottomTab === "log" ? null : "log"); }} style={{ padding: "6px 20px", border: "1px solid " + (bottomTab === "log" ? "#ffffff44" : "#ffffff20"), background: bottomTab === "log" ? "rgba(255,255,255,0.10)" : "rgba(20,20,40,0.6)", color: "#aaa", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif", borderRadius: 20, letterSpacing: 1, boxShadow: "0 2px 8px #000a" }}>LOG</button>
+          <button onClick={function() { setBottomTab(bottomTab === "chat" ? null : "chat"); }} style={{ padding: "6px 20px", border: "1px solid " + (bottomTab === "chat" ? "#ffffff44" : "#ffffff20"), background: bottomTab === "chat" ? "rgba(255,255,255,0.10)" : "rgba(20,20,40,0.6)", color: "#aaa", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif", borderRadius: 20, letterSpacing: 1, boxShadow: "0 2px 8px #000a" }}>CHAT</button>
+          <div style={{ position: "relative" }}>
+            <button onClick={function() { setSettingsOpen(!settingsOpen); setEditingName(false); }} style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #ffffff20", background: settingsOpen ? "rgba(255,255,255,0.10)" : "rgba(20,20,40,0.6)", color: "#aaa", cursor: "pointer", fontSize: 22, lineHeight: 1, boxShadow: "0 2px 8px #000a" }}>&#9881;</button>
+            {settingsOpen && <div onClick={function(e) { e.stopPropagation(); }} style={{ position: "absolute", bottom: "100%", right: 0, marginBottom: 6, background: "#1a1a3a", border: "1px solid #ffffff20", borderRadius: 6, padding: 4, zIndex: 200, minWidth: 210, boxShadow: "0 -8px 24px #000a" }}>
+              {editingName ? <div style={{ padding: "4px 6px" }}>
+                <input autoFocus value={nameInput} onChange={function(e) { setNameInput(e.target.value); }} onKeyDown={function(e) { if (e.key === "Enter" && nameInput.trim()) { myName = nameInput.trim(); localStorage.setItem("riftNexusName", myName); if (roomCode) fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/name").set(myName); if (fbAuth.currentUser) { fbAuth.currentUser.updateProfile({ displayName: myName }); fbDb.ref("users/" + fbAuth.currentUser.uid + "/name").set(myName); } setEditingName(false); } }} style={{ width: "100%", padding: "4px 6px", borderRadius: 4, border: "1px solid #FFD70044", background: "#ffffff08", color: "#FFD700", fontSize: 13, outline: "none", fontFamily: "Spectral,serif", textAlign: "center" }} />
+                <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
+                  <button onClick={function() { if (nameInput.trim()) { myName = nameInput.trim(); localStorage.setItem("riftNexusName", myName); if (roomCode) fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/name").set(myName); if (fbAuth.currentUser) { fbAuth.currentUser.updateProfile({ displayName: myName }); fbDb.ref("users/" + fbAuth.currentUser.uid + "/name").set(myName); } } setEditingName(false); }} style={{ flex: 1, padding: "3px 6px", borderRadius: 3, border: "1px solid #4ADE8044", background: "rgba(74,222,128,0.1)", color: "#4ADE80", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Save</button>
+                  <button onClick={function() { setNameInput(myName); setEditingName(false); }} style={{ flex: 1, padding: "3px 6px", borderRadius: 3, border: "1px solid #ffffff15", background: "transparent", color: "#666", cursor: "pointer", fontSize: 11, fontFamily: "Spectral,serif" }}>Cancel</button>
+                </div>
+              </div> : <>
+                <div style={{ padding: "4px 10px 6px", borderBottom: "1px solid #ffffff10", marginBottom: 4 }}>
+                  <div style={{ fontSize: 11, color: "#777", fontFamily: "Spectral,serif", letterSpacing: 0.3, marginBottom: 3 }}>SORT BY</div>
+                  <select value={handSort} onChange={function(e) { setHandSort(e.target.value); }} style={{ fontSize: 13, padding: "3px 5px", borderRadius: 4, border: "1px solid #ffffff15", background: "rgba(255,255,255,0.06)", color: "#aaa", cursor: "pointer", fontFamily: "Spectral,serif", outline: "none", width: "100%" }}>
+                    <option value="drawn" style={{ background: "#2a2a50" }}>Drawn Order</option>
+                    <option value="type" style={{ background: "#2a2a50" }}>Card Type</option>
+                    <option value="energy" style={{ background: "#2a2a50" }}>Energy Cost</option>
+                  </select>
+                </div>
+                <div style={{ padding: "4px 10px 6px", borderBottom: "1px solid #ffffff10", marginBottom: 4 }}>
+                  <div style={{ fontSize: 11, color: "#777", fontFamily: "Spectral,serif", letterSpacing: 0.3, marginBottom: 3 }}>HOVER SIZE</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    <input type="range" min="1.5" max="5.5" step="0.5" value={hoverSize} onChange={function(e) { setHoverSize(parseFloat(e.target.value)); }} style={{ flex: 1, cursor: "pointer", accentColor: "#888" }} />
+                    <span style={{ fontSize: 12, color: "#aaa", fontFamily: "Spectral,serif", minWidth: 24, textAlign: "center" }}>{hoverSize.toFixed(1)}x</span>
+                  </div>
+                </div>
+                <div style={{ padding: "4px 10px 6px", borderBottom: "1px solid #ffffff10", marginBottom: 4 }}>
+                  <div style={{ fontSize: 11, color: "#777", fontFamily: "Spectral,serif", letterSpacing: 0.3, marginBottom: 5 }}>AUDIO</div>
+                  {[{ label: "Master", key: "master" }, { label: "Music", key: "music" }, { label: "SFX", key: "sfx" }].map(function(item) {
+                    return <div key={item.key} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+                      <span style={{ fontSize: 11, color: "#aaa", fontFamily: "Spectral,serif", minWidth: 40 }}>{item.label}</span>
+                      <input type="range" min="0" max="1" step="0.05" value={audioVol[item.key]} onChange={function(e) { var next = Object.assign({}, audioVol); next[item.key] = parseFloat(e.target.value); setAudioVol(next); try { localStorage.setItem("riftNexusAudio", JSON.stringify(next)); } catch(ex) {} }} style={{ flex: 1, cursor: "pointer", accentColor: "#FFD700" }} />
+                      <span style={{ fontSize: 11, color: "#aaa", fontFamily: "Spectral,serif", minWidth: 30, textAlign: "right" }}>{Math.round(audioVol[item.key] * 100)}%</span>
+                    </div>;
+                  })}
+                </div>
+                {!autoMode && <button onClick={function() { var next = !autoPay; setAutoPay(next); try { localStorage.setItem("riftNexusAutoPay", JSON.stringify(next)); } catch(ex) {} }} style={{ display: "flex", width: "100%", padding: "6px 10px", borderRadius: 4, border: "none", background: "transparent", color: "#ddd", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif", textAlign: "left", alignItems: "center", gap: 6 }}>
+                  <div style={{ width: 28, height: 16, borderRadius: 8, background: autoPay ? "#60a5fa" : "#333", position: "relative", transition: "background 0.2s ease", flexShrink: 0 }}><div style={{ width: 12, height: 12, borderRadius: "50%", background: autoPay ? "#fff" : "#666", position: "absolute", top: 2, left: autoPay ? 14 : 2, transition: "left 0.2s ease" }} /></div>
+                  Auto pay
+                </button>}
+                <button onClick={function() { setEditingName(true); }} style={{ display: "block", width: "100%", padding: "6px 10px", borderRadius: 4, border: "none", background: "transparent", color: "#ddd", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif", textAlign: "left" }}>Change Name</button>
+                <button onClick={function() { setAltPing(!altPing); }} style={{ display: "flex", width: "100%", padding: "6px 10px", borderRadius: 4, border: "none", background: "transparent", color: "#ddd", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif", textAlign: "left", alignItems: "center", gap: 6 }}>
+                  <div style={{ width: 28, height: 16, borderRadius: 8, background: altPing ? "#FFD700" : "#333", position: "relative", transition: "background 0.2s ease", flexShrink: 0 }}><div style={{ width: 12, height: 12, borderRadius: "50%", background: altPing ? "#000" : "#666", position: "absolute", top: 2, left: altPing ? 14 : 2, transition: "left 0.2s ease" }} /></div>
+                  Alt-click to ping
+                </button>
+                <button onClick={function() { setSettingsOpen(false); setGameMsg("__forfeit__"); }} style={{ display: "block", width: "100%", padding: "6px 10px", borderRadius: 4, border: "none", background: "transparent", color: "#ff6666", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif", textAlign: "left" }}>Forfeit</button>
+              </>}
+            </div>}
+          </div>
         </div>
       </div>
-      {/* Tab popup — anchored just above its respective tab button (LOG / CHAT). z-index sits above the END TURN / Resolve action buttons (950), the deck/bin/token piles (960), the avatar (970), and the pass-through hand wrapper (980) so the popup is never covered. The right offset shifts under the LOG button when the LOG tab is active so each box hangs over its own button. */}
-      {bottomTab && <div style={{ position: "fixed", bottom: 44, right: bottomTab === "log" ? 98 : 24, width: 380, height: 240, background: "rgba(10,15,40,0.97)", border: "1px solid #60a5fa33", borderRadius: 10, padding: 8, display: "flex", flexDirection: "column", zIndex: 985, boxShadow: "0 -4px 16px #000a" }}>
+      {/* Tab popup — anchored just above its respective tab button (LOG / CHAT). z-index sits above the END TURN / Resolve action buttons (950), the deck/bin/token piles (960), the avatar (970), and the pass-through hand wrapper (980) so the popup is never covered. The right offset shifts under the LOG button (further left) or CHAT button (just left of the gear) so each box hangs over its own button. */}
+      {bottomTab && <div style={{ position: "fixed", bottom: 44, right: bottomTab === "log" ? 146 : 70, width: 380, height: 240, background: "rgba(10,15,40,0.97)", border: "1px solid #ffffff20", borderRadius: 10, padding: 8, display: "flex", flexDirection: "column", zIndex: 985, boxShadow: "0 -4px 16px #000a" }}>
         {bottomTab === "log" && <>
           <div ref={lr} style={{ flex: 1, overflow: "auto", padding: 4, fontSize: 12, lineHeight: 1.5 }}>
             {log.map(function(e, i) { return <div key={i} style={{ color: e.m.indexOf("===") >= 0 ? "#FFD700" : e.m.indexOf("wins") >= 0 ? "#FFD700" : e.m.indexOf("SHOWDOWN") >= 0 ? "#FF6B35" : e.m.indexOf("onquer") >= 0 || e.m.indexOf("holding point") >= 0 ? "#4ADE80" : "#667", marginBottom: 2, fontFamily: e.m.indexOf("===") >= 0 ? "Spectral,serif" : "inherit" }}>{e.m}</div>; })}
