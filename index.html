@@ -4867,8 +4867,12 @@ function RiftboundGame() {
   var _scPriority = useState(null), showcasePriority = _scPriority[0], setShowcasePriority = _scPriority[1];
   var _scActed = useState(false), showcaseActed = _scActed[0], setShowcaseActed = _scActed[1];
   function _otherPlayerUid() { var ks = Object.keys(lobbyPlayers || {}); for (var i = 0; i < ks.length; i++) { if (ks[i] !== myUid) return ks[i]; } return null; }
-  function markShowcaseActed() {
+  function markShowcaseActed(cardMoved) {
+    if (cardMoved === undefined) cardMoved = true;
     if (!showcaseCard || showcaseAccepted) return;
+    // In-place actions (tap, counter, hide) don't invalidate other players'
+    // acceptances or set the acted flag — only true card-moves do.
+    if (!cardMoved) return;
     if (pc >= 3) {
       // 3+ players: any action by player X invalidates the OTHER players' acceptances —
       // remaining players must re-accept. The actor is treated as implicitly having accepted.
@@ -4883,22 +4887,24 @@ function RiftboundGame() {
     }
   }
   // Helper: mark a showdown action; in 3+ player games, the actor's acceptance is preserved
-  // but everyone else's is invalidated.
-  function markSdActed(currentSd) {
+  // but everyone else's is invalidated. Pass cardMoved=false for in-place actions
+  // (tap/counter/hide) — those preserve the resolve gate so players don't have to
+  // re-click Resolve for a tweak that doesn't move a card.
+  function markSdActed(currentSd, cardMoved) {
+    if (cardMoved === undefined) cardMoved = true;
     var src = currentSd || sd;
     if (!src) return null;
     var next = Object.assign({}, src, { acted: true });
-    if (pc >= 3) {
+    if (pc >= 3 && cardMoved) {
       var hadOthers = src.acceptors && Object.keys(src.acceptors).some(function(k) { return Number(k) !== mySlot; });
       var newAcc = {}; newAcc[mySlot] = true;
       next.acceptors = newAcc;
       if (hadOthers) aL(pName(mySlot) + " interrupted — remaining players must re-pass the showdown");
     }
-    // Reset the resolve box (auto-mode + manual): any card play / move during a
-    // showdown forces all players to press Resolve again. Also covers the
-    // assignment phase in manual games where damage assignments stay valid but
-    // the resolve gate must re-fill.
-    if (Object.keys(conquerAcceptors || {}).length > 0) {
+    // Reset the resolve box only when a card is dropped in a new location.
+    // In-place actions (tap, counter, hide) leave conquerAcceptors intact so
+    // players don't have to re-press Resolve for a non-move tweak.
+    if (cardMoved && Object.keys(conquerAcceptors || {}).length > 0) {
       setConquerAcceptors({});
       if (roomCode) { try { fbDb.ref("lobbies/" + roomCode + "/conquerAcceptors").set({}); } catch(e) { /* ignore */ } }
     }
@@ -8939,8 +8945,8 @@ function RiftboundGame() {
     // always apply the counter change.
     var idx = myActIdx;
     var _me = ps[idx]; if (!_me) return;
-    if (sd) markSdActed();
-    markShowcaseActed();
+    if (sd) markSdActed(null, false);
+    markShowcaseActed(false);
     var p = Object.assign({}, _me, { base: _me.base.slice() });
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
     var newVal;
@@ -8959,8 +8965,8 @@ function RiftboundGame() {
     if (!canMoveOwn) return;
     var idx = myActIdx;
     var _me = ps[idx]; if (!_me) return;
-    if (sd) markSdActed();
-    markShowcaseActed();
+    if (sd) markSdActed(null, false);
+    markShowcaseActed(false);
     var p = Object.assign({}, _me, { base: _me.base.slice() });
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
     var newVal;
@@ -8977,8 +8983,8 @@ function RiftboundGame() {
     if (!canMoveOwn) return;
     var idx = myActIdx;
     var _me = ps[idx]; if (!_me) return;
-    if (sd) markSdActed();
-    markShowcaseActed();
+    if (sd) markSdActed(null, false);
+    markShowcaseActed(false);
     var p = Object.assign({}, _me, { base: _me.base.slice(), hand: _me.hand.slice() });
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
     // Check hand
@@ -9148,8 +9154,8 @@ function RiftboundGame() {
     if (drawingArrow) return;
     if (!canMoveOwn) return;
     var idx = myActIdx;
-    if (sd) markSdActed();
-    markShowcaseActed();
+    if (sd) markSdActed(null, false);
+    markShowcaseActed(false);
     var p = Object.assign({}, ps[idx]);
     // Check champion
     if (p.champion && p.champion.uid === cardUid) { var _wasExC = p.champion.exhausted; p.champion = Object.assign({}, p.champion, { exhausted: !p.champion.exhausted }); var np = ps.slice(); np[idx] = p; setPs(np); _syncLive(np, null); fireOnTapEffect(p.champion, _wasExC); return; }
@@ -10373,13 +10379,25 @@ function RiftboundGame() {
         var myMullDone = roomCode && lobbyPlayers[myUid] && false; // check via ref
         // Simple check: if we already wrote mulled, show waiting
         var mullDoneLocal = _gamePhaseRef.current === "mullDone";
-        return <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, zIndex: 1100, overflow: "auto", padding: "40px 20px" }}>
+        // Compute a card scale that fits the row inside the viewport, leaving headroom for
+        // the title block above and the MULLIGAN/KEEP button below — no scrolling needed.
+        var _mullVH = (typeof window !== "undefined") ? window.innerHeight : 1080;
+        var _mullVW = (typeof window !== "undefined") ? window.innerWidth : 1920;
+        var _mullCardW = 374, _mullCardH = 524;
+        var _mullCount = ((ps[mySlot] && ps[mySlot].hand) || []).length || 4;
+        var _mullRowW = _mullCount * _mullCardW + Math.max(0, _mullCount - 1) * 8;
+        // Reserved chrome: title (~24) + subtitle (~20) + help (~20) + button (~50) + 4×gap (~48) + padding (~32) ≈ 200
+        var _mullScale = Math.min(0.95, (_mullVH - 200) / _mullCardH, (_mullVW - 60) / _mullRowW);
+        if (_mullScale < 0.25) _mullScale = 0.25;
+        return <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, zIndex: 1100, overflow: "hidden", padding: "16px 20px" }}>
           {!mullDoneLocal ? <>
-            <h2 style={{ fontSize: 22, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700" }}>Your Mulligan</h2>
-            <p style={{ color: "#4ADE80", fontSize: 14, fontFamily: "Spectral,serif", fontWeight: 700 }}>{pName(firstPlayerIdx)} to draw first</p>
-            <p style={{ color: "#888", fontSize: 15 }}>Select up to 2 to replace</p>
-            <div style={{ display: "flex", gap: 8, flexWrap: "nowrap", justifyContent: "center", alignItems: "center", flexShrink: 0, transform: "scale(" + (0.9 * vScale) + ")", transformOrigin: "top center", marginBottom: 0 }}>
-              {ps[mySlot].hand.map(function(c) { return <Card key={c.uid} card={c} selected={mc.indexOf(c.uid) >= 0} onClick={function() { setMc(function(p) { return p.indexOf(c.uid) >= 0 ? p.filter(function(x) { return x !== c.uid; }) : p.length < 2 ? p.concat([c.uid]) : p; }); }} zoomed />; })}
+            <h2 style={{ fontSize: 22, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700", flexShrink: 0, margin: 0 }}>Your Mulligan</h2>
+            <p style={{ color: "#4ADE80", fontSize: 14, fontFamily: "Spectral,serif", fontWeight: 700, flexShrink: 0, margin: 0 }}>{pName(firstPlayerIdx)} to draw first</p>
+            <p style={{ color: "#888", fontSize: 15, flexShrink: 0, margin: 0 }}>Select up to 2 to replace</p>
+            <div style={{ width: _mullRowW * _mullScale, height: _mullCardH * _mullScale, flexShrink: 0 }}>
+              <div style={{ display: "flex", gap: 8, flexWrap: "nowrap", alignItems: "center", width: _mullRowW, height: _mullCardH, transform: "scale(" + _mullScale + ")", transformOrigin: "top left" }}>
+                {ps[mySlot].hand.map(function(c) { return <Card key={c.uid} card={c} selected={mc.indexOf(c.uid) >= 0} onClick={function() { setMc(function(p) { return p.indexOf(c.uid) >= 0 ? p.filter(function(x) { return x !== c.uid; }) : p.length < 2 ? p.concat([c.uid]) : p; }); }} zoomed />; })}
+              </div>
             </div>
             <button onClick={function() {
               var p = Object.assign({}, ps[mySlot], { hand: ps[mySlot].hand.slice(), mainDeck: ps[mySlot].mainDeck.slice() });
@@ -10397,7 +10415,7 @@ function RiftboundGame() {
                 fbDb.ref("lobbies/" + roomCode + "/gameState/mulled/" + myUid).set(true);
               }
               _gamePhaseRef.current = "mullDone";
-            }} style={{ padding: "12px 28px", borderRadius: 6, border: "2px solid #FFD700", background: "#FFD70040", color: "#FFD700", cursor: "pointer", fontSize: 18, fontWeight: 700, position: "relative", zIndex: 10 }}>{mc.length > 0 ? "MULLIGAN " + mc.length : "KEEP"}</button>
+            }} style={{ padding: "12px 28px", borderRadius: 6, border: "2px solid #FFD700", background: "#FFD70040", color: "#FFD700", cursor: "pointer", fontSize: 18, fontWeight: 700, position: "relative", zIndex: 10, flexShrink: 0 }}>{mc.length > 0 ? "MULLIGAN " + mc.length : "KEEP"}</button>
           </> : <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
             <h2 style={{ fontSize: 20, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700" }}>Waiting for other players...</h2>
             <div className="anim-pulse" style={{ fontSize: 28, opacity: 0.3 }}>⚔</div>
