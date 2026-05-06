@@ -5334,6 +5334,8 @@ function RiftboundGame() {
   var _damageAudio = useRef(null);
   var _drawAudio = useRef(null);
   var _championAudio = useRef(null);
+  var _championSfxKnownUids = useRef({});
+  var _championSfxInit = useRef(false);
   useEffect(function() {
     var a = _musicAudio.current;
     if (!a) return;
@@ -5401,6 +5403,7 @@ function RiftboundGame() {
       function fixBf(b) { if (!b) return b; var u = b.units || []; var n = Math.max(u.length, _pcRef.current || pc || 2); b.units = []; for (var pi2 = 0; pi2 < n; pi2++) { b.units[pi2] = fixCards(u[pi2] || []); } return b; }
       if (state.ps) setPs(state.ps.map(fixPlayer));
       if (state.bfs) setBfs(state.bfs.map(fixBf));
+      _processChampSfxOnSync(state);
       if (state.turn !== undefined) setTurn(state.turn);
       if (state.act !== undefined) setAct(state.act);
       if (state.screen && state.screen !== "bf" && state.screen !== "mull" && _gamePhaseRef.current === "playing") setScreen(state.screen);
@@ -7015,9 +7018,28 @@ function RiftboundGame() {
         var a = _championAudio.current; if (!a) return;
         var url = CHAMP_SFX_PREFIX + clips[Math.floor(Math.random() * clips.length)];
         try { a.pause(); a.src = url; a.volume = audioVol.master * audioVol.sfx; a.currentTime = 0; a.play().catch(function() {}); } catch (e) {}
+        if (card.uid) _championSfxKnownUids.current[card.uid] = true;
         return;
       }
     }
+  }
+  // Detect new units arriving on the board via remote sync and fire VO for any with
+  // a matching champion keyword. The first sync after listener attach is treated as
+  // a warm-up so we don't fire for every pre-existing unit when joining a game.
+  function _processChampSfxOnSync(state) {
+    if (!state) return;
+    var newSet = {};
+    var newPlays = [];
+    function visit(u) {
+      if (!u || !u.uid) return;
+      newSet[u.uid] = true;
+      if (_championSfxInit.current && !_championSfxKnownUids.current[u.uid]) newPlays.push(u);
+    }
+    (state.ps || []).forEach(function(p) { if (p) (p.base || []).forEach(visit); });
+    (state.bfs || []).forEach(function(b) { if (b && b.units) b.units.forEach(function(arr) { (arr || []).forEach(visit); }); });
+    newPlays.forEach(function(u) { _playChampionAttackSound(u); });
+    _championSfxKnownUids.current = newSet;
+    _championSfxInit.current = true;
   }
   function _readyCardById(ownerIdx, cardUid) {
     setPs(function(prev) {
