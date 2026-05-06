@@ -10576,10 +10576,52 @@ function RiftboundGame() {
           {sd && (function() {
             var defIdx = 0; for (var j3 = 0; j3 < pc; j3++) { if (j3 !== sd.atkIdx) { defIdx = j3; break; } }
             if (!isOnlineGame || !autoMode) {
+              var isOnlineM = lobbyType === "host" || lobbyType === "join";
+              var meReadyM = !!conquerAcceptors[myUid];
+              var allUidsM = isOnlineM ? Object.keys(lobbyPlayers || {}) : [myUid];
+              var pendingM = allUidsM.filter(function(u) { return !conquerAcceptors[u]; });
+              var pendingNamesM = pendingM.map(function(u) { var sl = lobbyPlayers && lobbyPlayers[u] && typeof lobbyPlayers[u].slot === "number" ? lobbyPlayers[u].slot : -1; return sl >= 0 ? pName(sl) : (lobbyPlayers && lobbyPlayers[u] && lobbyPlayers[u].name) || "?"; });
+              var bfLabelM = (bfs[sd.bfIdx] && bfs[sd.bfIdx].name) || "";
+              if (sd.contested && sd.assignmentPhase) {
+                var allAssignedM = allMyUnitsAssigned();
+                var canPressM = allAssignedM && !meReadyM;
+                return <div style={{ textAlign: "center", padding: "6px 8px", flexShrink: 0, margin: "0 4px", border: "2px solid #60a5fa", borderBottom: "none", borderRadius: "6px 6px 0 0" }}>
+                  <div style={{ fontSize: 15, color: "#60a5fa", fontWeight: 700, fontFamily: "Spectral,serif" }}>SHOWDOWN</div>
+                  <div style={{ fontSize: 11, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1, marginTop: 1 }}>Contested: {bfLabelM}</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 3 }}>
+                    <button onClick={function(e) {
+                      e.stopPropagation();
+                      if (!canPressM) return;
+                      var newAcc = Object.assign({}, conquerAcceptors); newAcc[myUid] = true; setConquerAcceptors(newAcc);
+                      if (!isOnlineM) { resolveShowdownContested(); }
+                    }} disabled={!canPressM} style={{ padding: 7, borderRadius: 4, border: "2px solid " + (canPressM ? "#60a5fa" : (meReadyM ? "#60a5fa" : "#444")), background: canPressM ? "linear-gradient(135deg,#3b82f6,#60a5fa)" : (meReadyM ? "rgba(96,165,250,0.15)" : "rgba(80,80,90,0.4)"), color: canPressM ? "#fff" : (meReadyM ? "#60a5fa" : "#888"), cursor: canPressM ? "pointer" : (meReadyM ? "default" : "not-allowed"), fontSize: 13, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif", letterSpacing: 1, textTransform: "uppercase" }}>
+                      {meReadyM ? "Waiting…" : (allAssignedM ? "Resolve" : "Assign damage")}
+                    </button>
+                    {isOnlineM && meReadyM && pendingM.length > 0 && pendingNamesM.length > 0 && <span style={{ fontSize: 10, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Awaiting: {pendingNamesM.join(", ")}</span>}
+                  </div>
+                </div>;
+              }
               return <div style={{ textAlign: "center", padding: "6px 8px", flexShrink: 0, margin: "0 4px", border: "2px solid #60a5fa", borderBottom: "none", borderRadius: "6px 6px 0 0" }}>
                 <div style={{ fontSize: 15, color: "#60a5fa", fontWeight: 700, fontFamily: "Spectral,serif" }}>SHOWDOWN</div>
+                <div style={{ fontSize: 11, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1, marginTop: 1 }}>{bfLabelM}</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 3 }}>
-                  <button onClick={function() { resolveShowdown("none"); }} style={{ padding: 7, borderRadius: 4, border: "2px solid #60a5fa", background: "rgba(96,165,250,0.12)", color: "#60a5fa", cursor: "pointer", fontSize: 13, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>RESOLVE</button>
+                  <button onClick={function(e) {
+                    e.stopPropagation();
+                    if (meReadyM) return;
+                    var newAcc = Object.assign({}, conquerAcceptors); newAcc[myUid] = true; setConquerAcceptors(newAcc);
+                    if (!isOnlineM) {
+                      var bi4 = sd.bfIdx; var bf4 = bfs[bi4];
+                      var atkHas = bf4 && bf4.units && bf4.units[sd.atkIdx] && bf4.units[sd.atkIdx].length > 0;
+                      var defHas = false; for (var j4 = 0; j4 < ps.length; j4++) { if (j4 !== sd.atkIdx && bf4 && bf4.units && bf4.units[j4] && bf4.units[j4].length > 0) { defHas = true; break; } }
+                      setConquerAcceptors({});
+                      if (atkHas && !defHas) resolveShowdown("attacker");
+                      else if (!atkHas && defHas) resolveShowdown("defender");
+                      else resolveShowdown("none");
+                    }
+                  }} disabled={meReadyM} style={{ padding: 7, borderRadius: 4, border: "2px solid #60a5fa", background: meReadyM ? "rgba(96,165,250,0.15)" : "linear-gradient(135deg,#3b82f6,#60a5fa)", color: meReadyM ? "#60a5fa" : "#fff", cursor: meReadyM ? "default" : "pointer", fontSize: 13, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif", letterSpacing: 1, textTransform: "uppercase" }}>
+                    {meReadyM ? "Waiting…" : "Resolve"}
+                  </button>
+                  {isOnlineM && pendingM.length > 0 && pendingNamesM.length > 0 && <span style={{ fontSize: 10, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Awaiting: {pendingNamesM.join(", ")}</span>}
                 </div>
               </div>;
             }
@@ -10851,8 +10893,8 @@ function RiftboundGame() {
           }} style={{ padding: "12px 28px", borderRadius: 8, border: "2px solid #60a5fa", background: "linear-gradient(135deg,#3b82f6,#60a5fa)", color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: "Spectral,serif", cursor: "pointer", letterSpacing: 1.5, boxShadow: "0 4px 16px #000c, 0 0 22px rgba(96,165,250,0.6)", textTransform: "uppercase" }}>{pbcContested ? "Start Showdown" : "Begin Showdown"}</button>
         </div>;
       })()}
-      {/* Conquer-Resolve button — shown to all players during uncontested showdown (both modes) */}
-      {sd && !sd.contested && !pendingSpell && !autoPrompt && (function() {
+      {/* Conquer-Resolve button — shown to all players during uncontested showdown (auto mode only; manual mode renders this inline above the showcase panel) */}
+      {autoMode && sd && !sd.contested && !pendingSpell && !autoPrompt && (function() {
         var isOnline = lobbyType === "host" || lobbyType === "join";
         var meReady = !!conquerAcceptors[myUid];
         var allUids = isOnline ? Object.keys(lobbyPlayers || {}) : [myUid];
@@ -10880,8 +10922,8 @@ function RiftboundGame() {
           {isOnline && pending.length > 0 && pendingNames.length > 0 && <span style={{ fontSize: 11, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Awaiting: {pendingNames.join(", ")}</span>}
         </div>;
       })()}
-      {/* Contested-Showdown Resolve button — grey until all my BF units have damage assignments, then blue (both modes) */}
-      {sd && sd.contested && sd.assignmentPhase && !pendingSpell && !autoPrompt && (function() {
+      {/* Contested-Showdown Resolve button — grey until all my BF units have damage assignments, then blue (auto mode only; manual mode renders this inline above the showcase panel) */}
+      {autoMode && sd && sd.contested && sd.assignmentPhase && !pendingSpell && !autoPrompt && (function() {
         var isOnline = lobbyType === "host" || lobbyType === "join";
         var meReady = !!conquerAcceptors[myUid];
         var allUids = isOnline ? Object.keys(lobbyPlayers || {}) : [myUid];
