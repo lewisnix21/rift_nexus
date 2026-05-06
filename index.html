@@ -10771,198 +10771,16 @@ function RiftboundGame() {
           <div style={{ flex: 1 }} />
         </div>); }()}
 
-        {/* Right panel — hidden in auto mode */}
-        <div style={{ width: autoMode ? 0 : Math.round(250 * vScale), background: "transparent", borderLeft: autoMode ? "none" : "1px solid #FFD70015", display: autoMode ? "none" : "flex", flexDirection: "column", flexShrink: 0, overflow: "visible", position: "relative", zIndex: 20 }}>
-          <div style={{ padding: 8, borderBottom: "1px solid #FFD70015", display: "flex", flexDirection: "column", gap: 5 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontWeight: 700, fontSize: 18, fontFamily: "Spectral,serif", background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Turn {turn}</span>
-            </div>
-            {tm && <div style={{ background: "#FFD70010", borderRadius: 4, padding: 5, fontSize: 13, color: "#FFD700", textAlign: "center", border: "1px solid #FFD70040" }}>{tm.ty === "buff" ? "Pick friendly" : tm.ty === "dmg" ? "Pick to damage" : tm.ty === "stun" ? "Pick enemy" : "Target"}<br /><button onClick={function() { setTm(null); }} style={{ marginTop: 3, padding: "1px 6px", border: "1px solid #333", background: "transparent", color: "#555", cursor: "pointer", fontSize: 11, borderRadius: 3 }}>cancel</button></div>}
-            {screen === "wait" && !awakenPhase && turn === 1 && act === 0 && _gamePhaseRef.current === "playing" && isHost && <button onClick={function() { doStartTurn(); }} style={{ padding: 10, borderRadius: 5, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0015)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>START GAME</button>}
-            {awakenPhase && <div style={{ textAlign: "center", padding: 6, background: "#FFD70008", borderRadius: 4, border: "1px solid #FFD70040" }}><div className="anim-pulse" style={{ fontSize: 15, fontWeight: 700, fontFamily: "Spectral,serif", color: "#FFD700", textTransform: "uppercase", letterSpacing: 2 }}>New Turn</div></div>}
-            {!awakenPhase && (function() { var isOnlineGame = (lobbyType === "host" || lobbyType === "join") && !_soloTestRef.current; if (isOnlineGame) { if (_gamePhaseRef.current !== "playing") return null; var isMyTurnO = act === mySlot; return isMyTurnO ? <button onClick={endTurn} style={{ padding: 10, borderRadius: 5, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0015)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>END TURN</button> : <div style={{ padding: 10, borderRadius: 5, border: "1px solid #ffffff20", background: "transparent", color: "#888", fontSize: 14, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif", textAlign: "center" }}>{pName(act) + "'s turn"}</div>; } else { if (screen !== "play") return null; return <button onClick={endTurn} style={{ padding: 10, borderRadius: 5, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0015)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>END TURN</button>; } })()}
-            {sel && canAct && !tm && !fc && <div style={{ padding: 5, fontSize: 13, color: "#aaa", textAlign: "center", background: "#FFD70008", borderRadius: 4, border: "1px solid #FFD70040" }}>Selected: <b style={{ color: "#FFD700" }}>{sel.name}</b><br /><span style={{ fontSize: 12, color: "#888" }}>click a battlefield</span></div>}
-          </div>
-          {/* Chat log — upper half */}
-          <div ref={lr} style={{ flex: 1, overflow: "auto", padding: 6, fontSize: 12, lineHeight: 1.5, minHeight: 20 }}>
-            {log.map(function(e, i) { return <div key={i} style={{ color: e.m.indexOf("===") >= 0 ? "#FFD700" : e.m.indexOf("wins") >= 0 ? "#FFD700" : e.m.indexOf("SHOWDOWN") >= 0 ? "#FF6B35" : e.m.indexOf("onquer") >= 0 || e.m.indexOf("holding point") >= 0 ? "#4ADE80" : "#667", marginBottom: 2, fontFamily: e.m.indexOf("===") >= 0 ? "Spectral,serif" : "inherit" }}>{e.m}</div>; })}
-            <button onClick={function() { var txt = log.map(function(e) { return e.m; }).join("\n"); navigator.clipboard.writeText(txt); }} style={{ padding: "2px 6px", borderRadius: 3, border: "1px solid #ffffff15", background: "transparent", color: "#555", cursor: "pointer", fontSize: 10, marginTop: 4 }}>Copy Log</button>
-          </div>
-          {/* Showdown controls — directly above showcase. Hidden while a spell is pending so the spell chain takes priority. */}
-          {sd && !pendingSpell && (function() {
-            var defIdx = 0; for (var j3 = 0; j3 < pc; j3++) { if (j3 !== sd.atkIdx) { defIdx = j3; break; } }
-            if (!isOnlineGame || !autoMode) {
-              var isOnlineM = lobbyType === "host" || lobbyType === "join";
-              var meReadyM = !!conquerAcceptors[myUid];
-              var allUidsM = isOnlineM ? Object.keys(lobbyPlayers || {}) : [myUid];
-              var pendingM = allUidsM.filter(function(u) { return !conquerAcceptors[u]; });
-              var allReadyM = pendingM.length === 0;
-              var isWaitingM = meReadyM && !allReadyM;
-              var _sdBorderColor = allReadyM ? "#4ADE80" : "#60a5fa";
-              var pendingNamesM = pendingM.map(function(u) { var sl = lobbyPlayers && lobbyPlayers[u] && typeof lobbyPlayers[u].slot === "number" ? lobbyPlayers[u].slot : -1; return sl >= 0 ? pName(sl) : (lobbyPlayers && lobbyPlayers[u] && lobbyPlayers[u].name) || "?"; });
-              var bfLabelM = (bfs[sd.bfIdx] && bfs[sd.bfIdx].name) || "";
-              if (sd.contested && sd.assignmentPhase) {
-                var allAssignedM = allMyUnitsAssigned();
-                var canPressM = allAssignedM && !meReadyM;
-                return <div style={{ textAlign: "center", padding: "6px 8px", flexShrink: 0, margin: "0 4px", border: "2px solid " + _sdBorderColor, borderRadius: 6, animation: resolvedPhase === "sd" ? "resolvedBoxFadeOut 2.2s ease-out forwards" : undefined }}>
-                  <div style={{ fontSize: 15, color: _sdBorderColor, fontWeight: 700, fontFamily: "Spectral,serif" }}>SHOWDOWN</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 3 }}>
-                    <button onClick={function(e) {
-                      e.stopPropagation();
-                      if (!canPressM) return;
-                      var newAcc = Object.assign({}, conquerAcceptors); newAcc[myUid] = true; setConquerAcceptors(newAcc);
-                      if (!isOnlineM) { setResolvedPhase("sd"); if (_rdTimer.current) clearTimeout(_rdTimer.current); _rdTimer.current = setTimeout(function() { setResolvedPhase(null); resolveShowdownContested(); }, 2200); }
-                    }} disabled={!canPressM} style={{ padding: 7, borderRadius: 4, border: "2px solid " + (allReadyM ? "#4ADE80" : canPressM ? "#60a5fa" : isWaitingM ? "#60a5fa" : "#444"), background: allReadyM ? "rgba(74,222,128,0.12)" : canPressM ? "linear-gradient(135deg,#3b82f6,#60a5fa)" : isWaitingM ? "rgba(96,165,250,0.10)" : "rgba(80,80,90,0.4)", color: allReadyM ? "#4ADE80" : canPressM ? "#fff" : isWaitingM ? "#60a5fa" : "#888", cursor: canPressM ? "pointer" : "default", fontSize: 13, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif", letterSpacing: 1, textTransform: "uppercase" }}>
-                      {allReadyM ? "RESOLVED" : isWaitingM ? "Waiting..." : allAssignedM ? "Resolve" : "Assign damage"}
-                    </button>
-                    {isOnlineM && isWaitingM && pendingNamesM.length > 0 && <span style={{ fontSize: 10, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Awaiting: {pendingNamesM.join(", ")}</span>}
-                  </div>
-                </div>;
-              }
-              return <div style={{ textAlign: "center", padding: "6px 8px", flexShrink: 0, margin: "0 4px", border: "2px solid " + _sdBorderColor, borderRadius: 6, animation: resolvedPhase === "sd" ? "resolvedBoxFadeOut 2.2s ease-out forwards" : undefined }}>
-                <div style={{ fontSize: 15, color: _sdBorderColor, fontWeight: 700, fontFamily: "Spectral,serif" }}>SHOWDOWN</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 3 }}>
-                  <button onClick={function(e) {
-                    e.stopPropagation();
-                    if (meReadyM) return;
-                    var newAcc = Object.assign({}, conquerAcceptors); newAcc[myUid] = true; setConquerAcceptors(newAcc);
-                    if (!isOnlineM) {
-                      var bi4 = sd.bfIdx; var bf4 = bfs[bi4];
-                      var atkHas = bf4 && bf4.units && bf4.units[sd.atkIdx] && bf4.units[sd.atkIdx].length > 0;
-                      var defHas = false; for (var j4 = 0; j4 < ps.length; j4++) { if (j4 !== sd.atkIdx && bf4 && bf4.units && bf4.units[j4] && bf4.units[j4].length > 0) { defHas = true; break; } }
-                      var _res4 = (atkHas && !defHas) ? "attacker" : (!atkHas && defHas) ? "defender" : "none";
-                      setResolvedPhase("sd");
-                      if (_rdTimer.current) clearTimeout(_rdTimer.current);
-                      _rdTimer.current = setTimeout(function() { setResolvedPhase(null); setConquerAcceptors({}); resolveShowdown(_res4); }, 2200);
-                    }
-                  }} disabled={meReadyM} style={{ padding: 7, borderRadius: 4, border: allReadyM ? "2px solid #4ADE80" : "2px solid #60a5fa", background: allReadyM ? "rgba(74,222,128,0.12)" : isWaitingM ? "rgba(96,165,250,0.10)" : "linear-gradient(135deg,#3b82f6,#60a5fa)", color: allReadyM ? "#4ADE80" : isWaitingM ? "#60a5fa" : "#fff", cursor: meReadyM ? "default" : "pointer", fontSize: 13, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif", letterSpacing: 1, textTransform: "uppercase" }}>
-                    {allReadyM ? "RESOLVED" : isWaitingM ? "Waiting..." : "Resolve"}
-                  </button>
-                  {isOnlineM && isWaitingM && pendingNamesM.length > 0 && <span style={{ fontSize: 10, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Awaiting: {pendingNamesM.join(", ")}</span>}
-                </div>
-              </div>;
-            }
-            var bothPassed = sd.lastPass !== null && sd.lastPass !== sd.priority && !sd.acted;
-            var canResolve = hasPri && bothPassed;
-            return <div className="anim-sd-pulse" style={{ textAlign: "center", padding: "6px 8px", flexShrink: 0, margin: "0 4px", border: "2px solid #FF6B35", borderBottom: "none", borderRadius: "6px 6px 0 0" }}>
-              <div style={{ fontSize: 15, color: "#FF6B35", fontWeight: 700, fontFamily: "Spectral,serif" }}>SHOWDOWN</div>
-              {hasPri ? (canResolve ? <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 3 }}>
-                <div style={{ fontSize: 11, color: "#ffffff50", textAlign: "center", marginBottom: 1, fontFamily: "Spectral,serif" }}>Both players passed — resolve ends showdown</div>
-                <button onClick={function() { resolveShowdown("attacker"); }} style={{ padding: 5, borderRadius: 4, border: "1.5px solid #4ADE80", background: "rgba(74,222,128,0.08)", color: "#4ADE80", cursor: "pointer", fontSize: 11, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>Point for {pName(sd.atkIdx)}</button>
-                <button onClick={function() { resolveShowdown("none"); }} style={{ padding: 5, borderRadius: 4, border: "1.5px solid #FFB400", background: "rgba(255,180,0,0.08)", color: "#FFB400", cursor: "pointer", fontSize: 11, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>No points</button>
-                <button onClick={function() { resolveShowdown("defender"); }} style={{ padding: 5, borderRadius: 4, border: "1.5px solid #ff6666", background: "rgba(255,100,100,0.08)", color: "#ff6666", cursor: "pointer", fontSize: 11, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>Point for {pName(defIdx)}</button>
-              </div> : <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 3 }}>
-                <button onClick={passPriority} style={{ padding: 7, borderRadius: 4, border: "2px solid #FF6B35", background: "#FF6B3515", color: "#FF6B35", cursor: "pointer", fontSize: 13, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif" }}>PASS PRIORITY</button>
-              </div>) : <button disabled style={{ padding: 7, borderRadius: 4, border: "1px solid #ffffff20", background: "transparent", color: "#666", cursor: "not-allowed", fontSize: 13, fontWeight: 700, marginTop: 3, width: "100%", fontFamily: "Spectral,serif", opacity: 0.7 }}>Waiting for {pName(sd.priority)}...</button>}
-            </div>;
-          })()}
-          {/* Showcase zone - fixed */}
-          <div
-            className={sd && isOnlineGame && autoMode ? "anim-sd-pulse" : ""}
-            onClick={pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.type === "Spell" ? function(e) { e.stopPropagation(); var _pzc = pendingZonePlay.card; setPendingZonePlay(null); castSpellFromHand(_pzc, null); } : undefined}
-            onDragOver={function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; if (!dragOverShowcase) setDragOverShowcase(true); }}
-            onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverShowcase(false); }}
-            onMouseEnter={!autoMode && pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.type === "Spell" ? function() { setPendingHoverZone("showcase"); } : undefined}
-            onMouseLeave={function() { if (pendingHoverZone === "showcase") setPendingHoverZone(null); }}
-            onDrop={function(e) { e.preventDefault(); e.stopPropagation(); setDragOverShowcase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; var card = null; if (myCur) { if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } else if (type === "base") { card = myCur.base.find(function(c) { return c.uid === uid2; }); } else if (type === "bf") { for (var bk = 0; bk < bfs.length; bk++) { var uArr = bfs[bk].units[myActIdx]; if (!uArr) continue; var found = uArr.find(function(u) { return u.uid === uid2; }); if (found) { card = found; break; } } } else if (type === "bin") { card = (myCur.trash || []).find(function(c) { return c.uid === uid2; }); } } if (card) { pushShowcase(card); if (card.type === "Spell") { setPendingSpell(card); setResolveAcceptors({}); } } }}
-            style={{ flexShrink: 0, height: Math.round(370 * vScale), padding: "6px 4px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", margin: "0 4px", border: (sd && isOnlineGame && autoMode) ? "2px solid #FF6B35" : pendingHoverZone === "showcase" ? "1.5px solid #FFD700" : (dragOverShowcase ? "1.5px solid #ffffff55" : "1.5px solid #ffffff20"), borderTop: (sd && isOnlineGame && autoMode) ? "none" : undefined, borderRadius: (sd && isOnlineGame && autoMode) ? "0 0 6px 6px" : 4, transition: "border 0.15s ease", overflow: "visible", position: "relative", zIndex: scryMode && showcaseCard ? 1250 : undefined }}>
-            <div style={{ fontSize: 11, color: "#ffffff44", fontFamily: "Spectral,serif", letterSpacing: 1, marginBottom: 3 }}>SHOWCASE</div>
-            {!autoMode && pendingBeginConquer && !pendingConquer && !pendingSpell && !autoPrompt && (function() {
-              var _isOnlineBC = lobbyType === "host" || lobbyType === "join";
-              var _isAttackerBC = _isOnlineBC ? pendingBeginConquer.playerIdx === mySlot : true;
-              var _pbcContested = !!pendingBeginConquer.contested;
-              return <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "12px 6px", width: "100%" }}>
-                <span style={{ fontSize: 12, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1, textAlign: "center" }}>{pendingBeginConquer.bfName} — {_pbcContested ? "contested" : "uncontested"}</span>
-                {_isAttackerBC
-                  ? <button onClick={function(e) { e.stopPropagation(); var pbc = pendingBeginConquer; var newSd = { bfIdx: pbc.bi, atkIdx: pbc.playerIdx, priority: pbc.playerIdx, lastPass: null, acted: false, contested: _pbcContested, assignmentPhase: _pbcContested, assignments: {} }; setSd(newSd); setConquerAcceptors({}); setPendingBeginConquer(null); if (_pbcContested) { setScreen("sd"); var unitObj = null; var bfHere = bfs[pbc.bi]; if (bfHere) ((bfHere.units && bfHere.units[pbc.playerIdx]) || []).forEach(function(u) { if (u.name === pbc.unitName) unitObj = u; }); if (unitObj) fireShowdownStartEffects(unitObj, pbc.bi, pbc.playerIdx); showAutoBanner("AUTO · Contested Showdown at " + pbc.bfName + " — assign damage, then Resolve"); aL(pName(pbc.playerIdx) + " starts contested showdown at " + pbc.bfName); } else { showAutoBanner("AUTO · Showdown at " + pbc.bfName + " — all players Resolve to conquer"); aL(pName(pbc.playerIdx) + " begins showdown at " + pbc.bfName); } if (roomCode) { _lastSyncVersion.current++; var cleanPsBC = ps.map(function(p) { if (!p) return p; return Object.assign({}, p, { hand: p.hand || [], base: (p.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: p.trash || [], runes: p.runes || [], runeDeck: p.runeDeck || [], mainDeck: p.mainDeck || [], battlefields: p.battlefields || [] }); }); var cleanBfsBC = bfs.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); }); fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPsBC, bfs: cleanBfsBC, turn: turn, act: act, screen: _pbcContested ? "sd" : screen, log: log.slice(-30), sd: newSd, ver: _lastSyncVersion.current, by: myUid }))); } }} style={{ padding: "10px 20px", borderRadius: 8, border: "2px solid #60a5fa", background: "linear-gradient(135deg,#3b82f6,#60a5fa)", color: "#fff", fontSize: 14, fontWeight: 700, fontFamily: "Spectral,serif", cursor: "pointer", letterSpacing: 1.5, boxShadow: "0 4px 16px #000c, 0 0 22px rgba(96,165,250,0.6)", textTransform: "uppercase" }}>{_pbcContested ? "Start Showdown" : "Begin Showdown"}</button>
-                  : <span style={{ fontSize: 11, color: "#60a5fa66", fontFamily: "Spectral,serif", letterSpacing: 1, textAlign: "center" }}>Waiting for attacker…</span>
-                }
-              </div>;
-            })()}
-            {showcaseCard ? (<>
-              {/* Spell-resolve button — auto-mode style, positioned inline within the panel above the showcase card. */}
-              {pendingSpell && (function() {
-                var isOnline = lobbyType === "host" || lobbyType === "join";
-                var meReady = !!resolveAcceptors[myUid];
-                var allUids = isOnline ? Object.keys(lobbyPlayers || {}) : [myUid];
-                var pending = allUids.filter(function(u) { return !resolveAcceptors[u]; });
-                var pendingNames = pending.map(function(u) { var sl = lobbyPlayers && lobbyPlayers[u] && typeof lobbyPlayers[u].slot === "number" ? lobbyPlayers[u].slot : -1; return sl >= 0 ? pName(sl) : (lobbyPlayers && lobbyPlayers[u] && lobbyPlayers[u].name) || "?"; });
-                var _allReadySR = pending.length === 0;
-                var _isWaitingSR = meReady && !_allReadySR;
-                var _srBorderColor = _allReadySR ? "#4ADE80" : "#60a5fa";
-                return <div style={{ textAlign: "center", padding: "6px 8px", width: "100%", maxWidth: Math.round(215 * vScale), marginBottom: 6, flexShrink: 0, border: "2px solid " + _srBorderColor, borderRadius: 6, animation: resolvedPhase === "spell" ? "resolvedBoxFadeOut 2.2s ease-out forwards" : undefined }}>
-                  <div style={{ fontSize: 15, color: _srBorderColor, fontWeight: 700, fontFamily: "Spectral,serif" }}>SPELL</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 3 }}>
-                    <button onClick={function(e) {
-                      e.stopPropagation();
-                      if (meReady) return;
-                      var newAcc = Object.assign({}, resolveAcceptors); newAcc[myUid] = true; setResolveAcceptors(newAcc);
-                      if (!autoMode) { return; }
-                      if (!isOnline) {
-                        var spellToResolve = pendingSpell;
-                        _resolveDidSomethingRef.current = false;
-                        setSpellResolving(spellToResolve.name || "Spell");
-                        setPendingSpell(null); setResolveAcceptors({});
-                        runAutoOnCast(spellToResolve);
-                        setTimeout(function() { setSpellResolving(null); }, 500);
-                      }
-                    }} disabled={meReady} style={{ padding: 7, borderRadius: 4, border: "2px solid " + (_allReadySR ? "#4ADE80" : "#60a5fa"), background: _allReadySR ? "rgba(74,222,128,0.12)" : !meReady ? "linear-gradient(135deg,#3b82f6,#60a5fa)" : "rgba(96,165,250,0.10)", color: _allReadySR ? "#4ADE80" : !meReady ? "#fff" : "#60a5fa", cursor: meReady ? "default" : "pointer", fontSize: 13, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif", letterSpacing: 1, textTransform: "uppercase" }}>
-                      {_allReadySR ? "RESOLVED" : _isWaitingSR ? "Waiting..." : "Resolve"}
-                    </button>
-                    {isOnline && _isWaitingSR && pendingNames.length > 0 && <span style={{ fontSize: 10, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Awaiting: {pendingNames.join(", ")}</span>}
-                  </div>
-                </div>;
-              })()}
-              {!pendingSpell && spellResolving && <div style={{ width: "100%", maxWidth: Math.round(215 * vScale), display: "flex", flexDirection: "column", alignItems: "center", gap: 4, marginBottom: 6, flexShrink: 0 }}>
-                <span style={{ fontSize: 12, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>{spellResolving}</span>
-                <button disabled style={{ width: "100%", padding: "8px 16px", borderRadius: 6, border: "2px solid #60a5fa44", background: "rgba(96,165,250,0.07)", color: "#60a5fa66", fontSize: 14, fontWeight: 700, fontFamily: "Spectral,serif", cursor: "not-allowed", letterSpacing: 1.5, boxShadow: "0 4px 16px #000a", textTransform: "uppercase" }}>Resolving…</button>
-              </div>}
-              {(function() {
-                var scCardW = Math.round(215 * vScale); var scCardH = Math.round(301 * vScale);
-                var scPeek = Math.round(scCardW * 0.3);
-                var scHistLen = showcaseHistory.length;
-                return <div style={{ position: "relative", flex: 1, width: "100%", display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 4, overflow: "visible" }}>
-                {/* All showcase cards in a horizontal stack — history on left, main on right. Right-aligned so main stays in-panel while history overflows to the left into the game area. */}
-                <div onMouseLeave={function() { setScHovIdx(-1); }} style={{ display: "flex", flexDirection: "row", alignItems: "center", overflow: "visible" }}>
-                  {/* History cards — older cards on the left, each peeking out behind the one to its right */}
-                  {showcaseHistory.slice().reverse().map(function(hc, ri) {
-                    var hi = scHistLen - 1 - ri;
-                    var hImg = hc.img ? imgSrc(hc.img) : "";
-                    var isHovered = scHovIdx === hi;
-                    return <div key={hc.uid + "-" + hi} data-uid={hc.uid} className={getAnimType(hc.uid) === "flash" ? "anim-flash" : ""} onMouseEnter={function() { setScHovIdx(hi); }} style={{ width: isHovered ? scCardW : scPeek, height: scCardH, flexShrink: 0, borderRadius: 6, overflow: "hidden", border: isHovered ? "2px solid #FFD700" : "1.5px solid #FFD70044", boxShadow: isHovered ? "0 4px 20px #000c" : "0 2px 6px #000a", cursor: "pointer", transition: "width 0.2s ease, border 0.15s ease, box-shadow 0.15s ease", zIndex: ri + 1 }}>
-                      {hImg ? <img src={hImg} style={{ width: scCardW, height: scCardH, objectFit: "fill", display: "block" }} /> : <div style={{ width: scCardW, height: scCardH, background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#FFD700" }}>{hc.name}</div>}
-                    </div>;
-                  })}
-                  {/* Main showcase card (most recent, on top/right) */}
-                  <div data-uid={showcaseCard.uid} className={getAnimType(showcaseCard.uid) === "flash" ? "anim-flash" : ""} onMouseEnter={function() { setScHovIdx(-1); }} style={{ position: "relative", cursor: drawingArrow ? "crosshair" : "default", width: scCardW, height: scCardH, flexShrink: 0, overflow: "visible", zIndex: scHistLen + 2, borderRadius: 6, boxShadow: "0 0 28px rgba(255,215,0,0.7), 0 0 56px rgba(255,215,0,0.4), 0 0 90px rgba(255,140,0,0.25)" }}>
-                    <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: 6 }}>
-                      {showcaseCard.img ? <img src={imgSrc(showcaseCard.img)} onError={function(e) { if (PA[showcaseCard.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[showcaseCard.name] + ".webp"; } }} style={{ width: "100%", height: "100%", objectFit: "fill", display: "block" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 16, fontFamily: "Spectral,serif", border: "1px solid #ffffff20", textAlign: "center", padding: 8 }}>{showcaseCard.name}</div>}
-                    </div>
-                    {showcaseCard.counter2 !== 0 && showcaseCard.counter2 !== undefined && <div style={{ position: "absolute", top: -8, right: -8, background: "#854d0e", color: "#FACC15", borderRadius: 12, minWidth: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, boxShadow: "0 2px 6px #000a", padding: "0 4px", zIndex: 3 }}>{showcaseCard.counter2 > 0 ? "+" : ""}{showcaseCard.counter2}</div>}
-                    {showcaseCard.counter !== 0 && showcaseCard.counter !== undefined && <div style={{ position: "absolute", top: -8, right: showcaseCard.counter2 ? 30 : -8, background: "#166534", color: "#4ADE80", borderRadius: 12, minWidth: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, boxShadow: "0 2px 6px #000a", padding: "0 4px", zIndex: 3 }}>{showcaseCard.counter > 0 ? "+" : ""}{showcaseCard.counter}</div>}
-                    {showcaseOwner === myUid && <button onClick={function(e) { e.stopPropagation(); var idx = myActIdx; var _me = ps[idx]; if (_me) { var p = Object.assign({}, _me, { trash: (_me.trash || []).slice() }); p.trash.push(Object.assign({}, showcaseCard, { exhausted: false, gear: [] })); var np = ps.slice(); np[idx] = p; setPs(np); aL(pName(idx) + " bins " + cName(showcaseCard)); if (sd) markSdActed(); } if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false); setShowcaseAcceptors({}); setShowcasePriority(null); setShowcaseActed(false); } }} style={{ position: "absolute", bottom: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.75)", color: "#ffaaaa", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>🗑</button>}
-                    <button onClick={function(e) { e.stopPropagation(); startArrow(showcaseCard.uid); }} style={{ position: "absolute", top: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #3B82F688", background: "rgba(59,130,246,0.75)", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>↗</button>
-                    {cardHasArrow(showcaseCard.uid) && <button onClick={function(e) { e.stopPropagation(); removeArrow(showcaseCard.uid); }} style={{ position: "absolute", top: -8, left: 22, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(200,40,40,0.85)", color: "#fff", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, fontWeight: 700, zIndex: 3 }}>✕</button>}
-                  </div>
-                </div>
-              </div>; })()}
-            </>) : (
-              <div style={{ width: Math.round(215 * vScale), height: Math.round(301 * vScale), border: "1px dashed #ffffff20", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff30", fontSize: 12, fontFamily: "Spectral,serif" }}>Drag a card</div>
-            )}
-          </div>
-          {/* Chat zone — lower half */}
-          <div style={{ flex: 1, minHeight: 20, display: "flex", flexDirection: "column", borderTop: "1px solid #ffffff15", padding: "4px 4px 4px" }}>
-            <div style={{ fontSize: 11, color: "#ffffff44", fontFamily: "Spectral,serif", letterSpacing: 1, marginBottom: 2, textAlign: "center" }}>CHAT</div>
-            <div ref={chatRef} style={{ flex: 1, overflow: "auto", fontSize: 12, lineHeight: 1.4, padding: "2px 4px" }}>
-              {chatMsgs.length === 0 && <div style={{ color: "#ffffff15", fontSize: 11, fontFamily: "Spectral,serif", textAlign: "center", marginTop: 8 }}>{roomCode ? "No messages yet" : "Chat available in online games"}</div>}
-              {chatMsgs.map(function(m, i) { var isMe = m.uid === myUid; return <div key={i} style={{ marginBottom: 2 }}><span style={{ color: isMe ? "#4ADE80" : "#FFD700", fontWeight: 700, fontSize: 11 }}>{m.name}: </span><span style={{ color: "#bbb" }}>{m.text}</span></div>; })}
-            </div>
-            {roomCode && <div style={{ display: "flex", gap: 3, marginTop: 3 }}>
-              <input value={chatInput} onChange={function(e) { setChatInput(e.target.value); }} onKeyDown={function(e) { if (e.key === "Enter") sendChat(); }} placeholder="Type a message..." style={{ flex: 1, padding: "4px 6px", borderRadius: 4, border: "1px solid #ffffff15", background: "rgba(255,255,255,0.05)", color: "#ddd", fontSize: 12, outline: "none", fontFamily: "Inter,sans-serif" }} />
-              <button onClick={sendChat} style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #FFD70033", background: "rgba(255,215,0,0.1)", color: "#FFD700", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif" }}>Send</button>
-            </div>}
-          </div>
-        </div>
+        {/* Right panel removed — showcase, log, chat, and END TURN now float in the bottom-right in both auto and manual modes. */}
+        {screen === "wait" && !awakenPhase && turn === 1 && act === 0 && _gamePhaseRef.current === "playing" && isHost && <button onClick={function() { doStartTurn(); }} style={{ position: "fixed", bottom: 24, right: 24, padding: "12px 28px", borderRadius: 8, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70060,#FF8C0030)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif", zIndex: 950, boxShadow: "0 4px 16px #000c, 0 0 24px rgba(255,215,0,0.2)", letterSpacing: 1 }}>START GAME</button>}
+        {/* Manual-mode targeting/selection hint — replaces the side panel's tm/sel hint blocks. Floats top-center so it doesn't crowd the bottom-right action stack. */}
+        {tm && <div style={{ position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 940, padding: "8px 14px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #FFD70066", color: "#FFD700", fontSize: 13, fontFamily: "Spectral,serif", fontWeight: 700, textAlign: "center", boxShadow: "0 4px 16px #000a", display: "flex", alignItems: "center", gap: 10, pointerEvents: "auto" }}>
+          <span>{tm.ty === "buff" ? "Pick friendly" : tm.ty === "dmg" ? "Pick to damage" : tm.ty === "stun" ? "Pick enemy" : "Target"}</span>
+          <button onClick={function() { setTm(null); }} style={{ padding: "2px 8px", border: "1px solid #ffffff20", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 11, borderRadius: 4, fontFamily: "Spectral,serif" }}>cancel</button>
+        </div>}
+        {sel && canAct && !tm && !fc && <div style={{ position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 940, padding: "8px 14px", borderRadius: 8, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2px solid #FFD70044", color: "#aaa", fontSize: 13, fontFamily: "Spectral,serif", textAlign: "center", boxShadow: "0 4px 16px #000a" }}>
+          Selected: <b style={{ color: "#FFD700" }}>{sel.name}</b> <span style={{ color: "#888", fontSize: 11, marginLeft: 6 }}>click a battlefield</span>
+        </div>}
       </div>
       {/* AUTO MODE: Effect-trigger duplicate-card animation — ghost flies from source to showcase */}
       {effectAnim && effectAnim.sourceCard && (function() {
@@ -11011,12 +10829,14 @@ function RiftboundGame() {
           </div>
         </div>;
       })()}
-      {/* Floating showcase (right side, no border) — auto mode only; manual uses the paneled showcase */}
-      {autoMode && (showcaseCard || dragOverShowcase || (pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.type === "Spell")) && <div className={sd ? "anim-sd-pulse" : ""}
+      {/* Floating showcase (right side, no border) — both auto and manual mode */}
+      {(showcaseCard || dragOverShowcase || (pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.type === "Spell")) && <div className={sd ? "anim-sd-pulse" : ""}
         onClick={pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.type === "Spell" ? function(e) { e.stopPropagation(); var _pzc = pendingZonePlay.card; setPendingZonePlay(null); castSpellFromHand(_pzc, null); } : undefined}
         onDragOver={function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; if (!dragOverShowcase) setDragOverShowcase(true); }}
         onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverShowcase(false); }}
-        onDrop={function(e) { e.preventDefault(); e.stopPropagation(); setDragOverShowcase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; var card = null; if (myCur) { if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } else if (type === "base") { card = myCur.base.find(function(c) { return c.uid === uid2; }); } else if (type === "bf") { for (var bk = 0; bk < bfs.length; bk++) { var uArr = bfs[bk].units[myActIdx]; if (!uArr) continue; var found = uArr.find(function(u) { return u.uid === uid2; }); if (found) { card = found; break; } } } else if (type === "bin") { card = (myCur.trash || []).find(function(c) { return c.uid === uid2; }); } } if (card) { if (type === "hand" && card.type === "Spell") { var _idx = myActIdx; setPs(function(prev) { var p = prev[_idx]; if (!p) return prev; var np = prev.slice(); np[_idx] = Object.assign({}, p, { hand: p.hand.filter(function(h) { return h.uid !== card.uid; }) }); return np; }); aL(pName(_idx) + " casts " + cName(card)); } pushShowcase(card); if (card.type === "Spell") { setPendingSpell(card); setResolveAcceptors({}); } } }}
+        onMouseEnter={!autoMode && pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.type === "Spell" ? function() { setPendingHoverZone("showcase"); } : undefined}
+        onMouseLeave={function() { if (pendingHoverZone === "showcase") setPendingHoverZone(null); }}
+        onDrop={function(e) { e.preventDefault(); e.stopPropagation(); setDragOverShowcase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; var card = null; if (myCur) { if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } else if (type === "base") { card = myCur.base.find(function(c) { return c.uid === uid2; }); } else if (type === "bf") { for (var bk = 0; bk < bfs.length; bk++) { var uArr = bfs[bk].units[myActIdx]; if (!uArr) continue; var found = uArr.find(function(u) { return u.uid === uid2; }); if (found) { card = found; break; } } } else if (type === "bin") { card = (myCur.trash || []).find(function(c) { return c.uid === uid2; }); } } if (card) { if (autoMode && type === "hand" && card.type === "Spell") { var _idx = myActIdx; setPs(function(prev) { var p = prev[_idx]; if (!p) return prev; var np = prev.slice(); np[_idx] = Object.assign({}, p, { hand: p.hand.filter(function(h) { return h.uid !== card.uid; }) }); return np; }); aL(pName(_idx) + " casts " + cName(card)); } pushShowcase(card); if (card.type === "Spell") { setPendingSpell(card); setResolveAcceptors({}); } } }}
         style={{ position: "fixed", right: "2%", top: "50%", transform: "translateY(-50%)", padding: "6px 4px", display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "center", overflow: "visible", zIndex: scryMode && showcaseCard ? 1250 : 800, pointerEvents: "auto" }}>
         {showcaseCard ? (function() {
           var scCardW = Math.round(258 * vScale); var scCardH = Math.round(361 * vScale);
@@ -11046,8 +10866,8 @@ function RiftboundGame() {
           </div>;
         })() : <div style={{ width: Math.round(258 * vScale), height: Math.round(361 * vScale), border: "2px dashed #FFD70066", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD70088", fontSize: 12, fontFamily: "Spectral,serif", background: "rgba(255,215,0,0.05)" }}>Drop here</div>}
       </div>}
-      {/* Spell chain Resolve button — auto mode renders this floating bottom-right; manual mode renders an equivalent button inline within the paneled showcase below */}
-      {autoMode && pendingSpell && (function() {
+      {/* Spell chain Resolve button — floating bottom-right in both modes */}
+      {pendingSpell && (function() {
         var isOnline = lobbyType === "host" || lobbyType === "join";
         var meReady = !!resolveAcceptors[myUid];
         var allUids = isOnline ? Object.keys(lobbyPlayers || {}) : [myUid];
@@ -11059,6 +10879,8 @@ function RiftboundGame() {
             e.stopPropagation();
             if (meReady) return;
             var newAcc = Object.assign({}, resolveAcceptors); newAcc[myUid] = true; setResolveAcceptors(newAcc);
+            // Manual mode: just record the acceptor — the spell-resolve useEffect handles cleanup.
+            if (!autoMode) return;
             if (!isOnline) {
               var spellToResolve = pendingSpell;
               _resolveDidSomethingRef.current = false;
@@ -11088,12 +10910,12 @@ function RiftboundGame() {
           {isOnline && pending.length > 0 && pendingNames.length > 0 && <span style={{ fontSize: 11, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Awaiting: {pendingNames.join(", ")}</span>}
         </div>;
       })()}
-      {autoMode && spellResolving && !pendingSpell && <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+      {spellResolving && !pendingSpell && <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
         <span style={{ fontSize: 12, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>{spellResolving}</span>
         <button disabled style={{ padding: "12px 28px", borderRadius: 8, border: "2px solid #60a5fa44", background: "rgba(96,165,250,0.07)", color: "#60a5fa66", fontSize: 15, fontWeight: 700, fontFamily: "Spectral,serif", cursor: "not-allowed", letterSpacing: 1.5, boxShadow: "0 4px 16px #000c", textTransform: "uppercase" }}>Resolving…</button>
       </div>}
-      {/* Begin Showdown button — attacker only, after moving to unconquered BF (auto mode only; manual mode renders this inside the showcase panel) */}
-      {autoMode && pendingBeginConquer && !pendingConquer && !pendingSpell && !autoPrompt && (function() {
+      {/* Begin Showdown button — attacker only, after moving to unconquered BF (both modes) */}
+      {pendingBeginConquer && !pendingConquer && !pendingSpell && !autoPrompt && (function() {
         var isOnline = lobbyType === "host" || lobbyType === "join";
         var isAttacker = isOnline ? pendingBeginConquer.playerIdx === mySlot : true;
         if (!isAttacker) return null;
@@ -11128,8 +10950,8 @@ function RiftboundGame() {
           }} style={{ padding: "12px 28px", borderRadius: 8, border: "2px solid #60a5fa", background: "linear-gradient(135deg,#3b82f6,#60a5fa)", color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: "Spectral,serif", cursor: "pointer", letterSpacing: 1.5, boxShadow: "0 4px 16px #000c, 0 0 22px rgba(96,165,250,0.6)", textTransform: "uppercase" }}>{pbcContested ? "Start Showdown" : "Begin Showdown"}</button>
         </div>;
       })()}
-      {/* Conquer-Resolve button — shown to all players during uncontested showdown (auto mode only; manual mode renders this inline above the showcase panel) */}
-      {autoMode && sd && !sd.contested && !pendingSpell && !autoPrompt && (function() {
+      {/* Conquer-Resolve button — shown to all players during uncontested showdown (both modes) */}
+      {sd && !sd.contested && !pendingSpell && !autoPrompt && (function() {
         var isOnline = lobbyType === "host" || lobbyType === "join";
         var meReady = !!conquerAcceptors[myUid];
         var allUids = isOnline ? Object.keys(lobbyPlayers || {}) : [myUid];
@@ -11160,8 +10982,8 @@ function RiftboundGame() {
           {isOnline && _isWaitingFL && pendingNames.length > 0 && <span style={{ fontSize: 11, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Awaiting: {pendingNames.join(", ")}</span>}
         </div>;
       })()}
-      {/* Contested-Showdown Resolve button — grey until all my BF units have damage assignments, then blue (auto mode only; manual mode renders this inline above the showcase panel) */}
-      {autoMode && sd && sd.contested && sd.assignmentPhase && !pendingSpell && !autoPrompt && (function() {
+      {/* Contested-Showdown Resolve button — grey until all my BF units have damage assignments, then blue (both modes) */}
+      {sd && sd.contested && sd.assignmentPhase && !pendingSpell && !autoPrompt && (function() {
         var isOnline = lobbyType === "host" || lobbyType === "join";
         var meReady = !!conquerAcceptors[myUid];
         var allUids = isOnline ? Object.keys(lobbyPlayers || {}) : [myUid];
@@ -11185,14 +11007,14 @@ function RiftboundGame() {
           {isOnline && meReady && !allReadyCFL && pending.length > 0 && pendingNames.length > 0 && <span style={{ fontSize: 11, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Awaiting: {pendingNames.join(", ")}</span>}
         </div>;
       })()}
-      {/* AUTO MODE: Floating END TURN button (bottom-right) — only when no showdown and no pending spell-resolve chain */}
-      {autoMode && screen === "play" && !awakenPhase && !sd && !pendingSpell && !pendingBeginConquer && !autoPrompt && !showcaseCard && (function() {
+      {/* Floating END TURN button (bottom-right) — only when no showdown, no pending spell-resolve chain, and no targeting prompt (manual modes' tm/fc states) */}
+      {screen === "play" && !awakenPhase && !sd && !pendingSpell && !pendingBeginConquer && !autoPrompt && !showcaseCard && !tm && !fc && (function() {
         var isOnlineGame = (lobbyType === "host" || lobbyType === "join") && !_soloTestRef.current;
         if (isOnlineGame) { if (_gamePhaseRef.current !== "playing") return null; if (act !== mySlot) return null; }
         return <button onClick={endTurn} style={{ position: "fixed", bottom: 24, right: 24, padding: "12px 28px", borderRadius: 8, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70060,#FF8C0030)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif", zIndex: 950, boxShadow: "0 4px 16px #000c, 0 0 24px rgba(255,215,0,0.2)", letterSpacing: 1 }}>END TURN</button>;
       })()}
-      {/* AUTO MODE: Bottom tabs (Log + Chat) */}
-      {autoMode && <div style={{ position: "fixed", bottom: 0, right: 220, zIndex: 900, display: "flex", flexDirection: "column", alignItems: "flex-end", pointerEvents: "auto" }}>
+      {/* Bottom tabs (Log + Chat) — both modes */}
+      <div style={{ position: "fixed", bottom: 0, right: 220, zIndex: 900, display: "flex", flexDirection: "column", alignItems: "flex-end", pointerEvents: "auto" }}>
         {bottomTab && <div style={{ width: 380, height: 240, background: "rgba(10,15,40,0.97)", border: "1px solid #60a5fa33", borderBottom: "none", borderRadius: "10px 10px 0 0", padding: 8, display: "flex", flexDirection: "column" }}>
           {bottomTab === "log" && <>
             <div ref={lr} style={{ flex: 1, overflow: "auto", padding: 4, fontSize: 12, lineHeight: 1.5 }}>
@@ -11215,9 +11037,9 @@ function RiftboundGame() {
           <button onClick={function() { setBottomTab(bottomTab === "log" ? null : "log"); }} style={{ padding: "6px 20px", border: "1px solid " + (bottomTab === "log" ? "#60a5fa" : "#60a5fa44"), background: bottomTab === "log" ? "rgba(96,165,250,0.2)" : "rgba(10,15,40,0.85)", color: "#60a5fa", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif", borderRadius: 20, letterSpacing: 1, boxShadow: bottomTab === "log" ? "0 0 10px rgba(96,165,250,0.3)" : "none" }}>LOG</button>
           <button onClick={function() { setBottomTab(bottomTab === "chat" ? null : "chat"); }} style={{ padding: "6px 20px", border: "1px solid " + (bottomTab === "chat" ? "#60a5fa" : "#60a5fa44"), background: bottomTab === "chat" ? "rgba(96,165,250,0.2)" : "rgba(10,15,40,0.85)", color: "#60a5fa", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif", borderRadius: 20, letterSpacing: 1, boxShadow: bottomTab === "chat" ? "0 0 10px rgba(96,165,250,0.3)" : "none" }}>CHAT</button>
         </div>
-      </div>}
-      {/* Centered point announcement (autoMode) */}
-      {autoMode && pointMessage && <div key={pointMessage.ts} className="anim-point-msg" style={{ position: "fixed", top: "40%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 1600, padding: "20px 44px", borderRadius: 10, background: "linear-gradient(135deg,rgba(255,215,0,0.18),rgba(255,140,0,0.10))", border: "2px solid #FFD700", color: "#FFD700", fontFamily: "Spectral,serif", fontSize: 28, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", textShadow: "0 0 14px #FFD700aa, 0 0 36px #FFD70066", boxShadow: "0 0 36px rgba(255,215,0,0.45), 0 0 72px rgba(255,215,0,0.25), 0 12px 36px #000c", pointerEvents: "none" }}>{pointMessage.text}</div>}
+      </div>
+      {/* Centered point announcement — fires on conquer/hold (auto-mode flow only by data path; harmless render guard otherwise) */}
+      {pointMessage && <div key={pointMessage.ts} className="anim-point-msg" style={{ position: "fixed", top: "40%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 1600, padding: "20px 44px", borderRadius: 10, background: "linear-gradient(135deg,rgba(255,215,0,0.18),rgba(255,140,0,0.10))", border: "2px solid #FFD700", color: "#FFD700", fontFamily: "Spectral,serif", fontSize: 28, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", textShadow: "0 0 14px #FFD700aa, 0 0 36px #FFD70066", boxShadow: "0 0 36px rgba(255,215,0,0.45), 0 0 72px rgba(255,215,0,0.25), 0 12px 36px #000c", pointerEvents: "none" }}>{pointMessage.text}</div>}
       {/* Ping effects */}
       {pings.map(function(p) { var el = document.querySelector("[data-uid='" + p.cardUid + "']"); if (!el) return null; var r = el.getBoundingClientRect(); return <div key={p.id} className="ping-dot" style={{ left: r.left + r.width / 2, top: r.top + r.height / 2 }} />; })}
       {/* Arrow SVG overlay */}
