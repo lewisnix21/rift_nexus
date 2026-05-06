@@ -5395,6 +5395,36 @@ function RiftboundGame() {
     return function() { ref.off("value", handler); };
   }, [roomCode, lobbyType]);
 
+  // Preload every card image once it shows up in any player's deck/hand/etc.
+  // Without this, images load on-demand the first time a card renders — slow
+  // for players on slower connections, especially in 4-player games where
+  // ~3× the cards are visible at once.
+  var _preloadedImgs = useRef({});
+  useEffect(function() {
+    if (!ps || ps.length === 0) return;
+    function preload(c) {
+      if (!c || !c.img) return;
+      var url = imgSrc(c.img);
+      if (!url || _preloadedImgs.current[url]) return;
+      _preloadedImgs.current[url] = true;
+      var img = new Image(); img.src = url;
+    }
+    ps.forEach(function(p) {
+      if (!p) return;
+      preload(p.legend); preload(p.champion);
+      (p.mainDeck || []).forEach(preload);
+      (p.hand || []).forEach(preload);
+      (p.battlefields || []).forEach(preload);
+      (p.base || []).forEach(preload);
+      (p.runeDeck || []).forEach(preload);
+      (p.trash || []).forEach(preload);
+    });
+    (bfs || []).forEach(function(b) {
+      preload(b);
+      if (b && b.units) b.units.forEach(function(arr) { (arr || []).forEach(preload); });
+    });
+  }, [ps, bfs]);
+
   // Sync showcase + history to all players
   var _scFromRemote = useRef(false);
   function serializeCard(c) { return c ? { name: c.name || "", img: c.img || "", domain: c.domain || "", type: c.type || "", energy: c.energy || 0, might: c.might || 0, text: c.text || "", uid: c.uid || "", counter: c.counter || 0, counter2: c.counter2 || 0 } : null; }
