@@ -11112,7 +11112,7 @@ function RiftboundGame() {
               var cleanBfsBC = bfs.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
               fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPsBC, bfs: cleanBfsBC, turn: turn, act: act, screen: pbcContested ? "sd" : screen, log: log.slice(-30), sd: newSd, ver: _lastSyncVersion.current, by: myUid })));
             }
-          }} style={{ padding: "12px 28px", borderRadius: 8, border: "2px solid #60a5fa", background: "linear-gradient(135deg,#3b82f6,#60a5fa)", color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: "Spectral,serif", cursor: "pointer", letterSpacing: 1.5, boxShadow: "0 4px 16px #000c, 0 0 22px rgba(96,165,250,0.6)", textTransform: "uppercase" }}>{pbcContested ? "Start Showdown" : "Begin Showdown"}</button>
+          }} style={{ padding: "8px 16px", borderRadius: 8, border: "2px solid #60a5fa", background: "linear-gradient(135deg,#3b82f6,#60a5fa)", color: "#fff", fontSize: 11, fontWeight: 700, fontFamily: "Spectral,serif", cursor: "pointer", letterSpacing: 0.5, boxShadow: "0 4px 16px #000c, 0 0 22px rgba(96,165,250,0.6)", textTransform: "uppercase" }}>{pbcContested ? "Start Showdown" : "Begin Showdown"}</button>
         </div>;
       })()}
       {/* Conquer-Resolve button — shown to all players during uncontested showdown (both modes) */}
