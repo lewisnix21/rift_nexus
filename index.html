@@ -10120,7 +10120,7 @@ function RiftboundGame() {
     // Auto-mode look:
     //   empty  \u2192 dashed placeholder (no skull)
     //   filled \u2192 most-recent card face-up + dimmed, count badge bottom-right
-    // Legacy look kept for non-auto: skull + count.
+    // Legacy look kept for non-auto: count only (skull removed).
     if (inAuto) {
       return React.createElement("div", {
         style: {
@@ -10138,7 +10138,6 @@ function RiftboundGame() {
     return React.createElement("div", { style: { width: HAND_W, height: HAND_H, borderRadius: 6, background: "#0a0a14", border: "1.5px solid #ffffff25", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden", flexShrink: 0 } },
       topImg ? React.createElement("img", { src: topImg, style: { width: "100%", height: "100%", objectFit: "fill", opacity: 0.35 } }) : null,
       React.createElement("div", { style: { position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2 } },
-        React.createElement("span", { style: { fontSize: 40, opacity: 0.5, lineHeight: 1 } }, "\uD83D\uDC80"),
         React.createElement("span", { style: { fontSize: 16, fontWeight: 700, color: "#ffffff66", fontFamily: "Spectral,serif" } }, trash.length)
       )
     );
