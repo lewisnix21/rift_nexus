@@ -6130,25 +6130,348 @@ function RiftboundGame() {
           </>}
         </div>
       </div>
-      {/* Body with three equal columns: branding on left, lobby box in middle, deck picker on right */}
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 2fr)", alignItems: "stretch", gap: 20, width: "100%", boxSizing: "border-box", paddingRight: 32, paddingBottom: 20, flex: 1, minHeight: 0, position: "relative", zIndex: 1 }}>
-        {/* Left column — branding (flush to the left edge of the screen) */}
-        <div style={{ minWidth: 0, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 22, paddingTop: 12, paddingLeft: 32, paddingBottom: 20 }}>
-          <h1 style={{ fontSize: "min(2.3vw, 54px)", fontFamily: "Spectral,serif", fontWeight: 700, letterSpacing: "min(0.1vw, 2px)", lineHeight: 0.95, margin: 0, whiteSpace: "nowrap", overflow: "hidden", background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>RIFTBOUND ARENA</h1>
-          <div style={{ display: "flex", flexDirection: "column", width: "100%", gap: "clamp(18px, 2.3vw, 34px)" }}>
-            <div style={{ fontSize: "clamp(18px, 2.3vw, 34px)", fontFamily: "Spectral,serif", fontWeight: 800, color: "#fff", letterSpacing: 2, textShadow: "0 2px 10px rgba(0,0,0,0.4)", lineHeight: 1 }}>AWAKEN.</div>
-            <div style={{ fontSize: "clamp(18px, 2.3vw, 34px)", fontFamily: "Spectral,serif", fontWeight: 800, color: "#fff", letterSpacing: 2, textShadow: "0 2px 10px rgba(0,0,0,0.4)", lineHeight: 1 }}>BATTLE.</div>
-            <div style={{ fontSize: "clamp(18px, 2.3vw, 34px)", fontFamily: "Spectral,serif", fontWeight: 800, color: "#fff", letterSpacing: 2, textShadow: "0 2px 10px rgba(0,0,0,0.4)", lineHeight: 1 }}>CONQUER.</div>
-          </div>
-          <p style={{ fontSize: "clamp(13px, 1.4vw, 21px)", color: "#fff", lineHeight: 1.55, margin: 0, maxWidth: 520, fontFamily: "Inter,sans-serif" }}>Riftbound Arena is an online tabletop simulator for <em>Riftbound</em>, the League of Legends trading card game. Host a lobby, invite a friend, build your own decks, and battle it out across iconic Runeterra battlefields.</p>
-          <a href="https://riftbound.gg/how-to-play/" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", padding: "clamp(5px, 0.5vw, 8px) clamp(10px, 1vw, 14px)", borderRadius: 5, border: "1.5px solid #60A5FA66", background: "rgba(96,165,250,0.08)", color: "#60A5FA", cursor: "pointer", fontSize: "clamp(11px, 1.1vw, 15px)", fontWeight: 700, fontFamily: "Inter,sans-serif", letterSpacing: 1, textDecoration: "none", marginTop: "auto" }}>HOW TO PLAY</a>
+      {/* HERO — title, subtitle, host/join toggle, how-to-play */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "clamp(6px, 1vh, 12px)", padding: "clamp(8px, 1.4vh, 16px) 20px clamp(4px, 0.6vh, 8px)", position: "relative", zIndex: 1, flexShrink: 0 }}>
+        <h1 style={{ fontSize: "clamp(34px, 4.4vw, 60px)", fontFamily: "Spectral,serif", fontWeight: 700, letterSpacing: "clamp(1px, 0.15vw, 3px)", lineHeight: 1, margin: 0, background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textAlign: "center", textShadow: "0 0 30px rgba(255,215,0,0.15)" }}>RIFTBOUND ARENA</h1>
+        <p style={{ fontSize: "clamp(11px, 1.1vw, 15px)", fontFamily: "Spectral,serif", fontWeight: 600, color: "#eaeaf0", letterSpacing: "clamp(3px, 0.4vw, 5px)", textTransform: "uppercase", margin: 0, opacity: 0.85 }}>Awaken <span style={{ color: "#FFD700cc", margin: "0 6px" }}>•</span> Battle <span style={{ color: "#FFD700cc", margin: "0 6px" }}>•</span> Conquer</p>
+        <div style={{ display: "flex", gap: 12, marginTop: 2, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+          {[{id:"host",label:"Host a Game",color:"#FFD700",icon:"👑"},{id:"join",label:"Join a Game",color:"#4ADE80",icon:"⚔️"}].map(function(t) {
+            var sel2 = lobbyType === t.id;
+            var pillClass = t.id === "host" ? "btn-host-pill" : "btn-join-pill";
+            return <button key={t.id} className={pillClass} onClick={function() { setLobbyType(t.id); if (t.id === "host") { var lastMode = localStorage.getItem("riftNexusLastMode") || "Normal"; var found = modes.find(function(m) { return m.name === lastMode && !m.quick; }); if (!found) found = modes.find(function(m) { return m.name === "Normal"; }); setLobbyMode(found || null); } else { setLobbyMode(null); } setDp({}); }} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 24px", borderRadius: 999, border: "2px solid " + (sel2 ? t.color : t.color + "44"), background: sel2 ? "linear-gradient(135deg," + t.color + "30," + t.color + "12)" : "rgba(255,255,255,0.02)", color: sel2 ? t.color : t.color + "aa", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Inter,sans-serif", letterSpacing: 1, transition: "transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease, background 200ms ease", boxShadow: sel2 ? "0 6px 18px rgba(0,0,0,0.35), 0 0 18px " + t.color + "55" : "none", transform: sel2 ? "translateY(-1px)" : "none" }}><span style={{ fontSize: 18, lineHeight: 1 }}>{t.icon}</span>{t.label}</button>;
+          })}
+          <a href="https://riftbound.gg/how-to-play/" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", padding: "8px 14px", borderRadius: 999, border: "1.5px solid #60A5FA66", background: "rgba(96,165,250,0.08)", color: "#60A5FA", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter,sans-serif", letterSpacing: 1, textDecoration: "none", marginLeft: 4 }}>HOW TO PLAY</a>
         </div>
-        {/* Middle + Right combined — single shared bordered container */}
-        <div style={{ minWidth: 0, minHeight: 0, display: "flex", flexDirection: "row", height: "100%", border: "2px solid " + (lobbyType === "host" ? "#FFD70066" : lobbyType === "join" ? "#4ADE8066" : "#ffffff22"), background: lobbyType === "host" ? "rgba(255,215,0,0.06)" : lobbyType === "join" ? "rgba(74,222,128,0.06)" : "rgba(255,255,255,0.02)", borderRadius: 10, boxSizing: "border-box", overflow: "hidden", transition: "border 0.15s ease, background 0.15s ease" }}>
-        {/* PLAY NOW pane */}
-        <div style={{ flex: 1, minWidth: 0, padding: 18, overflow: "auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+      </div>
 
-      {/* Auth modal */}
+      {/* BODY ROW — Setup panel (left) + Deck preview panel (right) */}
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 16, width: "100%", maxWidth: 1500, boxSizing: "border-box", padding: "8px 20px 0", flex: 1, minHeight: 0, position: "relative", zIndex: 1 }}>
+
+        {/* SETUP PANEL */}
+        {(function() {
+          var hasLobby = !!roomCode;
+          var accent = lobbyType === "host" ? "#FFD700" : lobbyType === "join" ? "#4ADE80" : "#666677";
+          var accentBorder = lobbyType === "host" ? "#FFD70044" : lobbyType === "join" ? "#4ADE8044" : "#ffffff22";
+          return <div style={{ minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column", gap: 10, padding: "14px 16px", borderRadius: 10, border: "1px solid " + accentBorder, background: "linear-gradient(160deg, rgba(26,26,58,0.6), rgba(15,15,35,0.6))", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), 0 6px 20px rgba(0,0,0,0.35)", overflow: "auto", transition: "border 200ms ease" }}>
+            <h3 style={{ fontSize: 12, fontFamily: "Inter,sans-serif", fontWeight: 700, color: "#9aa0b5", letterSpacing: 3, margin: 0, textAlign: "center" }}>SETUP</h3>
+
+            {/* Display Name */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 11, color: "#9aa0b5", fontFamily: "Inter,sans-serif", letterSpacing: 2, fontWeight: 700, minWidth: 70 }}>NAME</span>
+              <input defaultValue={myName} placeholder="Enter display name..." onBlur={function(e) { var v = e.target.value.trim(); if (v) { myName = v; localStorage.setItem("riftNexusName", myName); if (hasLobby) { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/name").set(myName); fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/ready").set(false); } setReadyErr(""); } else { myName = ""; try { localStorage.removeItem("riftNexusName"); } catch(_e) {} if (hasLobby) { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/name").set(""); fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/ready").set(false); } setReadyErr("Please enter a display name before readying up."); } }} style={{ flex: 1, padding: "8px 12px", borderRadius: 6, border: "1px solid " + accentBorder, background: "rgba(0,0,0,0.25)", color: accent, fontSize: 14, outline: "none", fontFamily: "Inter,sans-serif" }} />
+            </div>
+
+            {/* Team picker (Doubles only, in lobby) */}
+            {lobbySettings && lobbySettings.mode === "Doubles" && hasLobby && (function() {
+              var myTeam = (lobbyPlayers[myUid] && lobbyPlayers[myUid].team) || null;
+              return <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 11, color: "#9aa0b5", fontFamily: "Inter,sans-serif", letterSpacing: 2, fontWeight: 700, minWidth: 70 }}>TEAM</span>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {[{id:"red",label:"RED",color:"#ef4444"},{id:"blue",label:"BLUE",color:"#3b82f6"}].map(function(t) {
+                    var sel = myTeam === t.id;
+                    return <button key={t.id} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/team").set(t.id); fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/ready").set(false); setReadyErr(""); }} style={{ padding: "5px 14px", borderRadius: 5, border: "2px solid " + (sel ? t.color : t.color + "55"), background: sel ? t.color + "25" : "transparent", color: sel ? t.color : t.color + "aa", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter,sans-serif", letterSpacing: 1, transition: "all 200ms ease" }}>{t.label}</button>;
+                  })}
+                </div>
+              </div>;
+            })()}
+
+            {/* Deck picker — collapsed button + expanding list */}
+            {(function() {
+              var lobbyDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null;
+              var myDeck = hasLobby ? (lobbyDeck || preselectedDeck) : preselectedDeck;
+              var currentDeckDisplayName = "";
+              if (myDeck && DECKS[myDeck]) {
+                currentDeckDisplayName = myDeck.indexOf(" (") > 0 ? myDeck.substring(0, myDeck.indexOf(" (")) : myDeck;
+              }
+              return <>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontSize: 11, color: "#9aa0b5", fontFamily: "Inter,sans-serif", letterSpacing: 2, fontWeight: 700, minWidth: 70 }}>DECK</span>
+                  <button onClick={function() { setDeckTab(deckTab ? null : "precons"); }} style={{ flex: 1, padding: "8px 12px", borderRadius: 6, border: "1px solid " + accentBorder, background: "rgba(0,0,0,0.25)", color: currentDeckDisplayName ? accent : "#7a7f95", cursor: "pointer", fontSize: 14, outline: "none", fontFamily: "Inter,sans-serif", textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "border 200ms ease" }}>
+                    <span>{currentDeckDisplayName || "Choose a deck..."}</span>
+                    <span style={{ fontSize: 11, color: "#9aa0b5" }}>{deckTab ? "▲" : "▼"}</span>
+                  </button>
+                </div>
+                {deckTab && <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "8px 0 4px" }}>
+                  <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
+                    <button onClick={function() { setDeckTab("precons"); }} style={{ padding: "4px 14px", borderRadius: 5, border: "2px solid " + (deckTab === "precons" ? accent : accent + "55"), background: deckTab === "precons" ? accent + "20" : accent + "08", color: deckTab === "precons" ? accent : accent + "aa", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter,sans-serif" }}>Precons</button>
+                    <button onClick={authUser && dbSavedDecks.length > 0 ? function() { setDeckTab("mydecks"); } : undefined} style={{ padding: "4px 14px", borderRadius: 5, border: "2px solid " + (deckTab === "mydecks" ? "#8B5CF6" : authUser && dbSavedDecks.length > 0 ? "#8B5CF655" : "#ffffff25"), background: deckTab === "mydecks" ? "#8B5CF620" : authUser && dbSavedDecks.length > 0 ? "#8B5CF608" : "#ffffff06", color: deckTab === "mydecks" ? "#8B5CF6" : authUser && dbSavedDecks.length > 0 ? "#8B5CF6aa" : "#ffffff50", cursor: authUser && dbSavedDecks.length > 0 ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 700, fontFamily: "Inter,sans-serif" }}>Your Decks{authUser && dbSavedDecks.length > 0 ? " (" + dbSavedDecks.length + ")" : ""}</button>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: "32vh", overflow: "auto", paddingRight: 4 }}>
+                    {(deckTab === "mydecks" ? dbSavedDecks : DNAMES).map(function(item) {
+                      var isCustom = deckTab === "mydecks";
+                      var name = isCustom ? registerCustomDeck(item) : item;
+                      var data = isCustom ? item : DECKS[item];
+                      var s = myDeck === name;
+                      var lgImg = CI[data.legend] ? imgSrc(CI[data.legend]) : (PA[data.legend] ? PA_CDN + PA[data.legend] + ".webp" : "");
+                      var chImg = CI[data.champ] ? imgSrc(CI[data.champ]) : (PA[data.champ] ? PA_CDN + PA[data.champ] + ".webp" : "");
+                      var dn = isCustom ? (data.name || "Untitled") : (item.indexOf(" (") > 0 ? item.substring(0, item.indexOf(" (")) : item);
+                      var uniqueR = []; (data.runes || []).forEach(function(r) { if (uniqueR.indexOf(r) < 0) uniqueR.push(r); });
+                      var btnAccent = isCustom ? "#8B5CF6" : accent;
+                      var setInfo = !isCustom && data.set ? SET[data.set] : null;
+                      return <button key={(isCustom ? item._id : item)} onClick={function() { if (hasLobby) { var pRef = "lobbies/" + roomCode + "/players/" + myUid; fbDb.ref(pRef + "/deck").set(name); fbDb.ref(pRef + "/ready").set(false); if (isCustom) { fbDb.ref(pRef + "/deckData").set({ name: item.name || "Custom Deck", legend: item.legend || null, champ: item.champ || null, cards: item.cards || [], bfs: item.bfs || [], runes: item.runes || [] }); } else { fbDb.ref(pRef + "/deckData").set(null); } } else { setPreselectedDeck(name); setPreselectedDeckData(isCustom ? item : null); } setDeckTab(null); setReadyErr(""); }} style={{ padding: "6px 10px", borderRadius: 5, border: s ? "2px solid " + btnAccent : "1px solid #2a2a3a", background: s ? btnAccent + "15" : "#1a1a3a", color: s ? btnAccent : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 13, display: "flex", alignItems: "center", gap: 8, transition: "border 200ms ease, background 200ms ease" }}>
+                        <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
+                          {lgImg && <img src={lgImg} onMouseEnter={function(e) { _hoverByName(data.legend, e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ width: 38, height: 53, objectFit: "fill", borderRadius: 3, border: "1px solid " + btnAccent + "33" }} />}
+                          {chImg && <img src={chImg} onMouseEnter={function(e) { _hoverByName(data.champ, e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ width: 38, height: 53, objectFit: "fill", borderRadius: 3, border: "1px solid " + btnAccent + "33" }} />}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                            <div style={{ fontWeight: 700, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{dn}</div>
+                            {setInfo && <span title={setInfo.label} style={{ flexShrink: 0, padding: "1px 5px", borderRadius: 3, fontSize: 9, fontWeight: 700, color: setInfo.c, border: "1px solid " + setInfo.c + "55", background: setInfo.c + "15", letterSpacing: 0.5, fontFamily: "Inter,sans-serif" }}>{data.set}</span>}
+                          </div>
+                          <div style={{ display: "flex", gap: 2, marginTop: 2 }}>{uniqueR.map(function(r) { var rImg = CI[r + " Rune"] ? imgSrc(CI[r + " Rune"]) : ""; return rImg ? <img key={r} src={rImg} onMouseEnter={function(e) { _hoverByName(r + " Rune", e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ width: 22, height: 30, objectFit: "fill", borderRadius: 2, border: "1px solid " + (DOM[r] || DOM.Colorless).c + "55" }} /> : <span key={r} onMouseEnter={function(e) { _hoverByName(r + " Rune", e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ color: (DOM[r] || DOM.Colorless).c, fontSize: 14 }}>{(DOM[r] || DOM.Colorless).i}</span>; })}</div>
+                        </div>
+                      </button>;
+                    })}
+                  </div>
+                </div>}
+              </>;
+            })()}
+
+            {/* Subtle divider */}
+            <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "2px 0" }} />
+
+            {/* Mode-specific content */}
+            {!lobbyType && <div style={{ padding: "16px 12px", textAlign: "center", color: "#9aa0b5", fontSize: 13, fontFamily: "Inter,sans-serif", lineHeight: 1.6 }}>Pick <span style={{ color: "#FFD700", fontWeight: 700 }}>👑 Host</span> or <span style={{ color: "#4ADE80", fontWeight: 700 }}>⚔️ Join</span> above to get started.</div>}
+
+            {/* Host config (before lobby) */}
+            {lobbyType === "host" && !roomCode && <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <span style={{ fontSize: 11, color: "#9aa0b5", fontFamily: "Inter,sans-serif", letterSpacing: 2, fontWeight: 700 }}>GAME TYPE</span>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {modes.filter(function(m) { return !m.quick; }).map(function(mode) {
+                    var sel2 = lobbyMode && lobbyMode.name === mode.name;
+                    var isAvail = mode.name === "Normal" || mode.name === "3 Player" || mode.name === "4 Player" || mode.name === "Doubles" || mode.quick;
+                    return <button key={mode.name} className={"btn-mode-pill" + (sel2 ? " selected" : "")} onClick={isAvail ? function() { setLobbyMode(mode); localStorage.setItem("riftNexusLastMode", mode.name); setDp({}); } : undefined} style={{ padding: "8px 10px", borderRadius: 12, border: "2px solid " + (sel2 ? "#FFD700" : isAvail ? "#FFD70044" : "#ffffff12"), background: sel2 ? "linear-gradient(135deg, rgba(255,215,0,0.22), rgba(255,140,0,0.10))" : isAvail ? "rgba(255,215,0,0.04)" : "transparent", color: sel2 ? "#FFD700" : isAvail ? "#FFD700cc" : "#ffffff25", cursor: isAvail ? "pointer" : "not-allowed", fontSize: 12, fontWeight: 700, minWidth: 0, flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, opacity: isAvail ? 1 : 0.4, fontFamily: "Inter,sans-serif" }}><span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12 }}><span style={{ fontSize: 14, lineHeight: 1 }}>{mode.icon}</span>{mode.name}</span><span style={{ fontSize: 10, fontWeight: 400, color: sel2 ? "#FFD700aa" : isAvail ? "#FFD70066" : "#ffffff15", letterSpacing: 0.5 }}>{isAvail ? mode.sub : "Coming Soon"}</span></button>;
+                  })}
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 11, color: "#9aa0b5", fontFamily: "Inter,sans-serif", letterSpacing: 2, fontWeight: 700, minWidth: 70 }}>PASSWORD</span>
+                <input value={hostPw} onChange={function(e) { setHostPw(e.target.value); }} placeholder="Optional — leave blank for open" style={{ flex: 1, padding: "6px 10px", borderRadius: 5, border: "1px solid #ffffff20", background: "rgba(0,0,0,0.25)", color: "#eaeaf0", fontSize: 13, outline: "none", fontFamily: "Inter,sans-serif" }} />
+              </div>
+              <div onClick={function() { setHostAutoMode(!hostAutoMode); }} title="When enabled, the game reads each card's text and automatically resolves their effects." style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 10, padding: "6px 12px", borderRadius: 6, border: "1.5px solid " + (hostAutoMode ? "#FFD700" : "#ffffff20"), background: hostAutoMode ? "rgba(255,215,0,0.10)" : "transparent", transition: "all 200ms ease" }}>
+                <div style={{ width: 32, height: 18, borderRadius: 9, background: hostAutoMode ? "#FFD700" : "#333", position: "relative", transition: "background 0.2s ease", flexShrink: 0 }}>
+                  <div style={{ width: 14, height: 14, borderRadius: "50%", background: hostAutoMode ? "#000" : "#666", position: "absolute", top: 2, left: hostAutoMode ? 16 : 2, transition: "left 0.2s ease" }} />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <span style={{ fontSize: 12, color: hostAutoMode ? "#FFD700" : "#aaa", fontFamily: "Inter,sans-serif", fontWeight: 700, letterSpacing: 1 }}>AUTO MODE</span>
+                  <span style={{ fontSize: 10, color: hostAutoMode ? "#FFD70099" : "#666", fontFamily: "Inter,sans-serif" }}>Card abilities resolve automatically</span>
+                </div>
+              </div>
+            </div>}
+
+            {/* Join: code input + lobby browser (before joining) */}
+            {lobbyType === "join" && !roomCode && <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {lobbyErr && <div style={{ padding: "5px 10px", borderRadius: 4, border: "1px solid #ff444466", background: "rgba(255,50,50,0.08)", color: "#ff6666", fontSize: 12, textAlign: "center" }}>{lobbyErr}</div>}
+              {(function() {
+                var doJoin = function(code, pw) { setLobbyErr(null); joinLobby(code, pw || null, function(code2, lobby) { setRoomCode(code2); setIsHost(false); setLobbySettings(lobby.settings); setMySlot(Object.keys(lobby.players || {}).length); if (_lobbyUnsub.current) _lobbyUnsub.current(); var ref = fbDb.ref("lobbies/" + code2); var unsub = ref.on("value", function(snap) { var data = snap.val(); if (data) handleLobbyUpdate(data); }); _lobbyUnsub.current = function() { ref.off("value", unsub); }; }, function(err) { setLobbyErr(err); }); };
+                window._rnDoJoin = doJoin;
+                return null;
+              })()}
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <input value={joinCode} onChange={function(e) { setJoinCode(e.target.value.toUpperCase()); }} onKeyDown={function(e) { if (e.key === "Enter" && joinCode.length >= 4) { window._rnDoJoin(joinCode, joinPw); } }} placeholder="CODE" maxLength={6} style={{ padding: "6px 10px", borderRadius: 5, border: "2px solid #4ADE8044", background: "rgba(0,0,0,0.25)", color: "#eaeaf0", fontSize: 16, fontFamily: "Inter,sans-serif", letterSpacing: 3, width: 110, textAlign: "center", outline: "none" }} />
+                <input value={joinPw} onChange={function(e) { setJoinPw(e.target.value); }} onKeyDown={function(e) { if (e.key === "Enter" && joinCode.length >= 4) { window._rnDoJoin(joinCode, joinPw); } }} placeholder="Password" style={{ padding: "6px 8px", borderRadius: 5, border: "1px solid #ffffff20", background: "rgba(0,0,0,0.25)", color: "#eaeaf0", fontSize: 13, outline: "none", flex: 1, fontFamily: "Inter,sans-serif" }} />
+                <button className="btn-primary-glow btn-primary-glow-green" onClick={function() { if (joinCode.length >= 4) window._rnDoJoin(joinCode, joinPw); }} disabled={joinCode.length < 4} style={{ padding: "7px 14px", borderRadius: 5, border: "2px solid " + (joinCode.length >= 4 ? "#4ADE80" : "#333"), background: joinCode.length >= 4 ? "linear-gradient(135deg, rgba(74,222,128,0.30), rgba(34,197,94,0.15))" : "#1a1a2a", color: joinCode.length >= 4 ? "#4ADE80" : "#555", cursor: joinCode.length >= 4 ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 800, letterSpacing: 1, fontFamily: "Inter,sans-serif" }}>JOIN</button>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%" }}><div style={{ flex: 1, height: 1, background: "#ffffff10" }} /><span style={{ fontSize: 11, color: "#9aa0b5" }}>or browse</span><button onClick={function() { listLobbies(function(list) { setLobbyList(list); }); }} style={{ padding: "3px 10px", borderRadius: 4, border: "1px solid #4ADE8033", background: "transparent", color: "#4ADE8088", cursor: "pointer", fontSize: 12 }}>↻ Refresh</button>{!authUser && <button onClick={function() { var newId = "p_" + Math.random().toString(36).substr(2, 9); localStorage.setItem("riftNexusUid", newId); localStorage.removeItem("riftNexusName"); window.location.reload(); }} style={{ padding: "3px 10px", borderRadius: 4, border: "1px solid #aa66ff33", background: "transparent", color: "#aa66ff66", cursor: "pointer", fontSize: 12 }}>New Identity</button>}<div style={{ flex: 1, height: 1, background: "#ffffff10" }} /></div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 11, color: "#9aa0b5" }}>Filter:</span>
+                <select value={lobbyFilter} onChange={function(e) { setLobbyFilter(e.target.value); }} style={{ fontSize: 12, padding: "3px 6px", borderRadius: 4, border: "1px solid #ffffff15", background: "rgba(255,255,255,0.06)", color: "#eaeaf0", cursor: "pointer", fontFamily: "Inter,sans-serif", outline: "none" }}>
+                  <option value="all" style={{ background: "#1a1a30" }}>All Modes</option>
+                  <option value="Normal" style={{ background: "#1a1a30" }}>Normal (1v1)</option>
+                  <option value="3 Player" style={{ background: "#1a1a30" }}>3 Player</option>
+                  <option value="4 Player" style={{ background: "#1a1a30" }}>4 Player</option>
+                  <option value="Doubles" style={{ background: "#1a1a30" }}>Doubles (2v2)</option>
+                </select>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: 180, overflow: "auto", paddingRight: 4 }}>
+                {lobbyList.filter(function(l) { return lobbyFilter === "all" || l.data.settings.mode === lobbyFilter; }).length === 0 && <div style={{ fontSize: 12, color: "#9aa0b5", textAlign: "center", padding: 8 }}>No open lobbies{lobbyFilter !== "all" ? " for " + lobbyFilter : ""}</div>}
+                {lobbyList.filter(function(l) { return lobbyFilter === "all" || l.data.settings.mode === lobbyFilter; }).map(function(l) { var lp2 = Object.keys(l.data.players || {}).length; var hasPw = l.data.settings && l.data.settings.password; var isFull = lp2 >= l.data.settings.pc; return <div key={l.code} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 5, border: "1px solid #ffffff10", background: "rgba(255,255,255,0.02)", fontSize: 13 }}><span style={{ fontWeight: 700, color: "#FFD700", fontFamily: "Inter,sans-serif", letterSpacing: 2 }}>{l.code}</span><span style={{ color: "#eaeaf0" }}>{l.data.settings.mode}</span><span style={{ color: "#9aa0b5", fontSize: 12 }}>{lp2}/{l.data.settings.pc}</span><button onClick={function() { setJoinCode(l.code); window._rnDoJoin(l.code, joinPw); }} disabled={isFull} style={{ padding: "3px 10px", borderRadius: 4, border: "1.5px solid " + (isFull ? "#ffffff20" : "#4ADE80"), background: isFull ? "transparent" : "rgba(74,222,128,0.12)", color: isFull ? "#555" : "#4ADE80", cursor: isFull ? "not-allowed" : "pointer", fontSize: 11, fontWeight: 700, fontFamily: "Inter,sans-serif", letterSpacing: 1 }}>{isFull ? "FULL" : "JOIN"}</button>{hasPw && <span>🔒</span>}<span style={{ color: "#9aa0b5", marginLeft: "auto", fontSize: 12 }}>{l.data.host ? l.data.host.name : ""}</span></div>; })}
+              </div>
+            </div>}
+
+            {/* In-lobby info (host or join) */}
+            {hasLobby && <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, paddingBottom: 8, borderBottom: "1px solid " + accent + "26" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <span style={{ fontSize: 10, fontFamily: "Inter,sans-serif", color: "#9aa0b5", letterSpacing: 2.5, fontWeight: 700 }}>ROOM CODE</span>
+                  <span style={{ fontSize: 22, fontFamily: "Inter,sans-serif", fontWeight: 800, color: accent, letterSpacing: 5, textShadow: "0 0 18px " + accent + "66" }}>{roomCode}</span>
+                </div>
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <button onClick={function() { navigator.clipboard.writeText(roomCode); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 5, border: "1px solid " + accent + "55", background: accent + "12", color: accent + "cc", cursor: "pointer", fontSize: 12, fontFamily: "Inter,sans-serif", fontWeight: 700, transition: "all 200ms ease" }}>📋 Copy</button>
+                  {lobbySettings && lobbySettings.password && <span style={{ fontSize: 14 }}>🔒</span>}
+                  {lobbySettings && <span style={{ padding: "3px 8px", borderRadius: 4, border: "1px solid " + (lobbySettings.autoMode ? "#FFD700" : "#ffffff20"), background: lobbySettings.autoMode ? "rgba(255,215,0,0.12)" : "transparent", color: lobbySettings.autoMode ? "#FFD700" : "#666", fontFamily: "Inter,sans-serif", fontSize: 10, fontWeight: 800, letterSpacing: 1.5 }}>AUTO {lobbySettings.autoMode ? "ON" : "OFF"}</span>}
+                </div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {lpArr.map(function(p, i) {
+                  var isMe = p.uid === myUid;
+                  var displayDeckName = p.deck ? (p.deck.indexOf(" (") > 0 ? p.deck.substring(0, p.deck.indexOf(" (")) : p.deck) : null;
+                  var teamCol = p.team === "red" ? "#ef4444" : p.team === "blue" ? "#3b82f6" : null;
+                  var initial = (p.name || "?").trim().charAt(0).toUpperCase() || "?";
+                  var avatarColor = teamCol || (isMe ? accent : "#8a5cff");
+                  return <div key={p.uid} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 10px", borderRadius: 7, border: "1px solid " + (isMe ? accent + "66" : "rgba(255,255,255,0.08)"), background: isMe ? "linear-gradient(135deg, " + accent + "1a, " + accent + "06)" : "rgba(255,255,255,0.02)" }}>
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg, " + avatarColor + "cc, " + avatarColor + "55)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, color: "#1a1a2a", fontFamily: "Inter,sans-serif", flexShrink: 0, border: "1.5px solid " + avatarColor + "aa", boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>{initial}</div>
+                    {teamCol && <span style={{ fontSize: 9, color: teamCol, fontWeight: 700, fontFamily: "Inter,sans-serif", letterSpacing: 1, padding: "2px 5px", borderRadius: 3, border: "1px solid " + teamCol + "66", background: teamCol + "15" }}>{p.team.toUpperCase()}</span>}
+                    <span style={{ fontSize: 13, fontWeight: 700, color: isMe ? accent : "#eaeaf0", flex: 1, fontFamily: "Inter,sans-serif" }}>{p.name || <span style={{ color: "#666", fontStyle: "italic", fontWeight: 400 }}>(no name)</span>} {i === 0 && <span title="Host" style={{ marginLeft: 4 }}>👑</span>}</span>
+                    <span style={{ fontSize: 11, color: p.ready ? "#4ADE80" : p.deck ? "#9aa0b5" : "#7a7f95", fontFamily: "Inter,sans-serif", fontWeight: p.ready ? 700 : 500 }}>{p.ready ? "✓ Ready" : (displayDeckName || "Choosing...")}</span>
+                  </div>;
+                })}
+                {lobbyType === "host" && Array.from({ length: Math.max(0, (lobbySettings ? lobbySettings.pc : 2) - lpArr.length) }).map(function(_, i) { return <div key={"e" + i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 10px", borderRadius: 7, border: "1px dashed rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.015)" }}><div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "#666", flexShrink: 0, border: "1.5px dashed rgba(255,255,255,0.12)" }}>⏳</div><span style={{ fontSize: 12, color: "#9aa0b5", fontFamily: "Inter,sans-serif", flex: 1 }}>Waiting for player<span className="wait-dots"><span>.</span><span>.</span><span>.</span></span></span></div>; })}
+              </div>
+            </div>}
+          </div>;
+        })()}
+
+        {/* DECK PREVIEW PANEL */}
+        {(function() {
+          var hasLobby = !!roomCode;
+          var accent = lobbyType === "host" ? "#FFD700" : lobbyType === "join" ? "#4ADE80" : "#8a5cff";
+          var lobbyDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null;
+          var myDeck = hasLobby ? (lobbyDeck || preselectedDeck) : preselectedDeck;
+          var currentDeckData = null, currentDeckDisplayName = "";
+          if (myDeck && DECKS[myDeck]) {
+            currentDeckData = DECKS[myDeck];
+            currentDeckDisplayName = myDeck.indexOf(" (") > 0 ? myDeck.substring(0, myDeck.indexOf(" (")) : myDeck;
+          }
+
+          if (!currentDeckData) {
+            return <div style={{ minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 16, borderRadius: 10, border: "1px dashed " + accent + "44", background: "linear-gradient(160deg, rgba(26,26,58,0.4), rgba(15,15,35,0.4))", overflow: "hidden", textAlign: "center", gap: 12 }}>
+              <div style={{ fontSize: 56, opacity: 0.25 }}>🃏</div>
+              <h3 style={{ fontSize: 12, fontFamily: "Inter,sans-serif", fontWeight: 700, color: "#9aa0b5", letterSpacing: 3, margin: 0 }}>DECK PREVIEW</h3>
+              <p style={{ fontSize: 13, color: "#9aa0b5", fontFamily: "Inter,sans-serif", margin: 0, maxWidth: 320, lineHeight: 1.5 }}>Pick a deck on the left to preview your legend, champion, runes, battlefields, and full card list here.</p>
+            </div>;
+          }
+
+          var lgImg = CI[currentDeckData.legend] ? imgSrc(CI[currentDeckData.legend]) : "";
+          var chImg = CI[currentDeckData.champ] ? imgSrc(CI[currentDeckData.champ]) : "";
+          var uniqueR = []; (currentDeckData.runes || []).forEach(function(r) { if (uniqueR.indexOf(r) < 0) uniqueR.push(r); });
+
+          return <div style={{ minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column", gap: 10, padding: 16, borderRadius: 10, border: "1px solid " + accent + "44", background: "linear-gradient(160deg, rgba(26,26,58,0.92), rgba(15,15,35,0.92))", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), 0 8px 28px rgba(0,0,0,0.45)", overflow: "auto", transition: "border 200ms ease" }}>
+            <h3 style={{ fontSize: 12, fontFamily: "Inter,sans-serif", fontWeight: 700, color: "#9aa0b5", letterSpacing: 3, margin: 0, textAlign: "center" }}>DECK PREVIEW</h3>
+            <div style={{ fontSize: "clamp(20px, 1.8vw, 26px)", fontWeight: 700, fontFamily: "Spectral,serif", color: accent, textAlign: "center", letterSpacing: 1.5, textShadow: "0 0 18px " + accent + "55" }}>{currentDeckDisplayName}</div>
+            <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
+              {lgImg && <div onMouseEnter={function(e) { _hoverByName(currentDeckData.legend, e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, cursor: "pointer", transition: "transform 200ms ease" }} onMouseOver={function(e) { e.currentTarget.style.transform = "translateY(-2px)"; }} onMouseOut={function(e) { e.currentTarget.style.transform = "translateY(0)"; }}><img src={lgImg} style={{ width: "clamp(96px, 11vh, 140px)", height: "clamp(134px, 15.4vh, 196px)", objectFit: "fill", borderRadius: 8, border: "2px solid " + accent + "66", boxShadow: "0 6px 20px rgba(0,0,0,0.5)" }} /><span style={{ fontSize: 11, color: "#9aa0b5", fontFamily: "Inter,sans-serif", letterSpacing: 2, fontWeight: 700 }}>LEGEND</span></div>}
+              {chImg && <div onMouseEnter={function(e) { _hoverByName(currentDeckData.champ, e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, cursor: "pointer", transition: "transform 200ms ease" }} onMouseOver={function(e) { e.currentTarget.style.transform = "translateY(-2px)"; }} onMouseOut={function(e) { e.currentTarget.style.transform = "translateY(0)"; }}><img src={chImg} style={{ width: "clamp(96px, 11vh, 140px)", height: "clamp(134px, 15.4vh, 196px)", objectFit: "fill", borderRadius: 8, border: "2px solid #FFD700aa", boxShadow: "0 0 22px rgba(255,215,0,0.45), 0 6px 20px rgba(0,0,0,0.5)" }} /><span style={{ fontSize: 11, color: "#FFD700cc", fontFamily: "Inter,sans-serif", letterSpacing: 2, fontWeight: 700 }}>CHAMPION</span></div>}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+              <span style={{ fontSize: 11, color: "#9aa0b5", fontFamily: "Inter,sans-serif", letterSpacing: 2, fontWeight: 700 }}>RUNES</span>
+              <div style={{ display: "flex", gap: 5, justifyContent: "center" }}>{uniqueR.map(function(r) { var rImg = CI[r + " Rune"] ? imgSrc(CI[r + " Rune"]) : ""; return rImg ? <img key={r} src={rImg} onMouseEnter={function(e) { _hoverByName(r + " Rune", e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ width: "clamp(34px, 4.4vh, 50px)", height: "clamp(48px, 6.2vh, 70px)", objectFit: "fill", borderRadius: 4, border: "1px solid " + (DOM[r] || DOM.Colorless).c + "77", cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,0.35)" }} /> : <span key={r} onMouseEnter={function(e) { _hoverByName(r + " Rune", e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ color: (DOM[r] || DOM.Colorless).c, fontSize: 22, cursor: "pointer" }}>{(DOM[r] || DOM.Colorless).i}</span>; })}</div>
+            </div>
+            <div style={{ fontSize: 11, color: "#9aa0b5", textAlign: "center", fontFamily: "Inter,sans-serif", letterSpacing: 1 }}>{(currentDeckData.deck || []).length} cards · {(currentDeckData.bfs || []).length} battlefields <span style={{ color: "#7a7f95" }}>(hover to preview)</span></div>
+            {(currentDeckData.bfs || []).length > 0 && <div style={{ display: "flex", gap: 5, justifyContent: "center", flexWrap: "wrap" }}>{(currentDeckData.bfs || []).map(function(b, bi3) { var bImg = CI[b] ? imgSrc(CI[b]) : (PA[b] ? PA_CDN + PA[b] + ".webp" : ""); return <div key={"bf-" + bi3} onMouseEnter={function(e) { _hoverByName(b, e, true); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ cursor: "pointer", flexShrink: 0 }}>{bImg ? <img src={bImg} style={{ width: 68, height: 48, objectFit: "fill", borderRadius: 4, border: "1px solid " + accent + "55", display: "block", boxShadow: "0 2px 8px rgba(0,0,0,0.35)" }} /> : <div style={{ width: 68, height: 48, borderRadius: 4, border: "1px solid " + accent + "55", background: "#0c0c18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#9aa0b5", textAlign: "center", padding: 2 }}>{b}</div>}</div>; })}</div>}
+            {(currentDeckData.deck || []).length > 0 && (function() { var mc = {}; (currentDeckData.deck || []).forEach(function(n) { mc[n] = (mc[n] || 0) + 1; }); return <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(56px, 1fr))", gap: 4, paddingRight: 4 }}>{Object.keys(mc).sort().map(function(n) { var c = findCard(n); var dc = c ? (DOM[c.d] || DOM.Colorless) : DOM.Colorless; var mi = CI[n] ? imgSrc(CI[n]) : (PA[n] ? PA_CDN + PA[n] + ".webp" : ""); return <div key={n} onMouseEnter={function(e) { _hoverByName(n, e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ position: "relative", cursor: "pointer" }}>{mi ? <img src={mi} style={{ width: "100%", aspectRatio: "5/7", objectFit: "fill", borderRadius: 4, border: "1px solid " + dc.c + "55", display: "block", boxShadow: "0 1px 6px rgba(0,0,0,0.35)" }} /> : <div style={{ width: "100%", aspectRatio: "5/7", borderRadius: 4, border: "1px solid " + dc.c + "55", background: dc.c + "10", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: dc.c, textAlign: "center", padding: 1 }}>{n}</div>}{mc[n] > 1 && <div style={{ position: "absolute", top: 2, right: 2, background: "#000d", color: "#fff", borderRadius: 4, minWidth: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, padding: "0 3px", border: "1px solid " + dc.c + "55" }}>×{mc[n]}</div>}</div>; })}</div>; })()}
+          </div>;
+        })()}
+      </div>{/* end body row */}
+
+      {/* BOTTOM ACTION BAR */}
+      <div style={{ width: "100%", maxWidth: 1500, padding: "10px 20px 14px", display: "flex", justifyContent: "center", alignItems: "center", gap: 10, flexShrink: 0, position: "relative", zIndex: 1, flexWrap: "wrap" }}>
+        {readyErr && <div style={{ padding: "6px 10px", borderRadius: 4, border: "1px solid #ff444466", background: "rgba(255,50,50,0.1)", color: "#ff6666", fontSize: 12, fontFamily: "Inter,sans-serif", marginRight: 4 }}>{readyErr}</div>}
+
+        {/* Host: Create Lobby button (before lobby created) */}
+        {lobbyType === "host" && !roomCode && <button onClick={function() {
+          if (!lobbyMode) return;
+          setIsHost(true); setMySlot(0); setLobbyErr(null);
+          createLobby(lobbyMode, hostPw || null, hostAutoMode, function(code) {
+            setRoomCode(code);
+            if (_lobbyUnsub.current) _lobbyUnsub.current();
+            var ref = fbDb.ref("lobbies/" + code);
+            var unsub = ref.on("value", function(snap) {
+              var data = snap.val();
+              if (data) handleLobbyUpdate(data);
+            });
+            _lobbyUnsub.current = function() { ref.off("value", unsub); };
+          });
+        }} disabled={!lobbyMode} className="btn-primary-glow" style={{ padding: "12px 36px", borderRadius: 10, border: "2px solid " + (lobbyMode ? "#FFD700" : "#333"), background: lobbyMode ? "linear-gradient(135deg, #f5c542, #ffdd75)" : "#1a1a2a", color: lobbyMode ? "#1a1a2a" : "#555", cursor: lobbyMode ? "pointer" : "not-allowed", fontSize: 16, fontWeight: 800, fontFamily: "Inter,sans-serif", letterSpacing: 2, textTransform: "uppercase", boxShadow: lobbyMode ? "0 0 18px rgba(255,215,100,0.4), 0 6px 16px rgba(0,0,0,0.4)" : "none" }}>Create Lobby</button>}
+
+        {/* In-lobby: Ready Up + Start Game (host) + Solo Test + Leave */}
+        {roomCode && (function() {
+          var meInLobby = lobbyPlayers[myUid] || {};
+          var isReady = !!meInLobby.ready;
+          return <>
+            <button className={"btn-primary-glow" + (!isReady ? " anim-ready-pulse" : "")} onClick={function() {
+              if (isReady) {
+                fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/ready").set(false);
+                setReadyErr("");
+                return;
+              }
+              var nameOk = !!(myName && myName.trim());
+              var deckOk = !!meInLobby.deck || !!preselectedDeck;
+              if (!nameOk && !deckOk) { setReadyErr("Set name and pick a deck first."); return; }
+              if (!nameOk) { setReadyErr("Set a display name first."); return; }
+              if (!deckOk) { setReadyErr("Pick a deck first."); return; }
+              setReadyErr("");
+              var pRef = "lobbies/" + roomCode + "/players/" + myUid;
+              if (!meInLobby.deck && preselectedDeck) {
+                fbDb.ref(pRef + "/deck").set(preselectedDeck);
+                if (preselectedDeckData) { fbDb.ref(pRef + "/deckData").set({ name: preselectedDeckData.name || "Custom Deck", legend: preselectedDeckData.legend || null, champ: preselectedDeckData.champ || null, cards: preselectedDeckData.cards || [], bfs: preselectedDeckData.bfs || [], runes: preselectedDeckData.runes || [] }); }
+              }
+              fbDb.ref(pRef + "/ready").set(true);
+            }} style={{ padding: "12px 30px", borderRadius: 10, border: "2px solid " + (isReady ? "#4ADE80" : "#FFD700"), background: isReady ? "linear-gradient(135deg, rgba(74,222,128,0.25), rgba(34,197,94,0.12))" : "linear-gradient(135deg, #f5c542, #ffdd75)", color: isReady ? "#4ADE80" : "#1a1a2a", cursor: "pointer", fontSize: 15, fontWeight: 800, fontFamily: "Inter,sans-serif", letterSpacing: 2, textTransform: "uppercase", boxShadow: !isReady ? "0 0 18px rgba(255,215,100,0.4), 0 6px 16px rgba(0,0,0,0.4)" : "none" }}>{isReady ? "✓ Ready" : "Ready Up"}</button>
+
+            {lobbyType === "host" && <button title={allLobbyReady ? undefined : "Waiting for all players to ready up"} onClick={function() {
+              try {
+              if (!allLobbyReady) { console.warn("START GAME blocked: allLobbyReady is false", { roomCode: roomCode, lpArr: lpArr, lobbySettings: lobbySettings }); return; }
+              dbSavedDecks.forEach(function(deck) { registerCustomDeck(deck); });
+              var sorted = lpArr.sort(function(a, b) { return a.slot - b.slot; });
+              sorted.forEach(function(p) { if (!DECKS[p.deck] && p.deckData) { registerCustomDeck(p.deckData); } });
+              var slotsData = sorted.map(function(p) { var deckData = DECKS[p.deck]; return { uid: p.uid, deck: p.deck, name: p.name, team: p.team || null, deckData: deckData ? { legend: deckData.legend, champ: deckData.champ, deck: deckData.deck, bfs: deckData.bfs, runes: deckData.runes } : null }; });
+              var missing = slotsData.filter(function(s) { return !DECKS[s.deck]; });
+              if (missing.length > 0) { console.error("START GAME aborted — missing decks:", missing.map(function(s) { return s.name + " = " + s.deck; })); alert("Can't start — missing deck data for:\n" + missing.map(function(s) { return s.name + ": " + s.deck; }).join("\n")); return; }
+              setPc(sorted.length);
+              var hostIdx = slotsData.findIndex(function(s) { return s.uid === myUid; });
+              setMySlot(hostIdx >= 0 ? hostIdx : 0);
+              var nps = slotsData.map(function(s) { var pl = initPlayer(s.deck); pl.team = s.team || null; return pl; });
+              setPs(nps);
+              setTurn(1); setAct(0);
+              var hostAllUids = slotsData.map(function(s) { return s.uid; });
+              var hostRounds = [];
+              var hostActive = hostAllUids.slice();
+              for (var _safe = 0; _safe < 20; _safe++) {
+                var rRolls = {};
+                hostActive.forEach(function(u) { rRolls[u] = Math.floor(Math.random() * 6) + 1; });
+                var rMax = Math.max.apply(null, hostActive.map(function(u) { return rRolls[u]; }));
+                var rWinners = hostActive.filter(function(u) { return rRolls[u] === rMax; });
+                hostRounds.push({ rolls: rRolls, active: hostActive.slice() });
+                if (rWinners.length === 1) { hostActive = rWinners; break; }
+                hostActive = rWinners;
+              }
+              var hostWinnerUid = hostActive[0];
+              _gamePhaseRef.current = "diceroll";
+              setScreen("wait");
+              fbDb.ref("lobbies/" + roomCode + "/settings/status").set("playing");
+              fbDb.ref("lobbies/" + roomCode + "/gameState").set({ phase: "diceroll", slots: slotsData, diceRollSeq: { rounds: hostRounds, winner: hostWinnerUid } });
+              _lastSyncVersion.current++;
+              fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: nps, ver: _lastSyncVersion.current, by: myUid })));
+              } catch (err) { console.error("START GAME threw:", err); alert("Error starting game: " + (err && err.message ? err.message : err) + "\n\nCheck the browser console for details."); }
+            }} disabled={!allLobbyReady} className={"btn-primary-glow" + (allLobbyReady ? " anim-ready-pulse" : "")} style={{ padding: "12px 30px", borderRadius: 10, border: "2px solid " + (allLobbyReady ? "#FFD700" : "#333"), background: allLobbyReady ? "linear-gradient(135deg, #f5c542, #ffdd75)" : "#1a1a2a", color: allLobbyReady ? "#1a1a2a" : "#555", cursor: allLobbyReady ? "pointer" : "not-allowed", fontSize: 15, fontWeight: 800, fontFamily: "Inter,sans-serif", letterSpacing: 2, textTransform: "uppercase", boxShadow: allLobbyReady ? "0 0 18px rgba(255,215,100,0.4), 0 6px 16px rgba(0,0,0,0.4)" : "none" }}>Start Game</button>}
+
+            {soloTestReady && lobbyType === "host" && <button onClick={function() {
+              try {
+                dbSavedDecks.forEach(function(deck) { registerCustomDeck(deck); });
+                var deckName = _myLobbyP.deck;
+                var t = DECKS[deckName];
+                if (!t) { alert("Deck not found: " + deckName); return; }
+                var nps = [initPlayer(deckName), initPlayer(deckName)];
+                var bfNames = t.bfs || [];
+                var makeBf = function(name) { if (!name) return null; var bfCard = mkC(name); if (!bfCard) return null; return Object.assign({}, bfCard, { controller: null, units: [[], []], uid: uid() }); };
+                var gb = [makeBf(bfNames[0] || null), makeBf(bfNames[1] || bfNames[0] || null)].filter(Boolean);
+                if (!gb.length) { alert("No battlefields in deck."); return; }
+                setPc(2); setMySlot(0); setPs(nps); setBfs(gb);
+                setTurn(1); setAct(0); setFirstPlayerIdx(0);
+                _gamePhaseRef.current = "playing";
+                _soloTestRef.current = true;
+                setScreen("wait");
+              } catch(err) { alert("Solo test error: " + (err && err.message ? err.message : err)); }
+            }} style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #8B5CF666", background: "rgba(139,92,246,0.08)", color: "#8B5CF6", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Inter,sans-serif" }}>Test Solo</button>}
+
+            <button onClick={function() { leaveLobby(); }} style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #ff444466", background: "transparent", color: "#ff666688", cursor: "pointer", fontSize: 13, fontFamily: "Inter,sans-serif" }}>Leave</button>
+          </>;
+        })()}
+      </div>
+
+      {/* Auth modal (moved out of legacy PLAY NOW pane) */}
       {authScreen && <div onClick={function(e) { if (e.target === e.currentTarget) setAuthScreen(null); }} style={{ position: "fixed", inset: 0, background: "#000a", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1300, cursor: "pointer" }}>
         <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "linear-gradient(160deg, #1a1a3a, #12122a)", borderRadius: 10, padding: "24px 32px", border: "2px solid #FFD70044", boxShadow: "0 8px 40px #0008", maxWidth: 380, width: "100%", cursor: "default" }}>
           <div style={{ display: "flex", gap: 0, marginBottom: 16 }}>
@@ -6176,448 +6499,6 @@ function RiftboundGame() {
           <div style={{ textAlign: "center", marginTop: 10 }}><button onClick={function() { setAuthScreen(null); }} style={{ border: "none", background: "transparent", color: "#fff", cursor: "pointer", fontSize: 12, fontFamily: "Inter,sans-serif" }}>Continue as Guest</button></div>
         </div>
       </div>}
-
-      {/* Step 1: Lobby type */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, marginTop: 4 }}>
-        <h3 style={{ fontSize: "clamp(18px, 1.7vw, 24px)", fontFamily: "Inter,sans-serif", fontWeight: 700, color: "#fff", letterSpacing: "clamp(2px, 0.25vw, 4px)", margin: 0, lineHeight: 1 }}>PLAY NOW</h3>
-        <div style={{ display: "flex", gap: 10 }}>
-          {[{id:"host",label:"Host a Game",color:"#FFD700",icon:"👑"},{id:"join",label:"Join a Game",color:"#4ADE80",icon:"⚔️"}].map(function(t) {
-            var sel2 = lobbyType === t.id;
-            var pillClass = t.id === "host" ? "btn-host-pill" : "btn-join-pill";
-            return <button key={t.id} className={pillClass} onClick={function() { setLobbyType(t.id); if (t.id === "host") { var lastMode = localStorage.getItem("riftNexusLastMode") || "Normal"; var found = modes.find(function(m) { return m.name === lastMode && !m.quick; }); if (!found) found = modes.find(function(m) { return m.name === "Normal"; }); setLobbyMode(found || null); } else { setLobbyMode(null); } setDp({}); }} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 22px", borderRadius: 999, border: "2px solid " + (sel2 ? t.color : t.color + "44"), background: sel2 ? "linear-gradient(135deg," + t.color + "30," + t.color + "12)" : "rgba(255,255,255,0.02)", color: sel2 ? t.color : t.color + "aa", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Inter,sans-serif", letterSpacing: 1, transition: "transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease, background 200ms ease", boxShadow: sel2 ? "0 6px 18px rgba(0,0,0,0.35), 0 0 18px " + t.color + "55" : "none", transform: sel2 ? "translateY(-1px)" : "none" }}><span style={{ fontSize: 18, lineHeight: 1 }}>{t.icon}</span>{t.label}</button>;
-          })}
-        </div>
-      </div>
-
-      {/* Step 2: Game mode (host only) */}
-      {lobbyType === "host" && <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 8 }}>
-        <h3 style={{ fontSize: 14, fontFamily: "Inter,sans-serif", color: "#fff", letterSpacing: 2 }}>GAME TYPE</h3>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
-          {modes.filter(function(m) { return !m.quick; }).map(function(mode) {
-            var sel2 = lobbyMode && lobbyMode.name === mode.name;
-            var isAvail = mode.name === "Normal" || mode.name === "3 Player" || mode.name === "4 Player" || mode.name === "Doubles" || mode.quick;
-            return <button key={mode.name} className={"btn-mode-pill" + (sel2 ? " selected" : "")} onClick={isAvail ? function() { setLobbyMode(mode); localStorage.setItem("riftNexusLastMode", mode.name); setDp({}); } : undefined} style={{ padding: "10px 16px", borderRadius: 14, border: "2px solid " + (sel2 ? "#FFD700" : isAvail ? "#FFD70044" : "#ffffff12"), background: sel2 ? "linear-gradient(135deg, rgba(255,215,0,0.22), rgba(255,140,0,0.10))" : isAvail ? "rgba(255,215,0,0.04)" : "transparent", color: sel2 ? "#FFD700" : isAvail ? "#FFD700cc" : "#ffffff25", cursor: isAvail ? "pointer" : "not-allowed", fontSize: 14, fontWeight: 700, minWidth: 104, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, opacity: isAvail ? 1 : 0.4, fontFamily: "Inter,sans-serif" }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14 }}><span style={{ fontSize: 16, lineHeight: 1 }}>{mode.icon}</span>{mode.name}</span><span style={{ fontSize: 11, fontWeight: 400, color: sel2 ? "#FFD700aa" : isAvail ? "#FFD70066" : "#ffffff15", letterSpacing: 0.5 }}>{isAvail ? mode.sub : "Coming Soon"}</span></button>;
-          })}
-        </div>
-      </div>}
-
-
-      {/* Host: Create lobby */}
-      {lobbyType === "host" && !roomCode && <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 8 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 13, color: "#fff", fontFamily: "Inter,sans-serif" }}>Password (optional):</span>
-          <input value={hostPw} onChange={function(e) { setHostPw(e.target.value); }} placeholder="Leave blank for open" style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #ffffff20", background: "#ffffff08", color: "#ddd", fontSize: 14, outline: "none", width: 160 }} />
-        </div>
-        <div onClick={function() { setHostAutoMode(!hostAutoMode); }} title="When enabled, the game reads each card's text and automatically resolves their effects (e.g. Vanguard Attendant enters ready, Confront makes your units enter ready this turn)." style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 10, padding: "6px 14px", borderRadius: 6, border: "1.5px solid " + (hostAutoMode ? "#FFD700" : "#ffffff20"), background: hostAutoMode ? "rgba(255,215,0,0.10)" : "transparent", transition: "all 0.15s ease" }}>
-          <div style={{ width: 36, height: 20, borderRadius: 10, background: hostAutoMode ? "#FFD700" : "#333", position: "relative", transition: "background 0.2s ease" }}>
-            <div style={{ width: 16, height: 16, borderRadius: "50%", background: hostAutoMode ? "#000" : "#666", position: "absolute", top: 2, left: hostAutoMode ? 18 : 2, transition: "left 0.2s ease" }} />
-          </div>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{ fontSize: 13, color: hostAutoMode ? "#FFD700" : "#aaa", fontFamily: "Inter,sans-serif", fontWeight: 700, letterSpacing: 1 }}>AUTO MODE</span>
-            <span style={{ fontSize: 11, color: hostAutoMode ? "#FFD70099" : "#666", fontFamily: "Inter,sans-serif" }}>Card abilities resolve automatically</span>
-          </div>
-        </div>
-        <button onClick={function() {
-          if (!lobbyMode) return;
-          setIsHost(true); setMySlot(0); setLobbyErr(null);
-          createLobby(lobbyMode, hostPw || null, hostAutoMode, function(code) {
-            setRoomCode(code);
-            if (_lobbyUnsub.current) _lobbyUnsub.current();
-            var ref = fbDb.ref("lobbies/" + code);
-            var unsub = ref.on("value", function(snap) {
-              var data = snap.val();
-              if (data) handleLobbyUpdate(data);
-            });
-            _lobbyUnsub.current = function() { ref.off("value", unsub); };
-          });
-        }} disabled={!lobbyMode} className="btn-primary-glow" style={{ padding: "12px 34px", borderRadius: 10, border: "2px solid " + (lobbyMode ? "#FFD700" : "#333"), background: lobbyMode ? "linear-gradient(135deg, #f5c542, #ffdd75)" : "#1a1a2a", color: lobbyMode ? "#1a1a2a" : "#555", cursor: lobbyMode ? "pointer" : "not-allowed", fontSize: 16, fontWeight: 800, fontFamily: "Inter,sans-serif", letterSpacing: 2, textTransform: "uppercase", boxShadow: lobbyMode ? "0 0 18px rgba(255,215,100,0.4), 0 6px 16px rgba(0,0,0,0.4)" : "none" }}>Create Lobby</button>
-      </div>}
-
-      {/* Host: Waiting room (inline) */}
-      {lobbyType === "host" && roomCode && <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 12, marginTop: 8, padding: "16px 18px", width: "100%", maxWidth: "min(95vw, 900px)", flex: 1, minHeight: 0, borderRadius: 10, border: "1px solid #FFD70033", background: "linear-gradient(160deg, rgba(26,26,58,0.6), rgba(15,15,35,0.6))", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), 0 6px 20px rgba(0,0,0,0.35)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, paddingBottom: 10, borderBottom: "1px solid rgba(255,215,0,0.15)" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <span style={{ fontSize: 10, fontFamily: "Inter,sans-serif", color: "#9aa0b5", letterSpacing: 2.5, fontWeight: 700 }}>ROOM CODE</span>
-            <span style={{ fontSize: 22, fontFamily: "Inter,sans-serif", fontWeight: 800, color: "#FFD700", letterSpacing: 5, textShadow: "0 0 18px rgba(255,215,0,0.4)" }}>{roomCode}</span>
-          </div>
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <button onClick={function() { navigator.clipboard.writeText(roomCode); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 5, border: "1px solid #FFD70055", background: "rgba(255,215,0,0.08)", color: "#FFD700cc", cursor: "pointer", fontSize: 12, fontFamily: "Inter,sans-serif", fontWeight: 700, transition: "all 200ms ease" }}>📋 Copy</button>
-            {lobbySettings && lobbySettings.password && <span style={{ fontSize: 14 }}>🔒</span>}
-            {lobbySettings && <span style={{ padding: "3px 8px", borderRadius: 4, border: "1px solid " + (lobbySettings.autoMode ? "#FFD700" : "#ffffff20"), background: lobbySettings.autoMode ? "rgba(255,215,0,0.12)" : "transparent", color: lobbySettings.autoMode ? "#FFD700" : "#666", fontFamily: "Inter,sans-serif", fontSize: 10, fontWeight: 800, letterSpacing: 1.5 }} title={lobbySettings.autoMode ? "Auto Mode is ON — card abilities resolve automatically" : "Auto Mode is OFF — card abilities are manual"}>AUTO {lobbySettings.autoMode ? "ON" : "OFF"}</span>}
-          </div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%" }}>
-          {lpArr.map(function(p, i) {
-            var isMe = p.uid === myUid;
-            var displayDeckName = p.deck ? (p.deck.indexOf(" (") > 0 ? p.deck.substring(0, p.deck.indexOf(" (")) : p.deck) : null;
-            var teamCol = p.team === "red" ? "#ef4444" : p.team === "blue" ? "#3b82f6" : null;
-            var initial = (p.name || "?").trim().charAt(0).toUpperCase() || "?";
-            var avatarColor = teamCol || (isMe ? "#FFD700" : "#8a5cff");
-            return <div key={p.uid} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 8, border: "1px solid " + (isMe ? "#FFD70066" : "rgba(255,255,255,0.08)"), background: isMe ? "linear-gradient(135deg, rgba(255,215,0,0.10), rgba(255,215,0,0.03))" : "rgba(255,255,255,0.02)" }}>
-              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, " + avatarColor + "cc, " + avatarColor + "55)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: "#1a1a2a", fontFamily: "Inter,sans-serif", flexShrink: 0, border: "1.5px solid " + avatarColor + "aa", boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>{initial}</div>
-              {teamCol && <span style={{ fontSize: 10, color: teamCol, fontWeight: 700, fontFamily: "Inter,sans-serif", letterSpacing: 1, padding: "2px 6px", borderRadius: 3, border: "1px solid " + teamCol + "66", background: teamCol + "15" }}>{p.team.toUpperCase()}</span>}
-              <span style={{ fontSize: 14, fontWeight: 700, color: isMe ? "#FFD700" : "#eaeaf0", flex: 1, fontFamily: "Inter,sans-serif" }}>{p.name || <span style={{ color: "#666", fontStyle: "italic", fontWeight: 400 }}>(no name)</span>} {i === 0 && <span title="Host" style={{ marginLeft: 4 }}>👑</span>}</span>
-              <span style={{ fontSize: 12, color: p.ready ? "#4ADE80" : p.deck ? "#9aa0b5" : "#7a7f95", fontFamily: "Inter,sans-serif", fontWeight: p.ready ? 700 : 500 }}>{p.ready ? "✓ Ready" : (displayDeckName || "Choosing...")}</span>
-            </div>;
-          })}
-          {Array.from({ length: Math.max(0, (lobbySettings ? lobbySettings.pc : 2) - lpArr.length) }).map(function(_, i) { return <div key={"e" + i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 8, border: "1px dashed rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.015)" }}><div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "#666", flexShrink: 0, border: "1.5px dashed rgba(255,255,255,0.12)" }}>⏳</div><span style={{ fontSize: 13, color: "#9aa0b5", fontFamily: "Inter,sans-serif", flex: 1 }}>Waiting for player<span className="wait-dots"><span>.</span><span>.</span><span>.</span></span></span></div>; })}
-        </div>
-        {/* Deck selector moved to right column */}
-        <div style={{ display: "none" }}>
-        <div style={{ display: "flex", gap: 6, marginBottom: 6, justifyContent: "center" }}>
-          <button onClick={function() { setDeckTab("precons"); }} style={{ padding: "4px 14px", borderRadius: 5, border: "2px solid " + (deckTab === "precons" ? "#FFD700" : "#FFD70055"), background: deckTab === "precons" ? "#FFD70020" : "#FFD70008", color: deckTab === "precons" ? "#FFD700" : "#FFD700aa", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter,sans-serif" }}>Precons</button>
-          <button onClick={authUser && dbSavedDecks.length > 0 ? function() { setDeckTab(deckTab === "mydecks" ? null : "mydecks"); } : undefined} style={{ padding: "4px 14px", borderRadius: 5, border: "2px solid " + (deckTab === "mydecks" ? "#8B5CF6" : authUser && dbSavedDecks.length > 0 ? "#8B5CF655" : "#ffffff25"), background: deckTab === "mydecks" ? "#8B5CF620" : authUser && dbSavedDecks.length > 0 ? "#8B5CF608" : "#ffffff06", color: deckTab === "mydecks" ? "#8B5CF6" : authUser && dbSavedDecks.length > 0 ? "#8B5CF6aa" : "#ffffff50", cursor: authUser && dbSavedDecks.length > 0 ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 700, fontFamily: "Inter,sans-serif" }}>Your Decks{authUser && dbSavedDecks.length > 0 ? " (" + dbSavedDecks.length + ")" : ""}</button>
-        </div>
-        {deckTab === "precons" && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 4, width: "100%" }}>
-          {DNAMES.map(function(n) { var myDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null; var s = myDeck === n; var t2 = DECKS[n]; var lgImg = CI[t2.legend] ? imgSrc(CI[t2.legend]) : ""; var chImg = CI[t2.champ] ? imgSrc(CI[t2.champ]) : ""; var dn2 = n.indexOf(" (") > 0 ? n.substring(0, n.indexOf(" (")) : n; var uniqueRunes = []; t2.runes.forEach(function(r) { if (uniqueRunes.indexOf(r) < 0) uniqueRunes.push(r); }); var setInfo = SET[t2.set]; return <button key={n} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/deck").set(n); }} style={{ padding: "8px 10px", borderRadius: 5, border: s ? "2px solid #FFD700" : "1px solid #2a2a3a", background: s ? "#FFD70015" : "#1a1a3a", color: s ? "#FFD700" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 15, display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
-              {lgImg && <img src={lgImg} style={{ width: 48, height: 67, objectFit: "fill", borderRadius: 3, border: "1px solid #FFD70033" }} />}
-              {chImg && <img src={chImg} style={{ width: 48, height: 67, objectFit: "fill", borderRadius: 3, border: "1px solid #FFD70033" }} />}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <div style={{ fontWeight: 700, fontSize: 15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{dn2}</div>
-                {setInfo && <span title={setInfo.label} style={{ flexShrink: 0, padding: "1px 5px", borderRadius: 3, fontSize: 9, fontWeight: 700, color: setInfo.c, border: "1px solid " + setInfo.c + "55", background: setInfo.c + "15", letterSpacing: 0.5, fontFamily: "Inter,sans-serif" }}>{t2.set}</span>}
-              </div>
-              <div style={{ display: "flex", gap: 2, marginTop: 2 }}>{uniqueRunes.map(function(r) { var rImg = CI[r + " Rune"] ? imgSrc(CI[r + " Rune"]) : ""; return rImg ? <img key={r} src={rImg} style={{ width: 26, height: 36, objectFit: "fill", borderRadius: 2, border: "1px solid " + (DOM[r] || DOM.Colorless).c + "55" }} /> : <span key={r} style={{ color: (DOM[r] || DOM.Colorless).c, fontSize: 18 }}>{(DOM[r] || DOM.Colorless).i}</span>; })}</div>
-            </div>
-          </button>; })}
-        </div>}
-        {deckTab === "mydecks" && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 4, width: "100%" }}>
-          {dbSavedDecks.map(function(deck) { var dn = registerCustomDeck(deck); var myDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null; var s = myDeck === dn; var lgImg = CI[deck.legend] ? imgSrc(CI[deck.legend]) : ""; var chImg = CI[deck.champ] ? imgSrc(CI[deck.champ]) : ""; var uniqueRunes = []; (deck.runes || []).forEach(function(r) { if (uniqueRunes.indexOf(r) < 0) uniqueRunes.push(r); }); return <button key={deck._id} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/deck").set(dn); }} style={{ padding: "8px 10px", borderRadius: 5, border: s ? "2px solid #8B5CF6" : "1px solid #2a2a3a", background: s ? "#8B5CF615" : "#1a1a3a", color: s ? "#8B5CF6" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 15, display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
-              {lgImg && <img src={lgImg} style={{ width: 48, height: 67, objectFit: "fill", borderRadius: 3, border: "1px solid #8B5CF633" }} />}
-              {chImg && <img src={chImg} style={{ width: 48, height: 67, objectFit: "fill", borderRadius: 3, border: "1px solid #8B5CF633" }} />}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 700, fontSize: 15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{deck.name || "Untitled"}</div>
-              <div style={{ display: "flex", gap: 2, marginTop: 2 }}>{uniqueRunes.map(function(r) { var rImg = CI[r + " Rune"] ? imgSrc(CI[r + " Rune"]) : ""; return rImg ? <img key={r} src={rImg} style={{ width: 26, height: 36, objectFit: "fill", borderRadius: 2, border: "1px solid " + (DOM[r] || DOM.Colorless).c + "55" }} /> : <span key={r} style={{ color: (DOM[r] || DOM.Colorless).c, fontSize: 18 }}>{(DOM[r] || DOM.Colorless).i}</span>; })}</div>
-            </div>
-          </button>; })}
-        </div>}
-        </div>{/* end hidden deck selector (moved to right column) */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: "auto", width: "100%" }}>
-          {!allLobbyReady && (function() {
-            var reasons = [];
-            if (!roomCode) reasons.push("lobby not ready");
-            if (lpArr.length < (lobbySettings ? lobbySettings.pc : 2)) reasons.push("waiting for " + ((lobbySettings ? lobbySettings.pc : 2) - lpArr.length) + " more player(s)");
-            if (_doublesIssues.length > 0) _doublesIssues.forEach(function(d) { reasons.push(d); });
-            var notReady = lpArr.filter(function(p) { return !(p.deck && p.name && p.name.trim() && p.ready); });
-            if (notReady.length > 0) reasons.push(notReady.map(function(p) { var bits = []; if (!p.name || !p.name.trim()) bits.push("name"); if (!p.deck) bits.push("deck"); if (!p.ready) bits.push("ready"); return (p.name || "Unknown") + " (missing " + bits.join(", ") + ")"; }).join("; "));
-            return reasons.length > 0 ? <div style={{ fontSize: 11, color: "#FFD700aa", fontFamily: "Inter,sans-serif", textAlign: "center" }}>{reasons.join(" · ")}</div> : null;
-          })()}
-          <div style={{ display: "flex", gap: 8, width: "100%" }}>
-          <button title={allLobbyReady ? undefined : "Waiting for all players to set name, pick a deck, and ready up"} onClick={function() {
-            try {
-            if (!allLobbyReady) { console.warn("START GAME blocked: allLobbyReady is false", { roomCode: roomCode, lpArr: lpArr, lobbySettings: lobbySettings }); return; }
-            // Ensure all custom decks are registered before starting — host's own decks first…
-            dbSavedDecks.forEach(function(deck) { registerCustomDeck(deck); });
-            // …then any custom decks other players uploaded to their lobby entry.
-            var sorted = lpArr.sort(function(a, b) { return a.slot - b.slot; });
-            sorted.forEach(function(p) {
-              if (!DECKS[p.deck] && p.deckData) {
-                registerCustomDeck(p.deckData);
-              }
-            });
-            // Init game locally for host
-            var slotsData = sorted.map(function(p) {
-              // For custom decks, embed the full deck data so the other player can use it
-              var deckData = DECKS[p.deck];
-              return { uid: p.uid, deck: p.deck, name: p.name, team: p.team || null, deckData: deckData ? { legend: deckData.legend, champ: deckData.champ, deck: deckData.deck, bfs: deckData.bfs, runes: deckData.runes } : null };
-            });
-            // Safety net: if anything's still missing after registration, abort cleanly
-            var missing = slotsData.filter(function(s) { return !DECKS[s.deck]; });
-            if (missing.length > 0) {
-              console.error("START GAME aborted — missing decks:", missing.map(function(s) { return s.name + " = " + s.deck; }));
-              alert("Can't start — missing deck data for:\n" + missing.map(function(s) { return s.name + ": " + s.deck; }).join("\n"));
-              return;
-            }
-            setPc(sorted.length);
-            var hostIdx = slotsData.findIndex(function(s) { return s.uid === myUid; });
-            setMySlot(hostIdx >= 0 ? hostIdx : 0);
-            var nps = slotsData.map(function(s) { var pl = initPlayer(s.deck); pl.team = s.team || null; return pl; });
-            setPs(nps);
-            setTurn(1); setAct(0);
-            // Roll dice locally for host — compute full sequence including reroll rounds for ties
-            var hostAllUids = slotsData.map(function(s) { return s.uid; });
-            var hostRounds = [];
-            var hostActive = hostAllUids.slice();
-            for (var _safe = 0; _safe < 20; _safe++) {
-              var rRolls = {};
-              hostActive.forEach(function(u) { rRolls[u] = Math.floor(Math.random() * 6) + 1; });
-              var rMax = Math.max.apply(null, hostActive.map(function(u) { return rRolls[u]; }));
-              var rWinners = hostActive.filter(function(u) { return rRolls[u] === rMax; });
-              hostRounds.push({ rolls: rRolls, active: hostActive.slice() });
-              if (rWinners.length === 1) { hostActive = rWinners; break; }
-              hostActive = rWinners;
-            }
-            var hostWinnerUid = hostActive[0];
-            _gamePhaseRef.current = "diceroll";
-            setScreen("wait");
-            // Write to Firebase for other players
-            fbDb.ref("lobbies/" + roomCode + "/settings/status").set("playing");
-            fbDb.ref("lobbies/" + roomCode + "/gameState").set({ phase: "diceroll", slots: slotsData, diceRollSeq: { rounds: hostRounds, winner: hostWinnerUid } });
-            // Write canonical ps
-            _lastSyncVersion.current++;
-            fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: nps, ver: _lastSyncVersion.current, by: myUid })));
-            } catch (err) { console.error("START GAME threw:", err); alert("Error starting game: " + (err && err.message ? err.message : err) + "\n\nCheck the browser console for details."); }
-          }} disabled={!allLobbyReady} className={"btn-primary-glow" + (allLobbyReady ? " anim-ready-pulse" : "")} style={{ flex: 1, padding: "12px 26px", borderRadius: 10, border: "2px solid " + (allLobbyReady ? "#FFD700" : "#333"), background: allLobbyReady ? "linear-gradient(135deg, #f5c542, #ffdd75)" : "#1a1a2a", color: allLobbyReady ? "#1a1a2a" : "#555", cursor: allLobbyReady ? "pointer" : "not-allowed", fontSize: 16, fontWeight: 800, fontFamily: "Inter,sans-serif", letterSpacing: 2, textTransform: "uppercase", boxShadow: allLobbyReady ? "0 0 18px rgba(255,215,100,0.4), 0 6px 16px rgba(0,0,0,0.4)" : "none" }}>Start Game</button>
-          <button onClick={function() { leaveLobby(); }} style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #ff444466", background: "transparent", color: "#ff6666", cursor: "pointer", fontSize: 13, fontFamily: "Inter,sans-serif" }}>Close</button>
-          </div>
-          {soloTestReady && <button onClick={function() {
-            try {
-              dbSavedDecks.forEach(function(deck) { registerCustomDeck(deck); });
-              var deckName = _myLobbyP.deck;
-              var t = DECKS[deckName];
-              if (!t) { alert("Deck not found: " + deckName); return; }
-              var nps = [initPlayer(deckName), initPlayer(deckName)];
-              var bfNames = t.bfs || [];
-              var makeBf = function(name) { if (!name) return null; var bfCard = mkC(name); if (!bfCard) return null; return Object.assign({}, bfCard, { controller: null, units: [[], []], uid: uid() }); };
-              var gb = [makeBf(bfNames[0] || null), makeBf(bfNames[1] || bfNames[0] || null)].filter(Boolean);
-              if (!gb.length) { alert("No battlefields in deck."); return; }
-              setPc(2); setMySlot(0); setPs(nps); setBfs(gb);
-              setTurn(1); setAct(0); setFirstPlayerIdx(0);
-              _gamePhaseRef.current = "playing";
-              _soloTestRef.current = true;
-              setScreen("wait");
-            } catch(err) { alert("Solo test error: " + (err && err.message ? err.message : err)); }
-          }} style={{ width: "100%", padding: "8px 16px", borderRadius: 6, border: "1px solid #8B5CF666", background: "rgba(139,92,246,0.08)", color: "#8B5CF6", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter,sans-serif" }}>Test Solo (your deck vs itself)</button>}
-        </div>
-      </div>}
-
-      {/* Join: inline */}
-      {lobbyType === "join" && !roomCode && <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, marginTop: 8, padding: "12px 20px", borderRadius: 8, border: "1px solid #4ADE8033", background: "#4ADE8008", width: "100%", maxWidth: "min(95vw, 900px)" }}>
-        {lobbyErr && <div style={{ padding: "6px 12px", borderRadius: 4, border: "1px solid #ff444466", background: "rgba(255,50,50,0.08)", color: "#ff6666", fontSize: 13, width: "100%", textAlign: "center" }}>{lobbyErr}</div>}
-        {(function() {
-          var doJoin = function(code, pw) {
-            setLobbyErr(null);
-            joinLobby(code, pw || null, function(code2, lobby) { setRoomCode(code2); setIsHost(false); setLobbySettings(lobby.settings); setMySlot(Object.keys(lobby.players || {}).length); if (_lobbyUnsub.current) _lobbyUnsub.current(); var ref = fbDb.ref("lobbies/" + code2); var unsub = ref.on("value", function(snap) { var data = snap.val(); if (data) handleLobbyUpdate(data); }); _lobbyUnsub.current = function() { ref.off("value", unsub); }; }, function(err) { setLobbyErr(err); });
-          };
-          window._rnDoJoin = doJoin;
-          return null;
-        })()}
-        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-          <input value={joinCode} onChange={function(e) { setJoinCode(e.target.value.toUpperCase()); }} onKeyDown={function(e) { if (e.key === "Enter" && joinCode.length >= 4) { window._rnDoJoin(joinCode, joinPw); } }} placeholder="CODE" maxLength={6} style={{ padding: "6px 10px", borderRadius: 5, border: "2px solid #4ADE8044", background: "#ffffff08", color: "#ddd", fontSize: 18, fontFamily: "Inter,sans-serif", letterSpacing: 3, width: 110, textAlign: "center", outline: "none" }} />
-          <input value={joinPw} onChange={function(e) { setJoinPw(e.target.value); }} onKeyDown={function(e) { if (e.key === "Enter" && joinCode.length >= 4) { window._rnDoJoin(joinCode, joinPw); } }} placeholder="Password" style={{ padding: "6px 8px", borderRadius: 5, border: "1px solid #ffffff20", background: "#ffffff08", color: "#ddd", fontSize: 13, outline: "none", width: 100 }} />
-          <span style={{ fontSize: 12, color: "#fff", fontFamily: "Inter,sans-serif" }}>(Enter to join, or pick below)</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%" }}><div style={{ flex: 1, height: 1, background: "#ffffff10" }} /><span style={{ fontSize: 12, color: "#fff" }}>or browse</span><button onClick={function() { listLobbies(function(list) { setLobbyList(list); }); }} style={{ padding: "3px 10px", borderRadius: 4, border: "1px solid #4ADE8033", background: "transparent", color: "#4ADE8088", cursor: "pointer", fontSize: 14, fontFamily: "Inter,sans-serif" }}>↻ Refresh</button>{!authUser && <button onClick={function() { var newId = "p_" + Math.random().toString(36).substr(2, 9); localStorage.setItem("riftNexusUid", newId); localStorage.removeItem("riftNexusName"); window.location.reload(); }} style={{ padding: "3px 10px", borderRadius: 4, border: "1px solid #aa66ff33", background: "transparent", color: "#aa66ff66", cursor: "pointer", fontSize: 14, fontFamily: "Inter,sans-serif" }}>New Identity</button>}<div style={{ flex: 1, height: 1, background: "#ffffff10" }} /></div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, width: "100%" }}>
-          <span style={{ fontSize: 12, color: "#fff" }}>Filter:</span>
-          <select value={lobbyFilter} onChange={function(e) { setLobbyFilter(e.target.value); }} style={{ fontSize: 12, padding: "3px 6px", borderRadius: 4, border: "1px solid #ffffff15", background: "rgba(255,255,255,0.06)", color: "#fff", cursor: "pointer", fontFamily: "Inter,sans-serif", outline: "none" }}>
-            <option value="all" style={{ background: "#1a1a30" }}>All Modes</option>
-            <option value="Normal" style={{ background: "#1a1a30" }}>Normal (1v1)</option>
-            <option value="3 Player" style={{ background: "#1a1a30" }}>3 Player</option>
-            <option value="4 Player" style={{ background: "#1a1a30" }}>4 Player</option>
-            <option value="Doubles" style={{ background: "#1a1a30" }}>Doubles (2v2)</option>
-          </select>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 4, width: "100%", maxHeight: 150, overflow: "auto" }}>
-          {lobbyList.filter(function(l) { return lobbyFilter === "all" || l.data.settings.mode === lobbyFilter; }).length === 0 && <div style={{ fontSize: 13, color: "#fff", textAlign: "center" }}>No open lobbies{lobbyFilter !== "all" ? " for " + lobbyFilter : ""}</div>}
-          {lobbyList.filter(function(l) { return lobbyFilter === "all" || l.data.settings.mode === lobbyFilter; }).map(function(l) { var lp2 = Object.keys(l.data.players || {}).length; var hasPw = l.data.settings && l.data.settings.password; var isFull = lp2 >= l.data.settings.pc; return <div key={l.code} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 5, border: "1px solid #ffffff10", background: "transparent", width: "100%", fontSize: 13 }}><span style={{ fontWeight: 700, color: "#FFD700", fontFamily: "Inter,sans-serif", letterSpacing: 2 }}>{l.code}</span><span style={{ color: "#fff" }}>{l.data.settings.mode}</span><span style={{ color: "#fff" }}>{lp2}/{l.data.settings.pc}</span><button onClick={function() { setJoinCode(l.code); window._rnDoJoin(l.code, joinPw); }} disabled={isFull} style={{ padding: "4px 12px", borderRadius: 4, border: "1.5px solid " + (isFull ? "#ffffff20" : "#4ADE80"), background: isFull ? "transparent" : "rgba(74,222,128,0.12)", color: isFull ? "#555" : "#4ADE80", cursor: isFull ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Inter,sans-serif", letterSpacing: 1 }}>{isFull ? "FULL" : "JOIN"}</button>{hasPw && <span>🔒</span>}<span style={{ color: "#fff", marginLeft: "auto" }}>{l.data.host ? l.data.host.name : ""}</span></div>; })}
-        </div>
-      </div>}
-
-      {/* Join: In lobby (after joining) */}
-      {lobbyType === "join" && roomCode && <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 12, marginTop: 8, padding: "16px 18px", width: "100%", maxWidth: "min(95vw, 900px)", maxHeight: "calc(100vh - 180px)", overflow: "auto", borderRadius: 10, border: "1px solid #4ADE8033", background: "linear-gradient(160deg, rgba(26,26,58,0.6), rgba(15,15,35,0.6))", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), 0 6px 20px rgba(0,0,0,0.35)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, paddingBottom: 10, borderBottom: "1px solid rgba(74,222,128,0.18)" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <span style={{ fontSize: 10, fontFamily: "Inter,sans-serif", color: "#9aa0b5", letterSpacing: 2.5, fontWeight: 700 }}>ROOM CODE</span>
-            <span style={{ fontSize: 22, fontFamily: "Inter,sans-serif", fontWeight: 800, color: "#4ADE80", letterSpacing: 5, textShadow: "0 0 18px rgba(74,222,128,0.4)" }}>{roomCode}</span>
-          </div>
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            {lobbySettings && <span style={{ padding: "3px 8px", borderRadius: 4, border: "1px solid " + (lobbySettings.autoMode ? "#FFD700" : "#ffffff20"), background: lobbySettings.autoMode ? "rgba(255,215,0,0.12)" : "transparent", color: lobbySettings.autoMode ? "#FFD700" : "#666", fontFamily: "Inter,sans-serif", fontSize: 10, fontWeight: 800, letterSpacing: 1.5 }} title={lobbySettings.autoMode ? "Auto Mode is ON — card abilities resolve automatically" : "Auto Mode is OFF — card abilities are manual"}>AUTO {lobbySettings.autoMode ? "ON" : "OFF"}</span>}
-            <span style={{ fontSize: 12, color: "#9aa0b5", fontFamily: "Inter,sans-serif" }}>Waiting for host<span className="wait-dots"><span>.</span><span>.</span><span>.</span></span></span>
-          </div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%" }}>
-          {lpArr.map(function(p, i) {
-            var isMe = p.uid === myUid;
-            var displayDeckName = p.deck ? (p.deck.indexOf(" (") > 0 ? p.deck.substring(0, p.deck.indexOf(" (")) : p.deck) : null;
-            var teamCol = p.team === "red" ? "#ef4444" : p.team === "blue" ? "#3b82f6" : null;
-            var initial = (p.name || "?").trim().charAt(0).toUpperCase() || "?";
-            var avatarColor = teamCol || (isMe ? "#4ADE80" : "#8a5cff");
-            return <div key={p.uid} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 8, border: "1px solid " + (isMe ? "#4ADE8066" : "rgba(255,255,255,0.08)"), background: isMe ? "linear-gradient(135deg, rgba(74,222,128,0.10), rgba(74,222,128,0.03))" : "rgba(255,255,255,0.02)" }}>
-              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, " + avatarColor + "cc, " + avatarColor + "55)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: "#1a1a2a", fontFamily: "Inter,sans-serif", flexShrink: 0, border: "1.5px solid " + avatarColor + "aa", boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>{initial}</div>
-              {teamCol && <span style={{ fontSize: 10, color: teamCol, fontWeight: 700, fontFamily: "Inter,sans-serif", letterSpacing: 1, padding: "2px 6px", borderRadius: 3, border: "1px solid " + teamCol + "66", background: teamCol + "15" }}>{p.team.toUpperCase()}</span>}
-              <span style={{ fontSize: 14, fontWeight: 700, color: isMe ? "#4ADE80" : "#eaeaf0", flex: 1, fontFamily: "Inter,sans-serif" }}>{p.name || <span style={{ color: "#666", fontStyle: "italic", fontWeight: 400 }}>(no name)</span>} {i === 0 && <span title="Host" style={{ marginLeft: 4 }}>👑</span>}</span>
-              <span style={{ fontSize: 12, color: p.ready ? "#4ADE80" : p.deck ? "#9aa0b5" : "#7a7f95", fontFamily: "Inter,sans-serif", fontWeight: p.ready ? 700 : 500 }}>{p.ready ? "✓ Ready" : (displayDeckName || "Choosing...")}</span>
-            </div>;
-          })}
-        </div>
-        {/* Deck selector moved to right column */}
-        <div style={{ display: "none" }}>
-        <div style={{ display: "flex", gap: 6, marginBottom: 6, justifyContent: "center" }}>
-          <button onClick={function() { setDeckTab("precons"); }} style={{ padding: "4px 14px", borderRadius: 5, border: "2px solid " + (deckTab === "precons" ? "#4ADE80" : "#4ADE8055"), background: deckTab === "precons" ? "#4ADE8020" : "#4ADE8008", color: deckTab === "precons" ? "#4ADE80" : "#4ADE80aa", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter,sans-serif" }}>Precons</button>
-          <button onClick={authUser && dbSavedDecks.length > 0 ? function() { setDeckTab(deckTab === "mydecks" ? null : "mydecks"); } : undefined} style={{ padding: "4px 14px", borderRadius: 5, border: "2px solid " + (deckTab === "mydecks" ? "#8B5CF6" : authUser && dbSavedDecks.length > 0 ? "#8B5CF655" : "#ffffff25"), background: deckTab === "mydecks" ? "#8B5CF620" : authUser && dbSavedDecks.length > 0 ? "#8B5CF608" : "#ffffff06", color: deckTab === "mydecks" ? "#8B5CF6" : authUser && dbSavedDecks.length > 0 ? "#8B5CF6aa" : "#ffffff50", cursor: authUser && dbSavedDecks.length > 0 ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 700, fontFamily: "Inter,sans-serif" }}>Your Decks{authUser && dbSavedDecks.length > 0 ? " (" + dbSavedDecks.length + ")" : ""}</button>
-        </div>
-        {deckTab === "precons" && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 4, width: "100%" }}>
-          {DNAMES.map(function(n) { var myDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null; var s = myDeck === n; var t2 = DECKS[n]; var lgImg = CI[t2.legend] ? imgSrc(CI[t2.legend]) : ""; var chImg = CI[t2.champ] ? imgSrc(CI[t2.champ]) : ""; var dn2 = n.indexOf(" (") > 0 ? n.substring(0, n.indexOf(" (")) : n; var uniqueRunes = []; t2.runes.forEach(function(r) { if (uniqueRunes.indexOf(r) < 0) uniqueRunes.push(r); }); var setInfo = SET[t2.set]; return <button key={n} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/deck").set(n); }} style={{ padding: "8px 10px", borderRadius: 5, border: s ? "2px solid #4ADE80" : "1px solid #2a2a3a", background: s ? "#4ADE8015" : "#1a1a3a", color: s ? "#4ADE80" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 15, display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
-              {lgImg && <img src={lgImg} style={{ width: 48, height: 67, objectFit: "fill", borderRadius: 3, border: "1px solid #4ADE8033" }} />}
-              {chImg && <img src={chImg} style={{ width: 48, height: 67, objectFit: "fill", borderRadius: 3, border: "1px solid #4ADE8033" }} />}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <div style={{ fontWeight: 700, fontSize: 15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{dn2}</div>
-                {setInfo && <span title={setInfo.label} style={{ flexShrink: 0, padding: "1px 5px", borderRadius: 3, fontSize: 9, fontWeight: 700, color: setInfo.c, border: "1px solid " + setInfo.c + "55", background: setInfo.c + "15", letterSpacing: 0.5, fontFamily: "Inter,sans-serif" }}>{t2.set}</span>}
-              </div>
-              <div style={{ display: "flex", gap: 2, marginTop: 2 }}>{uniqueRunes.map(function(r) { var rImg = CI[r + " Rune"] ? imgSrc(CI[r + " Rune"]) : ""; return rImg ? <img key={r} src={rImg} style={{ width: 26, height: 36, objectFit: "fill", borderRadius: 2, border: "1px solid " + (DOM[r] || DOM.Colorless).c + "55" }} /> : <span key={r} style={{ color: (DOM[r] || DOM.Colorless).c, fontSize: 18 }}>{(DOM[r] || DOM.Colorless).i}</span>; })}</div>
-            </div>
-          </button>; })}
-        </div>}
-        {deckTab === "mydecks" && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 4, width: "100%" }}>
-          {dbSavedDecks.map(function(deck) { var dn = registerCustomDeck(deck); var myDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null; var s = myDeck === dn; var lgImg = CI[deck.legend] ? imgSrc(CI[deck.legend]) : ""; var chImg = CI[deck.champ] ? imgSrc(CI[deck.champ]) : ""; var uniqueRunes = []; (deck.runes || []).forEach(function(r) { if (uniqueRunes.indexOf(r) < 0) uniqueRunes.push(r); }); return <button key={deck._id} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/deck").set(dn); }} style={{ padding: "8px 10px", borderRadius: 5, border: s ? "2px solid #8B5CF6" : "1px solid #2a2a3a", background: s ? "#8B5CF615" : "#1a1a3a", color: s ? "#8B5CF6" : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 15, display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
-              {lgImg && <img src={lgImg} style={{ width: 48, height: 67, objectFit: "fill", borderRadius: 3, border: "1px solid #8B5CF633" }} />}
-              {chImg && <img src={chImg} style={{ width: 48, height: 67, objectFit: "fill", borderRadius: 3, border: "1px solid #8B5CF633" }} />}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 700, fontSize: 15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{deck.name || "Untitled"}</div>
-              <div style={{ display: "flex", gap: 2, marginTop: 2 }}>{uniqueRunes.map(function(r) { var rImg = CI[r + " Rune"] ? imgSrc(CI[r + " Rune"]) : ""; return rImg ? <img key={r} src={rImg} style={{ width: 26, height: 36, objectFit: "fill", borderRadius: 2, border: "1px solid " + (DOM[r] || DOM.Colorless).c + "55" }} /> : <span key={r} style={{ color: (DOM[r] || DOM.Colorless).c, fontSize: 18 }}>{(DOM[r] || DOM.Colorless).i}</span>; })}</div>
-            </div>
-          </button>; })}
-        </div>}
-        </div>{/* end hidden deck selector (moved to right column) */}
-        <button onClick={function() { leaveLobby(); }} style={{ padding: "6px 14px", borderRadius: 5, border: "1px solid #ff444466", background: "transparent", color: "#ff6666", cursor: "pointer", fontSize: 12, fontFamily: "Inter,sans-serif" }}>Leave</button>
-      </div>}
-        </div>{/* end PLAY NOW pane */}
-        {/* SETUP pane (PLAY NOW + SETUP share one outer container — no internal divider) */}
-        {(function() {
-            var isHostCol = lobbyType === "host";
-            var hasLobby = !!roomCode;
-            var accent = lobbyType === "host" ? "#FFD700" : lobbyType === "join" ? "#4ADE80" : "#666677";
-            var accentBg = lobbyType === "host" ? "rgba(255,215,0,0.06)" : lobbyType === "join" ? "rgba(74,222,128,0.06)" : "rgba(255,255,255,0.02)";
-            var accentBorder = lobbyType === "host" ? "#FFD70066" : lobbyType === "join" ? "#4ADE8066" : "#ffffff22";
-            var lobbyDeck = lobbyPlayers[myUid] ? lobbyPlayers[myUid].deck : null;
-            var myDeck = hasLobby ? (lobbyDeck || preselectedDeck) : preselectedDeck;
-            var currentDeckData = null, currentDeckDisplayName = "", currentDeckIsCustom = false;
-            if (myDeck) {
-              if (DECKS[myDeck]) {
-                currentDeckData = DECKS[myDeck];
-                currentDeckDisplayName = myDeck.indexOf(" (") > 0 ? myDeck.substring(0, myDeck.indexOf(" (")) : myDeck;
-                currentDeckIsCustom = myDeck.indexOf("✦") >= 0;
-              }
-            }
-            return <div style={{ flex: 1, minWidth: 0, padding: 18, overflow: "auto", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 12 }}>
-              <h3 style={{ fontSize: "clamp(18px, 1.7vw, 24px)", fontFamily: "Inter,sans-serif", fontWeight: 700, color: "#fff", letterSpacing: "clamp(2px, 0.25vw, 4px)", margin: 0, lineHeight: 1, textAlign: "center" }}>SETUP</h3>
-              {/* Name */}
-              <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
-                <span style={{ fontSize: "clamp(13px, 1.4vw, 19px)", color: "#fff" }}>Display Name:</span>
-                <input defaultValue={myName} placeholder="Enter name..." onBlur={function(e) { var v = e.target.value.trim(); if (v) { myName = v; localStorage.setItem("riftNexusName", myName); if (hasLobby) { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/name").set(myName); fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/ready").set(false); } setReadyErr(""); } else { myName = ""; try { localStorage.removeItem("riftNexusName"); } catch(_e) {} if (hasLobby) { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/name").set(""); fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/ready").set(false); } setReadyErr("Please enter a display name before readying up."); } }} style={{ padding: "clamp(5px, 0.7vw, 8px) clamp(10px, 1vw, 14px)", borderRadius: 5, border: "1px solid " + accentBorder, background: "#ffffff08", color: accent, fontSize: "clamp(14px, 1.4vw, 20px)", outline: "none", width: "clamp(170px, 16vw, 230px)", fontFamily: "Inter,sans-serif", textAlign: "center" }} />
-              </div>
-              {/* Team picker — only for Doubles */}
-              {lobbySettings && lobbySettings.mode === "Doubles" && hasLobby && (function() {
-                var myTeam = (lobbyPlayers[myUid] && lobbyPlayers[myUid].team) || null;
-                return <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
-                  <span style={{ fontSize: "clamp(13px, 1.4vw, 19px)", color: "#fff" }}>Team:</span>
-                  {[{id:"red",label:"RED",color:"#ef4444"},{id:"blue",label:"BLUE",color:"#3b82f6"}].map(function(t) {
-                    var sel = myTeam === t.id;
-                    return <button key={t.id} onClick={function() { fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/team").set(t.id); fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/ready").set(false); setReadyErr(""); }} style={{ padding: "5px 14px", borderRadius: 5, border: "2px solid " + (sel ? t.color : t.color + "55"), background: sel ? t.color + "25" : "transparent", color: sel ? t.color : t.color + "aa", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter,sans-serif", letterSpacing: 1 }}>{t.label}</button>;
-                  })}
-                </div>;
-              })()}
-              {/* Deck picker: dropdown-style */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                <span style={{ fontSize: 13, color: "#fff", fontFamily: "Inter,sans-serif", letterSpacing: 2 }}>DECK</span>
-                {currentDeckData && <button onClick={function() { setDeckTab(deckTab ? null : "precons"); }} style={{ padding: "3px 10px", borderRadius: 4, border: "1px solid " + accentBorder, background: "transparent", color: accent, cursor: "pointer", fontSize: 11, fontFamily: "Inter,sans-serif" }}>{deckTab ? "Cancel" : "Change"}</button>}
-              </div>
-              {/* Deck options dropdown (shown if no deck yet OR user clicked Change) */}
-              {(!currentDeckData || deckTab) && <>
-                <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
-                  <button onClick={function() { setDeckTab("precons"); }} style={{ padding: "4px 14px", borderRadius: 5, border: "2px solid " + (deckTab === "precons" ? accent : accent + "55"), background: deckTab === "precons" ? accent + "20" : accent + "08", color: deckTab === "precons" ? accent : accent + "aa", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter,sans-serif" }}>Precons</button>
-                  <button onClick={authUser && dbSavedDecks.length > 0 ? function() { setDeckTab("mydecks"); } : undefined} style={{ padding: "4px 14px", borderRadius: 5, border: "2px solid " + (deckTab === "mydecks" ? "#8B5CF6" : authUser && dbSavedDecks.length > 0 ? "#8B5CF655" : "#ffffff25"), background: deckTab === "mydecks" ? "#8B5CF620" : authUser && dbSavedDecks.length > 0 ? "#8B5CF608" : "#ffffff06", color: deckTab === "mydecks" ? "#8B5CF6" : authUser && dbSavedDecks.length > 0 ? "#8B5CF6aa" : "#ffffff50", cursor: authUser && dbSavedDecks.length > 0 ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 700, fontFamily: "Inter,sans-serif" }}>Your Decks{authUser && dbSavedDecks.length > 0 ? " (" + dbSavedDecks.length + ")" : ""}</button>
-                </div>
-                {deckTab && <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minHeight: 0, overflow: "auto" }}>
-                  {(deckTab === "mydecks" ? dbSavedDecks : DNAMES).map(function(item) {
-                    var isCustom = deckTab === "mydecks";
-                    var name = isCustom ? registerCustomDeck(item) : item;
-                    var data = isCustom ? item : DECKS[item];
-                    var s = myDeck === name;
-                    var lgImg = CI[data.legend] ? imgSrc(CI[data.legend]) : (PA[data.legend] ? PA_CDN + PA[data.legend] + ".webp" : "");
-                    var chImg = CI[data.champ] ? imgSrc(CI[data.champ]) : (PA[data.champ] ? PA_CDN + PA[data.champ] + ".webp" : "");
-                    var dn = isCustom ? (data.name || "Untitled") : (item.indexOf(" (") > 0 ? item.substring(0, item.indexOf(" (")) : item);
-                    var uniqueR = []; (data.runes || []).forEach(function(r) { if (uniqueR.indexOf(r) < 0) uniqueR.push(r); });
-                    var btnAccent = isCustom ? "#8B5CF6" : accent;
-                    var setInfo = !isCustom && data.set ? SET[data.set] : null;
-                    return <button key={(isCustom ? item._id : item)} onClick={function() { if (hasLobby) { var pRef = "lobbies/" + roomCode + "/players/" + myUid; fbDb.ref(pRef + "/deck").set(name); fbDb.ref(pRef + "/ready").set(false); if (isCustom) { fbDb.ref(pRef + "/deckData").set({ name: item.name || "Custom Deck", legend: item.legend || null, champ: item.champ || null, cards: item.cards || [], bfs: item.bfs || [], runes: item.runes || [] }); } else { fbDb.ref(pRef + "/deckData").set(null); } } else { setPreselectedDeck(name); setPreselectedDeckData(isCustom ? item : null); } setDeckTab(null); setReadyErr(""); }} style={{ padding: "8px 10px", borderRadius: 5, border: s ? "2px solid " + btnAccent : "1px solid #2a2a3a", background: s ? btnAccent + "15" : "#1a1a3a", color: s ? btnAccent : "#aaa", cursor: "pointer", textAlign: "left", fontSize: 14, display: "flex", alignItems: "center", gap: 8 }}>
-                      <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
-                        {lgImg && <img src={lgImg} onMouseEnter={function(e) { _hoverByName(data.legend, e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ width: 48, height: 67, objectFit: "fill", borderRadius: 3, border: "1px solid " + btnAccent + "33" }} />}
-                        {chImg && <img src={chImg} onMouseEnter={function(e) { _hoverByName(data.champ, e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ width: 48, height: 67, objectFit: "fill", borderRadius: 3, border: "1px solid " + btnAccent + "33" }} />}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                          <div style={{ fontWeight: 700, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{dn}</div>
-                          {setInfo && <span title={setInfo.label} style={{ flexShrink: 0, padding: "1px 5px", borderRadius: 3, fontSize: 9, fontWeight: 700, color: setInfo.c, border: "1px solid " + setInfo.c + "55", background: setInfo.c + "15", letterSpacing: 0.5, fontFamily: "Inter,sans-serif" }}>{data.set}</span>}
-                        </div>
-                        <div style={{ display: "flex", gap: 2, marginTop: 2 }}>{uniqueR.map(function(r) { var rImg = CI[r + " Rune"] ? imgSrc(CI[r + " Rune"]) : ""; return rImg ? <img key={r} src={rImg} onMouseEnter={function(e) { _hoverByName(r + " Rune", e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ width: 26, height: 36, objectFit: "fill", borderRadius: 2, border: "1px solid " + (DOM[r] || DOM.Colorless).c + "55" }} /> : <span key={r} onMouseEnter={function(e) { _hoverByName(r + " Rune", e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ color: (DOM[r] || DOM.Colorless).c, fontSize: 16 }}>{(DOM[r] || DOM.Colorless).i}</span>; })}</div>
-                      </div>
-                    </button>;
-                  })}
-                </div>}
-              </>}
-              {/* Deck preview (shown when deck is chosen and dropdown is collapsed) — centered vertically */}
-              {currentDeckData && !deckTab && (function() {
-                var lgImg = CI[currentDeckData.legend] ? imgSrc(CI[currentDeckData.legend]) : "";
-                var chImg = CI[currentDeckData.champ] ? imgSrc(CI[currentDeckData.champ]) : "";
-                var uniqueR = []; (currentDeckData.runes || []).forEach(function(r) { if (uniqueR.indexOf(r) < 0) uniqueR.push(r); });
-                return <div style={{ overflow: "hidden", width: "100%" }}><div style={{ display: "flex", flexDirection: "column", gap: 12, padding: 16, borderRadius: 10, border: "1px solid " + accent + "44", background: "linear-gradient(160deg, rgba(26,26,58,0.92), rgba(15,15,35,0.92))", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), 0 8px 28px rgba(0,0,0,0.45)", width: "100%", maxHeight: "clamp(220px, 48vh, 560px)", overflowY: "auto" }}>
-                  <div style={{ fontSize: "clamp(20px, 1.8vw, 26px)", fontWeight: 700, fontFamily: "Spectral,serif", color: accent, textAlign: "center", letterSpacing: 1.5, textShadow: "0 0 18px " + accent + "55" }}>{currentDeckDisplayName}</div>
-                  <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-                    {lgImg && <div onMouseEnter={function(e) { _hoverByName(currentDeckData.legend, e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, cursor: "pointer", transition: "transform 200ms ease" }} onMouseOver={function(e) { e.currentTarget.style.transform = "translateY(-2px)"; }} onMouseOut={function(e) { e.currentTarget.style.transform = "translateY(0)"; }}><img src={lgImg} style={{ width: "clamp(96px, 11vh, 140px)", height: "clamp(134px, 15.4vh, 196px)", objectFit: "fill", borderRadius: 8, border: "2px solid " + accent + "66", boxShadow: "0 6px 20px rgba(0,0,0,0.5)" }} /><span style={{ fontSize: 11, color: "#9aa0b5", fontFamily: "Inter,sans-serif", letterSpacing: 2, fontWeight: 700 }}>LEGEND</span></div>}
-                    {chImg && <div onMouseEnter={function(e) { _hoverByName(currentDeckData.champ, e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, cursor: "pointer", transition: "transform 200ms ease" }} onMouseOver={function(e) { e.currentTarget.style.transform = "translateY(-2px)"; }} onMouseOut={function(e) { e.currentTarget.style.transform = "translateY(0)"; }}><img src={chImg} style={{ width: "clamp(96px, 11vh, 140px)", height: "clamp(134px, 15.4vh, 196px)", objectFit: "fill", borderRadius: 8, border: "2px solid #FFD700aa", boxShadow: "0 0 22px rgba(255,215,0,0.45), 0 6px 20px rgba(0,0,0,0.5)" }} /><span style={{ fontSize: 11, color: "#FFD700cc", fontFamily: "Inter,sans-serif", letterSpacing: 2, fontWeight: 700 }}>CHAMPION</span></div>}
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-                    <span style={{ fontSize: 11, color: "#9aa0b5", fontFamily: "Inter,sans-serif", letterSpacing: 2, fontWeight: 700 }}>RUNES</span>
-                    <div style={{ display: "flex", gap: 5, justifyContent: "center" }}>{uniqueR.map(function(r) { var rImg = CI[r + " Rune"] ? imgSrc(CI[r + " Rune"]) : ""; return rImg ? <img key={r} src={rImg} onMouseEnter={function(e) { _hoverByName(r + " Rune", e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ width: "clamp(34px, 4.4vh, 50px)", height: "clamp(48px, 6.2vh, 70px)", objectFit: "fill", borderRadius: 4, border: "1px solid " + (DOM[r] || DOM.Colorless).c + "77", cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,0.35)" }} /> : <span key={r} onMouseEnter={function(e) { _hoverByName(r + " Rune", e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ color: (DOM[r] || DOM.Colorless).c, fontSize: 22, cursor: "pointer" }}>{(DOM[r] || DOM.Colorless).i}</span>; })}</div>
-                  </div>
-                  <div style={{ fontSize: 11, color: "#9aa0b5", textAlign: "center", fontFamily: "Inter,sans-serif", letterSpacing: 1 }}>{(currentDeckData.deck || []).length} cards · {(currentDeckData.bfs || []).length} battlefields <span style={{ color: "#7a7f95" }}>(hover to preview)</span></div>
-                  {/* Battlefield thumbnails */}
-                  {(currentDeckData.bfs || []).length > 0 && <div style={{ display: "flex", gap: 5, justifyContent: "center", flexWrap: "wrap" }}>{(currentDeckData.bfs || []).map(function(b, bi3) { var bImg = CI[b] ? imgSrc(CI[b]) : (PA[b] ? PA_CDN + PA[b] + ".webp" : ""); var bLand = bImg && (bImg.indexOf("1038x744") > -1 || bImg.indexOf("1039x744") > -1); return <div key={"bf-" + bi3} onMouseEnter={function(e) { _hoverByName(b, e, true); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ cursor: "pointer", flexShrink: 0 }}>{bImg ? <img src={bImg} style={{ width: 68, height: 48, objectFit: "fill", borderRadius: 4, border: "1px solid " + accent + "55", display: "block", boxShadow: "0 2px 8px rgba(0,0,0,0.35)" }} /> : <div style={{ width: 68, height: 48, borderRadius: 4, border: "1px solid " + accent + "55", background: "#0c0c18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#9aa0b5", textAlign: "center", padding: 2 }}>{b}</div>}</div>; })}</div>}
-                  {/* Main deck thumbnails (deduped, with x-counts) */}
-                  {(currentDeckData.deck || []).length > 0 && (function() { var mc = {}; (currentDeckData.deck || []).forEach(function(n) { mc[n] = (mc[n] || 0) + 1; }); return <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(56px, 1fr))", gap: 4, maxHeight: 280, overflowY: "auto", paddingRight: 4 }}>{Object.keys(mc).sort().map(function(n) { var c = findCard(n); var dc = c ? (DOM[c.d] || DOM.Colorless) : DOM.Colorless; var mi = CI[n] ? imgSrc(CI[n]) : (PA[n] ? PA_CDN + PA[n] + ".webp" : ""); return <div key={n} onMouseEnter={function(e) { _hoverByName(n, e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ position: "relative", cursor: "pointer" }}>{mi ? <img src={mi} style={{ width: "100%", aspectRatio: "5/7", objectFit: "fill", borderRadius: 4, border: "1px solid " + dc.c + "55", display: "block", boxShadow: "0 1px 6px rgba(0,0,0,0.35)" }} /> : <div style={{ width: "100%", aspectRatio: "5/7", borderRadius: 4, border: "1px solid " + dc.c + "55", background: dc.c + "10", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: dc.c, textAlign: "center", padding: 1 }}>{n}</div>}{mc[n] > 1 && <div style={{ position: "absolute", top: 2, right: 2, background: "#000d", color: "#fff", borderRadius: 4, minWidth: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, padding: "0 3px", border: "1px solid " + dc.c + "55" }}>×{mc[n]}</div>}</div>; })}</div>; })()}
-                </div></div>;
-              })()}
-              {/* Ready button + inline error */}
-              {(function() {
-                var meInLobby = hasLobby ? (lobbyPlayers[myUid] || {}) : {};
-                var isReady = !!meInLobby.ready;
-                var disabled = !hasLobby;
-                return <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: "auto", paddingTop: 8 }}>
-                  {readyErr && <div style={{ padding: "6px 10px", borderRadius: 4, border: "1px solid #ff444466", background: "rgba(255,50,50,0.1)", color: "#ff6666", fontSize: 12, fontFamily: "Inter,sans-serif", textAlign: "center" }}>{readyErr}</div>}
-                  <button disabled={disabled} title={disabled ? "Host or join a game to ready up" : undefined} onClick={function() {
-                    if (disabled) return;
-                    if (isReady) {
-                      fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/ready").set(false);
-                      setReadyErr("");
-                      return;
-                    }
-                    // Use local myName as source of truth — it's updated synchronously in the name input's onBlur,
-                    // whereas meInLobby.name may still be stale from a not-yet-synced Firebase write.
-                    var nameOk = !!(myName && myName.trim());
-                    // Accept preselectedDeck as a fallback — the sync useEffect writes it to Firebase
-                    // but there can be a brief gap between joining and the write completing.
-                    var deckOk = !!meInLobby.deck || !!preselectedDeck;
-                    if (!nameOk && !deckOk) { setReadyErr("Please enter a display name and choose a deck before readying up."); return; }
-                    if (!nameOk) { setReadyErr("Please enter a display name before readying up."); return; }
-                    if (!deckOk) { setReadyErr("Please choose a deck before readying up."); return; }
-                    setReadyErr("");
-                    var pRef = "lobbies/" + roomCode + "/players/" + myUid;
-                    // If our preselected deck hasn't synced to Firebase yet, push it now so other players see it.
-                    if (!meInLobby.deck && preselectedDeck) {
-                      fbDb.ref(pRef + "/deck").set(preselectedDeck);
-                      if (preselectedDeckData) {
-                        fbDb.ref(pRef + "/deckData").set({ name: preselectedDeckData.name || "Custom Deck", legend: preselectedDeckData.legend || null, champ: preselectedDeckData.champ || null, cards: preselectedDeckData.cards || [], bfs: preselectedDeckData.bfs || [], runes: preselectedDeckData.runes || [] });
-                      }
-                    }
-                    fbDb.ref(pRef + "/ready").set(true);
-                  }} className={"btn-primary-glow" + (!disabled && !isReady ? " anim-ready-pulse" : "")} style={{ padding: "12px 18px", borderRadius: 10, border: "2px solid " + (disabled ? "#ffffff22" : isReady ? "#4ADE80" : accent), background: disabled ? "rgba(255,255,255,0.03)" : isReady ? "linear-gradient(135deg, rgba(74,222,128,0.25), rgba(34,197,94,0.12))" : "linear-gradient(135deg, #f5c542, #ffdd75)", color: disabled ? "#666" : isReady ? "#4ADE80" : "#1a1a2a", cursor: disabled ? "not-allowed" : "pointer", fontSize: 15, fontWeight: 800, fontFamily: "Inter,sans-serif", letterSpacing: 2, textTransform: "uppercase", opacity: disabled ? 0.55 : 1, boxShadow: !disabled && !isReady ? "0 0 18px rgba(255,215,100,0.4), 0 6px 16px rgba(0,0,0,0.4)" : "none" }}>{isReady ? "✓ Ready — tap to cancel" : "Ready Up"}</button>
-                </div>;
-              })()}
-            </div>;
-          })()}
-        </div>{/* end shared container (PLAY NOW + SETUP) */}
-      </div>{/* end body row */}
       {renderHoverPreview()}
     </div>
   );
