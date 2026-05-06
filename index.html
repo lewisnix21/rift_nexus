@@ -11181,8 +11181,8 @@ function RiftboundGame() {
           <button onClick={function() { setBottomTab(bottomTab === "chat" ? null : "chat"); }} style={{ padding: "6px 20px", border: "1px solid " + (bottomTab === "chat" ? "#60a5fa" : "#60a5fa44"), background: bottomTab === "chat" ? "rgba(96,165,250,0.2)" : "rgba(10,15,40,0.85)", color: "#60a5fa", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif", borderRadius: 20, letterSpacing: 1, boxShadow: bottomTab === "chat" ? "0 0 10px rgba(96,165,250,0.3)" : "none" }}>CHAT</button>
         </div>
       </div>
-      {/* Tab popup — anchored ABOVE the action button so the END TURN never gets covered. */}
-      {bottomTab && <div style={{ position: "fixed", bottom: 140, right: 24, width: 380, height: 240, background: "rgba(10,15,40,0.97)", border: "1px solid #60a5fa33", borderRadius: 10, padding: 8, display: "flex", flexDirection: "column", zIndex: 905, boxShadow: "0 -4px 16px #000a" }}>
+      {/* Tab popup — anchored just above its respective tab button (LOG / CHAT). z-index sits above the END TURN / Resolve action buttons (950), the deck/bin/token piles (960), the avatar (970), and the pass-through hand wrapper (980) so the popup is never covered. The right offset shifts under the LOG button when the LOG tab is active so each box hangs over its own button. */}
+      {bottomTab && <div style={{ position: "fixed", bottom: 44, right: bottomTab === "log" ? 98 : 24, width: 380, height: 240, background: "rgba(10,15,40,0.97)", border: "1px solid #60a5fa33", borderRadius: 10, padding: 8, display: "flex", flexDirection: "column", zIndex: 985, boxShadow: "0 -4px 16px #000a" }}>
         {bottomTab === "log" && <>
           <div ref={lr} style={{ flex: 1, overflow: "auto", padding: 4, fontSize: 12, lineHeight: 1.5 }}>
             {log.map(function(e, i) { return <div key={i} style={{ color: e.m.indexOf("===") >= 0 ? "#FFD700" : e.m.indexOf("wins") >= 0 ? "#FFD700" : e.m.indexOf("SHOWDOWN") >= 0 ? "#FF6B35" : e.m.indexOf("onquer") >= 0 || e.m.indexOf("holding point") >= 0 ? "#4ADE80" : "#667", marginBottom: 2, fontFamily: e.m.indexOf("===") >= 0 ? "Spectral,serif" : "inherit" }}>{e.m}</div>; })}
