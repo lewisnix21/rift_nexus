@@ -10704,8 +10704,10 @@ function RiftboundGame() {
 
           {/* ROW 2: ENEMY RUNES + BASE — mirror of player row 4. Enemy avatar sits in the
               gap between the base banner (left) and rune banner (right), absolutely
-              positioned so it stays vertically centred with both. */}
-          <div style={{ display: "flex", alignItems: "stretch", flexShrink: 0, padding: "2px 6px", gap: 6, overflow: "visible", zIndex: 1, height: ZONE_H, minHeight: ZONE_H, maxHeight: ZONE_H, position: "relative" }}>
+              positioned so it stays vertically centred with both. z-index 2 so the
+              base/rune drop targets sit above the carry-cancel overlay (z 1) but
+              below the BF row (z 3). */}
+          <div style={{ display: "flex", alignItems: "stretch", flexShrink: 0, padding: "2px 6px", gap: 6, overflow: "visible", zIndex: 2, height: ZONE_H, minHeight: ZONE_H, maxHeight: ZONE_H, position: "relative" }}>
             {/* Enemy base - horizontal (gold) */}
             {ps.filter(function(_, i) { return i === effectiveSpotlight; }).map(function(enemy) {
               var eI = ps.indexOf(enemy);
@@ -10816,8 +10818,11 @@ function RiftboundGame() {
           <div className={isMyTurnOnline && screen === "play" && !awakenPhase ? "anim-turn-pulse" : ""} style={{ margin: "4px 4px 4px", padding: 2, flexShrink: 0, overflow: "visible", border: "2px solid transparent", borderRadius: 8 }}>
           {/* ROW 4: PLAYER RUNES + BASE (legend/champion on right to mirror enemy). Avatar
               sits in the gap between the rune banner and the base banner, absolutely
-              positioned so it stays vertically centred with both. */}
-          <div style={{ display: "flex", alignItems: "stretch", flexShrink: 0, padding: "2px 6px", gap: 6, overflow: "visible", zIndex: 1, height: ZONE_H, minHeight: ZONE_H, maxHeight: ZONE_H, position: "relative" }}>
+              positioned so it stays vertically centred with both. z-index 2 so the
+              base/rune drop targets sit above the carry-cancel overlay (z 1) — without
+              this, click-carrying a hand card and clicking the base just cancels the
+              carry because the overlay (later in DOM) catches the click first. */}
+          <div style={{ display: "flex", alignItems: "stretch", flexShrink: 0, padding: "2px 6px", gap: 6, overflow: "visible", zIndex: 2, height: ZONE_H, minHeight: ZONE_H, maxHeight: ZONE_H, position: "relative" }}>
             {/* Player runes - horizontal (white), overlapping via absolute positioning */}
             {function() { var prc = myCur.runes.length; var untapped = myCur.runes.filter(function(r) { return !r.exhausted; }).length; var step = 1 / 11; return (
             <div style={{ display: "flex", flexDirection: "row", padding: "3px 4px", borderRadius: 6, border: "1.5px solid #ffffff35", alignItems: "center", flex: 1, overflow: "visible", height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H }}>
