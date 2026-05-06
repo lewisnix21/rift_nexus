@@ -5114,6 +5114,8 @@ function RiftboundGame() {
   var _dbExp = useState({}), dbExpanded = _dbExp[0], setDbExpanded = _dbExp[1];
   var _dbDel = useState(null), dbDeleteConfirm = _dbDel[0], setDbDeleteConfirm = _dbDel[1];
   var _dbClr = useState(false), dbClearConfirm = _dbClr[0], setDbClearConfirm = _dbClr[1];
+  var _dbExitC = useState(false), dbExitConfirm = _dbExitC[0], setDbExitConfirm = _dbExitC[1];
+  var _dbSnap = useState(null), dbSnap = _dbSnap[0], setDbSnap = _dbSnap[1];
   var _lmode = useState(null), lobbyMode = _lmode[0], setLobbyMode = _lmode[1];
   var _lfilter = useState("all"), lobbyFilter = _lfilter[0], setLobbyFilter = _lfilter[1];
   var _rc = useState(null), roomCode = _rc[0], setRoomCode = _rc[1];
@@ -6539,10 +6541,12 @@ function RiftboundGame() {
       setDbName(deck.name || ""); setDbLegend(deck.legend || null); setDbChamp(deck.champ || null);
       setDbCards(deck.cards || []); setDbBfs(deck.bfs || []); setDbRunes(deck.runes || []); setDbSideboard(deck.sideboard || []);
       setDbEditId(deck._id); setDbSection("legend"); setDbView("edit");
+      setDbSnap({ n: deck.name || "", l: deck.legend || null, c: deck.champ || null, cs: (deck.cards || []).slice(), b: (deck.bfs || []).slice(), r: (deck.runes || []).slice(), sb: (deck.sideboard || []).slice() });
     }
     function newDeck() {
       setDbName(""); setDbLegend(null); setDbChamp(null); setDbCards([]); setDbBfs([]); setDbRunes([]); setDbSideboard([]);
       setDbEditId(null); setDbSection("legend"); setDbView("edit");
+      setDbSnap({ n: "", l: null, c: null, cs: [], b: [], r: [], sb: [] });
     }
     function deleteDeck(deckId) {
       if (!authUser) return;
@@ -6709,7 +6713,12 @@ function RiftboundGame() {
     <div style={{ height: "100vh", maxHeight: "100vh", background: "linear-gradient(180deg, #2a2a50 0%, #333368 30%, #3d3d7a 50%, #333368 70%, #2a2a50 100%)", color: "#ddd", fontFamily: "sans-serif", display: "flex", flexDirection: "column", overflow: "auto" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderBottom: "1px solid #FFD70022", flexShrink: 0, background: "linear-gradient(180deg, rgba(255,215,0,0.05), rgba(255,215,0,0.01))", boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}>
-        <button onClick={function() { setDbView("list"); }} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 17px", borderRadius: 6, border: "1px solid #FFD70033", background: "rgba(255,255,255,0.02)", color: "#eaeaf0", cursor: "pointer", fontSize: 16, fontFamily: "Inter,sans-serif", fontWeight: 700, transition: "all 200ms ease" }}>← Back to Decks</button>
+        <button onClick={function() {
+          var current = JSON.stringify({ n: dbName, l: dbLegend, c: dbChamp, cs: dbCards, b: dbBfs, r: dbRunes, sb: dbSideboard });
+          var initial = dbSnap ? JSON.stringify(dbSnap) : null;
+          var isDirty = initial !== null && current !== initial;
+          if (isDirty) { setDbExitConfirm(true); } else { setDbView("list"); }
+        }} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 17px", borderRadius: 6, border: "1px solid #FFD70033", background: "rgba(255,255,255,0.02)", color: "#eaeaf0", cursor: "pointer", fontSize: 16, fontFamily: "Inter,sans-serif", fontWeight: 700, transition: "all 200ms ease" }}>← Back to Decks</button>
         <h2 style={{ fontSize: "clamp(22px, 2.6vw, 36px)", fontFamily: "Spectral,serif", fontWeight: 700, letterSpacing: "clamp(1px, 0.12vw, 2px)", lineHeight: 1, margin: 0, background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textAlign: "center", textShadow: "0 0 30px rgba(255,215,0,0.15)" }}>DECK BUILDER</h2>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {/* Import dropdown — bundles Import Text + Import Precon */}
@@ -6788,7 +6797,7 @@ function RiftboundGame() {
             </div>}
           </div>
           <button onClick={function() { setDbClearConfirm(true); }} style={{ padding: "8px 17px", borderRadius: 6, border: "1px solid #ff444466", background: "transparent", color: "#ff8888", cursor: "pointer", fontSize: 16, fontFamily: "Inter,sans-serif", fontWeight: 700, transition: "all 200ms ease" }}>Clear</button>
-          <button onClick={dbSaveDeck} disabled={!dbName.trim() || !dbLegend} style={{ padding: "8px 22px", borderRadius: 6, border: "2px solid " + (dbName.trim() && dbLegend ? "rgba(255,255,255,0.85)" : "#333"), background: dbName.trim() && dbLegend ? "linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06))" : "transparent", color: dbName.trim() && dbLegend ? "#ffffff" : "#555", cursor: dbName.trim() && dbLegend ? "pointer" : "not-allowed", fontSize: 16, fontWeight: 800, fontFamily: "Inter,sans-serif", letterSpacing: 1, transition: "all 200ms ease", boxShadow: dbName.trim() && dbLegend ? "0 0 14px rgba(255,255,255,0.18)" : "none" }}>Save</button>
+          <button onClick={dbSaveDeck} disabled={!dbName.trim() || !dbLegend} style={{ padding: "8px 22px", borderRadius: 6, border: "2px solid " + (dbName.trim() && dbLegend ? "#4ADE80" : "#333"), background: dbName.trim() && dbLegend ? "linear-gradient(135deg, #4ADE80, #22c55e)" : "transparent", color: dbName.trim() && dbLegend ? "#0c2415" : "#555", cursor: dbName.trim() && dbLegend ? "pointer" : "not-allowed", fontSize: 16, fontWeight: 800, fontFamily: "Inter,sans-serif", letterSpacing: 1, transition: "all 200ms ease", boxShadow: dbName.trim() && dbLegend ? "0 0 18px rgba(74,222,128,0.45), 0 6px 16px rgba(0,0,0,0.4)" : "none" }}>Save</button>
         </div>
       </div>
       {/* Main content */}
@@ -6933,6 +6942,17 @@ function RiftboundGame() {
           </div>
         </div>
       </div>
+      {/* Unsaved-changes exit confirmation modal */}
+      {dbExitConfirm && <div onClick={function(e) { if (e.target === e.currentTarget) setDbExitConfirm(false); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1300, cursor: "pointer", backdropFilter: "blur(2px)" }}>
+        <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "linear-gradient(160deg, #1a1a3a, #12122a)", borderRadius: 12, padding: "24px 28px", border: "1px solid #FFB40055", boxShadow: "0 12px 48px rgba(0,0,0,0.6), 0 0 28px rgba(255,180,0,0.15)", maxWidth: 460, width: "100%", cursor: "default", fontFamily: "Inter,sans-serif" }}>
+          <h3 style={{ fontSize: 22, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFB400", margin: 0, marginBottom: 12, letterSpacing: 0.5 }}>Unsaved changes</h3>
+          <p style={{ fontSize: 15, color: "#eaeaf0", lineHeight: 1.55, margin: 0, marginBottom: 22 }}>You have unsaved changes to this deck. If you leave now, those changes will be lost.</p>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+            <button onClick={function() { setDbExitConfirm(false); }} style={{ padding: "10px 22px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.30)", background: "rgba(255,255,255,0.04)", color: "#eaeaf0", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Inter,sans-serif", transition: "all 200ms ease" }}>Keep editing</button>
+            <button onClick={function() { setDbExitConfirm(false); setDbView("list"); }} style={{ padding: "10px 22px", borderRadius: 6, border: "2px solid #ff4444", background: "linear-gradient(135deg, rgba(255,68,68,0.40), rgba(220,38,38,0.20))", color: "#ffffff", cursor: "pointer", fontSize: 14, fontWeight: 800, fontFamily: "Inter,sans-serif", letterSpacing: 1, textTransform: "uppercase", boxShadow: "0 0 18px rgba(255,68,68,0.4), 0 6px 16px rgba(0,0,0,0.4)", transition: "all 200ms ease" }}>Discard</button>
+          </div>
+        </div>
+      </div>}
       {/* Clear deck confirmation modal */}
       {dbClearConfirm && <div onClick={function(e) { if (e.target === e.currentTarget) setDbClearConfirm(false); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1300, cursor: "pointer", backdropFilter: "blur(2px)" }}>
         <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "linear-gradient(160deg, #1a1a3a, #12122a)", borderRadius: 12, padding: "24px 28px", border: "1px solid #ff444455", boxShadow: "0 12px 48px rgba(0,0,0,0.6), 0 0 28px rgba(255,68,68,0.15)", maxWidth: 440, width: "100%", cursor: "default", fontFamily: "Inter,sans-serif" }}>
