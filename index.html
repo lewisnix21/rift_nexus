@@ -6133,17 +6133,17 @@ function RiftboundGame() {
               </button>
               {profileMenuOpen && <>
                 <div onClick={function() { setProfileMenuOpen(false); }} style={{ position: "fixed", inset: 0, zIndex: 1100, cursor: "default" }} />
-                <div style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, minWidth: 200, background: "linear-gradient(160deg, #1a1a3a, #12122a)", border: "1px solid #FFD70044", borderRadius: 8, boxShadow: "0 8px 28px rgba(0,0,0,0.55), 0 0 18px rgba(255,215,0,0.12)", padding: 6, zIndex: 1101, fontFamily: "Inter,sans-serif" }}>
-                  <div style={{ padding: "8px 10px 10px", borderBottom: "1px solid rgba(255,255,255,0.06)", marginBottom: 4 }}>
-                    <div style={{ fontSize: 10, color: "#9aa0b5", letterSpacing: 2, fontWeight: 700 }}>SIGNED IN AS</div>
-                    <div style={{ fontSize: 13, color: "#eaeaf0", fontWeight: 700, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{authUser.displayName || authUser.email}</div>
+                <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, minWidth: 240, background: "linear-gradient(160deg, #1a1a3a, #12122a)", border: "1px solid #FFD70044", borderRadius: 8, boxShadow: "0 8px 28px rgba(0,0,0,0.55), 0 0 18px rgba(255,215,0,0.12)", padding: 8, zIndex: 1101, fontFamily: "Inter,sans-serif" }}>
+                  <div style={{ padding: "10px 12px 12px", borderBottom: "1px solid rgba(255,255,255,0.06)", marginBottom: 6 }}>
+                    <div style={{ fontSize: 12, color: "#9aa0b5", letterSpacing: 2, fontWeight: 700 }}>SIGNED IN AS</div>
+                    <div style={{ fontSize: 16, color: "#eaeaf0", fontWeight: 700, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{authUser.displayName || authUser.email}</div>
                   </div>
-                  <button onClick={function() { setProfileMenuOpen(false); signOutUser(function() { setAuthUser(null); }); }} style={{ display: "flex", alignItems: "center", width: "100%", padding: "8px 10px", borderRadius: 5, border: "none", background: "transparent", color: "#ff8888", cursor: "pointer", fontSize: 13, fontFamily: "Inter,sans-serif", fontWeight: 600, textAlign: "left", transition: "background 150ms ease" }} onMouseOver={function(e) { e.currentTarget.style.background = "rgba(255,68,68,0.10)"; }} onMouseOut={function(e) { e.currentTarget.style.background = "transparent"; }}>Log Out</button>
+                  <button onClick={function() { setProfileMenuOpen(false); signOutUser(function() { setAuthUser(null); }); }} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 12px", borderRadius: 5, border: "none", background: "transparent", color: "#ff8888", cursor: "pointer", fontSize: 15, fontFamily: "Inter,sans-serif", fontWeight: 600, textAlign: "left", transition: "background 150ms ease" }} onMouseOver={function(e) { e.currentTarget.style.background = "rgba(255,68,68,0.10)"; }} onMouseOut={function(e) { e.currentTarget.style.background = "transparent"; }}>Log Out</button>
                 </div>
               </>}
             </div>;
           })() : <>
-            <button onClick={function() { setAuthScreen("login"); setAuthErr(""); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 6, border: "1px solid #FFD70033", background: "rgba(255,255,255,0.02)", color: "#eaeaf0", cursor: "pointer", fontSize: 14, fontFamily: "Inter,sans-serif", fontWeight: 700, transition: "all 200ms ease" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>Sign In</button>
+            <button onClick={function() { setAuthScreen("login"); setAuthErr(""); }} style={{ display: "flex", alignItems: "center", padding: "7px 14px", borderRadius: 6, border: "1px solid #FFD70033", background: "rgba(255,255,255,0.02)", color: "#eaeaf0", cursor: "pointer", fontSize: 14, fontFamily: "Inter,sans-serif", fontWeight: 700, transition: "all 200ms ease" }}>Sign In</button>
           </>}
         </div>
       </div>
