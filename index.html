@@ -10710,30 +10710,33 @@ function RiftboundGame() {
               var meReadyM = !!conquerAcceptors[myUid];
               var allUidsM = isOnlineM ? Object.keys(lobbyPlayers || {}) : [myUid];
               var pendingM = allUidsM.filter(function(u) { return !conquerAcceptors[u]; });
+              var allReadyM = pendingM.length === 0;
+              var isWaitingM = meReadyM && !allReadyM;
+              var _sdBorderColor = allReadyM ? "#4ADE80" : "#60a5fa";
               var pendingNamesM = pendingM.map(function(u) { var sl = lobbyPlayers && lobbyPlayers[u] && typeof lobbyPlayers[u].slot === "number" ? lobbyPlayers[u].slot : -1; return sl >= 0 ? pName(sl) : (lobbyPlayers && lobbyPlayers[u] && lobbyPlayers[u].name) || "?"; });
               var bfLabelM = (bfs[sd.bfIdx] && bfs[sd.bfIdx].name) || "";
               if (sd.contested && sd.assignmentPhase) {
                 var allAssignedM = allMyUnitsAssigned();
                 var canPressM = allAssignedM && !meReadyM;
-                return <div style={{ textAlign: "center", padding: "6px 8px", flexShrink: 0, margin: "0 4px", border: "2px solid #60a5fa", borderRadius: 6 }}>
-                  <div style={{ fontSize: 15, color: "#60a5fa", fontWeight: 700, fontFamily: "Spectral,serif" }}>SHOWDOWN</div>
-                  <div style={{ fontSize: 11, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1, marginTop: 1 }}>Contested: {bfLabelM}</div>
+                return <div style={{ textAlign: "center", padding: "6px 8px", flexShrink: 0, margin: "0 4px", border: "2px solid " + _sdBorderColor, borderRadius: 6 }}>
+                  <div style={{ fontSize: 15, color: _sdBorderColor, fontWeight: 700, fontFamily: "Spectral,serif" }}>SHOWDOWN</div>
+                  <div style={{ fontSize: 11, color: allReadyM ? "#4ADE8099" : "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1, marginTop: 1 }}>Contested: {bfLabelM}</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 3 }}>
                     <button onClick={function(e) {
                       e.stopPropagation();
                       if (!canPressM) return;
                       var newAcc = Object.assign({}, conquerAcceptors); newAcc[myUid] = true; setConquerAcceptors(newAcc);
                       if (!isOnlineM) { resolveShowdownContested(); }
-                    }} disabled={!canPressM} style={{ padding: 7, borderRadius: 4, border: "2px solid " + (canPressM ? "#60a5fa" : (meReadyM ? "#4ADE80" : "#444")), background: canPressM ? "linear-gradient(135deg,#3b82f6,#60a5fa)" : (meReadyM ? "rgba(74,222,128,0.12)" : "rgba(80,80,90,0.4)"), color: canPressM ? "#fff" : (meReadyM ? "#4ADE80" : "#888"), cursor: canPressM ? "pointer" : (meReadyM ? "default" : "not-allowed"), fontSize: 13, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif", letterSpacing: 1, textTransform: "uppercase", animation: meReadyM ? "resolvedFade 2s ease-out forwards" : undefined }}>
-                      {meReadyM ? "RESOLVED" : (allAssignedM ? "Resolve" : "Assign damage")}
+                    }} disabled={!canPressM} style={{ padding: 7, borderRadius: 4, border: "2px solid " + (allReadyM ? "#4ADE80" : canPressM ? "#60a5fa" : isWaitingM ? "#4ADE8066" : "#444"), background: allReadyM ? "rgba(74,222,128,0.12)" : canPressM ? "linear-gradient(135deg,#3b82f6,#60a5fa)" : isWaitingM ? "rgba(74,222,128,0.04)" : "rgba(80,80,90,0.4)", color: allReadyM ? "#4ADE80" : canPressM ? "#fff" : isWaitingM ? "#4ADE8066" : "#888", cursor: canPressM ? "pointer" : "default", fontSize: 13, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif", letterSpacing: 1, textTransform: "uppercase", animation: allReadyM ? "resolvedFade 2s ease-out forwards" : undefined }}>
+                      {allReadyM ? "RESOLVED" : isWaitingM ? "Waiting..." : allAssignedM ? "Resolve" : "Assign damage"}
                     </button>
-                    {isOnlineM && meReadyM && pendingM.length > 0 && pendingNamesM.length > 0 && <span style={{ fontSize: 10, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Awaiting: {pendingNamesM.join(", ")}</span>}
+                    {isOnlineM && isWaitingM && pendingNamesM.length > 0 && <span style={{ fontSize: 10, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Awaiting: {pendingNamesM.join(", ")}</span>}
                   </div>
                 </div>;
               }
-              return <div style={{ textAlign: "center", padding: "6px 8px", flexShrink: 0, margin: "0 4px", border: "2px solid #60a5fa", borderRadius: 6 }}>
-                <div style={{ fontSize: 15, color: "#60a5fa", fontWeight: 700, fontFamily: "Spectral,serif" }}>SHOWDOWN</div>
-                <div style={{ fontSize: 11, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1, marginTop: 1 }}>{bfLabelM}</div>
+              return <div style={{ textAlign: "center", padding: "6px 8px", flexShrink: 0, margin: "0 4px", border: "2px solid " + _sdBorderColor, borderRadius: 6 }}>
+                <div style={{ fontSize: 15, color: _sdBorderColor, fontWeight: 700, fontFamily: "Spectral,serif" }}>SHOWDOWN</div>
+                <div style={{ fontSize: 11, color: allReadyM ? "#4ADE8099" : "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1, marginTop: 1 }}>{bfLabelM}</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 3 }}>
                   <button onClick={function(e) {
                     e.stopPropagation();
@@ -10748,10 +10751,10 @@ function RiftboundGame() {
                       else if (!atkHas && defHas) resolveShowdown("defender");
                       else resolveShowdown("none");
                     }
-                  }} disabled={meReadyM} style={{ padding: 7, borderRadius: 4, border: meReadyM ? "2px solid #4ADE80" : "2px solid #60a5fa", background: meReadyM ? "rgba(74,222,128,0.12)" : "linear-gradient(135deg,#3b82f6,#60a5fa)", color: meReadyM ? "#4ADE80" : "#fff", cursor: meReadyM ? "default" : "pointer", fontSize: 13, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif", letterSpacing: 1, textTransform: "uppercase", animation: meReadyM ? "resolvedFade 2s ease-out forwards" : undefined }}>
-                    {meReadyM ? "RESOLVED" : "Resolve"}
+                  }} disabled={meReadyM} style={{ padding: 7, borderRadius: 4, border: allReadyM ? "2px solid #4ADE80" : isWaitingM ? "2px solid #4ADE8066" : "2px solid #60a5fa", background: allReadyM ? "rgba(74,222,128,0.12)" : isWaitingM ? "rgba(74,222,128,0.04)" : "linear-gradient(135deg,#3b82f6,#60a5fa)", color: allReadyM ? "#4ADE80" : isWaitingM ? "#4ADE8066" : "#fff", cursor: meReadyM ? "default" : "pointer", fontSize: 13, fontWeight: 700, width: "100%", fontFamily: "Spectral,serif", letterSpacing: 1, textTransform: "uppercase", animation: allReadyM ? "resolvedFade 2s ease-out forwards" : undefined }}>
+                    {allReadyM ? "RESOLVED" : isWaitingM ? "Waiting..." : "Resolve"}
                   </button>
-                  {isOnlineM && pendingM.length > 0 && pendingNamesM.length > 0 && <span style={{ fontSize: 10, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Awaiting: {pendingNamesM.join(", ")}</span>}
+                  {isOnlineM && isWaitingM && pendingNamesM.length > 0 && <span style={{ fontSize: 10, color: "#60a5fa99", fontFamily: "Spectral,serif", letterSpacing: 1 }}>Awaiting: {pendingNamesM.join(", ")}</span>}
                 </div>
               </div>;
             }
