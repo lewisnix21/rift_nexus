@@ -5111,6 +5111,8 @@ function RiftboundGame() {
   var _ltype = useState(null), lobbyType = _ltype[0], setLobbyType = _ltype[1];
   var _profMenu = useState(false), profileMenuOpen = _profMenu[0], setProfileMenuOpen = _profMenu[1];
   var _deckMore = useState(false), deckMoreOpen = _deckMore[0], setDeckMoreOpen = _deckMore[1];
+  var _dbExp = useState({}), dbExpanded = _dbExp[0], setDbExpanded = _dbExp[1];
+  var _dbDel = useState(null), dbDeleteConfirm = _dbDel[0], setDbDeleteConfirm = _dbDel[1];
   var _lmode = useState(null), lobbyMode = _lmode[0], setLobbyMode = _lmode[1];
   var _lfilter = useState("all"), lobbyFilter = _lfilter[0], setLobbyFilter = _lfilter[1];
   var _rc = useState(null), roomCode = _rc[0], setRoomCode = _rc[1];
@@ -6547,32 +6549,67 @@ function RiftboundGame() {
     }
 
     return (
-    <div style={{ height: "100vh", maxHeight: "100vh", background: "linear-gradient(180deg, #2a2a50 0%, #333368 30%, #3d3d7a 50%, #333368 70%, #2a2a50 100%)", color: "#ddd", fontFamily: "sans-serif", display: "flex", flexDirection: "column", alignItems: "center", overflow: "auto", padding: "20px 20px 40px" }}>
-      <button onClick={function() { setScreen("mode"); }} style={{ position: "absolute", top: 12, left: 16, padding: "4px 12px", borderRadius: 4, border: "1px solid #ffffff20", background: "transparent", color: "#888", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif" }}>← Back</button>
-      <h2 style={{ fontSize: 24, fontFamily: "Spectral,serif", fontWeight: 700, background: "linear-gradient(135deg,#8B5CF6,#A78BFA)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 16 }}>MY DECKS</h2>
-      <button onClick={newDeck} style={{ padding: "10px 28px", borderRadius: 6, border: "2px solid #4ADE80", background: "rgba(74,222,128,0.1)", color: "#4ADE80", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif", marginBottom: 20 }}>+ New Deck</button>
-      {dbSavedDecks.length === 0 && <p style={{ color: "#555", fontSize: 15, fontFamily: "Spectral,serif" }}>No saved decks yet</p>}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%", maxWidth: 600 }}>
+    <div style={{ height: "100vh", maxHeight: "100vh", background: "radial-gradient(ellipse at 50% -10%, #3d3d7a 0%, #2c2f5a 32%, #1a1a3a 65%, #121326 100%)", color: "#eaeaf0", fontFamily: "Inter,sans-serif", display: "flex", flexDirection: "column", alignItems: "center", overflow: "auto", padding: "20px 20px 40px", position: "relative" }}>
+      <div className="home-bg-particles" />
+      <div style={{ width: "100%", maxWidth: 900, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 20, position: "relative", zIndex: 1 }}>
+        <button onClick={function() { setScreen("mode"); }} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 18px", borderRadius: 6, border: "1px solid #FFD70033", background: "rgba(255,255,255,0.02)", color: "#eaeaf0", cursor: "pointer", fontSize: 16, fontFamily: "Inter,sans-serif", fontWeight: 700, transition: "all 200ms ease" }}>← Back</button>
+        <h2 style={{ fontSize: "clamp(34px, 4.4vw, 60px)", fontFamily: "Spectral,serif", fontWeight: 700, letterSpacing: "clamp(1px, 0.15vw, 3px)", lineHeight: 1, margin: 0, background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textAlign: "center", textShadow: "0 0 30px rgba(255,215,0,0.15)" }}>MY DECKS</h2>
+        <div style={{ width: 90 }} />
+      </div>
+      <button onClick={newDeck} className="btn-mode-toggle" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 28px", borderRadius: 999, border: "2px solid rgba(255,255,255,0.85)", background: "linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06))", color: "#ffffff", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Inter,sans-serif", letterSpacing: 1, marginBottom: 24, position: "relative", zIndex: 1, boxShadow: "0 6px 18px rgba(0,0,0,0.35), 0 0 18px rgba(255,255,255,0.20)", transition: "transform 200ms ease, box-shadow 200ms ease" }}>Create New Deck</button>
+      {dbSavedDecks.length === 0 && <p style={{ color: "#9aa0b5", fontSize: 16, fontFamily: "Inter,sans-serif", position: "relative", zIndex: 1 }}>No saved decks yet</p>}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 900, position: "relative", zIndex: 1 }}>
         {dbSavedDecks.map(function(deck) {
           var legendImg = deck.legend && CI[deck.legend] ? imgSrc(CI[deck.legend]) : (deck.legend && PA[deck.legend] ? PA_CDN + PA[deck.legend] + ".webp" : "");
           var champImg = deck.champ && CI[deck.champ] ? imgSrc(CI[deck.champ]) : (deck.champ && PA[deck.champ] ? PA_CDN + PA[deck.champ] + ".webp" : "");
           var lc = deck.legend ? findCard(deck.legend) : null;
           var dc = lc ? (DOM[lc.d] || DOM.Colorless) : DOM.Colorless;
+          var champCard = deck.champ ? findCard(deck.champ) : null;
+          var champColor = champCard ? (DOM[champCard.d] || DOM.Colorless).c : "#FFD700";
           var uniqueRunes = []; (deck.runes || []).forEach(function(r) { if (uniqueRunes.indexOf(r) < 0) uniqueRunes.push(r); });
-          return <div key={deck._id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 8, border: "1px solid #ffffff15", background: "#1a1a3a", cursor: "pointer" }} onClick={function() { loadDeck(deck); }}>
-            <div style={{ display: "flex", gap: 3, flexShrink: 0 }}>
-              {legendImg ? <img src={legendImg} style={{ width: 50, height: 70, objectFit: "fill", borderRadius: 4, border: "1.5px solid " + dc.c + "44" }} /> : <div style={{ width: 50, height: 70, borderRadius: 4, border: "1px dashed #ffffff20", display: "flex", alignItems: "center", justifyContent: "center", color: "#444", fontSize: 10 }}>?</div>}
-              {champImg ? <img src={champImg} style={{ width: 50, height: 70, objectFit: "fill", borderRadius: 4, border: "1.5px solid " + dc.c + "44" }} /> : deck.champ ? <div style={{ width: 50, height: 70, borderRadius: 4, border: "1px dashed #ffffff20", display: "flex", alignItems: "center", justifyContent: "center", color: "#444", fontSize: 9, textAlign: "center", padding: 2 }}>{deck.champ}</div> : null}
+          var isExp = !!dbExpanded[deck._id];
+          var isConfirmingDel = dbDeleteConfirm === deck._id;
+          return <div key={deck._id} style={{ borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "linear-gradient(160deg, rgba(26,26,58,0.7), rgba(15,15,35,0.7))", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), 0 6px 20px rgba(0,0,0,0.35)", overflow: "hidden", transition: "all 200ms ease" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "14px 18px", cursor: "pointer" }} onClick={function() { loadDeck(deck); }}>
+              <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
+                {legendImg ? <img src={legendImg} style={{ width: 80, height: 112, objectFit: "fill", borderRadius: 6, border: "2px solid " + dc.c + "55", boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }} /> : <div style={{ width: 80, height: 112, borderRadius: 6, border: "1px dashed #ffffff20", display: "flex", alignItems: "center", justifyContent: "center", color: "#666", fontSize: 14 }}>?</div>}
+                {champImg ? <img src={champImg} style={{ width: 80, height: 112, objectFit: "fill", borderRadius: 6, border: "2px solid " + champColor + "77", boxShadow: "0 0 16px " + champColor + "40, 0 4px 12px rgba(0,0,0,0.4)" }} /> : deck.champ ? <div style={{ width: 80, height: 112, borderRadius: 6, border: "1px dashed #ffffff20", display: "flex", alignItems: "center", justifyContent: "center", color: "#666", fontSize: 11, textAlign: "center", padding: 4 }}>{deck.champ}</div> : null}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color: "#eaeaf0", fontFamily: "Spectral,serif", letterSpacing: 0.5 }}>{deck.name || "Untitled"}</div>
+                <div style={{ fontSize: 14, color: "#9aa0b5", marginTop: 4, fontFamily: "Inter,sans-serif" }}>{(deck.cards || []).length}/39 cards · {(deck.bfs || []).length} battlefields</div>
+                <div style={{ display: "flex", gap: 4, marginTop: 8 }}>{uniqueRunes.map(function(r) { var rImg = CI[r + " Rune"] ? imgSrc(CI[r + " Rune"]) : ""; return rImg ? <img key={r} src={rImg} style={{ width: 32, height: 45, objectFit: "fill", borderRadius: 3, border: "1px solid " + (DOM[r] || DOM.Colorless).c + "66" }} /> : <span key={r} style={{ color: (DOM[r] || DOM.Colorless).c, fontSize: 22 }}>{(DOM[r] || DOM.Colorless).i}</span>; })}</div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, flexShrink: 0 }} onClick={function(e) { e.stopPropagation(); }}>
+                <button onClick={function() { setDbExpanded(Object.assign({}, dbExpanded, (function() { var o = {}; o[deck._id] = !isExp; return o; })())); }} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.28)", background: "rgba(255,255,255,0.04)", color: "#eaeaf0", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter,sans-serif", letterSpacing: 1, transition: "all 200ms ease" }}>{isExp ? "Hide details" : "View more details"}<span style={{ fontSize: 11, transition: "transform 200ms ease", transform: isExp ? "rotate(180deg)" : "rotate(0deg)" }}>▾</span></button>
+                {isConfirmingDel ? <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <span style={{ fontSize: 12, color: "#ff8888", fontFamily: "Inter,sans-serif", fontWeight: 600 }}>Delete?</span>
+                  <button onClick={function() { deleteDeck(deck._id); setDbDeleteConfirm(null); }} style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #ff4444", background: "rgba(255,68,68,0.15)", color: "#ff6666", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter,sans-serif" }}>Yes</button>
+                  <button onClick={function() { setDbDeleteConfirm(null); }} style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.30)", background: "rgba(255,255,255,0.04)", color: "#eaeaf0", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter,sans-serif" }}>Cancel</button>
+                </div> : <button onClick={function() { setDbDeleteConfirm(deck._id); }} style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid #ff444466", background: "transparent", color: "#ff8888", cursor: "pointer", fontSize: 13, fontFamily: "Inter,sans-serif", fontWeight: 700, transition: "all 200ms ease" }}>Delete</button>}
+              </div>
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 17, fontWeight: 700, color: "#ddd", fontFamily: "Spectral,serif" }}>{deck.name || "Untitled"}</div>
-              <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>{(deck.cards || []).length}/39 cards</div>
-              <div style={{ display: "flex", gap: 3, marginTop: 4 }}>{uniqueRunes.map(function(r) { var rImg = CI[r + " Rune"] ? imgSrc(CI[r + " Rune"]) : ""; return rImg ? <img key={r} src={rImg} style={{ width: 22, height: 31, objectFit: "fill", borderRadius: 2, border: "1px solid " + (DOM[r] || DOM.Colorless).c + "55" }} /> : <span key={r} style={{ color: (DOM[r] || DOM.Colorless).c, fontSize: 18 }}>{(DOM[r] || DOM.Colorless).i}</span>; })}</div>
-            </div>
-            <button onClick={function(e) { e.stopPropagation(); deleteDeck(deck._id); }} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid #ff444444", background: "transparent", color: "#ff666688", cursor: "pointer", fontSize: 12, fontFamily: "Spectral,serif" }}>Delete</button>
+            {isExp && (function() {
+              var deckSetInfo = deck.set ? SET[deck.set] : null;
+              return <div style={{ padding: "16px 18px 20px", borderTop: "1px solid rgba(255,255,255,0.08)", background: "rgba(0,0,0,0.18)", display: "flex", flexDirection: "column", gap: 14 }} onClick={function(e) { e.stopPropagation(); }}>
+                {deckSetInfo && <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                  <span style={{ fontSize: 12, color: "#9aa0b5", fontFamily: "Inter,sans-serif", letterSpacing: 2, fontWeight: 700 }}>SET</span>
+                  <span style={{ fontSize: 15, color: deckSetInfo.c || "#eaeaf0", fontFamily: "Inter,sans-serif", letterSpacing: 1, fontWeight: 700 }}>{deckSetInfo.label || deck.set}</span>
+                </div>}
+                {(deck.bfs || []).length > 0 && <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 12, color: "#9aa0b5", fontFamily: "Inter,sans-serif", letterSpacing: 2, fontWeight: 700 }}>BATTLEFIELDS</span>
+                  <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>{deck.bfs.map(function(b, bi3) { var bImg = CI[b] ? imgSrc(CI[b]) : (PA[b] ? PA_CDN + PA[b] + ".webp" : ""); return <div key={"bf-" + deck._id + "-" + bi3} onMouseEnter={function(e) { _hoverByName(b, e, true); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ cursor: "pointer", flexShrink: 0 }}>{bImg ? <img src={bImg} style={{ width: 100, height: 72, objectFit: "fill", borderRadius: 5, border: "1px solid rgba(255,255,255,0.30)", display: "block", boxShadow: "0 2px 8px rgba(0,0,0,0.35)" }} /> : <div style={{ width: 100, height: 72, borderRadius: 5, border: "1px solid rgba(255,255,255,0.30)", background: "#0c0c18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#9aa0b5", textAlign: "center", padding: 4 }}>{b}</div>}</div>; })}</div>
+                </div>}
+                {(deck.cards || []).length > 0 && (function() { var mc = {}; deck.cards.forEach(function(n) { mc[n] = (mc[n] || 0) + 1; }); return <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <span style={{ fontSize: 12, color: "#9aa0b5", fontFamily: "Inter,sans-serif", letterSpacing: 2, fontWeight: 700, textAlign: "center" }}>MAIN DECK</span>
+                  <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 5 }}>{Object.keys(mc).sort().map(function(n) { var c = findCard(n); var dcc = c ? (DOM[c.d] || DOM.Colorless) : DOM.Colorless; var mi = CI[n] ? imgSrc(CI[n]) : (PA[n] ? PA_CDN + PA[n] + ".webp" : ""); return <div key={"c-" + deck._id + "-" + n} onMouseEnter={function(e) { _hoverByName(n, e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ position: "relative", cursor: "pointer", width: 80 }}>{mi ? <img src={mi} style={{ width: "100%", aspectRatio: "5/7", objectFit: "fill", borderRadius: 5, border: "1px solid " + dcc.c + "55", display: "block", boxShadow: "0 1px 6px rgba(0,0,0,0.35)" }} /> : <div style={{ width: "100%", aspectRatio: "5/7", borderRadius: 5, border: "1px solid " + dcc.c + "55", background: dcc.c + "10", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: dcc.c, textAlign: "center", padding: 2 }}>{n}</div>}{mc[n] > 1 && <div style={{ position: "absolute", top: 3, right: 3, background: "#000d", color: "#fff", borderRadius: 4, minWidth: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, padding: "0 4px", border: "1px solid " + dcc.c + "55" }}>×{mc[n]}</div>}</div>; })}</div>
+                </div>; })()}
+              </div>;
+            })()}
           </div>;
         })}
       </div>
+      {renderHoverPreview()}
     </div>
     );
   }
