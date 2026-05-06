@@ -10015,6 +10015,11 @@ function RiftboundGame() {
   var BF_ROW_H = Math.round((HAND_H + Math.round(125 * vScale)) * 1.2);
   var ZONE_H = HAND_H + Math.round(53 * vScale);
   var INNER_H = HAND_H + Math.round(43 * vScale);
+  // Avatar scaled to ~85% of the rune/base banner inner height so it visually fits
+  // the seam without overflowing the row. Gap container widens with it so the
+  // circle stays horizontally centered between the two banners.
+  var AVATAR_SIZE = Math.round(INNER_H * 0.85);
+  var AVATAR_GAP_W = AVATAR_SIZE + 16;
   // Auto-mode BF unit card sizes (smaller so friendly+enemy units fit top/bottom of BF zone with space between).
   var BF_UNIT_W = Math.round(85 * vScale), BF_UNIT_H = Math.round(119 * vScale);
   // canPlayCard: in auto-mode, returns false when the player can't pay the rune cost
@@ -10686,7 +10691,7 @@ function RiftboundGame() {
               var enemySlot = ps.indexOf(enemy);
               var enemyP = lobbyPlayers && Object.keys(lobbyPlayers).map(function(k) { return lobbyPlayers[k]; }).find(function(p) { return p && p.slot === enemySlot; });
               var enemyPhoto = (enemyP && enemyP.photoURL) || "";
-              return <div style={{ width: 138, flexShrink: 0, position: "relative" }}>
+              return <div style={{ width: AVATAR_GAP_W, flexShrink: 0, position: "relative" }}>
                 <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 970, pointerEvents: "auto" }}>
                   <PlayerAvatar
                     photoURL={enemyPhoto}
@@ -10694,7 +10699,7 @@ function RiftboundGame() {
                     score={enemy.score || 0}
                     xp={enemy.xp || 0}
                     scoreMax={continuePlaying ? null : (lobbySettings && lobbySettings.mode === "Doubles" ? "11" : "8")}
-                    size={130}
+                    size={AVATAR_SIZE}
                     isActive={act === enemySlot && screen === "play" && !awakenPhase}
                     isMine={false}
                     flipped={true}
@@ -10810,7 +10815,7 @@ function RiftboundGame() {
             </div>); }()}
             {/* Avatar gap — visible reserved space between the rune and base banners.
                 The PlayerAvatar nests inside this spacer so it tracks the seam. */}
-            <div style={{ width: 138, flexShrink: 0, position: "relative" }}>
+            <div style={{ width: AVATAR_GAP_W, flexShrink: 0, position: "relative" }}>
               <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 970, pointerEvents: "auto" }}>
                 <PlayerAvatar
                   photoURL={(lobbyPlayers && lobbyPlayers[myUid] && lobbyPlayers[myUid].photoURL) || userPhotoURL || myPhotoURL}
@@ -10818,7 +10823,7 @@ function RiftboundGame() {
                   score={myCur.score}
                   xp={myCur.xp || 0}
                   scoreMax={continuePlaying ? null : (lobbySettings && lobbySettings.mode === "Doubles" ? "11" : "8")}
-                  size={130}
+                  size={AVATAR_SIZE}
                   isActive={isMyTurnOnline && screen === "play" && !awakenPhase}
                   isMine={true}
                   onScoreInc={function() { var idx = myActIdx; var np = ps.slice(); np[idx] = Object.assign({}, np[idx], { score: np[idx].score + 1 }); setPs(np); _syncLive(np, null); }}
