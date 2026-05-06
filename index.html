@@ -8966,6 +8966,30 @@ function RiftboundGame() {
     // Check bin
     var ti = p.trash.findIndex(function(c) { return c.uid === cardUid; });
     if (ti >= 0) { var card = Object.assign({}, p.trash[ti], { exhausted: false }); p.trash.splice(ti, 1); p.hand.push(card); aL(pName(idx2) + " returns " + cName(card) + " to hand from bin"); var np = ps.slice(); np[idx2] = p; setPs(np); fireOnMoveToHandEffect(card); return; }
+    // Check showcase (manual mode only — auto-mode runs the spell-resolution chain so pulling a card out mid-chain isn't safe)
+    if (!autoMode) {
+      if (showcaseCard && showcaseCard.uid === cardUid) {
+        var scCard = Object.assign({}, showcaseCard, { exhausted: false, gear: [] });
+        p.hand.push(scCard);
+        aL(pName(idx2) + " returns " + cName(scCard) + " to hand from showcase");
+        if (showcaseHistory.length > 0) {
+          setShowcaseCard(showcaseHistory[0]);
+          setShowcaseHistory(function(prev) { return prev.slice(1); });
+        } else {
+          setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false);
+          setShowcaseAcceptors({}); setShowcasePriority(null); setShowcaseActed(false);
+        }
+        var np = ps.slice(); np[idx2] = p; setPs(np); fireOnMoveToHandEffect(scCard); return;
+      }
+      var shi = showcaseHistory.findIndex(function(c) { return c.uid === cardUid; });
+      if (shi >= 0) {
+        var hCard = Object.assign({}, showcaseHistory[shi], { exhausted: false, gear: [] });
+        p.hand.push(hCard);
+        aL(pName(idx2) + " returns " + cName(hCard) + " to hand from showcase");
+        setShowcaseHistory(function(prev) { return prev.filter(function(_, _i) { return _i !== shi; }); });
+        var np = ps.slice(); np[idx2] = p; setPs(np); fireOnMoveToHandEffect(hCard); return;
+      }
+    }
   }
 
   function binCard(card, p) {
@@ -10971,11 +10995,17 @@ function RiftboundGame() {
                 var hi = scHistLen - 1 - ri;
                 var hImg = hc.img ? imgSrc(hc.img) : "";
                 var isHovered = scHovIdx === hi;
-                return <div key={hc.uid + "-" + hi} data-uid={hc.uid} className={getAnimType(hc.uid) === "flash" ? "anim-flash" : ""} onMouseEnter={function() { setScHovIdx(hi); }} style={{ width: isHovered ? scCardW : scPeek, height: scCardH, flexShrink: 0, borderRadius: 6, overflow: "hidden", border: isHovered ? "2px solid #FFD700" : "1.5px solid #FFD70044", boxShadow: isHovered ? "0 4px 20px #000c" : "0 2px 6px #000a", cursor: "pointer", transition: "width 0.2s ease, border 0.15s ease, box-shadow 0.15s ease", zIndex: ri + 1 }}>
-                  {hImg ? <img src={hImg} style={{ width: scCardW, height: scCardH, objectFit: "fill", display: "block" }} /> : <div style={{ width: scCardW, height: scCardH, background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#FFD700" }}>{hc.name}</div>}
+                var _ownsHist = (hc._caster && hc._caster === myUid) || (!hc._caster && showcaseOwner === myUid);
+                var _draggableHist = !autoMode && _ownsHist && canMoveOwn;
+                return <div key={hc.uid + "-" + hi} data-uid={hc.uid} className={getAnimType(hc.uid) === "flash" ? "anim-flash" : ""} draggable={_draggableHist} onDragStart={_draggableHist ? function(e) { e.dataTransfer.setData("text/plain", "showcase:" + hc.uid); } : undefined} onMouseEnter={function() { setScHovIdx(hi); }} style={{ position: "relative", width: isHovered ? scCardW : scPeek, height: scCardH, flexShrink: 0, borderRadius: 6, overflow: "visible", border: isHovered ? "2px solid #FFD700" : "1.5px solid #FFD70044", boxShadow: isHovered ? "0 4px 20px #000c" : "0 2px 6px #000a", cursor: _draggableHist ? "grab" : "pointer", transition: "width 0.2s ease, border 0.15s ease, box-shadow 0.15s ease", zIndex: ri + 1 }}>
+                  <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: 6 }}>
+                    {hImg ? <img src={hImg} style={{ width: scCardW, height: scCardH, objectFit: "fill", display: "block" }} /> : <div style={{ width: scCardW, height: scCardH, background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#FFD700" }}>{hc.name}</div>}
+                  </div>
+                  {_ownsHist && hc.type !== "Spell" && isHovered && <button onClick={function(e) { e.stopPropagation(); var idx = myActIdx; var _me = ps[idx]; if (_me) { var p = Object.assign({}, _me, { trash: (_me.trash || []).slice() }); p.trash.push(Object.assign({}, hc, { exhausted: false, gear: [] })); var np = ps.slice(); np[idx] = p; setPs(np); aL(pName(idx) + " bins " + cName(hc)); if (sd) markSdActed(); } setShowcaseHistory(function(prev) { return prev.filter(function(_, _i) { return _i !== hi; }); }); }} style={{ position: "absolute", bottom: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.75)", color: "#ffaaaa", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 4 }}>🗑</button>}
                 </div>;
               })}
-              <div data-uid={showcaseCard.uid} className={getAnimType(showcaseCard.uid) === "flash" ? "anim-flash" : ""} onMouseEnter={function() { setScHovIdx(-1); }} style={{ position: "relative", cursor: drawingArrow ? "crosshair" : "default", width: scCardW, height: scCardH, flexShrink: 0, overflow: "visible", zIndex: scHistLen + 2, borderRadius: 6, boxShadow: autoMode ? "0 0 28px rgba(255,215,0,0.7), 0 0 56px rgba(255,215,0,0.4), 0 0 90px rgba(255,140,0,0.25)" : undefined }}>
+              {(function() { var _ownsMain = showcaseOwner === myUid; var _draggableMain = !autoMode && _ownsMain && canMoveOwn; return (
+              <div data-uid={showcaseCard.uid} className={getAnimType(showcaseCard.uid) === "flash" ? "anim-flash" : ""} draggable={_draggableMain} onDragStart={_draggableMain ? function(e) { e.dataTransfer.setData("text/plain", "showcase:" + showcaseCard.uid); } : undefined} onMouseEnter={function() { setScHovIdx(-1); }} style={{ position: "relative", cursor: drawingArrow ? "crosshair" : (_draggableMain ? "grab" : "default"), width: scCardW, height: scCardH, flexShrink: 0, overflow: "visible", zIndex: scHistLen + 2, borderRadius: 6, boxShadow: autoMode ? "0 0 28px rgba(255,215,0,0.7), 0 0 56px rgba(255,215,0,0.4), 0 0 90px rgba(255,140,0,0.25)" : undefined }}>
                 <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: 6 }}>
                   {showcaseCard.img ? <img src={imgSrc(showcaseCard.img)} onError={function(e) { if (PA[showcaseCard.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[showcaseCard.name] + ".webp"; } }} style={{ width: "100%", height: "100%", objectFit: "fill", display: "block" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 16, fontFamily: "Spectral,serif", border: "1px solid #ffffff20", textAlign: "center", padding: 8 }}>{showcaseCard.name}</div>}
                 </div>
@@ -10984,7 +11014,7 @@ function RiftboundGame() {
                 {showcaseOwner === myUid && showcaseCard.type !== "Spell" && <button onClick={function(e) { e.stopPropagation(); var idx = myActIdx; var _me = ps[idx]; if (_me) { var p = Object.assign({}, _me, { trash: (_me.trash || []).slice() }); p.trash.push(Object.assign({}, showcaseCard, { exhausted: false, gear: [] })); var np = ps.slice(); np[idx] = p; setPs(np); aL(pName(idx) + " bins " + cName(showcaseCard)); if (sd) markSdActed(); } if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false); setShowcaseAcceptors({}); setShowcasePriority(null); setShowcaseActed(false); } }} style={{ position: "absolute", bottom: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.75)", color: "#ffaaaa", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>🗑</button>}
                 {showcaseCard.type !== "Spell" && <button onClick={function(e) { e.stopPropagation(); startArrow(showcaseCard.uid); }} style={{ position: "absolute", top: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #3B82F688", background: "rgba(59,130,246,0.75)", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>↗</button>}
                 {showcaseCard.type !== "Spell" && cardHasArrow(showcaseCard.uid) && <button onClick={function(e) { e.stopPropagation(); removeArrow(showcaseCard.uid); }} style={{ position: "absolute", top: -8, left: 22, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(200,40,40,0.85)", color: "#fff", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, fontWeight: 700, zIndex: 3 }}>✕</button>}
-              </div>
+              </div>); })()}
             </div>
           </div>;
         })() : <div style={{ width: Math.round(258 * vScale), height: Math.round(361 * vScale) }} />}
