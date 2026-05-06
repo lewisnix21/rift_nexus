@@ -5386,7 +5386,11 @@ function RiftboundGame() {
       setSd(state.sd || null);
       if (state.win !== undefined) setWin(state.win);
       _lastSyncVersion.current = state.ver || 0;
-      setTimeout(function() { _isReceivingSync.current = false; }, 500);
+      // Was 500ms — that pinned the flag true across rapid 4-player receives and swallowed
+      // user actions, so plays vanished. setTimeout(0) is long enough for React to flush the
+      // receive's setStates (so auto-sync bails and doesn't echo) and short enough that
+      // subsequent user actions still trigger a sync.
+      setTimeout(function() { _isReceivingSync.current = false; }, 0);
     });
     return function() { ref.off("value", handler); };
   }, [roomCode, lobbyType]);
