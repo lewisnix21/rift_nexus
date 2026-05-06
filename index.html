@@ -5280,6 +5280,15 @@ function RiftboundGame() {
   var _ghostAfterFnRef = useRef(null);
   var _readyGhostAnim = useState(null), readyGhostAnim = _readyGhostAnim[0], setReadyGhostAnim = _readyGhostAnim[1];
   var _pendingZonePlay = useState(null), pendingZonePlay = _pendingZonePlay[0], setPendingZonePlay = _pendingZonePlay[1];
+  // Cursor position while a card is "carried" (click-to-attach play flow). Updated by a window-level
+  // mousemove listener that's only active while pendingZonePlay is set.
+  var _pendingCursor = useState({ x: 0, y: 0 }), pendingCursor = _pendingCursor[0], setPendingCursor = _pendingCursor[1];
+  useEffect(function() {
+    if (!pendingZonePlay) return;
+    var handler = function(e) { setPendingCursor({ x: e.clientX, y: e.clientY }); };
+    window.addEventListener("mousemove", handler);
+    return function() { window.removeEventListener("mousemove", handler); };
+  }, [pendingZonePlay]);
   // Hovered hand card (auto-mode only). Used by rune rendering to highlight which runes
   // would be tapped (light-blue) vs recycled (red) to pay the cost of the hovered card.
   var _hoveredHandCard = useState(null), hoveredHandCard = _hoveredHandCard[0], setHoveredHandCard = _hoveredHandCard[1];
@@ -9248,6 +9257,58 @@ function RiftboundGame() {
     markShowcaseActed();
   }
 
+  // Cast a spell from hand by routing it to the showcase. Called when the player drops a
+  // carried spell on the showcase via the click-to-attach play flow. Mirrors the inline
+  // FannedHand cast logic: pays cost in autoMode/autoPay, runs ghost animation in autoMode,
+  // pushes the spell to the showcase and arms the resolve gate.
+  function castSpellFromHand(c, srcRect) {
+    if (autoMode && !canPlayCard(c)) return;
+    var idx = myActIdx;
+    var _me = ps[idx]; if (!_me) return;
+    var sp = Object.assign({}, _me, { hand: _me.hand.filter(function(h) { return h.uid !== c.uid; }) });
+    if (autoMode || autoPay) {
+      var rcN = (c.rc || []).slice();
+      var eN = c.energy || 0;
+      var _hasEager = (_me.base || []).some(function(u) { return u.name === "Eager Apprentice"; }) || bfs.some(function(b) { return ((b.units && b.units[idx]) || []).some(function(u) { return u.name === "Eager Apprentice"; }); });
+      if (_hasEager && eN > 1) eN--;
+      var _xEnergy = _extraEnergyRef.current;
+      if (_xEnergy > 0) { _extraEnergyRef.current = 0; eN = Math.max(0, eN - _xEnergy); }
+      var aR = _me.runes.slice();
+      var recUids = [];
+      rcN.forEach(function(dom) {
+        var f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0 && r.exhausted; });
+        if (!f) f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0; });
+        if (f) { recUids.push(f.uid); if (eN > 0) eN--; }
+      });
+      var tapUids = [];
+      if (eN > 0) {
+        var av = aR.filter(function(r) { return !r.exhausted && recUids.indexOf(r.uid) < 0; });
+        av.slice(0, eN).forEach(function(r) { tapUids.push(r.uid); });
+      }
+      sp.runes = _me.runes.filter(function(r) { return recUids.indexOf(r.uid) < 0; }).map(function(r) { return tapUids.indexOf(r.uid) >= 0 ? Object.assign({}, r, { exhausted: true }) : r; });
+      sp.runeDeck = shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); })));
+    }
+    var np = ps.slice(); np[idx] = sp; setPs(np);
+    if (autoMode) {
+      var _scCardW = Math.round(258 * vScale);
+      var _scCardH = Math.round(361 * vScale);
+      var _vw = (typeof window !== "undefined") ? window.innerWidth : 1920;
+      var _vh = (typeof window !== "undefined") ? window.innerHeight : 1080;
+      var fromX = srcRect ? (srcRect.left + srcRect.width / 2) : (_vw / 2);
+      var fromY = srcRect ? (srcRect.top + srcRect.height / 2) : (_vh / 2);
+      setEffectAnim({ sourceCard: c, fromX: fromX, fromY: fromY, toX: _vw - _vw * 0.02 - _scCardW / 2, toY: _vh * 0.5, w: _scCardW, h: _scCardH, ts: Date.now(), arrived: false, expanding: true });
+      setTimeout(function() { setEffectAnim(function(prev) { return prev ? Object.assign({}, prev, { expanding: false }) : prev; }); }, 30);
+      setTimeout(function() { setEffectAnim(function(prev) { return prev ? Object.assign({}, prev, { arrived: true }) : prev; }); }, 50);
+      setTimeout(function() { setEffectAnim(null); pushShowcase(c); aL(pName(idx) + " casts " + cName(c)); setPendingSpell(c); setResolveAcceptors({}); }, 1000);
+    } else {
+      pushShowcase(c);
+      aL(pName(idx) + " casts " + cName(c));
+      setPendingSpell(c);
+      setResolveAcceptors({});
+    }
+    if (sd) markSdActed();
+  }
+
   function confirmPlay() {
     var idx = myActIdx;
     var _me = ps[idx]; if (!_me) return;
@@ -9823,10 +9884,12 @@ function RiftboundGame() {
             React.createElement("img", { src: CARD_BACK, style: { width: "100%", height: "100%", objectFit: "fill" } })
           );
         }
-        var isDraggable2 = !isEnemy && canMoveOwn && !tm && !fc;
         var _handAct = (canMoveOwn && !tm && !fc && !c.hidden && playable) ? (c.type === "Spell" ? "Cast" : "Play") : undefined;
-        // Hand card positioning matches auto-mode in both modes — same overlap, transitions, and CSS hover lift.
-        return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover auto-hand-card" + animCls, draggable: isDraggable2, onDragStart: isDraggable2 ? function(e) { e.dataTransfer.setData("text/plain", "hand:" + c.uid); setDragUnit(c); } : undefined, onDragEnd: function() { setDragUnit(null); }, onClick: (canMoveOwn && playable) ? function() { if (tm || fc) return; if (c.type === "Unit" || c.type === "Champion" || c.type === "Gear") { onPlay(c); } else if (c.type === "Spell") { if (showcaseCard && showcaseCard.uid === c.uid) { setShowcaseCard(null); } else { if (autoMode && !canPlayCard(c)) return; var idx = myActIdx; var _me = ps[idx]; if (_me) { var sp = Object.assign({}, _me, { hand: _me.hand.filter(function(h) { return h.uid !== c.uid; }) }); if (autoMode || autoPay) { var rcN = (c.rc || []).slice(); var eN = c.energy || 0; var _hasEager = (_me.base || []).some(function(u){return u.name==="Eager Apprentice";})||bfs.some(function(b){return((b.units&&b.units[idx])||[]).some(function(u){return u.name==="Eager Apprentice";});}); if(_hasEager&&eN>1)eN--; var _xEnergy=_extraEnergyRef.current; if(_xEnergy>0){_extraEnergyRef.current=0;eN=Math.max(0,eN-_xEnergy);} var aR = _me.runes.slice(); var recUids = []; rcN.forEach(function(dom) { var f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0 && r.exhausted; }); if (!f) f = aR.find(function(r) { return r.domain === dom && recUids.indexOf(r.uid) < 0; }); if (f) { recUids.push(f.uid); if (eN > 0) eN--; } }); var tapUids = []; if (eN > 0) { var av = aR.filter(function(r) { return !r.exhausted && recUids.indexOf(r.uid) < 0; }); av.slice(0, eN).forEach(function(r) { tapUids.push(r.uid); }); } sp.runes = _me.runes.filter(function(r) { return recUids.indexOf(r.uid) < 0; }).map(function(r) { return tapUids.indexOf(r.uid) >= 0 ? Object.assign({}, r, { exhausted: true }) : r; }); sp.runeDeck = shuffle(_me.runeDeck.concat(_me.runes.filter(function(r) { return recUids.indexOf(r.uid) >= 0; }).map(function(r) { return Object.assign({}, r, { exhausted: false }); }))); } var np = ps.slice(); np[idx] = sp; setPs(np); if (autoMode) { var _srcRect = e.currentTarget.getBoundingClientRect(); var _scCardW = Math.round(258 * vScale); var _scCardH = Math.round(361 * vScale); var _vw = (typeof window !== "undefined") ? window.innerWidth : 1920; var _vh = (typeof window !== "undefined") ? window.innerHeight : 1080; setEffectAnim({ sourceCard: c, fromX: _srcRect.left + _srcRect.width / 2, fromY: _srcRect.top + _srcRect.height / 2, toX: _vw - _vw * 0.02 - _scCardW / 2, toY: _vh * 0.5, w: _scCardW, h: _scCardH, ts: Date.now(), arrived: false, expanding: true }); setTimeout(function() { setEffectAnim(function(prev) { return prev ? Object.assign({}, prev, { expanding: false }) : prev; }); }, 30); setTimeout(function() { setEffectAnim(function(prev) { return prev ? Object.assign({}, prev, { arrived: true }) : prev; }); }, 50); setTimeout(function() { setEffectAnim(null); pushShowcase(c); aL(pName(idx) + " casts " + cName(c)); setPendingSpell(c); setResolveAcceptors({}); }, 1000); } else { pushShowcase(c); aL(pName(idx) + " casts " + cName(c)); setPendingSpell(c); setResolveAcceptors({}); } } } if (sd) markSdActed(); } } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { setHandHovIdx(i); if (autoMode) setHoveredHandCard(c); }, onMouseLeave: function() { setHandCtxUid(null); }, style: { width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: (autoMode && playable) ? "3px solid #3b82f6" : "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + "20"), flexShrink: 0, cursor: isDraggable2 ? "grab" : "pointer", transform: "rotate(" + rot + "deg) translateY(" + ty + "px)", transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -45 : total > 5 ? -24 : 0), transition: "transform 200ms ease-out, box-shadow 0.2s ease, border 0.15s ease, filter 200ms ease-out", position: "relative", zIndex: i === handHovIdx ? 998 : i, boxShadow: (autoMode && playable) ? "0 0 22px rgba(59,130,246,1), 0 0 44px rgba(59,130,246,0.65), 0 4px 16px #000a" : "0 4px 16px #000a", opacity: 1, pointerEvents: "auto" } },
+        // Click-to-attach play flow: clicking a playable hand card "carries" it on the cursor
+        // (via pendingZonePlay). The next click on a valid drop target plays/casts the card.
+        // Hand cards are no longer draggable — drag-and-drop has been replaced by this flow.
+        var _isCarried = !!(pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.uid === c.uid);
+        return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover auto-hand-card" + animCls, draggable: false, onClick: (canMoveOwn && playable) ? function(e) { if (tm || fc) return; if (e && e.stopPropagation) e.stopPropagation(); if (_isCarried) { setPendingZonePlay(null); return; } if (e && e.clientX !== undefined) setPendingCursor({ x: e.clientX, y: e.clientY }); onPlay(c); if (sd) markSdActed(); } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { setHandHovIdx(i); if (autoMode) setHoveredHandCard(c); }, onMouseLeave: function() { setHandCtxUid(null); }, style: { width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: _isCarried ? "3px solid #FFD700" : ((autoMode && playable) ? "3px solid #3b82f6" : "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + "20")), flexShrink: 0, cursor: "pointer", transform: "rotate(" + rot + "deg) translateY(" + ty + "px)", transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -45 : total > 5 ? -24 : 0), transition: "transform 200ms ease-out, box-shadow 0.2s ease, border 0.15s ease, filter 200ms ease-out", position: "relative", zIndex: i === handHovIdx ? 998 : i, boxShadow: _isCarried ? "0 0 24px rgba(255,215,0,0.85), 0 4px 16px #000a" : ((autoMode && playable) ? "0 0 22px rgba(59,130,246,1), 0 0 44px rgba(59,130,246,0.65), 0 4px 16px #000a" : "0 4px 16px #000a"), opacity: _isCarried ? 0.45 : 1, pointerEvents: "auto" } },
           c.hidden ? React.createElement("img", { src: CARD_BACK, style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : (c.img ? React.createElement("img", { src: imgSrc(c.img), style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : React.createElement("div", { style: { width: "100%", height: "100%", background: "linear-gradient(180deg," + (DOM[c.domain] || DOM.Colorless).c + "15,#0a0a18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#666", padding: 4, textAlign: "center" } }, c.name)),
           handCtxUid === c.uid ? React.createElement("button", { onClick: function(e) { e.stopPropagation(); toggleHide(c.uid); setHandCtxUid(null); }, style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 10, padding: "4px 12px", borderRadius: 4, border: "1.5px solid #ffffff40", background: "rgba(20,20,50,0.92)", color: "#ddd", fontSize: 12, cursor: "pointer", fontFamily: "Spectral,serif", fontWeight: 700, boxShadow: "0 4px 12px #000a", whiteSpace: "nowrap" } }, c.hidden ? "Reveal" : "Hide") : null
         );
@@ -10402,7 +10465,7 @@ function RiftboundGame() {
               var isSdBf = sd && sd.bfIdx === bi;
               // Auto-mode: when a base card is "picked up" (click-to-attach), every BF zone glows gold and is clickable to deploy.
               var isAutoBfTarget = autoMode && !!baseCardSelected;
-              var isPendingZoneBF = !!pendingZonePlay && (bf.units[myActIdx] || []).length > 0;
+              var isPendingZoneBF = !!pendingZonePlay && pendingZonePlay.card && (pendingZonePlay.card.type === "Unit" || pendingZonePlay.card.type === "Champion");
               // BF zone uses the auto-mode horizontal layout in both modes (manual mode previously used a
               // rotated absolute layout — kept identical visual treatment so card abilities don't fire in manual).
               var _bfTint = bfImg ? bfAvgColors[bfImg] : null;
@@ -10476,7 +10539,7 @@ function RiftboundGame() {
               onDragEnter={canMoveOwn && !tm && !fc ? function(e) { e.preventDefault(); if (!dragUnit || (dragUnit.type !== "Spell")) setDragOverBase(true); } : undefined}
               onDragLeave={function() { setDragOverBase(false); }}
               onDrop={canMoveOwn && !tm && !fc ? function(e) { e.preventDefault(); setDragOverBase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; if (type === "gear") { detachGear(uid2); } else if (type === "bf" || type === "bin") { returnToBase(uid2); } else { var card = null; if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } if (card && (card.type === "Unit" || card.type === "Champion" || card.type === "Gear")) { if (type === "champ" && (card.energy === 0 || card.energy === null)) { playChampionToBase(); } else { openPlay(card); } } } } : undefined}
-              onClick={pendingZonePlay ? function(e) { e.stopPropagation(); var _pzc = pendingZonePlay.card; setPendingZonePlay(null); openPlay(_pzc); } : undefined}
+              onClick={pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.type !== "Spell" ? function(e) { e.stopPropagation(); var _pzc = pendingZonePlay.card; setPendingZonePlay(null); openPlay(_pzc); } : undefined}
               style={{ display: "flex", flexDirection: "row", gap: 3, padding: "3px 4px", borderRadius: 6, border: dragOverBase ? "2px solid #ffffff" : (pendingZonePlay ? "2.5px solid #FFD700" : "1.5px solid #ffffff35"), background: dragOverBase ? "rgba(255,255,255,0.06)" : (pendingZonePlay ? "rgba(255,215,0,0.10)" : "transparent"), boxShadow: dragOverBase ? "0 0 16px rgba(255,255,255,0.15), inset 0 0 16px rgba(255,255,255,0.04)" : (pendingZonePlay ? "0 0 22px rgba(255,215,0,0.55), inset 0 0 18px rgba(255,215,0,0.12)" : "none"), alignItems: "center", flexWrap: "nowrap", flex: 9, height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H, overflow: "hidden", cursor: pendingZonePlay ? "pointer" : "default", transition: "border 0.15s ease, background 0.15s ease, box-shadow 0.15s ease", position: "relative", zIndex: pendingZonePlay ? 2 : undefined }}>
               <div style={{ fontSize: 13, color: "#ffffff55", fontFamily: "Spectral,serif", letterSpacing: 1 }}>BASE</div>
               {myCur.base.map(function(u) {
@@ -10499,7 +10562,7 @@ function RiftboundGame() {
             <div style={{ position: "fixed", bottom: -Math.round(HAND_H * 1.5 * 0.35), left: 0, right: autoMode ? 0 : Math.round(250 * vScale), display: "flex", justifyContent: "center", alignItems: "flex-end", overflow: "visible", zIndex: 950, pointerEvents: autoMode ? "none" : undefined, "--hand-ah": Math.round(HAND_H * 1.5) + "px" }}
               onDragOver={canMoveOwn ? function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } : undefined}
               onDrop={canMoveOwn ? function(e) { e.preventDefault(); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var uid2 = parts.length > 1 ? parts[1] : parts[0]; returnToHand(uid2); } : undefined}>
-              <FannedHand hand={handSort === "type" ? myCur.hand.slice().sort(function(a, b) { var order = { Champion: 0, Unit: 1, Gear: 2, Spell: 3 }; return (order[a.type] || 9) - (order[b.type] || 9); }) : handSort === "energy" ? myCur.hand.slice().sort(function(a, b) { return (a.energy || 0) - (b.energy || 0); }) : myCur.hand} isEnemy={false} onPlay={function(card) { if (card.type !== "Unit" && card.type !== "Champion" && card.type !== "Gear") { openPlay(card); return; } var _ctrlBfs = bfs.filter(function(b) { return (b.units[myActIdx] || []).length > 0; }); if (_ctrlBfs.length === 0) { openPlay(card); return; } setPendingZonePlay({ card: card }); }} onZoom={setZoom} />
+              <FannedHand hand={handSort === "type" ? myCur.hand.slice().sort(function(a, b) { var order = { Champion: 0, Unit: 1, Gear: 2, Spell: 3 }; return (order[a.type] || 9) - (order[b.type] || 9); }) : handSort === "energy" ? myCur.hand.slice().sort(function(a, b) { return (a.energy || 0) - (b.energy || 0); }) : myCur.hand} isEnemy={false} onPlay={function(card) { setPendingZonePlay({ card: card }); }} onZoom={setZoom} />
             </div>
             {!autoMode && <div style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", display: "flex", gap: 3, alignItems: "flex-start", padding: "4px 2px", zIndex: 960 }}>
               {/* Main deck (non-auto) */}
@@ -10642,6 +10705,7 @@ function RiftboundGame() {
           {/* Showcase zone - fixed */}
           <div
             className={sd && isOnlineGame && autoMode ? "anim-sd-pulse" : ""}
+            onClick={pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.type === "Spell" ? function(e) { e.stopPropagation(); var _pzc = pendingZonePlay.card; setPendingZonePlay(null); castSpellFromHand(_pzc, null); } : undefined}
             onDragOver={function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; if (!dragOverShowcase) setDragOverShowcase(true); }}
             onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverShowcase(false); }}
             onDrop={function(e) { e.preventDefault(); e.stopPropagation(); setDragOverShowcase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; var card = null; if (myCur) { if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } else if (type === "base") { card = myCur.base.find(function(c) { return c.uid === uid2; }); } else if (type === "bf") { for (var bk = 0; bk < bfs.length; bk++) { var uArr = bfs[bk].units[myActIdx]; if (!uArr) continue; var found = uArr.find(function(u) { return u.uid === uid2; }); if (found) { card = found; break; } } } else if (type === "bin") { card = (myCur.trash || []).find(function(c) { return c.uid === uid2; }); } } if (card) { pushShowcase(card); if (card.type === "Spell") { setPendingSpell(card); setResolveAcceptors({}); } } }}
@@ -10754,6 +10818,16 @@ function RiftboundGame() {
         </div>;
       })()}
       {pendingZonePlay && <div onClick={function() { setPendingZonePlay(null); }} style={{ position: "fixed", inset: 0, zIndex: 1, pointerEvents: "auto", background: "transparent" }} />}
+      {/* Click-to-attach play flow: card ghost follows the cursor while a hand card is "carried". */}
+      {pendingZonePlay && pendingZonePlay.card && (function() {
+        var _c = pendingZonePlay.card;
+        var _w = HAND_W;
+        var _h = HAND_H;
+        var _img = _c.img ? imgSrc(_c.img) : (CI[_c.name] ? imgSrc(CI[_c.name]) : (PA[_c.name] ? PA_CDN + PA[_c.name] + ".webp" : ""));
+        return <div style={{ position: "fixed", left: pendingCursor.x - _w / 2, top: pendingCursor.y - _h / 2, width: _w, height: _h, pointerEvents: "none", zIndex: 1600, borderRadius: 6, overflow: "hidden", border: "2px solid #FFD700", boxShadow: "0 0 22px rgba(255,215,0,0.8), 0 8px 24px #000c", opacity: 0.92, transition: "left 60ms linear, top 60ms linear" }}>
+          {_img ? <img src={_img} style={{ width: "100%", height: "100%", objectFit: "fill", display: "block" }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 11, padding: 4, textAlign: "center" }}>{_c.name}</div>}
+        </div>;
+      })()}
       {/* entersReady ghost animation — card slides to showcase, pulses, slides back, then readies */}
       {readyGhostAnim && (function() {
         var rg = readyGhostAnim;
@@ -10778,7 +10852,8 @@ function RiftboundGame() {
         </div>;
       })()}
       {/* Floating showcase (right side, no border) — auto mode only; manual uses the paneled showcase */}
-      {autoMode && (showcaseCard || dragOverShowcase) && <div className={sd ? "anim-sd-pulse" : ""}
+      {autoMode && (showcaseCard || dragOverShowcase || (pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.type === "Spell")) && <div className={sd ? "anim-sd-pulse" : ""}
+        onClick={pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.type === "Spell" ? function(e) { e.stopPropagation(); var _pzc = pendingZonePlay.card; setPendingZonePlay(null); castSpellFromHand(_pzc, null); } : undefined}
         onDragOver={function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; if (!dragOverShowcase) setDragOverShowcase(true); }}
         onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverShowcase(false); }}
         onDrop={function(e) { e.preventDefault(); e.stopPropagation(); setDragOverShowcase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; var card = null; if (myCur) { if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } else if (type === "base") { card = myCur.base.find(function(c) { return c.uid === uid2; }); } else if (type === "bf") { for (var bk = 0; bk < bfs.length; bk++) { var uArr = bfs[bk].units[myActIdx]; if (!uArr) continue; var found = uArr.find(function(u) { return u.uid === uid2; }); if (found) { card = found; break; } } } else if (type === "bin") { card = (myCur.trash || []).find(function(c) { return c.uid === uid2; }); } } if (card) { if (type === "hand" && card.type === "Spell") { var _idx = myActIdx; setPs(function(prev) { var p = prev[_idx]; if (!p) return prev; var np = prev.slice(); np[_idx] = Object.assign({}, p, { hand: p.hand.filter(function(h) { return h.uid !== card.uid; }) }); return np; }); aL(pName(_idx) + " casts " + cName(card)); } pushShowcase(card); if (card.type === "Spell") { setPendingSpell(card); setResolveAcceptors({}); } } }}
