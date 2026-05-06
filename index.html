@@ -10906,12 +10906,14 @@ function RiftboundGame() {
                 </select>
               </div>
             </div>
-            {/* Hand wrapper — z-index 980 sits above the avatar (970) so a hovered hand card scales up over the avatar instead of being clipped behind it. */}
-            <div style={{ position: "fixed", bottom: -Math.round(HAND_H * 1.5 * 0.35), left: 0, right: 0, display: "flex", justifyContent: "center", alignItems: "flex-end", overflow: "visible", zIndex: 980, pointerEvents: autoMode ? "none" : undefined, "--hand-ah": Math.round(HAND_H * 1.5) + "px" }}
-              onDragOver={canMoveOwn ? function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } : undefined}
-              onDrop={canMoveOwn ? function(e) { e.preventDefault(); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var uid2 = parts.length > 1 ? parts[1] : parts[0]; returnToHand(uid2); } : undefined}
-              onClick={!autoMode && pendingZonePlay && pendingZonePlay.card ? function(e) { if (pendingZonePlay.fromBf !== undefined || pendingZonePlay.fromBase) { returnToHand(pendingZonePlay.card.uid); } setPendingZonePlay(null); } : undefined}>
-              <FannedHand hand={handSort === "type" ? myCur.hand.slice().sort(function(a, b) { var order = { Champion: 0, Unit: 1, Gear: 2, Spell: 3 }; return (order[a.type] || 9) - (order[b.type] || 9); }) : handSort === "energy" ? myCur.hand.slice().sort(function(a, b) { return (a.energy || 0) - (b.energy || 0); }) : myCur.hand} isEnemy={false} onPlay={function(card) { if (pendingZonePlay && pendingZonePlay.card && (pendingZonePlay.fromBf !== undefined || pendingZonePlay.fromBase)) { returnToHand(pendingZonePlay.card.uid); setPendingZonePlay(null); return; } setPendingZonePlay({ card: card }); }} onZoom={setZoom} />
+            {/* Hand wrapper — z-index 980 sits above the avatar (970) so a hovered hand card scales up over the avatar instead of being clipped behind it. The OUTER fixed wrapper is pointer-events:none so it doesn't intercept clicks on the deck/bin/token piles or the rune/champion/legend piles that share the bottom band of the viewport; the INNER wrapper around the FannedHand re-enables pointer events for the actual hand drop/click target (drag-to-hand return + carry cancel). */}
+            <div style={{ position: "fixed", bottom: -Math.round(HAND_H * 1.5 * 0.35), left: 0, right: 0, display: "flex", justifyContent: "center", alignItems: "flex-end", overflow: "visible", zIndex: 980, pointerEvents: "none", "--hand-ah": Math.round(HAND_H * 1.5) + "px" }}>
+              <div style={{ pointerEvents: autoMode ? "none" : "auto", display: "flex", alignItems: "flex-end" }}
+                onDragOver={canMoveOwn ? function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } : undefined}
+                onDrop={canMoveOwn ? function(e) { e.preventDefault(); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var uid2 = parts.length > 1 ? parts[1] : parts[0]; returnToHand(uid2); } : undefined}
+                onClick={!autoMode && pendingZonePlay && pendingZonePlay.card ? function(e) { if (pendingZonePlay.fromBf !== undefined || pendingZonePlay.fromBase) { returnToHand(pendingZonePlay.card.uid); } setPendingZonePlay(null); } : undefined}>
+                <FannedHand hand={handSort === "type" ? myCur.hand.slice().sort(function(a, b) { var order = { Champion: 0, Unit: 1, Gear: 2, Spell: 3 }; return (order[a.type] || 9) - (order[b.type] || 9); }) : handSort === "energy" ? myCur.hand.slice().sort(function(a, b) { return (a.energy || 0) - (b.energy || 0); }) : myCur.hand} isEnemy={false} onPlay={function(card) { if (pendingZonePlay && pendingZonePlay.card && (pendingZonePlay.fromBf !== undefined || pendingZonePlay.fromBase)) { returnToHand(pendingZonePlay.card.uid); setPendingZonePlay(null); return; } setPendingZonePlay({ card: card }); }} onZoom={setZoom} />
+              </div>
             </div>
           </div>{/* end ROW 5 */}
           </div>{/* end PLAYER ZONE wrapper */}
