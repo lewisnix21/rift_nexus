@@ -4561,11 +4561,15 @@ function PlayerAvatar({ photoURL, name, score, xp, scoreMax, size, isActive, isM
   var textPad = 18;
   var svgW = 2 * arcR + 4;
   var svgH = arcR + textPad + 4;
-  // sweep flag 1 always curves the arc *toward* the SVG's interior; we just choose
-  // which edge of the SVG holds the chord.
+  // Player (frown above): sweep flag 1, chord at the SVG's bottom edge — arc
+  // curves up via the top, putting the name above the circle.
+  // Enemy (smile below): sweep flag 0, chord at the SVG's top edge — arc curves
+  // down via the bottom, putting the name below the circle. (Same chord
+  // direction as the player but opposite sweep flag, otherwise both arcs would
+  // bulge through the same SVG edge regardless of where the chord sits.)
   var arcD, svgTop;
   if (flipped) {
-    arcD = "M 2 " + textPad + " A " + arcR + " " + arcR + " 0 0 1 " + (svgW - 2) + " " + textPad;
+    arcD = "M 2 " + textPad + " A " + arcR + " " + arcR + " 0 0 0 " + (svgW - 2) + " " + textPad;
     svgTop = size / 2 - textPad;
   } else {
     arcD = "M 2 " + (textPad + arcR) + " A " + arcR + " " + arcR + " 0 0 1 " + (svgW - 2) + " " + (textPad + arcR);
