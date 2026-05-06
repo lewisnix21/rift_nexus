@@ -5109,6 +5109,7 @@ function RiftboundGame() {
   var _chatInput = useState(""), chatInput = _chatInput[0], setChatInput = _chatInput[1];
   var chatRef = useRef(null);
   var _ltype = useState(null), lobbyType = _ltype[0], setLobbyType = _ltype[1];
+  var _profMenu = useState(false), profileMenuOpen = _profMenu[0], setProfileMenuOpen = _profMenu[1];
   var _lmode = useState(null), lobbyMode = _lmode[0], setLobbyMode = _lmode[1];
   var _lfilter = useState("all"), lobbyFilter = _lfilter[0], setLobbyFilter = _lfilter[1];
   var _rc = useState(null), roomCode = _rc[0], setRoomCode = _rc[1];
@@ -6118,15 +6119,31 @@ function RiftboundGame() {
     <div style={{ height: "100vh", maxHeight: "100vh", background: "radial-gradient(ellipse at 50% -10%, #3d3d7a 0%, #2c2f5a 32%, #1a1a3a 65%, #121326 100%)", color: "#eaeaf0", fontFamily: "Inter,sans-serif", display: "flex", flexDirection: "column", alignItems: "center", overflow: "hidden", padding: 0, position: "relative" }}>
       <div className="home-bg-particles" />
       {/* Top header bar */}
-      <div style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "10px 20px", background: "linear-gradient(180deg, rgba(255,215,0,0.08), rgba(255,215,0,0.02))", borderBottom: "1px solid #FFD70033", marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.3)", position: "relative", zIndex: 1 }}>
+      <div style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "10px 20px", background: "linear-gradient(180deg, rgba(255,215,0,0.05), rgba(255,215,0,0.01))", borderBottom: "1px solid #FFD70022", boxShadow: "0 2px 12px rgba(0,0,0,0.3)", position: "relative", zIndex: 2 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {authUser && <span style={{ fontSize: 16, color: "#4ADE80", fontFamily: "Inter,sans-serif", fontWeight: 700, marginRight: 4 }}>{authUser.displayName || authUser.email}</span>}
-          <button onClick={function() { if (authUser) { setDbView("list"); setScreen("deckbuilder"); } else { setAuthScreen("login"); setAuthErr("Sign in or create an account to save and manage your decks."); } }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 5, border: "1px solid #8B5CF655", background: "rgba(139,92,246,0.06)", color: "#8B5CF6", cursor: "pointer", fontSize: 15, fontFamily: "Inter,sans-serif", fontWeight: 700 }}><span style={{ fontSize: 18 }}>🂠</span>My Decks</button>
-          {authUser ? <>
-            <button onClick={function() { signOutUser(function() { setAuthUser(null); }); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 5, border: "1px solid #ff444455", background: "rgba(255,68,68,0.06)", color: "#ff6666aa", cursor: "pointer", fontSize: 15, fontFamily: "Inter,sans-serif" }}><span style={{ fontSize: 18 }}>🚪</span>Log Out</button>
-          </> : <>
-            <button onClick={function() { setAuthScreen("register"); setAuthErr(""); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 5, border: "1px solid #4ADE8055", background: "rgba(74,222,128,0.06)", color: "#4ADE80", cursor: "pointer", fontSize: 15, fontFamily: "Inter,sans-serif", fontWeight: 700 }}><svg width="16" height="16" viewBox="0 0 512 512" fill="currentColor" style={{ flexShrink: 0 }}><path d="M512 32c0 113.6-84.6 207.5-194.2 222c-7.1-53.4-30.6-101.6-65.3-139.3C290.8 46.3 364 0 448 0h32c17.7 0 32 14.3 32 32zM0 96C0 78.3 14.3 64 32 64H64c123.7 0 224 100.3 224 224v32V480c0 17.7-14.3 32-32 32s-32-14.3-32-32V320C100.3 320 0 219.7 0 96z"/></svg>Create Account</button>
-            <button onClick={function() { setAuthScreen("login"); setAuthErr(""); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 5, border: "1px solid #FFD70055", background: "rgba(255,215,0,0.06)", color: "#FFD700", cursor: "pointer", fontSize: 15, fontFamily: "Inter,sans-serif", fontWeight: 700 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>Sign In</button>
+          <button onClick={function() { if (authUser) { setDbView("list"); setScreen("deckbuilder"); } else { setAuthScreen("login"); setAuthErr("Sign in or create an account to save and manage your decks."); } }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 6, border: "1px solid #8B5CF655", background: "rgba(139,92,246,0.06)", color: "#8B5CF6", cursor: "pointer", fontSize: 14, fontFamily: "Inter,sans-serif", fontWeight: 700, transition: "all 200ms ease" }}><span style={{ fontSize: 16 }}>🂠</span>My Decks</button>
+          {authUser ? (function() {
+            var initial = ((authUser.displayName || authUser.email || "?").trim().charAt(0) || "?").toUpperCase();
+            return <div style={{ position: "relative" }}>
+              <button onClick={function() { setProfileMenuOpen(!profileMenuOpen); }} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 10px 5px 5px", borderRadius: 6, border: "1px solid " + (profileMenuOpen ? "#FFD700aa" : "#FFD70033"), background: profileMenuOpen ? "rgba(255,215,0,0.10)" : "rgba(255,255,255,0.02)", color: "#eaeaf0", cursor: "pointer", fontSize: 14, fontFamily: "Inter,sans-serif", fontWeight: 700, transition: "all 200ms ease" }}>
+                <div style={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg, #FFD700cc, #FF8C0088)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, color: "#1a1a2a", fontFamily: "Inter,sans-serif", flexShrink: 0, border: "1.5px solid #FFD700aa", boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>{initial}</div>
+                <span style={{ maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{authUser.displayName || authUser.email}</span>
+                <span style={{ fontSize: 10, color: "#9aa0b5", marginLeft: 2, transition: "transform 200ms ease", transform: profileMenuOpen ? "rotate(180deg)" : "rotate(0deg)" }}>▾</span>
+              </button>
+              {profileMenuOpen && <>
+                <div onClick={function() { setProfileMenuOpen(false); }} style={{ position: "fixed", inset: 0, zIndex: 1100, cursor: "default" }} />
+                <div style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, minWidth: 200, background: "linear-gradient(160deg, #1a1a3a, #12122a)", border: "1px solid #FFD70044", borderRadius: 8, boxShadow: "0 8px 28px rgba(0,0,0,0.55), 0 0 18px rgba(255,215,0,0.12)", padding: 6, zIndex: 1101, fontFamily: "Inter,sans-serif" }}>
+                  <div style={{ padding: "8px 10px 10px", borderBottom: "1px solid rgba(255,255,255,0.06)", marginBottom: 4 }}>
+                    <div style={{ fontSize: 10, color: "#9aa0b5", letterSpacing: 2, fontWeight: 700 }}>SIGNED IN AS</div>
+                    <div style={{ fontSize: 13, color: "#eaeaf0", fontWeight: 700, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{authUser.displayName || authUser.email}</div>
+                  </div>
+                  <button onClick={function() { setProfileMenuOpen(false); signOutUser(function() { setAuthUser(null); }); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "8px 10px", borderRadius: 5, border: "none", background: "transparent", color: "#ff8888", cursor: "pointer", fontSize: 13, fontFamily: "Inter,sans-serif", fontWeight: 600, textAlign: "left", transition: "background 150ms ease" }} onMouseOver={function(e) { e.currentTarget.style.background = "rgba(255,68,68,0.10)"; }} onMouseOut={function(e) { e.currentTarget.style.background = "transparent"; }}><span style={{ fontSize: 14 }}>🚪</span>Log Out</button>
+                </div>
+              </>}
+            </div>;
+          })() : <>
+            <button onClick={function() { setAuthScreen("register"); setAuthErr(""); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 6, border: "1px solid #4ADE8055", background: "rgba(74,222,128,0.06)", color: "#4ADE80", cursor: "pointer", fontSize: 14, fontFamily: "Inter,sans-serif", fontWeight: 700, transition: "all 200ms ease" }}><svg width="14" height="14" viewBox="0 0 512 512" fill="currentColor" style={{ flexShrink: 0 }}><path d="M512 32c0 113.6-84.6 207.5-194.2 222c-7.1-53.4-30.6-101.6-65.3-139.3C290.8 46.3 364 0 448 0h32c17.7 0 32 14.3 32 32zM0 96C0 78.3 14.3 64 32 64H64c123.7 0 224 100.3 224 224v32V480c0 17.7-14.3 32-32 32s-32-14.3-32-32V320C100.3 320 0 219.7 0 96z"/></svg>Create Account</button>
+            <button onClick={function() { setAuthScreen("login"); setAuthErr(""); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 6, border: "1px solid #FFD70055", background: "rgba(255,215,0,0.06)", color: "#FFD700", cursor: "pointer", fontSize: 14, fontFamily: "Inter,sans-serif", fontWeight: 700, transition: "all 200ms ease" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>Sign In</button>
           </>}
         </div>
       </div>
