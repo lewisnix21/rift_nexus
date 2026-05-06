@@ -5113,6 +5113,7 @@ function RiftboundGame() {
   var _deckMore = useState(false), deckMoreOpen = _deckMore[0], setDeckMoreOpen = _deckMore[1];
   var _dbExp = useState({}), dbExpanded = _dbExp[0], setDbExpanded = _dbExp[1];
   var _dbDel = useState(null), dbDeleteConfirm = _dbDel[0], setDbDeleteConfirm = _dbDel[1];
+  var _dbClr = useState(false), dbClearConfirm = _dbClr[0], setDbClearConfirm = _dbClr[1];
   var _lmode = useState(null), lobbyMode = _lmode[0], setLobbyMode = _lmode[1];
   var _lfilter = useState("all"), lobbyFilter = _lfilter[0], setLobbyFilter = _lfilter[1];
   var _rc = useState(null), roomCode = _rc[0], setRoomCode = _rc[1];
@@ -6553,7 +6554,7 @@ function RiftboundGame() {
       <div className="home-bg-particles" />
       <div style={{ width: "100%", maxWidth: 900, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 20, position: "relative", zIndex: 1 }}>
         <button onClick={function() { setScreen("mode"); }} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 18px", borderRadius: 6, border: "1px solid #FFD70033", background: "rgba(255,255,255,0.02)", color: "#eaeaf0", cursor: "pointer", fontSize: 16, fontFamily: "Inter,sans-serif", fontWeight: 700, transition: "all 200ms ease" }}>← Back</button>
-        <h2 style={{ fontSize: "clamp(34px, 4.4vw, 60px)", fontFamily: "Spectral,serif", fontWeight: 700, letterSpacing: "clamp(1px, 0.15vw, 3px)", lineHeight: 1, margin: 0, background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textAlign: "center", textShadow: "0 0 30px rgba(255,215,0,0.15)" }}>MY DECKS</h2>
+        <h2 style={{ fontSize: "clamp(24px, 3vw, 40px)", fontFamily: "Spectral,serif", fontWeight: 700, letterSpacing: "clamp(1px, 0.12vw, 2px)", lineHeight: 1, margin: 0, background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textAlign: "center", textShadow: "0 0 30px rgba(255,215,0,0.15)" }}>MY DECKS</h2>
         <div style={{ width: 90 }} />
       </div>
       <button onClick={newDeck} className="btn-mode-toggle" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 28px", borderRadius: 999, border: "2px solid rgba(255,255,255,0.85)", background: "linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06))", color: "#ffffff", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Inter,sans-serif", letterSpacing: 1, marginBottom: 24, position: "relative", zIndex: 1, boxShadow: "0 6px 18px rgba(0,0,0,0.35), 0 0 18px rgba(255,255,255,0.20)", transition: "transform 200ms ease, box-shadow 200ms ease" }}>Create New Deck</button>
@@ -6707,25 +6708,33 @@ function RiftboundGame() {
     return (
     <div style={{ height: "100vh", maxHeight: "100vh", background: "linear-gradient(180deg, #2a2a50 0%, #333368 30%, #3d3d7a 50%, #333368 70%, #2a2a50 100%)", color: "#ddd", fontFamily: "sans-serif", display: "flex", flexDirection: "column", overflow: "auto" }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderBottom: "1px solid #ffffff10", flexShrink: 0 }}>
-        <button onClick={function() { setDbView("list"); }} style={{ padding: "4px 12px", borderRadius: 4, border: "1px solid #ffffff20", background: "transparent", color: "#888", cursor: "pointer", fontSize: 13, fontFamily: "Spectral,serif" }}>← Back to Decks</button>
-        <h2 style={{ fontSize: 18, fontFamily: "Spectral,serif", fontWeight: 700, background: "linear-gradient(135deg,#8B5CF6,#A78BFA)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>DECK BUILDER</h2>
-        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderBottom: "1px solid #FFD70022", flexShrink: 0, background: "linear-gradient(180deg, rgba(255,215,0,0.05), rgba(255,215,0,0.01))", boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}>
+        <button onClick={function() { setDbView("list"); }} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 17px", borderRadius: 6, border: "1px solid #FFD70033", background: "rgba(255,255,255,0.02)", color: "#eaeaf0", cursor: "pointer", fontSize: 16, fontFamily: "Inter,sans-serif", fontWeight: 700, transition: "all 200ms ease" }}>← Back to Decks</button>
+        <h2 style={{ fontSize: "clamp(22px, 2.6vw, 36px)", fontFamily: "Spectral,serif", fontWeight: 700, letterSpacing: "clamp(1px, 0.12vw, 2px)", lineHeight: 1, margin: 0, background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textAlign: "center", textShadow: "0 0 30px rgba(255,215,0,0.15)" }}>DECK BUILDER</h2>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {/* Import dropdown — bundles Import Text + Import Precon */}
           <div style={{ position: "relative" }}>
-            <button onClick={function() { setDbSearch(dbSearch === "__importText__" ? "" : "__importText__"); }} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid #60A5FA66", background: "transparent", color: "#60A5FAcc", cursor: "pointer", fontSize: 12, fontFamily: "Spectral,serif" }}>Import Text</button>
+            <button onClick={function() { setDbSearch(dbSearch === "__importMenu__" ? "" : "__importMenu__"); }} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "8px 17px", borderRadius: 6, border: "1px solid " + (dbSearch === "__importMenu__" ? "rgba(255,255,255,0.7)" : "#FFD70033"), background: "rgba(255,255,255,0.02)", color: "#eaeaf0", cursor: "pointer", fontSize: 16, fontFamily: "Inter,sans-serif", fontWeight: 700, transition: "all 200ms ease" }}>Import<span style={{ fontSize: 12, transition: "transform 200ms ease", transform: dbSearch === "__importMenu__" ? "rotate(180deg)" : "rotate(0deg)" }}>▾</span></button>
+            {dbSearch === "__importMenu__" && <>
+              <div onClick={function() { setDbSearch(""); }} style={{ position: "fixed", inset: 0, zIndex: 199, cursor: "default" }} />
+              <div style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, minWidth: 200, background: "linear-gradient(160deg, #1a1a3a, #12122a)", border: "1px solid #FFD70044", borderRadius: 8, boxShadow: "0 8px 28px rgba(0,0,0,0.55), 0 0 18px rgba(255,215,0,0.12)", padding: 6, zIndex: 200, fontFamily: "Inter,sans-serif" }}>
+                <button onClick={function() { setDbSearch("__importText__"); }} style={{ display: "block", width: "100%", padding: "10px 14px", borderRadius: 5, border: "none", background: "transparent", color: "#eaeaf0", cursor: "pointer", fontSize: 15, fontFamily: "Inter,sans-serif", fontWeight: 600, textAlign: "left", transition: "background 150ms ease" }} onMouseOver={function(e) { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }} onMouseOut={function(e) { e.currentTarget.style.background = "transparent"; }}>Import Text</button>
+                <button onClick={function() { setDbSearch("__import__"); }} style={{ display: "block", width: "100%", padding: "10px 14px", borderRadius: 5, border: "none", background: "transparent", color: "#eaeaf0", cursor: "pointer", fontSize: 15, fontFamily: "Inter,sans-serif", fontWeight: 600, textAlign: "left", transition: "background 150ms ease" }} onMouseOver={function(e) { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }} onMouseOut={function(e) { e.currentTarget.style.background = "transparent"; }}>Import Precon</button>
+              </div>
+            </>}
             {dbSearch === "__importText__" && (function() {
               var parsed = parseDeckText(dbImportText);
               var canImport = !!dbImportText.trim() && parsed.errors.length === 0 && !!parsed.legend && parsed.cards.length > 0;
-              return <div style={{ position: "absolute", top: "100%", right: 0, marginTop: 4, background: "#1a1a3a", border: "1px solid #60A5FA66", borderRadius: 6, padding: 10, zIndex: 200, minWidth: 440, maxWidth: 520, maxHeight: 520, overflow: "auto", boxShadow: "0 8px 24px #000a", display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ fontSize: 12, color: "#60A5FA", fontFamily: "Spectral,serif", fontWeight: 700, letterSpacing: 1 }}>IMPORT FROM TEXT</div>
-                <textarea value={dbImportText} onChange={function(e) { setDbImportText(e.target.value); }} placeholder={"Legend:\n1 Vex, Gloomist\n\nChampion:\n1 Vex, Apathetic\n\nMainDeck:\n3 Charm\n3 Defy\n...\n\nBattlefields:\n1 Grove of the God-Willow\n...\n\nRunes:\n12 Calm Rune"} style={{ width: "100%", minHeight: 160, padding: 8, borderRadius: 4, border: "1px solid #ffffff20", background: "#0f0f28", color: "#ddd", fontSize: 12, fontFamily: "monospace", resize: "vertical", outline: "none", boxSizing: "border-box" }} />
-                {dbImportText.trim() && <div style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 11, fontFamily: "Spectral,serif", padding: "6px 8px", borderRadius: 4, background: "#0f0f28", border: "1px solid #ffffff10" }}>
+              return <div style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, background: "linear-gradient(160deg, #1a1a3a, #12122a)", border: "1px solid rgba(255,255,255,0.20)", borderRadius: 8, padding: 12, zIndex: 200, minWidth: 460, maxWidth: 540, maxHeight: 540, overflow: "auto", boxShadow: "0 12px 32px #000a", display: "flex", flexDirection: "column", gap: 10, fontFamily: "Inter,sans-serif" }}>
+                <div style={{ fontSize: 13, color: "#eaeaf0", fontFamily: "Inter,sans-serif", fontWeight: 700, letterSpacing: 2 }}>IMPORT FROM TEXT</div>
+                <textarea value={dbImportText} onChange={function(e) { setDbImportText(e.target.value); }} placeholder={"Legend:\n1 Vex, Gloomist\n\nChampion:\n1 Vex, Apathetic\n\nMainDeck:\n3 Charm\n3 Defy\n...\n\nBattlefields:\n1 Grove of the God-Willow\n...\n\nRunes:\n12 Calm Rune"} style={{ width: "100%", minHeight: 180, padding: 10, borderRadius: 5, border: "1px solid #ffffff20", background: "#0f0f28", color: "#eaeaf0", fontSize: 13, fontFamily: "monospace", resize: "vertical", outline: "none", boxSizing: "border-box" }} />
+                {dbImportText.trim() && <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12, fontFamily: "Inter,sans-serif", padding: "8px 10px", borderRadius: 5, background: "#0f0f28", border: "1px solid #ffffff10" }}>
                   <div style={{ color: parsed.legend ? "#4ADE80" : "#ff6666" }}>{parsed.legend ? "✓" : "✗"} Legend: {parsed.legend || "none"}</div>
-                  <div style={{ color: parsed.champ ? "#4ADE80" : "#FFD700aa" }}>{parsed.champ ? "✓" : "○"} Champion: {parsed.champ || "none"}</div>
+                  <div style={{ color: parsed.champ ? "#4ADE80" : "#eaeaf0aa" }}>{parsed.champ ? "✓" : "○"} Champion: {parsed.champ || "none"}</div>
                   <div style={{ color: parsed.cards.length === 39 ? "#4ADE80" : parsed.cards.length > 0 ? "#FFD700" : "#ff6666" }}>{parsed.cards.length === 39 ? "✓" : parsed.cards.length > 0 ? "⚠" : "✗"} Main deck: {parsed.cards.length}/39</div>
                   <div style={{ color: parsed.bfs.length === 3 ? "#4ADE80" : parsed.bfs.length > 0 ? "#FFD700" : "#ff6666" }}>{parsed.bfs.length === 3 ? "✓" : parsed.bfs.length > 0 ? "⚠" : "✗"} Battlefields: {parsed.bfs.length}/3</div>
                   <div style={{ color: parsed.runes.length === 12 ? "#4ADE80" : parsed.runes.length > 0 ? "#FFD700" : "#ff6666" }}>{parsed.runes.length === 12 ? "✓" : parsed.runes.length > 0 ? "⚠" : "✗"} Runes: {parsed.runes.length}/12</div>
-                  {parsed.sideboard.length > 0 && <div style={{ color: "#8B5CF6aa" }}>✓ Sideboard: {parsed.sideboard.length} card{parsed.sideboard.length === 1 ? "" : "s"} (stored with deck, not played)</div>}
+                  {parsed.sideboard.length > 0 && <div style={{ color: "#eaeaf0aa" }}>✓ Sideboard: {parsed.sideboard.length} card{parsed.sideboard.length === 1 ? "" : "s"} (stored with deck, not played)</div>}
                   {parsed.errors.length > 0 && <div style={{ marginTop: 4, paddingTop: 4, borderTop: "1px solid #ff444433" }}>
                     {parsed.errors.map(function(err, i) { return <div key={i} style={{ color: "#ff6666", lineHeight: 1.4 }}>✗ {err}</div>; })}
                   </div>}
@@ -6733,8 +6742,9 @@ function RiftboundGame() {
                     {parsed.warnings.map(function(warn, i) { return <div key={i} style={{ color: "#FFD700aa", lineHeight: 1.4 }}>⚠ {warn}</div>; })}
                   </div>}
                 </div>}
-                <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                  <button onClick={function() { setDbImportText(""); }} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid #ffffff20", background: "transparent", color: "#888", cursor: "pointer", fontSize: 12, fontFamily: "Spectral,serif" }}>Clear</button>
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                  <button onClick={function() { setDbImportText(""); }} style={{ padding: "7px 14px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.20)", background: "transparent", color: "#eaeaf0", cursor: "pointer", fontSize: 13, fontFamily: "Inter,sans-serif", fontWeight: 600 }}>Clear</button>
+                  <button onClick={function() { setDbSearch(""); }} style={{ padding: "7px 14px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.20)", background: "transparent", color: "#eaeaf0", cursor: "pointer", fontSize: 13, fontFamily: "Inter,sans-serif", fontWeight: 600 }}>Cancel</button>
                   <button disabled={!canImport} onClick={function() {
                     if (!canImport) return;
                     if (parsed.name) setDbName(parsed.name);
@@ -6747,14 +6757,11 @@ function RiftboundGame() {
                     setDbSection("main");
                     setDbSearch("");
                     setDbImportText("");
-                  }} style={{ padding: "4px 14px", borderRadius: 4, border: "1.5px solid " + (canImport ? "#60A5FA" : "#333"), background: canImport ? "rgba(96,165,250,0.15)" : "transparent", color: canImport ? "#60A5FA" : "#555", cursor: canImport ? "pointer" : "not-allowed", fontSize: 12, fontWeight: 700, fontFamily: "Spectral,serif" }}>Import</button>
+                  }} style={{ padding: "7px 18px", borderRadius: 5, border: "2px solid " + (canImport ? "rgba(255,255,255,0.85)" : "#333"), background: canImport ? "linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06))" : "transparent", color: canImport ? "#ffffff" : "#555", cursor: canImport ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 800, fontFamily: "Inter,sans-serif", letterSpacing: 1 }}>Import</button>
                 </div>
               </div>;
             })()}
-          </div>
-          <div style={{ position: "relative" }}>
-            <button onClick={function() { setDbSearch(dbSearch === "__import__" ? "" : "__import__"); }} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid #FFD70044", background: "transparent", color: "#FFD700aa", cursor: "pointer", fontSize: 12, fontFamily: "Spectral,serif" }}>Import Precon</button>
-            {dbSearch === "__import__" && <div style={{ position: "absolute", top: "100%", right: 0, marginTop: 4, background: "#1a1a3a", border: "1px solid #FFD70044", borderRadius: 6, padding: 4, zIndex: 200, minWidth: 220, maxHeight: 300, overflow: "auto", boxShadow: "0 8px 24px #000a" }}>
+            {dbSearch === "__import__" && <div style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, background: "linear-gradient(160deg, #1a1a3a, #12122a)", border: "1px solid rgba(255,255,255,0.20)", borderRadius: 8, padding: 6, zIndex: 200, minWidth: 260, maxHeight: 340, overflow: "auto", boxShadow: "0 12px 32px #000a", fontFamily: "Inter,sans-serif" }}>
               {DNAMES.map(function(dn) {
                 var dk = DECKS[dn];
                 var lc = dk.legend ? findCard(dk.legend) : null;
@@ -6770,18 +6777,18 @@ function RiftboundGame() {
                   setDbSideboard([]);
                   setDbSection("main");
                   setDbSearch("");
-                }} style={{ display: "block", width: "100%", padding: "6px 10px", borderRadius: 4, border: "none", background: "transparent", color: "#ddd", cursor: "pointer", fontSize: 14, fontFamily: "Spectral,serif", textAlign: "left" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                }} style={{ display: "block", width: "100%", padding: "8px 12px", borderRadius: 5, border: "none", background: "transparent", color: "#eaeaf0", cursor: "pointer", fontSize: 15, fontFamily: "Inter,sans-serif", textAlign: "left", transition: "background 150ms ease" }} onMouseOver={function(e) { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }} onMouseOut={function(e) { e.currentTarget.style.background = "transparent"; }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <div style={{ fontWeight: 700 }}>{dn}</div>
-                    {setInfo && <span title={setInfo.label} style={{ flexShrink: 0, padding: "1px 5px", borderRadius: 3, fontSize: 9, fontWeight: 700, color: setInfo.c, border: "1px solid " + setInfo.c + "55", background: setInfo.c + "15", letterSpacing: 0.5, fontFamily: "Spectral,serif" }}>{dk.set}</span>}
+                    {setInfo && <span title={setInfo.label} style={{ flexShrink: 0, padding: "2px 6px", borderRadius: 3, fontSize: 10, fontWeight: 700, color: setInfo.c, border: "1px solid " + setInfo.c + "55", background: setInfo.c + "15", letterSpacing: 0.5, fontFamily: "Inter,sans-serif" }}>{dk.set}</span>}
                   </div>
-                  <div style={{ fontSize: 11, color: "#888", display: "flex", gap: 3, marginTop: 1 }}>{ds.map(function(dd) { var dc = DOM[dd] || DOM.Colorless; return <span key={dd} style={{ color: dc.c, fontWeight: 700 }}>{dc.i} {dd}</span>; })}</div>
+                  <div style={{ fontSize: 12, color: "#eaeaf0", display: "flex", gap: 4, marginTop: 2, opacity: 0.8 }}>{ds.map(function(dd) { var dc = DOM[dd] || DOM.Colorless; return <span key={dd} style={{ color: dc.c, fontWeight: 700 }}>{dc.i} {dd}</span>; })}</div>
                 </button>;
               })}
             </div>}
           </div>
-          <button onClick={dbResetDeck} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid #ff444444", background: "transparent", color: "#ff666688", cursor: "pointer", fontSize: 12, fontFamily: "Spectral,serif" }}>Clear</button>
-          <button onClick={dbSaveDeck} disabled={!dbName.trim() || !dbLegend} style={{ padding: "4px 12px", borderRadius: 4, border: "1.5px solid " + (dbName.trim() && dbLegend ? "#4ADE80" : "#333"), background: dbName.trim() && dbLegend ? "rgba(74,222,128,0.1)" : "transparent", color: dbName.trim() && dbLegend ? "#4ADE80" : "#555", cursor: dbName.trim() && dbLegend ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 700, fontFamily: "Spectral,serif" }}>Save Deck</button>
+          <button onClick={function() { setDbClearConfirm(true); }} style={{ padding: "8px 17px", borderRadius: 6, border: "1px solid #ff444466", background: "transparent", color: "#ff8888", cursor: "pointer", fontSize: 16, fontFamily: "Inter,sans-serif", fontWeight: 700, transition: "all 200ms ease" }}>Clear</button>
+          <button onClick={dbSaveDeck} disabled={!dbName.trim() || !dbLegend} style={{ padding: "8px 22px", borderRadius: 6, border: "2px solid " + (dbName.trim() && dbLegend ? "rgba(255,255,255,0.85)" : "#333"), background: dbName.trim() && dbLegend ? "linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06))" : "transparent", color: dbName.trim() && dbLegend ? "#ffffff" : "#555", cursor: dbName.trim() && dbLegend ? "pointer" : "not-allowed", fontSize: 16, fontWeight: 800, fontFamily: "Inter,sans-serif", letterSpacing: 1, transition: "all 200ms ease", boxShadow: dbName.trim() && dbLegend ? "0 0 14px rgba(255,255,255,0.18)" : "none" }}>Save</button>
         </div>
       </div>
       {/* Main content */}
@@ -6794,7 +6801,7 @@ function RiftboundGame() {
               var sel = dbSection === s.id;
               var locked = s.id !== "legend" && s.id !== "battlefield" && !dbLegend;
               var cnt = sectionCounts[s.id] || 0;
-              return <button key={s.id} onClick={locked ? undefined : function() { setDbSection(s.id); setDbSearch(""); setDbFilterE(""); setDbFilterRC(""); setDbFilterType(""); setDbFilterKw(""); setDbFilterSet(""); }} style={{ flex: 1, padding: "8px 4px", border: "none", borderBottom: sel ? "2px solid #8B5CF6" : "2px solid transparent", background: sel ? "#8B5CF610" : "transparent", color: locked ? "#333" : sel ? "#8B5CF6" : "#888", fontSize: 14, fontFamily: "Spectral,serif", fontWeight: 700, cursor: locked ? "not-allowed" : "pointer", opacity: locked ? 0.4 : 1 }}>{s.label} <span style={{ fontSize: 12, opacity: 0.6 }}>({cnt})</span></button>;
+              return <button key={s.id} onClick={locked ? undefined : function() { setDbSection(s.id); setDbSearch(""); setDbFilterE(""); setDbFilterRC(""); setDbFilterType(""); setDbFilterKw(""); setDbFilterSet(""); }} style={{ flex: 1, padding: "10px 4px", border: "none", borderBottom: sel ? "2px solid #ffffff" : "2px solid transparent", background: sel ? "rgba(255,255,255,0.08)" : "transparent", color: locked ? "#333" : sel ? "#ffffff" : "#eaeaf0", fontSize: 16, fontFamily: "Inter,sans-serif", fontWeight: 700, cursor: locked ? "not-allowed" : "pointer", opacity: locked ? 0.4 : 1, transition: "all 200ms ease" }}>{s.label} <span style={{ fontSize: 13, opacity: 0.7 }}>({cnt})</span></button>;
             })}
           </div>
           {/* Search + filters */}
@@ -6835,7 +6842,7 @@ function RiftboundGame() {
           <div style={{ flex: 1, overflow: "auto", padding: "6px 8px" }}>
             {dbSection === "runes" ? (
               <div>
-                <p style={{ fontSize: 12, color: "#888", textAlign: "center", marginBottom: 6 }}>Select 12 runes ({dbRunes.length}/12)</p>
+                <p style={{ fontSize: 13, color: "#eaeaf0", textAlign: "center", marginBottom: 6, fontFamily: "Inter,sans-serif" }}>Select 12 runes ({dbRunes.length}/12)</p>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
                 {dbDomains.map(function(dom) {
                   var cnt = dbRunes.filter(function(r) { return r === dom; }).length;
@@ -6872,7 +6879,7 @@ function RiftboundGame() {
               }} style={{ borderRadius: 6, border: selected ? "2px solid " + dc.c : "2px solid transparent", boxShadow: selected ? "0 0 10px " + dc.c + "44" : "none", cursor: disabled && !selected && count === 0 ? "not-allowed" : "pointer", transition: "all 0.15s ease", position: "relative", overflow: "hidden" }}>
                 {cImg ? <img src={cImg} style={Object.assign({}, isBfCard ? { width: "100%", aspectRatio: isLandscape ? "7/5" : "5/7", objectFit: "fill", display: "block", borderRadius: 4, transform: isLandscape ? "none" : "rotate(90deg) scale(0.71)", transformOrigin: "center" } : { width: "100%", aspectRatio: "5/7", objectFit: "fill", display: "block", borderRadius: 4 }, disabled && !selected ? { opacity: 0.3 } : {})} /> : <div style={{ width: "100%", aspectRatio: isBfCard ? "7/5" : "5/7", background: "linear-gradient(160deg," + dc.c + "15,#0a0a18)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRadius: 4, padding: 4, opacity: disabled && !selected ? 0.3 : 1 }}><span style={{ fontSize: 20, opacity: 0.2 }}>{dc.i}</span><span style={{ fontSize: 11, color: dc.c, textAlign: "center", fontWeight: 700 }}>{c.n}</span></div>}
                 {dbSection === "main" && count > 0 && <div style={{ position: "absolute", top: 3, right: 3, display: "flex", gap: 2, zIndex: 2 }}><div style={{ background: count >= 3 ? "#DC2626" : "#333", color: "#fff", borderRadius: 8, minWidth: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, boxShadow: "0 1px 4px #000a" }}>×{count}</div><button onClick={function(e) { e.stopPropagation(); var idx = dbCards.indexOf(c.n); if (idx >= 0) { var nc = dbCards.slice(); nc.splice(idx, 1); setDbCards(nc); } }} style={{ background: "#DC2626", color: "#fff", borderRadius: 8, width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer", boxShadow: "0 1px 4px #000a" }}>−</button></div>}
-                <div style={{ padding: "3px 4px", fontSize: 11, color: "#aaa", textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", background: "#0a0a18" }}>{c.n}</div>
+                <div style={{ padding: "3px 4px", fontSize: 11, color: "#eaeaf0", textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", background: "#0a0a18" }}>{c.n}</div>
               </div>;
             })}
             </div>}
@@ -6880,7 +6887,7 @@ function RiftboundGame() {
         </div>
         {/* Right: Deck workspace */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", padding: "8px 10px" }}>
-          <input value={dbName} onChange={function(e) { setDbName(e.target.value); }} placeholder="Deck Name..." style={{ padding: "10px 14px", borderRadius: 6, border: "2px solid #8B5CF644", background: "#ffffff08", color: "#8B5CF6", fontSize: 20, fontWeight: 700, fontFamily: "Spectral,serif", textAlign: "center", outline: "none", marginBottom: 8 }} />
+          <input value={dbName} onChange={function(e) { setDbName(e.target.value); }} placeholder="Deck Name..." style={{ padding: "10px 14px", borderRadius: 6, border: "2px solid rgba(255,255,255,0.30)", background: "rgba(0,0,0,0.25)", color: "#ffffff", fontSize: 20, fontWeight: 700, fontFamily: "Spectral,serif", textAlign: "center", outline: "none", marginBottom: 8 }} />
           {/* Deck warnings */}
           {(function() {
             var warns = [];
@@ -6897,22 +6904,22 @@ function RiftboundGame() {
           <div style={{ flex: 1, overflow: "auto" }}>
             {/* Legend */}
             <div style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 15, color: "#888", fontFamily: "Spectral,serif", letterSpacing: 1, marginBottom: 3 }}>LEGEND</div>
+              <div style={{ fontSize: 15, color: "#eaeaf0", fontFamily: "Spectral,serif", letterSpacing: 1, marginBottom: 3 }}>LEGEND</div>
               {dbLegend ? (function() { var li = CI[dbLegend] ? imgSrc(CI[dbLegend]) : (PA[dbLegend] ? PA_CDN + PA[dbLegend] + ".webp" : ""); return <div onMouseEnter={function(e) { _hoverByName(dbLegend, e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ display: "inline-block", position: "relative", cursor: "pointer" }}>{li ? <img src={li} style={{ width: 96, height: 134, objectFit: "fill", borderRadius: 4, border: "2px solid #FFD700", display: "block" }} /> : <div style={{ width: 96, height: 134, borderRadius: 4, border: "2px solid #FFD700", background: "#FFD70010", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "#FFD700", textAlign: "center", padding: 2 }}>{dbLegend}</div>}<button onClick={function(e) { e.stopPropagation(); setDbLegend(null); }} style={{ position: "absolute", top: -4, right: -4, width: 18, height: 18, borderRadius: "50%", border: "none", background: "#DC2626", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button><div style={{ fontSize: 14, color: "#FFD700", textAlign: "center", marginTop: 2, maxWidth: 96, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{dbLegend}</div></div>; })() : <div style={{ width: 96, height: 134, borderRadius: 4, border: "1px dashed #ffffff20", display: "flex", alignItems: "center", justifyContent: "center", color: "#444", fontSize: 15 }}>None</div>}
             </div>
             {/* Champion */}
             <div style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 15, color: "#888", fontFamily: "Spectral,serif", letterSpacing: 1, marginBottom: 3 }}>CHAMPION</div>
+              <div style={{ fontSize: 15, color: "#eaeaf0", fontFamily: "Spectral,serif", letterSpacing: 1, marginBottom: 3 }}>CHAMPION</div>
               {dbChamp ? (function() { var ci2 = CI[dbChamp] ? imgSrc(CI[dbChamp]) : (PA[dbChamp] ? PA_CDN + PA[dbChamp] + ".webp" : ""); return <div onMouseEnter={function(e) { _hoverByName(dbChamp, e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ display: "inline-block", position: "relative", cursor: "pointer" }}>{ci2 ? <img src={ci2} style={{ width: 96, height: 134, objectFit: "fill", borderRadius: 4, border: "2px solid #FF8C00", display: "block" }} /> : <div style={{ width: 96, height: 134, borderRadius: 4, border: "2px solid #FF8C00", background: "#FF8C0010", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "#FF8C00", textAlign: "center", padding: 2 }}>{dbChamp}</div>}<button onClick={function(e) { e.stopPropagation(); setDbChamp(null); }} style={{ position: "absolute", top: -4, right: -4, width: 18, height: 18, borderRadius: "50%", border: "none", background: "#DC2626", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button><div style={{ fontSize: 14, color: "#FF8C00", textAlign: "center", marginTop: 2, maxWidth: 96, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{dbChamp}</div></div>; })() : <div style={{ width: 96, height: 134, borderRadius: 4, border: "1px dashed #ffffff20", display: "flex", alignItems: "center", justifyContent: "center", color: "#444", fontSize: 15 }}>None</div>}
             </div>
             {/* Main deck */}
             <div style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 15, color: "#888", fontFamily: "Spectral,serif", letterSpacing: 1, marginBottom: 3 }}>MAIN DECK ({dbCards.length}/39)</div>
+              <div style={{ fontSize: 15, color: "#eaeaf0", fontFamily: "Spectral,serif", letterSpacing: 1, marginBottom: 3 }}>MAIN DECK ({dbCards.length}/39)</div>
               {dbCards.length > 0 ? (function() { var mc = {}; dbCards.forEach(function(n) { mc[n] = (mc[n] || 0) + 1; }); return <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(84px, 1fr))", gap: 4 }}>{Object.keys(mc).sort().map(function(n) { var c = findCard(n); var dc = c ? (DOM[c.d] || DOM.Colorless) : DOM.Colorless; var mi = CI[n] ? imgSrc(CI[n]) : (PA[n] ? PA_CDN + PA[n] + ".webp" : ""); return <div key={n} onMouseEnter={function(e) { _hoverByName(n, e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ position: "relative", cursor: "pointer" }}>{mi ? <img src={mi} style={{ width: "100%", aspectRatio: "5/7", objectFit: "fill", borderRadius: 3, border: "1px solid " + dc.c + "44", display: "block" }} /> : <div style={{ width: "100%", aspectRatio: "5/7", borderRadius: 3, border: "1px solid " + dc.c + "44", background: dc.c + "10", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: dc.c, textAlign: "center", padding: 2 }}>{n}</div>}<div style={{ position: "absolute", top: 2, right: 2, display: "flex", gap: 2, zIndex: 2 }}><div style={{ background: "#333", color: "#fff", borderRadius: 6, minWidth: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700 }}>×{mc[n]}</div><button onClick={function(e) { e.stopPropagation(); var idx = dbCards.indexOf(n); if (idx >= 0) { var nc = dbCards.slice(); nc.splice(idx, 1); setDbCards(nc); } }} style={{ background: "#DC2626", color: "#fff", borderRadius: 6, width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, border: "none", cursor: "pointer" }}>−</button></div><div style={{ fontSize: 13, color: "#aaa", textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n}</div></div>; })}</div>; })() : <div style={{ padding: "3px 8px", borderRadius: 4, border: "1px dashed #ffffff15", color: "#444", fontSize: 16 }}>No cards added</div>}
             </div>
             {/* Battlefields */}
             <div style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 15, color: "#888", fontFamily: "Spectral,serif", letterSpacing: 1, marginBottom: 3 }}>BATTLEFIELDS ({dbBfs.length}/3)</div>
+              <div style={{ fontSize: 15, color: "#eaeaf0", fontFamily: "Spectral,serif", letterSpacing: 1, marginBottom: 3 }}>BATTLEFIELDS ({dbBfs.length}/3)</div>
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
               {dbBfs.map(function(b, i) { var bi2 = CI[b] ? imgSrc(CI[b]) : (PA[b] ? PA_CDN + PA[b] + ".webp" : ""); var bfLand = bi2 && (bi2.indexOf("1039x744") > -1 || bi2.indexOf("1038x744") > -1); return <div key={i} onMouseEnter={function(e) { _hoverByName(b, e, true); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ display: "inline-block", position: "relative", cursor: "pointer" }}>{bi2 ? <img src={bi2} style={bfLand ? { width: 134, height: 96, objectFit: "fill", borderRadius: 4, border: "1.5px solid #ffffff30", display: "block" } : { width: 134, height: 96, objectFit: "fill", borderRadius: 4, border: "1.5px solid #ffffff30", display: "block" }} /> : <div style={{ width: 134, height: 96, borderRadius: 4, border: "1.5px solid #ffffff30", background: "#ffffff08", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "#aaa", textAlign: "center", padding: 2 }}>{b}</div>}<button onClick={function(e) { e.stopPropagation(); setDbBfs(dbBfs.filter(function(_, j) { return j !== i; })); }} style={{ position: "absolute", top: -4, right: -4, width: 18, height: 18, borderRadius: "50%", border: "none", background: "#DC2626", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button><div style={{ fontSize: 13, color: "#aaa", textAlign: "center", marginTop: 2, maxWidth: 134, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b}</div></div>; })}
               {dbBfs.length === 0 && <div style={{ width: 134, height: 96, borderRadius: 4, border: "1px dashed #ffffff20", display: "flex", alignItems: "center", justifyContent: "center", color: "#444", fontSize: 15 }}>None</div>}
@@ -6920,12 +6927,23 @@ function RiftboundGame() {
             </div>
             {/* Runes */}
             <div style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 15, color: "#888", fontFamily: "Spectral,serif", letterSpacing: 1, marginBottom: 3 }}>RUNES ({dbRunes.length}/12)</div>
+              <div style={{ fontSize: 15, color: "#eaeaf0", fontFamily: "Spectral,serif", letterSpacing: 1, marginBottom: 3 }}>RUNES ({dbRunes.length}/12)</div>
               {dbRunes.length > 0 ? (function() { var rc = {}; dbRunes.forEach(function(d) { rc[d] = (rc[d] || 0) + 1; }); return <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{Object.keys(rc).map(function(d) { var dc = DOM[d] || DOM.Colorless; var ri = CI[d + " Rune"] ? imgSrc(CI[d + " Rune"]) : ""; return <div key={d} onMouseEnter={function(e) { _hoverByName(d + " Rune", e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ display: "inline-block", position: "relative", cursor: "pointer" }}>{ri ? <img src={ri} style={{ width: 48, height: 67, objectFit: "fill", borderRadius: 3, border: "1.5px solid " + dc.c + "44" }} /> : <span style={{ color: dc.c, fontSize: 18 }}>{dc.i}</span>}<div style={{ position: "absolute", top: 1, right: 1, display: "flex", gap: 1, zIndex: 2 }}><div style={{ background: "#333", color: "#fff", borderRadius: 6, minWidth: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700 }}>×{rc[d]}</div><button onClick={function(e) { e.stopPropagation(); var idx = dbRunes.indexOf(d); if (idx >= 0) { var nr = dbRunes.slice(); nr.splice(idx, 1); setDbRunes(nr); } }} style={{ background: "#DC2626", color: "#fff", borderRadius: 6, width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer" }}>−</button></div></div>; })}</div>; })() : <div style={{ padding: "3px 8px", borderRadius: 4, border: "1px dashed #ffffff15", color: "#444", fontSize: 16 }}>None selected</div>}
             </div>
           </div>
         </div>
       </div>
+      {/* Clear deck confirmation modal */}
+      {dbClearConfirm && <div onClick={function(e) { if (e.target === e.currentTarget) setDbClearConfirm(false); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1300, cursor: "pointer", backdropFilter: "blur(2px)" }}>
+        <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "linear-gradient(160deg, #1a1a3a, #12122a)", borderRadius: 12, padding: "24px 28px", border: "1px solid #ff444455", boxShadow: "0 12px 48px rgba(0,0,0,0.6), 0 0 28px rgba(255,68,68,0.15)", maxWidth: 440, width: "100%", cursor: "default", fontFamily: "Inter,sans-serif" }}>
+          <h3 style={{ fontSize: 22, fontFamily: "Spectral,serif", fontWeight: 700, color: "#ff8888", margin: 0, marginBottom: 12, letterSpacing: 0.5 }}>Clear deck?</h3>
+          <p style={{ fontSize: 15, color: "#eaeaf0", lineHeight: 1.55, margin: 0, marginBottom: 22 }}>This will reset the legend, champion, all main-deck cards, battlefields, and runes. Unsaved changes will be lost.</p>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+            <button onClick={function() { setDbClearConfirm(false); }} style={{ padding: "10px 22px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.30)", background: "rgba(255,255,255,0.04)", color: "#eaeaf0", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Inter,sans-serif", transition: "all 200ms ease" }}>Cancel</button>
+            <button onClick={function() { setDbClearConfirm(false); dbResetDeck(); }} style={{ padding: "10px 22px", borderRadius: 6, border: "2px solid #ff4444", background: "linear-gradient(135deg, rgba(255,68,68,0.40), rgba(220,38,38,0.20))", color: "#ffffff", cursor: "pointer", fontSize: 14, fontWeight: 800, fontFamily: "Inter,sans-serif", letterSpacing: 1, textTransform: "uppercase", boxShadow: "0 0 18px rgba(255,68,68,0.4), 0 6px 16px rgba(0,0,0,0.4)", transition: "all 200ms ease" }}>Clear</button>
+          </div>
+        </div>
+      </div>}
       {renderHoverPreview()}
     </div>
     );
