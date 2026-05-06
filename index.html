@@ -5332,7 +5332,7 @@ function RiftboundGame() {
     var a = _musicAudio.current;
     if (!a) return;
     a.volume = audioVol.master * audioVol.music;
-    if (screen === "play" || screen === "sd" || screen === "wait") { a.play().catch(function() {}); }
+    if (screen === "play" || screen === "sd" || screen === "wait" || screen === "bf" || screen === "mull") { a.play().catch(function() {}); }
     else { a.pause(); }
   }, [screen, audioVol]);
 
