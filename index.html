@@ -6296,7 +6296,7 @@ function RiftboundGame() {
               bg = "#1a1a3a"; border = "3px solid #ffffff20"; color = "#ddd"; shadow = "none";
             }
             return <div key={d.uid} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, opacity: isEliminated ? 0.55 : 1 }}>
-              <div style={{ fontSize: 18, fontFamily: "Spectral,serif", fontWeight: 700, color: isEliminated ? "#DC2626" : (d.uid === myUid ? "#4ADE80" : "#FFD700"), textDecoration: isEliminated ? "line-through" : "none" }}>{d.name}</div>
+              <div style={{ fontSize: 18, fontFamily: "Spectral,serif", fontWeight: 700, color: "#fff", textDecoration: isEliminated ? "line-through" : "none" }}>{d.name}</div>
               <div className={isActiveThisRound && !diceShowSettled ? "" : "anim-pulse"} style={{ width: 80, height: 80, borderRadius: 12, background: bg, border: border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, fontWeight: 700, fontFamily: "Spectral,serif", color: color, boxShadow: shadow, transition: "background 0.3s, border-color 0.3s, color 0.3s" }}>{displayVal}</div>
               {isWinner && <div style={{ fontSize: 14, color: "#FFD700", fontFamily: "Spectral,serif", fontWeight: 700 }}>WINNER!</div>}
               {isEliminated && <div style={{ fontSize: 12, color: "#DC2626", fontFamily: "Spectral,serif", fontWeight: 700 }}>OUT</div>}
@@ -6309,9 +6309,9 @@ function RiftboundGame() {
             <div style={{ fontSize: 16, color: "#ddd", fontFamily: "Spectral,serif" }}>You won the roll! Choose who goes first:</div>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
               {/* Always show "I'll go first" */}
-              <button onClick={function() { if (roomCode) { var myIdx3 = diceRoll.findIndex(function(d) { return d.uid === myUid; }); fbDb.ref("lobbies/" + roomCode + "/gameState/firstPlayer").set(myIdx3 >= 0 ? myIdx3 : 0); } }} style={{ padding: "10px 24px", borderRadius: 6, border: "2px solid #4ADE80", background: "rgba(74,222,128,0.15)", color: "#4ADE80", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif" }}>I'll go first</button>
+              <button onClick={function() { if (roomCode) { var myIdx3 = diceRoll.findIndex(function(d) { return d.uid === myUid; }); fbDb.ref("lobbies/" + roomCode + "/gameState/firstPlayer").set(myIdx3 >= 0 ? myIdx3 : 0); } }} style={{ padding: "10px 24px", borderRadius: 6, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70030,#FF8C0020)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif", boxShadow: "0 0 20px #FFD70044" }}>I'll go first</button>
               {/* Per-player buttons for the other slots — works for any player count */}
-              {diceRoll.map(function(d, k) { if (d.uid === myUid) return null; return <button key={d.uid} onClick={function() { if (roomCode) { fbDb.ref("lobbies/" + roomCode + "/gameState/firstPlayer").set(k); } }} style={{ padding: "10px 24px", borderRadius: 6, border: "2px solid #8B5CF6", background: "rgba(139,92,246,0.15)", color: "#8B5CF6", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif" }}>{d.name} first</button>; })}
+              {diceRoll.map(function(d, k) { if (d.uid === myUid) return null; return <button key={d.uid} onClick={function() { if (roomCode) { fbDb.ref("lobbies/" + roomCode + "/gameState/firstPlayer").set(k); } }} style={{ padding: "10px 24px", borderRadius: 6, border: "2px solid #ffffff20", background: "#1a1a3a", color: "#ddd", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Spectral,serif" }}>{d.name} first</button>; })}
             </div>
           </div> : <div style={{ fontSize: 16, color: "#888", fontFamily: "Spectral,serif" }}>Waiting for {diceRoll.find(function(d) { return d.uid === diceWinner; }) ? diceRoll.find(function(d) { return d.uid === diceWinner; }).name : "winner"} to choose...</div>}
         </div> : null}
