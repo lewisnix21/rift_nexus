@@ -386,6 +386,7 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
   var _act = (!zoomed && actionLabel) ? actionLabel : undefined;
   var _cardDragStart = dragData ? function(e) { e.dataTransfer.setData("text/plain", dragData); if (onDragStartCb) onDragStartCb(e); } : undefined;
   var _hov = useState(false), isHov = _hov[0], setIsHov = _hov[1];
+  var _hovT = useState(0), hovTilt = _hovT[0], setHovTilt = _hovT[1];
   var _gdo = useState(false), gearDragOver = _gdo[0], setGearDragOver = _gdo[1];
   var _ctx = useState(false), showCtx = _ctx[0], setShowCtx = _ctx[1];
   var _ghi = useState(-1), gearHovIdx = _ghi[0], setGearHovIdx = _ghi[1];
@@ -464,7 +465,12 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
   var gankingGlow = _isAtBf && _hasGanking && !zoomed && !gearDragOver && !selected;
   var gearCount = (card.gear && small) ? card.gear.length : 0;
   var gearExtra = gearCount > 0 ? Math.round(w * 0.3) * gearCount : 0;
-  var wrapS = { width: w, height: h, borderRadius: zoomed ? 10 : small ? 4 : 6, overflow: "visible", flexShrink: 0, position: "relative", border: gearDragOver ? "3px solid #4ADE80" : gankingGlow ? "2.5px solid #4ADE80cc" : (zoomed ? 3 : 2) + "px solid " + borderColor, boxShadow: gearDragOver ? "0 0 20px rgba(74,222,128,0.5), 0 0 40px rgba(74,222,128,0.2), inset 0 0 12px rgba(74,222,128,0.1)" : gankingGlow ? "0 0 14px rgba(74,222,128,0.55), inset 0 0 10px rgba(74,222,128,0.18)" : shadow, cursor: onClick ? "pointer" : "default", background: "#0c0c18", transition: "transform 0.15s ease, border 0.15s ease, box-shadow 0.15s ease", transform: ex && !zoomed && !noRotate ? "rotate(20deg)" : "none", filter: ex && !zoomed ? "brightness(0.58)" : "none", marginRight: gearExtra };
+  var _baseRot = (ex && !zoomed && !noRotate) ? 20 : 0;
+  var _zoomedTilt = zoomed ? 0 : hovTilt;
+  var _totalRot = _baseRot + _zoomedTilt;
+  var wrapS = { width: w, height: h, borderRadius: zoomed ? 10 : small ? 4 : 6, overflow: "visible", flexShrink: 0, position: "relative", border: gearDragOver ? "3px solid #4ADE80" : gankingGlow ? "2.5px solid #4ADE80cc" : (zoomed ? 3 : 2) + "px solid " + borderColor, boxShadow: gearDragOver ? "0 0 20px rgba(74,222,128,0.5), 0 0 40px rgba(74,222,128,0.2), inset 0 0 12px rgba(74,222,128,0.1)" : gankingGlow ? "0 0 14px rgba(74,222,128,0.55), inset 0 0 10px rgba(74,222,128,0.18)" : shadow, cursor: onClick ? "pointer" : "default", background: "#0c0c18", transition: "transform 0.15s ease, border 0.15s ease, box-shadow 0.15s ease", transform: _totalRot ? ("rotate(" + _totalRot + "deg)") : "none", filter: ex && !zoomed ? "brightness(0.58)" : "none", marginRight: gearExtra };
+  var _hovTiltMove = !zoomed ? function(e) { var rect = e.currentTarget.getBoundingClientRect(); var halfW = rect.width / 2; var t = ((e.clientX - rect.left - halfW) / halfW) * 5; if (t > 5) t = 5; else if (t < -5) t = -5; setHovTilt(t); } : undefined;
+  var _hovTiltLeave = !zoomed ? function() { setHovTilt(0); } : undefined;
   var hCls = zoomed ? "" : (ex ? "card-tapped" : "card-hover");
   var hEnter = !zoomed ? function(e) { if (_setHoverCard) _setHoverCard(card, e); } : undefined;
   var hLeave = !zoomed ? function() { if (_clearHoverCard) _clearHoverCard(); } : undefined;
@@ -472,7 +478,7 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
   /* Cards with real CDN image */
   if (imgUrl) {
       var hasGear = gearCount > 0;
-      var cardEl = <div data-uid={card.uid} className={hCls} draggable={!!dragData} onDragStart={_cardDragStart} onDragEnd={_onDragEnd} onClick={function(e) { if (showCtx) { setShowCtx(false); return; } if (onClick) onClick(e); }} onContextMenu={onHide ? function(e) { e.preventDefault(); setShowCtx(!showCtx); } : undefined} onMouseEnter={function(e) { setIsHov(true); if (hEnter) hEnter(e); }} onMouseLeave={function(e) { setIsHov(false); setShowCtx(false); if (hLeave) hLeave(e); }}
+      var cardEl = <div data-uid={card.uid} className={hCls} draggable={!!dragData} onDragStart={_cardDragStart} onDragEnd={_onDragEnd} onClick={function(e) { if (showCtx) { setShowCtx(false); return; } if (onClick) onClick(e); }} onContextMenu={onHide ? function(e) { e.preventDefault(); setShowCtx(!showCtx); } : undefined} onMouseEnter={function(e) { setIsHov(true); if (hEnter) hEnter(e); }} onMouseMove={_hovTiltMove} onMouseLeave={function(e) { setIsHov(false); setShowCtx(false); if (_hovTiltLeave) _hovTiltLeave(); if (hLeave) hLeave(e); }}
         onDragOver={onGearDrop ? function(e) { e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = "move"; if (!gearDragOver) setGearDragOver(true); } : undefined}
         onDragLeave={onGearDrop ? function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setGearDragOver(false); } : undefined}
         onDrop={onGearDrop ? function(e) { e.preventDefault(); e.stopPropagation(); setGearDragOver(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var uid2 = parts.length > 1 ? parts[1] : parts[0]; onGearDrop(uid2, card.uid); } : undefined}
@@ -507,7 +513,7 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
   var ft = small ? 6 : zoomed ? 12 : inHand ? 8 : 7;
   var fo = small ? 15 : zoomed ? 32 : inHand ? 19 : 17;
   return (
-    <div data-uid={card.uid} className={hCls} draggable={!!dragData} onDragStart={_cardDragStart} onDragEnd={_onDragEnd} onClick={onClick} onMouseEnter={function(e) { setIsHov(true); if (hEnter) hEnter(e); }} onMouseLeave={function(e) { setIsHov(false); if (hLeave) hLeave(e); }} style={Object.assign({}, wrapS, { display: "flex", flexDirection: "column", background: "linear-gradient(180deg," + d.c + "12,#0a0a16 20%,#08081a 80%," + d.c + "08)" })}>
+    <div data-uid={card.uid} className={hCls} draggable={!!dragData} onDragStart={_cardDragStart} onDragEnd={_onDragEnd} onClick={onClick} onMouseEnter={function(e) { setIsHov(true); if (hEnter) hEnter(e); }} onMouseMove={_hovTiltMove} onMouseLeave={function(e) { setIsHov(false); if (_hovTiltLeave) _hovTiltLeave(); if (hLeave) hLeave(e); }} style={Object.assign({}, wrapS, { display: "flex", flexDirection: "column", background: "linear-gradient(180deg," + d.c + "12,#0a0a16 20%,#08081a 80%," + d.c + "08)" })}>
       {/* Art area */}
       <div style={{ height: "45%", position: "relative", background: "linear-gradient(160deg," + d.c + "25,#1a1a3a 50%," + d.c + "10)", display: "flex", alignItems: "center", justifyContent: "center", borderBottom: "1px solid " + d.c + "33", flexShrink: 0 }}>
         <span style={{ fontSize: h * 0.22, opacity: 0.15 }}>{d.i}</span>
@@ -1213,12 +1219,21 @@ function RiftboundGame() {
   var _rph = useState(null), resolvedPhase = _rph[0], setResolvedPhase = _rph[1];
   // Cursor position while a card is "carried" (click-to-attach play flow). Updated by a window-level
   // mousemove listener that's only active while pendingZonePlay is set.
-  var _pendingCursor = useState({ x: 0, y: 0 }), pendingCursor = _pendingCursor[0], setPendingCursor = _pendingCursor[1];
+  var _pendingCursor = useState({ x: 0, y: 0, dx: 0 }), pendingCursor = _pendingCursor[0], setPendingCursor = _pendingCursor[1];
   useEffect(function() {
     if (!pendingZonePlay) return;
-    var handler = function(e) { setPendingCursor({ x: e.clientX, y: e.clientY }); };
+    var resetT;
+    var handler = function(e) {
+      setPendingCursor(function(prev) {
+        var dx = (prev.x ? e.clientX - prev.x : 0);
+        if (dx > 40) dx = 40; else if (dx < -40) dx = -40;
+        if (resetT) clearTimeout(resetT);
+        resetT = setTimeout(function() { setPendingCursor(function(p) { return Object.assign({}, p, { dx: 0 }); }); }, 90);
+        return { x: e.clientX, y: e.clientY, dx: dx };
+      });
+    };
     window.addEventListener("mousemove", handler);
-    return function() { window.removeEventListener("mousemove", handler); };
+    return function() { window.removeEventListener("mousemove", handler); if (resetT) clearTimeout(resetT); };
   }, [pendingZonePlay]);
   // Hovered hand card (auto-mode only). Used by rune rendering to highlight which runes
   // would be tapped (light-blue) vs recycled (red) to pay the cost of the hovered card.
@@ -5998,6 +6013,7 @@ function RiftboundGame() {
   function FannedHand(props) {
     var hand = props.hand; var isEnemy = props.isEnemy; var onPlay = props.onPlay; var onZoom = props.onZoom;
     var _hhi = useState(-1), handHovIdx = _hhi[0], setHandHovIdx = _hhi[1];
+    var _hht = useState(0), handHovTilt = _hht[0], setHandHovTilt = _hht[1];
     var total = hand.length; var mid = (total - 1) / 2;
     // In auto-mode, hand cards render ~50% larger so they're easy to read when half is off-screen.
     var aw = Math.round(HAND_W * 1.5);
@@ -6019,9 +6035,11 @@ function RiftboundGame() {
         // (via pendingZonePlay). The next click on a valid drop target plays/casts the card.
         // Hand cards are no longer draggable — drag-and-drop has been replaced by this flow.
         var _isCarried = !!(pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.uid === c.uid);
-        var _carriedStyle = { position: "fixed", left: pendingCursor.x - aw / 2, top: pendingCursor.y - ah / 2, width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: "3px solid #FFD700", boxShadow: "0 0 24px rgba(255,215,0,0.85), 0 8px 24px #000c", zIndex: 1600, pointerEvents: "none", transform: "none", transformOrigin: "center center", marginLeft: 0, transition: "left 60ms linear, top 60ms linear" };
-        var _normalStyle = { width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: (autoMode && playable) ? "3px solid #3b82f6" : "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + "20"), flexShrink: 0, cursor: "pointer", transform: "rotate(" + rot + "deg) translateY(" + ty + "px)", transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -45 : total > 5 ? -24 : 0), transition: "transform 200ms ease-out, box-shadow 0.2s ease, border 0.15s ease, filter 200ms ease-out", position: "relative", zIndex: i === handHovIdx ? 998 : i, boxShadow: (autoMode && playable) ? "0 0 22px rgba(59,130,246,1), 0 0 44px rgba(59,130,246,0.65), 0 4px 16px #000a" : "0 4px 16px #000a", opacity: 1, pointerEvents: "auto" };
-        return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover auto-hand-card" + animCls, draggable: false, onClick: (canMoveOwn && playable) ? function(e) { if (tm || fc) return; if (e && e.stopPropagation) e.stopPropagation(); if (_isCarried) { setPendingZonePlay(null); return; } if (e && e.clientX !== undefined) setPendingCursor({ x: e.clientX, y: e.clientY }); onPlay(c); if (sd) markSdActed(); } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { if (!_isCarried) { setHandHovIdx(i); if (autoMode) setHoveredHandCard(c); } }, onMouseLeave: function() { setHandCtxUid(null); }, style: _isCarried ? _carriedStyle : _normalStyle },
+        var _mvTiltC = Math.max(-15, Math.min(15, (pendingCursor.dx || 0) * 0.7));
+        var _carriedStyle = { position: "fixed", left: pendingCursor.x - aw / 2, top: pendingCursor.y - ah / 2, width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: "3px solid #FFD700", boxShadow: "0 0 24px rgba(255,215,0,0.85), 0 8px 24px #000c", zIndex: 1600, pointerEvents: "none", transform: "rotate(" + _mvTiltC + "deg)", transformOrigin: "center center", marginLeft: 0, transition: "left 60ms linear, top 60ms linear, transform 120ms ease-out" };
+        var _hoverExtra = (i === handHovIdx) ? handHovTilt : 0;
+        var _normalStyle = { width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: (autoMode && playable) ? "3px solid #3b82f6" : "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + "20"), flexShrink: 0, cursor: "pointer", transform: "rotate(" + (rot + _hoverExtra) + "deg) translateY(" + ty + "px)", transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -45 : total > 5 ? -24 : 0), transition: "transform 200ms ease-out, box-shadow 0.2s ease, border 0.15s ease, filter 200ms ease-out", position: "relative", zIndex: i === handHovIdx ? 998 : i, boxShadow: (autoMode && playable) ? "0 0 22px rgba(59,130,246,1), 0 0 44px rgba(59,130,246,0.65), 0 4px 16px #000a" : "0 4px 16px #000a", opacity: 1, pointerEvents: "auto" };
+        return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover auto-hand-card" + animCls, draggable: false, onClick: (canMoveOwn && playable) ? function(e) { if (tm || fc) return; if (e && e.stopPropagation) e.stopPropagation(); if (_isCarried) { setPendingZonePlay(null); return; } if (e && e.clientX !== undefined) setPendingCursor({ x: e.clientX, y: e.clientY, dx: 0 }); onPlay(c); if (sd) markSdActed(); } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { if (!_isCarried) { setHandHovIdx(i); if (autoMode) setHoveredHandCard(c); } }, onMouseMove: function(e) { if (_isCarried || isEnemy) return; var rect = e.currentTarget.getBoundingClientRect(); var halfW = rect.width / 2; var t = ((e.clientX - rect.left - halfW) / halfW) * 6; if (t > 6) t = 6; else if (t < -6) t = -6; setHandHovTilt(t); }, onMouseLeave: function() { setHandCtxUid(null); setHandHovTilt(0); }, style: _isCarried ? _carriedStyle : _normalStyle },
           c.hidden ? React.createElement("img", { src: CARD_BACK, style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : (c.img ? React.createElement("img", { src: imgSrc(c.img), style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : React.createElement("div", { style: { width: "100%", height: "100%", background: "linear-gradient(180deg," + (DOM[c.domain] || DOM.Colorless).c + "15,#0a0a18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#666", padding: 4, textAlign: "center" } }, c.name)),
           handCtxUid === c.uid ? React.createElement("button", { onClick: function(e) { e.stopPropagation(); toggleHide(c.uid); setHandCtxUid(null); }, style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 10, padding: "4px 12px", borderRadius: 4, border: "1.5px solid #ffffff40", background: "rgba(20,20,50,0.92)", color: "#ddd", fontSize: 12, cursor: "pointer", fontFamily: "Spectral,serif", fontWeight: 700, boxShadow: "0 4px 12px #000a", whiteSpace: "nowrap" } }, c.hidden ? "Reveal" : "Hide") : null
         );
@@ -6780,7 +6798,7 @@ function RiftboundGame() {
         </div>;
       })()}
       {pendingZonePlay && <div onClick={function() { setPendingZonePlay(null); }} style={{ position: "fixed", inset: 0, zIndex: 1, pointerEvents: "auto", background: "transparent" }} />}
-      {pendingZonePlay && pendingZonePlay.card && (pendingZonePlay.fromBf !== undefined || pendingZonePlay.fromBase || pendingZonePlay.fromChamp || pendingZonePlay.fromShowcase) && (function() { var _pzc = pendingZonePlay.card; var _cw = Math.round(HAND_W * 1.5); var _ch = Math.round(HAND_H * 1.5); var _imgUrl = _pzc.img ? imgSrc(_pzc.img) : null; return <div style={{ position: "fixed", left: pendingCursor.x - _cw/2, top: pendingCursor.y - _ch/2, width: _cw, height: _ch, borderRadius: 6, overflow: "hidden", border: "3px solid #FFD700", boxShadow: "0 0 24px rgba(255,215,0,0.85), 0 8px 24px #000c", zIndex: 1600, pointerEvents: "none", transition: "left 60ms linear, top 60ms linear" }}>{_imgUrl ? <img src={_imgUrl} style={{ width: "100%", height: "100%", objectFit: "fill" }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 11, padding: 2, textAlign: "center" }}>{_pzc.name}</div>}</div>; })()}
+      {pendingZonePlay && pendingZonePlay.card && (pendingZonePlay.fromBf !== undefined || pendingZonePlay.fromBase || pendingZonePlay.fromChamp || pendingZonePlay.fromShowcase) && (function() { var _pzc = pendingZonePlay.card; var _cw = Math.round(HAND_W * 1.5); var _ch = Math.round(HAND_H * 1.5); var _imgUrl = _pzc.img ? imgSrc(_pzc.img) : null; var _mvTilt = Math.max(-15, Math.min(15, (pendingCursor.dx || 0) * 0.7)); return <div style={{ position: "fixed", left: pendingCursor.x - _cw/2, top: pendingCursor.y - _ch/2, width: _cw, height: _ch, borderRadius: 6, overflow: "hidden", border: "3px solid #FFD700", boxShadow: "0 0 24px rgba(255,215,0,0.85), 0 8px 24px #000c", zIndex: 1600, pointerEvents: "none", transform: "rotate(" + _mvTilt + "deg)", transformOrigin: "center center", transition: "left 60ms linear, top 60ms linear, transform 120ms ease-out" }}>{_imgUrl ? <img src={_imgUrl} style={{ width: "100%", height: "100%", objectFit: "fill" }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 11, padding: 2, textAlign: "center" }}>{_pzc.name}</div>}</div>; })()}
       {/* entersReady ghost animation — card slides to showcase, pulses, slides back, then readies */}
       {readyGhostAnim && (function() {
         var rg = readyGhostAnim;
