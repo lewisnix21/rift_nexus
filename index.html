@@ -6399,102 +6399,105 @@ function RiftboundGame() {
         {/* Main column — all rows fixed height, content centered vertically with equal dead space top/bottom */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", overflow: "hidden", position: "relative" }}>
 
-          {/* ENEMY ZONE wrapper — pulses on enemy turn */}
-          <div className={isOnlineGame && !isMyTurnOnline && act === effectiveSpotlight && screen === "play" && !awakenPhase ? "anim-turn-pulse" : ""} style={{ margin: "4px 4px 4px", padding: 2, flexShrink: 0, overflow: "visible", border: "2px solid transparent", borderRadius: 8 }}>
-          {/* ROW 1: ENEMY HAND — hand spans full row width and centers; bin/deck/champ/legend/rune float on the edges via absolute positioning so they don't push the hand off-center. The enemy PlayerAvatar sits centered at the bottom of this row, just south of the hand cards (mirroring the local player's avatar). */}
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center", flexShrink: 0, overflow: "visible", padding: "4px 6px 2px", zIndex: 5, position: "relative", gap: 0, height: HAND_H + Math.round(22 * vScale), minHeight: HAND_H + Math.round(22 * vScale), maxHeight: HAND_H + Math.round(22 * vScale) }}>
-            {ps.filter(function(_, i) { return i === effectiveSpotlight; }).map(function(enemy) {
-              var enemySlot = ps.indexOf(enemy);
-              var enemyP = lobbyPlayers && Object.keys(lobbyPlayers).map(function(k) { return lobbyPlayers[k]; }).find(function(p) { return p && p.slot === enemySlot; });
-              var enemyPhoto = (enemyP && enemyP.photoURL) || "";
-              return <div key={"ehand"} style={{ position: "relative", width: "100%", height: "100%", overflow: "visible" }}>
-                <div style={{ position: "absolute", left: 0, top: 0, display: "flex", alignItems: "flex-start", zIndex: 2 }}>
-                  <div onClick={function() { setShowEnemyBin({name: pName(enemySlot), cards: enemy.trash || []}); }} style={{ cursor: "pointer" }}><BinPile trash={enemy.trash} /></div>
-                  {<div data-uid={"slot-" + enemySlot + "-deck"} style={{ marginLeft: 3 }}><CardBack w={HAND_W} h={HAND_H} count={enemy.mainDeck ? enemy.mainDeck.length : 0} label="DECK" /></div>}
-                </div>
-                <div style={{ position: "fixed", top: -Math.round(HAND_H * 1.5 * 0.5), left: 0, right: 0, display: "flex", justifyContent: "center", alignItems: "flex-start", overflow: "visible", zIndex: 940, pointerEvents: "none" }}>
-                  {(function() {
-                    var eaw = Math.round(HAND_W * 1.5);
-                    var eah = Math.round(HAND_H * 1.5);
-                    return enemy.hand.map(function(c, i) {
-                      var total = enemy.hand.length;
-                      var mid = (total - 1) / 2;
-                      var rot = -(i - mid) * (total > 6 ? 0.75 : 1.05);
-                      var ty = -(Math.abs(i - mid) * (total > 6 ? 0.9 : 1.5));
-                      var ml = total > 7 ? -68 : total > 5 ? -38 : -12;
-                      return <div key={"eh-" + i} style={{ width: eaw, height: eah, borderRadius: 6, overflow: "hidden", border: "1.5px solid #FFD70040", flexShrink: 0, transform: "rotate(" + rot + "deg) translateY(" + ty + "px)", transformOrigin: "top center", marginLeft: i === 0 ? 0 : ml, position: "relative", zIndex: i, boxShadow: "0 2px 8px #0006" }}>
-                        <img src={CARD_BACK} style={{ width: "100%", height: "100%", objectFit: "fill" }} />
-                      </div>;
-                    });
-                  })()}
-                </div>
-                <div style={{ position: "absolute", right: 0, top: 0, display: "flex", alignItems: "flex-start", zIndex: 2 }}>
-                  {enemy.champion && (function() { var eCImg = enemy.champion.img ? imgSrc(enemy.champion.img) : ""; return <div data-uid={enemy.champion.uid} className="card-hover" onMouseEnter={function(e) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: enemy.champion, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }); }} onMouseLeave={function() { setHoverCard(null); }} style={{ width: HAND_W, height: HAND_H, borderRadius: 6, overflow: "hidden", border: "2px solid #ffffff25", cursor: "pointer", flexShrink: 0 }}>{eCImg ? <img src={eCImg} style={{ width: "100%", height: "100%", objectFit: "fill" }} onError={function(e) { if (PA[enemy.champion.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[enemy.champion.name] + ".webp"; } }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#555", textAlign: "center" }}>{enemy.champion.name}</div>}</div>; })()}
-                  {enemy.legend && (function() { var eImg = enemy.legend.img ? imgSrc(enemy.legend.img) : ""; return <div data-uid={enemy.legend.uid} className="card-hover" onMouseEnter={function(e) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: enemy.legend, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }); }} onMouseLeave={function() { setHoverCard(null); }} style={{ width: HAND_W, height: HAND_H, borderRadius: 6, overflow: "hidden", border: "2px solid #ffffff25", cursor: "pointer", flexShrink: 0, marginLeft: 3 }}>{eImg ? <img src={eImg} style={{ width: "100%", height: "100%", objectFit: "fill" }} onError={function(e) { if (PA[enemy.legend.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[enemy.legend.name] + ".webp"; } }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#555", textAlign: "center" }}>{enemy.legend.name}</div>}</div>; })()}
-                  {<div data-uid={"slot-" + enemySlot + "-runes"} style={{ marginLeft: 3 }}><CardBack w={HAND_W} h={HAND_H} count={enemy.runeDeck ? enemy.runeDeck.length : 0} label="RUNES" /></div>}
-                </div>
-              </div>;
-            })}
-          </div>
+          {/* ENEMY ZONE wrapper — in 3-player games both enemies share the top half (each takes half-width); otherwise just the spotlight enemy is shown. Pulse animation is per-panel so only the active enemy's column highlights. */}
+          {(function() {
+            var enemyIdxList = (pc === 3)
+              ? ps.reduce(function(acc, _p, i) { if (i !== viewSlot) acc.push(i); return acc; }, [])
+              : [effectiveSpotlight];
+            return <div style={{ display: "flex", flexDirection: "row", margin: "4px 4px 4px", flexShrink: 0, overflow: "visible", gap: 0 }}>
+              {enemyIdxList.map(function(eIdx, slotPos) {
+                var enemy = ps[eIdx];
+                if (!enemy) return null;
+                var enemySlot = eIdx;
+                var totalSlots = enemyIdxList.length;
+                var enemyP = lobbyPlayers && Object.keys(lobbyPlayers).map(function(k) { return lobbyPlayers[k]; }).find(function(p) { return p && p.slot === enemySlot; });
+                var enemyPhoto = (enemyP && enemyP.photoURL) || "";
+                var handLeftPct = (slotPos / totalSlots) * 100 + "%";
+                var handRightPct = (1 - (slotPos + 1) / totalSlots) * 100 + "%";
+                var pulseClass = isOnlineGame && !isMyTurnOnline && act === enemySlot && screen === "play" && !awakenPhase ? "anim-turn-pulse" : "";
+                return <div key={"epanel-" + enemySlot} className={pulseClass} style={{ flex: 1, minWidth: 0, padding: 2, overflow: "visible", border: "2px solid transparent", borderRadius: 8 }}>
+                  {/* ROW 1: ENEMY HAND — hand spans this column's width and centers; bin/deck/champ/legend/rune float on the edges via absolute positioning so they don't push the hand off-center. */}
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center", flexShrink: 0, overflow: "visible", padding: "4px 6px 2px", zIndex: 5, position: "relative", gap: 0, height: HAND_H + Math.round(22 * vScale), minHeight: HAND_H + Math.round(22 * vScale), maxHeight: HAND_H + Math.round(22 * vScale) }}>
+                    <div style={{ position: "relative", width: "100%", height: "100%", overflow: "visible" }}>
+                      <div style={{ position: "absolute", left: 0, top: 0, display: "flex", alignItems: "flex-start", zIndex: 2 }}>
+                        <div onClick={function() { setShowEnemyBin({name: pName(enemySlot), cards: enemy.trash || []}); }} style={{ cursor: "pointer" }}><BinPile trash={enemy.trash} /></div>
+                        <div data-uid={"slot-" + enemySlot + "-deck"} style={{ marginLeft: 3 }}><CardBack w={HAND_W} h={HAND_H} count={enemy.mainDeck ? enemy.mainDeck.length : 0} label="DECK" /></div>
+                      </div>
+                      <div style={{ position: "fixed", top: -Math.round(HAND_H * 1.5 * 0.5), left: handLeftPct, right: handRightPct, display: "flex", justifyContent: "center", alignItems: "flex-start", overflow: "visible", zIndex: 940, pointerEvents: "none" }}>
+                        {(function() {
+                          var eaw = Math.round(HAND_W * 1.5);
+                          var eah = Math.round(HAND_H * 1.5);
+                          return enemy.hand.map(function(c, i) {
+                            var total = enemy.hand.length;
+                            var mid = (total - 1) / 2;
+                            var rot = -(i - mid) * (total > 6 ? 0.75 : 1.05);
+                            var ty = -(Math.abs(i - mid) * (total > 6 ? 0.9 : 1.5));
+                            var ml = total > 7 ? -68 : total > 5 ? -38 : -12;
+                            return <div key={"eh-" + i} style={{ width: eaw, height: eah, borderRadius: 6, overflow: "hidden", border: "1.5px solid #FFD70040", flexShrink: 0, transform: "rotate(" + rot + "deg) translateY(" + ty + "px)", transformOrigin: "top center", marginLeft: i === 0 ? 0 : ml, position: "relative", zIndex: i, boxShadow: "0 2px 8px #0006" }}>
+                              <img src={CARD_BACK} style={{ width: "100%", height: "100%", objectFit: "fill" }} />
+                            </div>;
+                          });
+                        })()}
+                      </div>
+                      <div style={{ position: "absolute", right: 0, top: 0, display: "flex", alignItems: "flex-start", zIndex: 2 }}>
+                        {enemy.champion && (function() { var eCImg = enemy.champion.img ? imgSrc(enemy.champion.img) : ""; return <div data-uid={enemy.champion.uid} className="card-hover" onMouseEnter={function(e) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: enemy.champion, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }); }} onMouseLeave={function() { setHoverCard(null); }} style={{ width: HAND_W, height: HAND_H, borderRadius: 6, overflow: "hidden", border: "2px solid #ffffff25", cursor: "pointer", flexShrink: 0 }}>{eCImg ? <img src={eCImg} style={{ width: "100%", height: "100%", objectFit: "fill" }} onError={function(e) { if (PA[enemy.champion.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[enemy.champion.name] + ".webp"; } }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#555", textAlign: "center" }}>{enemy.champion.name}</div>}</div>; })()}
+                        {enemy.legend && (function() { var eImg = enemy.legend.img ? imgSrc(enemy.legend.img) : ""; return <div data-uid={enemy.legend.uid} className="card-hover" onMouseEnter={function(e) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: enemy.legend, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }); }} onMouseLeave={function() { setHoverCard(null); }} style={{ width: HAND_W, height: HAND_H, borderRadius: 6, overflow: "hidden", border: "2px solid #ffffff25", cursor: "pointer", flexShrink: 0, marginLeft: 3 }}>{eImg ? <img src={eImg} style={{ width: "100%", height: "100%", objectFit: "fill" }} onError={function(e) { if (PA[enemy.legend.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[enemy.legend.name] + ".webp"; } }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#555", textAlign: "center" }}>{enemy.legend.name}</div>}</div>; })()}
+                        <div data-uid={"slot-" + enemySlot + "-runes"} style={{ marginLeft: 3 }}><CardBack w={HAND_W} h={HAND_H} count={enemy.runeDeck ? enemy.runeDeck.length : 0} label="RUNES" /></div>
+                      </div>
+                    </div>
+                  </div>
 
-          {/* ROW 2: ENEMY RUNES + BASE — mirror of player row 4. Enemy avatar sits in the
-              gap between the base banner (left) and rune banner (right), absolutely
-              positioned so it stays vertically centred with both. z-index 2 so the
-              base/rune drop targets sit above the carry-cancel overlay (z 1) but
-              below the BF row (z 3). */}
-          <div style={{ display: "flex", alignItems: "stretch", flexShrink: 0, padding: "2px 6px", gap: 6, overflow: "visible", zIndex: 2, height: ZONE_H, minHeight: ZONE_H, maxHeight: ZONE_H, position: "relative" }}>
-            {/* Enemy base - horizontal (gold) */}
-            {ps.filter(function(_, i) { return i === effectiveSpotlight; }).map(function(enemy) {
-              var eI = ps.indexOf(enemy);
-              return <div key={"ebase"} style={{ display: "flex", flexDirection: "row", gap: 3, padding: "3px 4px", borderRadius: 6, border: "1.5px solid #ffffff35", alignItems: "center", flexWrap: "nowrap", flex: 1, height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H, overflow: "hidden" }}>
-                <div style={{ fontSize: 13, color: "#ffffff55", fontFamily: "Spectral,serif", letterSpacing: 1 }}>BASE</div>
-                {enemy.base.map(function(u) { return <Card key={u.uid} card={u} small onClick={tm ? function() { resTarget(u, eI, null); } : undefined} />; })}
-              </div>;
-            })}
-            {/* Avatar gap — visible reserved space between the enemy base and rune banners. */}
-            {(function() {
-              var enemy = ps.filter(function(_, i) { return i === effectiveSpotlight; })[0];
-              if (!enemy) return null;
-              var enemySlot = ps.indexOf(enemy);
-              var enemyP = lobbyPlayers && Object.keys(lobbyPlayers).map(function(k) { return lobbyPlayers[k]; }).find(function(p) { return p && p.slot === enemySlot; });
-              var enemyPhoto = (enemyP && enemyP.photoURL) || "";
-              return <div style={{ width: AVATAR_GAP_W, flexShrink: 0, position: "relative" }}>
-                <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 970, pointerEvents: "auto" }}>
-                  <PlayerAvatar
-                    photoURL={enemyPhoto}
-                    name={pName(enemySlot)}
-                    score={enemy.score || 0}
-                    xp={enemy.xp || 0}
-                    scoreMax={continuePlaying ? null : (lobbySettings && lobbySettings.mode === "Doubles" ? "11" : "8")}
-                    size={AVATAR_SIZE}
-                    isActive={act === enemySlot && screen === "play" && !awakenPhase}
-                    isMine={false}
-                    flipped={true}
-                    scorePulse={scorePulseIdx === enemySlot}
-                  />
-                </div>
-              </div>;
-            })()}
-            {/* Enemy runes - horizontal (white), overlapping via absolute positioning */}
-            {ps.filter(function(_, i) { return i === effectiveSpotlight; }).map(function(enemy) {
-              var erc = enemy.runes.length;
-              var step = 1 / 11;
-              return <div key={"erunes"} style={{ display: "flex", flexDirection: "row", padding: "3px 4px", borderRadius: 6, border: "1.5px solid #ffffff35", alignItems: "center", flex: 1, overflow: "visible", height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, marginRight: 4 }}>
-                  <div style={{ fontSize: 13, color: "#ffffff55", fontFamily: "Spectral,serif", letterSpacing: 1 }}>RUNES</div>
-                  <div style={{ fontSize: 13, color: "#ffffff44", fontFamily: "Spectral,serif" }}>({erc}/12)</div>
-                </div>
-                <div style={{ flex: 1, position: "relative", height: RUNE_H, minWidth: 0 }}>
-                  {enemy.runes.sort(function(a, b) { return DOM[a.domain].o - DOM[b.domain].o; }).map(function(r, ri) {
-                    var rUrl = r.img ? imgSrc(r.img) : "";
-                    var leftCalc = "calc(" + (ri * step * 100) + "% - " + (ri * step * RUNE_W) + "px)";
-                    return <div key={r.uid} data-uid={r.uid} style={{ width: RUNE_W, height: RUNE_H, borderRadius: 5, overflow: "hidden", border: "1.5px solid " + (r.exhausted ? "#333" : DOM[r.domain].c + "55"), filter: r.exhausted ? "brightness(0.58)" : "none", transform: r.exhausted ? "rotate(20deg)" : "none", position: "absolute", left: leftCalc, top: 0, zIndex: ri }}>{rUrl ? <img src={rUrl} style={{ width: "100%", height: "100%", objectFit: "fill" }} /> : <div style={{ width: "100%", height: "100%", background: DOM[r.domain].c + "33", display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: RUNE_W * 0.3 }}>{DOM[r.domain].i}</span></div>}</div>;
-                  })}
-                </div>
-              </div>;
-            })}
-          </div>
-          </div>{/* end ENEMY ZONE wrapper */}
+                  {/* ROW 2: ENEMY RUNES + BASE — mirror of player row 4. Enemy avatar sits in the
+                      gap between the base banner (left) and rune banner (right), absolutely
+                      positioned so it stays vertically centred with both. z-index 2 so the
+                      base/rune drop targets sit above the carry-cancel overlay (z 1) but
+                      below the BF row (z 3). */}
+                  <div style={{ display: "flex", alignItems: "stretch", flexShrink: 0, padding: "2px 6px", gap: 6, overflow: "visible", zIndex: 2, height: ZONE_H, minHeight: ZONE_H, maxHeight: ZONE_H, position: "relative" }}>
+                    {/* Enemy base - horizontal (gold) */}
+                    <div key={"ebase"} style={{ display: "flex", flexDirection: "row", gap: 3, padding: "3px 4px", borderRadius: 6, border: "1.5px solid #ffffff35", alignItems: "center", flexWrap: "nowrap", flex: 1, height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H, overflow: "hidden" }}>
+                      <div style={{ fontSize: 13, color: "#ffffff55", fontFamily: "Spectral,serif", letterSpacing: 1 }}>BASE</div>
+                      {enemy.base.map(function(u) { return <Card key={u.uid} card={u} small onClick={tm ? function() { resTarget(u, enemySlot, null); } : undefined} />; })}
+                    </div>
+                    {/* Avatar gap — visible reserved space between the enemy base and rune banners. */}
+                    <div style={{ width: AVATAR_GAP_W, flexShrink: 0, position: "relative" }}>
+                      <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 970, pointerEvents: "auto" }}>
+                        <PlayerAvatar
+                          photoURL={enemyPhoto}
+                          name={pName(enemySlot)}
+                          score={enemy.score || 0}
+                          xp={enemy.xp || 0}
+                          scoreMax={continuePlaying ? null : (lobbySettings && lobbySettings.mode === "Doubles" ? "11" : "8")}
+                          size={AVATAR_SIZE}
+                          isActive={act === enemySlot && screen === "play" && !awakenPhase}
+                          isMine={false}
+                          flipped={true}
+                          scorePulse={scorePulseIdx === enemySlot}
+                        />
+                      </div>
+                    </div>
+                    {/* Enemy runes - horizontal (white), overlapping via absolute positioning */}
+                    {(function() {
+                      var erc = enemy.runes.length;
+                      var step = 1 / 11;
+                      return <div key={"erunes"} style={{ display: "flex", flexDirection: "row", padding: "3px 4px", borderRadius: 6, border: "1.5px solid #ffffff35", alignItems: "center", flex: 1, overflow: "visible", height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H }}>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, marginRight: 4 }}>
+                          <div style={{ fontSize: 13, color: "#ffffff55", fontFamily: "Spectral,serif", letterSpacing: 1 }}>RUNES</div>
+                          <div style={{ fontSize: 13, color: "#ffffff44", fontFamily: "Spectral,serif" }}>({erc}/12)</div>
+                        </div>
+                        <div style={{ flex: 1, position: "relative", height: RUNE_H, minWidth: 0 }}>
+                          {enemy.runes.sort(function(a, b) { return DOM[a.domain].o - DOM[b.domain].o; }).map(function(r, ri) {
+                            var rUrl = r.img ? imgSrc(r.img) : "";
+                            var leftCalc = "calc(" + (ri * step * 100) + "% - " + (ri * step * RUNE_W) + "px)";
+                            return <div key={r.uid} data-uid={r.uid} style={{ width: RUNE_W, height: RUNE_H, borderRadius: 5, overflow: "hidden", border: "1.5px solid " + (r.exhausted ? "#333" : DOM[r.domain].c + "55"), filter: r.exhausted ? "brightness(0.58)" : "none", transform: r.exhausted ? "rotate(20deg)" : "none", position: "absolute", left: leftCalc, top: 0, zIndex: ri }}>{rUrl ? <img src={rUrl} style={{ width: "100%", height: "100%", objectFit: "fill" }} /> : <div style={{ width: "100%", height: "100%", background: DOM[r.domain].c + "33", display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: RUNE_W * 0.3 }}>{DOM[r.domain].i}</span></div>}</div>;
+                          })}
+                        </div>
+                      </div>;
+                    })()}
+                  </div>
+                </div>;
+              })}
+            </div>;
+          })()}
 
           {/* ROW 3: BATTLEFIELDS — fixed static size */}
           <div onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverBf(-1); }} style={{ display: "flex", gap: 3, padding: "2px 6px", flex: "0 0 auto", height: BF_ROW_H, minHeight: BF_ROW_H, maxHeight: BF_ROW_H, position: "relative", zIndex: 3, overflow: "hidden" }}>
