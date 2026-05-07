@@ -326,13 +326,13 @@ function DiamondBadge({ value, color, size, onInc, onDec, label }) {
 // diamonds layered over the bottom. The arc radius is `circleRadius + arcGap` so the
 // name visually hugs the circle outline.
 var _avatarArcCounter = 0;
-function PlayerAvatar({ photoURL, name, score, xp, scoreMax, size, isActive, isMine, flipped, onPhotoClick, onScoreInc, onScoreDec, onXpInc, onXpDec, scorePulse, dataUid }) {
+function PlayerAvatar({ photoURL, name, score, xp, scoreMax, size, isActive, isMine, flipped, onPhotoClick, onScoreInc, onScoreDec, onXpInc, onXpDec, scorePulse, dataUid, accentColor }) {
   size = size || 120;
   var _idRef = useRef(null);
   if (!_idRef.current) _idRef.current = "name-arc-" + (++_avatarArcCounter);
   var arcId = _idRef.current;
-  var color = isActive ? "#FFD700" : "#FFD70077";
-  var nameColor = isActive ? "#FFD700" : "#FFD700cc";
+  var color = accentColor ? accentColor : (isActive ? "#FFD700" : "#FFD70077");
+  var nameColor = accentColor ? accentColor : (isActive ? "#FFD700" : "#FFD700cc");
   var fontSize = Math.max(11, Math.round(size * 0.11));
   // Player (frown above): tight 3-px clearance — name hugs the circle.
   // Enemy (smile below): radius pushed out by an extra textHeight so the upright
@@ -6430,7 +6430,13 @@ function RiftboundGame() {
                 var handLeftPct = (slotPos / totalSlots) * 100 + "%";
                 var handRightPct = (1 - (slotPos + 1) / totalSlots) * 100 + "%";
                 var pulseClass = isOnlineGame && !isMyTurnOnline && act === enemySlot && screen === "play" && !awakenPhase ? "anim-turn-pulse" : "";
-                return <div key={"epanel-" + enemySlot} className={pulseClass} style={{ flex: 1, minWidth: 0, padding: 2, overflow: "visible", border: "2px solid transparent", borderRadius: 8 }}>
+                var ENEMY_ACCENTS = ["#F87171", "#38BDF8"]; // left panel red, right panel sky-blue
+                var useAccent = totalSlots > 1;
+                var accent = useAccent ? ENEMY_ACCENTS[slotPos % ENEMY_ACCENTS.length] : null;
+                var bandBorder = accent ? ("1.5px solid " + accent + "88") : "1.5px solid #ffffff35";
+                var labelColor = accent ? (accent + "cc") : "#ffffff55";
+                var labelSubColor = accent ? (accent + "99") : "#ffffff44";
+                return <div key={"epanel-" + enemySlot} className={pulseClass} style={{ flex: 1, minWidth: 0, padding: 2, overflow: "visible", border: accent ? ("2px solid " + accent + "55") : "2px solid transparent", borderRadius: 8, background: accent ? ("linear-gradient(180deg, " + accent + "0a, transparent 60%)") : "transparent" }}>
                   {/* ROW 1: ENEMY HAND — hand spans this column's width and centers; bin/deck/champ/legend/rune float on the edges via absolute positioning so they don't push the hand off-center. */}
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center", flexShrink: 0, overflow: "visible", padding: "4px 6px 2px", zIndex: 5, position: "relative", gap: 0, height: HAND_H + Math.round(22 * vScale), minHeight: HAND_H + Math.round(22 * vScale), maxHeight: HAND_H + Math.round(22 * vScale) }}>
                     <div style={{ position: "relative", width: "100%", height: "100%", overflow: "visible" }}>
@@ -6447,8 +6453,9 @@ function RiftboundGame() {
                             var mid = (total - 1) / 2;
                             var rot = -(i - mid) * (total > 6 ? 0.75 : 1.05);
                             var ty = -(Math.abs(i - mid) * (total > 6 ? 0.9 : 1.5));
-                            var ml = total > 7 ? -68 : total > 5 ? -38 : -12;
-                            return <div key={"eh-" + i} style={{ width: eaw, height: eah, borderRadius: 6, overflow: "hidden", border: "1.5px solid #FFD70040", flexShrink: 0, transform: "rotate(" + rot + "deg) translateY(" + ty + "px)", transformOrigin: "top center", marginLeft: i === 0 ? 0 : ml, position: "relative", zIndex: i, boxShadow: "0 2px 8px #0006" }}>
+                            var ml = totalSlots > 1 ? (total > 7 ? -95 : total > 5 ? -65 : -35) : (total > 7 ? -68 : total > 5 ? -38 : -12);
+                            var handBorder = accent ? ("1.5px solid " + accent + "88") : "1.5px solid #FFD70040";
+                            return <div key={"eh-" + i} style={{ width: eaw, height: eah, borderRadius: 6, overflow: "hidden", border: handBorder, flexShrink: 0, transform: "rotate(" + rot + "deg) translateY(" + ty + "px)", transformOrigin: "top center", marginLeft: i === 0 ? 0 : ml, position: "relative", zIndex: i, boxShadow: "0 2px 8px #0006" }}>
                               <img src={CARD_BACK} style={{ width: "100%", height: "100%", objectFit: "fill" }} />
                             </div>;
                           });
@@ -6469,8 +6476,8 @@ function RiftboundGame() {
                       below the BF row (z 3). */}
                   <div style={{ display: "flex", alignItems: "stretch", flexShrink: 0, padding: "2px 6px", gap: 6, overflow: "visible", zIndex: 2, height: ZONE_H, minHeight: ZONE_H, maxHeight: ZONE_H, position: "relative" }}>
                     {/* Enemy base - horizontal (gold) */}
-                    <div key={"ebase"} style={{ display: "flex", flexDirection: "row", gap: 3, padding: "3px 4px", borderRadius: 6, border: "1.5px solid #ffffff35", alignItems: "center", flexWrap: "nowrap", flex: 1, height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H, overflow: "hidden" }}>
-                      <div style={{ fontSize: 13, color: "#ffffff55", fontFamily: "Spectral,serif", letterSpacing: 1 }}>BASE</div>
+                    <div key={"ebase"} style={{ display: "flex", flexDirection: "row", gap: 3, padding: "3px 4px", borderRadius: 6, border: bandBorder, alignItems: "center", flexWrap: "nowrap", flex: 1, height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H, overflow: "hidden" }}>
+                      <div style={{ fontSize: 13, color: labelColor, fontFamily: "Spectral,serif", letterSpacing: 1 }}>BASE</div>
                       {enemy.base.map(function(u) { return <Card key={u.uid} card={u} small onClick={tm ? function() { resTarget(u, enemySlot, null); } : undefined} />; })}
                     </div>
                     {/* Avatar gap — visible reserved space between the enemy base and rune banners. */}
@@ -6487,6 +6494,7 @@ function RiftboundGame() {
                           isMine={false}
                           flipped={true}
                           scorePulse={scorePulseIdx === enemySlot}
+                          accentColor={accent}
                         />
                       </div>
                     </div>
@@ -6494,10 +6502,10 @@ function RiftboundGame() {
                     {(function() {
                       var erc = enemy.runes.length;
                       var step = 1 / 11;
-                      return <div key={"erunes"} style={{ display: "flex", flexDirection: "row", padding: "3px 4px", borderRadius: 6, border: "1.5px solid #ffffff35", alignItems: "center", flex: 1, overflow: "visible", height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H }}>
+                      return <div key={"erunes"} style={{ display: "flex", flexDirection: "row", padding: "3px 4px", borderRadius: 6, border: bandBorder, alignItems: "center", flex: 1, overflow: "visible", height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H }}>
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, marginRight: 4 }}>
-                          <div style={{ fontSize: 13, color: "#ffffff55", fontFamily: "Spectral,serif", letterSpacing: 1 }}>RUNES</div>
-                          <div style={{ fontSize: 13, color: "#ffffff44", fontFamily: "Spectral,serif" }}>({erc}/12)</div>
+                          <div style={{ fontSize: 13, color: labelColor, fontFamily: "Spectral,serif", letterSpacing: 1 }}>RUNES</div>
+                          <div style={{ fontSize: 13, color: labelSubColor, fontFamily: "Spectral,serif" }}>({erc}/12)</div>
                         </div>
                         <div style={{ flex: 1, position: "relative", height: RUNE_H, minWidth: 0 }}>
                           {enemy.runes.sort(function(a, b) { return DOM[a.domain].o - DOM[b.domain].o; }).map(function(r, ri) {
