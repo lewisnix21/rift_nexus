@@ -6478,7 +6478,14 @@ function RiftboundGame() {
                     {/* Enemy base - horizontal (gold) */}
                     <div key={"ebase"} style={{ display: "flex", flexDirection: "row", gap: 3, padding: "3px 4px", borderRadius: 6, border: bandBorder, alignItems: "center", flexWrap: "nowrap", flex: 1, height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H, overflow: "hidden" }}>
                       <div style={{ fontSize: 13, color: labelColor, fontFamily: "Spectral,serif", letterSpacing: 1 }}>BASE</div>
-                      {enemy.base.map(function(u) { return <Card key={u.uid} card={u} small onClick={tm ? function() { resTarget(u, enemySlot, null); } : undefined} />; })}
+                      {(function() {
+                        var bcount = enemy.base.length;
+                        var bml = 0;
+                        if (totalSlots > 1 && bcount > 2) {
+                          bml = bcount >= 7 ? -110 : bcount === 6 ? -95 : bcount === 5 ? -82 : bcount === 4 ? -65 : -35;
+                        }
+                        return enemy.base.map(function(u, i) { return <div key={u.uid} style={{ marginLeft: i === 0 ? 0 : bml, position: "relative", zIndex: i, flexShrink: 0 }}><Card card={u} small onClick={tm ? function() { resTarget(u, enemySlot, null); } : undefined} /></div>; });
+                      })()}
                     </div>
                     {/* Avatar gap — visible reserved space between the enemy base and rune banners. */}
                     <div style={{ width: AVATAR_GAP_W, flexShrink: 0, position: "relative" }}>
