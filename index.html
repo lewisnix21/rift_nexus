@@ -6469,12 +6469,26 @@ function RiftboundGame() {
                         {(function() {
                           var eaw = Math.round(HAND_W * 1.5);
                           var eah = Math.round(HAND_H * 1.5);
+                          var total = enemy.hand.length;
+                          // Dynamic overlap: each render, fit the fanned hand into the space between bin/deck (left) and champ/legend/runes (right).
+                          var ml;
+                          if (totalSlots > 1 && total >= 2) {
+                            var _vwNow = (typeof window !== "undefined" ? window.innerWidth : 1920);
+                            var _halfVw = _vwNow / totalSlots;
+                            var _leftZone = HAND_W * 2 + 24;   // bin + deck + gap + safety
+                            var _rightZone = HAND_W * 3 + 30;  // champ + legend + runes + gaps + safety
+                            var _maxHandW = Math.max(60, _halfVw - _leftZone - _rightZone);
+                            // total = eaw + (total - 1) * (eaw + ml) ≤ _maxHandW
+                            var _maxMl = (_maxHandW - eaw) / (total - 1) - eaw;
+                            ml = Math.floor(Math.min(_maxMl, -12));
+                            if (ml < -(eaw - 25)) ml = -(eaw - 25);
+                          } else {
+                            ml = total > 7 ? -68 : total > 5 ? -38 : -12;
+                          }
                           return enemy.hand.map(function(c, i) {
-                            var total = enemy.hand.length;
                             var mid = (total - 1) / 2;
                             var rot = -(i - mid) * (total > 6 ? 0.75 : 1.05);
                             var ty = -(Math.abs(i - mid) * (total > 6 ? 0.9 : 1.5));
-                            var ml = totalSlots > 1 ? (total > 7 ? -120 : total > 5 ? -90 : -60) : (total > 7 ? -68 : total > 5 ? -38 : -12);
                             var handBorder = accent ? ("1.5px solid " + accent + "88") : "1.5px solid #FFD70040";
                             return <div key={"eh-" + i} style={{ width: eaw, height: eah, borderRadius: 6, overflow: "hidden", border: handBorder, flexShrink: 0, transform: "rotate(" + rot + "deg) translateY(" + ty + "px)", transformOrigin: "top center", marginLeft: i === 0 ? 0 : ml, position: "relative", zIndex: i, boxShadow: "0 2px 8px #0006" }}>
                               <img src={CARD_BACK} style={{ width: "100%", height: "100%", objectFit: "fill" }} />
