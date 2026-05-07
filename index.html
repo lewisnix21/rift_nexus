@@ -1607,6 +1607,26 @@ function RiftboundGame() {
     _rdTimer.current = setTimeout(function() { setResolvedPhase(null); setPendingSpell(null); setResolveAcceptors({}); setSpellResolving(null); }, 2200);
   }, [pendingSpell, resolveAcceptors, lobbyPlayers, lobbyType, autoMode, resolvedPhase]);
 
+  // Auto-cancel: if every spell in the chain has been manually pulled out (binned/returned)
+  // before the resolve flow finishes, drop pendingSpell so the Resolve button vanishes.
+  useEffect(function() {
+    if (resolvedPhase) return;
+    if (!pendingSpell) return;
+    if (showcaseCard) return;
+    if (showcaseHistory && showcaseHistory.length > 0) return;
+    setPendingSpell(null);
+    setResolveAcceptors({});
+  }, [showcaseCard, showcaseHistory, pendingSpell, resolvedPhase]);
+
+  // Auto-cancel: if every unit on the contested battlefield has been removed during a
+  // showdown (binned, killed, returned), drop sd so the showdown buttons vanish.
+  useEffect(function() {
+    if (!sd) return;
+    if (!bfs || !bfs[sd.bfIdx]) return;
+    var anyUnits = (bfs[sd.bfIdx].units || []).some(function(arr) { return arr && arr.length > 0; });
+    if (!anyUnits) setSd(null);
+  }, [sd, bfs]);
+
   // Chat listener
   useEffect(function() {
     if (!roomCode) return;
