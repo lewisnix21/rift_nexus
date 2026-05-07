@@ -4705,11 +4705,11 @@ function RiftboundGame() {
     for (var bk = 0; bk < nb.length; bk++) {
       if (!nb[bk].units[idx]) continue;
       var ui = nb[bk].units[idx].findIndex(function(u) { return u.uid === cardUid; });
-      if (ui >= 0) { var unit = nb[bk].units[idx].splice(ui, 1)[0]; p.base.push(Object.assign({}, unit, { exhausted: true })); aL(pName(idx) + " returns " + cName(unit) + " to base"); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); fireOnMoveToBaseEffect(unit); return; }
+      if (ui >= 0) { var unit = nb[bk].units[idx].splice(ui, 1)[0]; p.base.push(Object.assign({}, unit, { exhausted: true })); aL(pName(idx) + " returns " + cName(unit) + " to base"); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); if (pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.uid === cardUid) setPendingZonePlay(null); _syncLive(np, nb); fireOnMoveToBaseEffect(unit); return; }
     }
     // Check bin
     var ti = p.trash.findIndex(function(c) { return c.uid === cardUid; });
-    if (ti >= 0) { var card = Object.assign({}, p.trash[ti], { exhausted: p.trash[ti].type !== "Gear" }); p.trash.splice(ti, 1); p.base.push(card); aL(pName(idx) + " returns " + cName(card) + " to base from bin"); var np = ps.slice(); np[idx] = p; setPs(np); return; }
+    if (ti >= 0) { var card = Object.assign({}, p.trash[ti], { exhausted: p.trash[ti].type !== "Gear" }); p.trash.splice(ti, 1); p.base.push(card); aL(pName(idx) + " returns " + cName(card) + " to base from bin"); var np = ps.slice(); np[idx] = p; setPs(np); if (pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.uid === cardUid) setPendingZonePlay(null); _syncLive(np, null); return; }
   }
   function returnChampionToSlot(cardUid) {
     if (!canMoveOwn) return;
