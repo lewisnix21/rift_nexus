@@ -2402,12 +2402,26 @@ function RiftboundGame() {
                 var deckName = _myLobbyP.deck;
                 var t = DECKS[deckName];
                 if (!t) { alert("Deck not found: " + deckName); return; }
-                var nps = [initPlayer(deckName), initPlayer(deckName)];
+                var testPc = (lobbySettings && lobbySettings.pc) || 2;
+                var testMode = lobbySettings && lobbySettings.mode;
+                var nps = [];
+                for (var i = 0; i < testPc; i++) {
+                  var p = initPlayer(deckName);
+                  if (testMode === "Doubles") p.team = (i % 2 === 0) ? "red" : "blue";
+                  nps.push(p);
+                }
                 var bfNames = t.bfs || [];
-                var makeBf = function(name) { if (!name) return null; var bfCard = mkC(name); if (!bfCard) return null; return Object.assign({}, bfCard, { controller: null, units: [[], []], uid: uid() }); };
-                var gb = [makeBf(bfNames[0] || null), makeBf(bfNames[1] || bfNames[0] || null)].filter(Boolean);
+                var emptyUnits = function() { var u = []; for (var k = 0; k < testPc; k++) u.push([]); return u; };
+                var makeBf = function(name) { if (!name) return null; var bfCard = mkC(name); if (!bfCard) return null; return Object.assign({}, bfCard, { controller: null, units: emptyUnits(), uid: uid() }); };
+                var numBfs = testPc === 2 ? 2 : 3;
+                var gb = [];
+                for (var b = 0; b < numBfs; b++) {
+                  var bfName = bfNames.length ? bfNames[b % bfNames.length] : null;
+                  var bf = makeBf(bfName);
+                  if (bf) gb.push(bf);
+                }
                 if (!gb.length) { alert("No battlefields in deck."); return; }
-                setPc(2); setMySlot(0); setPs(nps); setBfs(gb);
+                setPc(testPc); setMySlot(0); setPs(nps); setBfs(gb);
                 setTurn(1); setAct(0); setFirstPlayerIdx(0);
                 _gamePhaseRef.current = "playing";
                 _soloTestRef.current = true;
