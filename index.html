@@ -4897,12 +4897,21 @@ function RiftboundGame() {
         var scCard = Object.assign({}, showcaseCard, { exhausted: false, gear: [] });
         p.hand.push(scCard);
         aL(pName(idx2) + " returns " + cName(scCard) + " to hand from showcase");
+        // If the returned card was the spell awaiting Resolve, cancel the resolve flow.
+        var _wasPendingSpell = pendingSpell && pendingSpell.uid === cardUid;
         if (showcaseHistory.length > 0) {
           setShowcaseCard(showcaseHistory[0]);
           setShowcaseHistory(function(prev) { return prev.slice(1); });
         } else {
           setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false);
           setShowcaseAcceptors({}); setShowcasePriority(null); setShowcaseActed(false);
+          // Last card removed from the showcase — drop any pending Resolve gates.
+          if (pendingSpell) { setPendingSpell(null); setResolveAcceptors({}); if (roomCode) { try { fbDb.ref("lobbies/" + roomCode + "/spellResolve").set({ card: null, acceptors: {}, by: myUid }); } catch(e) {} } }
+        }
+        if (_wasPendingSpell && showcaseHistory.length > 0) {
+          // Mid-chain: clear the gate for the popped spell so the flow can continue or cancel.
+          setPendingSpell(null); setResolveAcceptors({});
+          if (roomCode) { try { fbDb.ref("lobbies/" + roomCode + "/spellResolve").set({ card: null, acceptors: {}, by: myUid }); } catch(e) {} }
         }
         var np = ps.slice(); np[idx2] = p; setPs(np); fireOnMoveToHandEffect(scCard); return;
       }
