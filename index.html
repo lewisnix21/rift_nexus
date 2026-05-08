@@ -6084,7 +6084,7 @@ function RiftboundGame() {
     var ah = Math.round(HAND_H * 1.5);
     return React.createElement("div", { onMouseLeave: function() { setHandHovIdx(-1); if (!isEnemy) setHoveredHandCard(null); }, style: { display: "flex", justifyContent: "center", alignItems: "flex-end", height: ah, flexShrink: 0, overflow: "visible", background: "transparent", padding: isEnemy ? "0 20px 0" : "2px 20px 0", transform: isEnemy ? "scaleY(-1)" : "none", pointerEvents: autoMode ? "none" : undefined } },
       hand.map(function(c, i) {
-        var rot = (i - mid) * (total > 6 ? 0.9 : 1.35);
+        var rot = (i - mid) * (total > 6 ? 1.5 : 2.0);
         var ty = Math.abs(i - mid) * (total > 6 ? 1.2 : 1.8);
         var ml = total > 7 ? -22 : total > 5 ? -12 : 0;
         var playable = !isEnemy && canPlayCard(c);
