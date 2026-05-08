@@ -1224,18 +1224,22 @@ function RiftboundGame() {
   var _pendingCursor = useState({ x: 0, y: 0, dx: 0 }), pendingCursor = _pendingCursor[0], setPendingCursor = _pendingCursor[1];
   useEffect(function() {
     if (!pendingZonePlay) return;
-    var resetT;
+    var rafId = null, lastX = 0, lastY = 0, smoothDx = 0, decayT = null;
     var handler = function(e) {
-      setPendingCursor(function(prev) {
-        var dx = (prev.x ? e.clientX - prev.x : 0);
-        if (dx > 40) dx = 40; else if (dx < -40) dx = -40;
-        if (resetT) clearTimeout(resetT);
-        resetT = setTimeout(function() { setPendingCursor(function(p) { return Object.assign({}, p, { dx: 0 }); }); }, 90);
-        return { x: e.clientX, y: e.clientY, dx: dx };
+      var rawDx = lastX ? e.clientX - lastX : 0;
+      lastX = e.clientX; lastY = e.clientY;
+      smoothDx = smoothDx * 0.7 + rawDx * 0.3;
+      if (decayT) clearTimeout(decayT);
+      decayT = setTimeout(function() { smoothDx = 0; setPendingCursor(function(p) { return { x: p.x, y: p.y, dx: 0 }; }); }, 150);
+      if (rafId) return;
+      rafId = requestAnimationFrame(function() {
+        rafId = null;
+        var clampedDx = Math.max(-40, Math.min(40, smoothDx));
+        setPendingCursor({ x: lastX, y: lastY, dx: clampedDx });
       });
     };
     window.addEventListener("mousemove", handler);
-    return function() { window.removeEventListener("mousemove", handler); if (resetT) clearTimeout(resetT); };
+    return function() { window.removeEventListener("mousemove", handler); if (rafId) cancelAnimationFrame(rafId); if (decayT) clearTimeout(decayT); };
   }, [pendingZonePlay]);
   // Hovered hand card (auto-mode only). Used by rune rendering to highlight which runes
   // would be tapped (light-blue) vs recycled (red) to pay the cost of the hovered card.
