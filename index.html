@@ -7093,14 +7093,16 @@ function RiftboundGame() {
           {isOnline && meReady && !allReadyCFL && pending.length > 0 && pendingNames.length > 0 && <span style={{ fontSize: 11, color: "#60a5fa99", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1 }}>Awaiting: {pendingNames.join(", ")}</span>}
         </div>;
       })()}
-      {/* Floating END TURN button (bottom-right) — only when no showdown, no pending spell-resolve chain, and no targeting prompt (manual modes' tm/fc states) */}
-      {screen === "play" && !awakenPhase && !sd && !pendingSpell && !pendingBeginConquer && !autoPrompt && !showcaseCard && !tm && !fc && (function() {
-        var isOnlineGame = (lobbyType === "host" || lobbyType === "join") && !_soloTestRef.current;
-        if (isOnlineGame) { if (_gamePhaseRef.current !== "playing") return null; if (act !== mySlot) return null; }
-        return <button onClick={endTurn} style={{ position: "fixed", top: "min(calc(50% + 185px), calc(100vh - " + (HAND_H + 110) + "px))", right: "calc(2% + 8px)", padding: "12px 28px", borderRadius: 8, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70060,#FF8C0030)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", zIndex: 950, boxShadow: "0 4px 16px #000c, 0 0 24px rgba(255,215,0,0.2)", letterSpacing: 1 }}>END TURN</button>;
-      })()}
-      {/* Bottom tabs (Log + Chat + Settings) — anchored bottom-right under the action button (END TURN etc.). All three buttons share the same grey palette so the panel reads as a single joined unit along the bottom. The settings popup is `position: absolute` relative to the gear so it hangs upward from this panel; the LOG/CHAT popup is `position: fixed` and right-shifts to sit above its own button. */}
-      <div style={{ position: "fixed", bottom: 8, right: 3 * HAND_W + 24, zIndex: 970, display: "flex", flexDirection: "column", alignItems: "flex-end", pointerEvents: "auto" }}>
+      {/* End Turn + LOG/CHAT/SETTINGS share a column-flex wrapper. With alignItems:stretch
+          the End Turn button matches the natural width of the LOG bar below it. */}
+      {(function() {
+        var endTurnVisible = screen === "play" && !awakenPhase && !sd && !pendingSpell && !pendingBeginConquer && !autoPrompt && !showcaseCard && !tm && !fc;
+        if (endTurnVisible) {
+          var isOnlineGame = (lobbyType === "host" || lobbyType === "join") && !_soloTestRef.current;
+          if (isOnlineGame && (_gamePhaseRef.current !== "playing" || act !== mySlot)) endTurnVisible = false;
+        }
+        return <div style={{ position: "fixed", bottom: 8, right: 3 * HAND_W + 24, zIndex: 970, display: "flex", flexDirection: "column", alignItems: "stretch", pointerEvents: "auto" }}>
+          {endTurnVisible && <button onClick={endTurn} style={{ padding: "10px 0", marginBottom: 6, borderRadius: 6, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70060,#FF8C0030)", color: "#FFD700", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", letterSpacing: 1.5, boxShadow: "0 4px 16px #000c, 0 0 24px rgba(255,215,0,0.2)", textTransform: "uppercase" }}>END TURN</button>}
         <div style={{ display: "flex", margin: "6px 0", alignItems: "stretch", background: "rgba(20,20,40,0.6)", border: "1px solid #ffffff20", borderRadius: 6, boxShadow: "0 2px 8px #000a" }}>
           <button onClick={function() { setBottomTab(bottomTab === "log" ? null : "log"); }} style={{ padding: "6px 20px", border: "none", borderRight: "1px solid #ffffff18", background: bottomTab === "log" ? "rgba(255,255,255,0.10)" : "transparent", color: "#aaa", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", letterSpacing: 1, borderRadius: "5px 0 0 5px" }}>LOG</button>
           <button onClick={function() { setBottomTab(bottomTab === "chat" ? null : "chat"); }} style={{ padding: "6px 20px", border: "none", borderRight: "1px solid #ffffff18", background: bottomTab === "chat" ? "rgba(255,255,255,0.10)" : "transparent", color: "#aaa", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", letterSpacing: 1 }}>CHAT</button>
@@ -7153,7 +7155,8 @@ function RiftboundGame() {
             </div>}
           </div>
         </div>
-      </div>
+      </div>;
+      })()}
       {/* Tab popup — anchored just above its respective tab button (LOG / CHAT). z-index sits above the END TURN / Resolve action buttons (950), the deck/bin/token piles (960), the avatar (970), and the pass-through hand wrapper (980) so the popup is never covered. The right offset shifts under the LOG button (further left) or CHAT button (just left of the gear) so each box hangs over its own button. */}
       {bottomTab && <div style={{ position: "fixed", bottom: 44, right: bottomTab === "log" ? 146 : 70, width: 380, height: 240, background: "rgba(10,15,40,0.97)", border: "1px solid #ffffff20", borderRadius: 10, padding: 8, display: "flex", flexDirection: "column", zIndex: 985, boxShadow: "0 -4px 16px #000a" }}>
         {bottomTab === "log" && <>
