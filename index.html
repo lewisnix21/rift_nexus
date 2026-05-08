@@ -6784,6 +6784,8 @@ function RiftboundGame() {
                 </div>}
               </div>
             </div>
+            {/* Hand zone arc backing — dark teal/black dome with gold border that elevates the hand area */}
+            <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "130vw", height: Math.round(HAND_H * 1.5 + 54), borderRadius: "50% 50% 0 0 / 100% 100% 0 0", background: "radial-gradient(ellipse 65% 100% at 50% 100%, #0e2a2a 0%, #071b1b 35%, #041010 65%, #020909 100%)", borderTop: "1.5px solid rgba(155,118,26,0.62)", boxShadow: "0 -16px 48px rgba(0,0,0,0.95), 0 -6px 22px rgba(0,0,0,0.8), inset 0 1px 0 rgba(155,118,26,0.18)", zIndex: 955, pointerEvents: "none" }} />
             {/* Hand wrapper — z-index 980 sits above the avatar (970) so a hovered hand card scales up over the avatar instead of being clipped behind it. The OUTER fixed wrapper is pointer-events:none so it doesn't intercept clicks on the deck/bin/token piles or the rune/champion/legend piles that share the bottom band of the viewport; the INNER wrapper around the FannedHand re-enables pointer events for the actual hand drop/click target (drag-to-hand return + carry cancel). */}
             <div style={{ position: "fixed", bottom: -Math.round(HAND_H * 1.5 * 0.35), left: 0, right: 0, display: "flex", justifyContent: "center", alignItems: "flex-end", overflow: "visible", zIndex: 980, pointerEvents: "none", "--hand-ah": Math.round(HAND_H * 1.5) + "px" }}>
               <div style={{ pointerEvents: autoMode ? "none" : "auto", display: "flex", alignItems: "flex-end" }}
