@@ -6692,7 +6692,7 @@ function RiftboundGame() {
                           xp={enemy.xp || 0}
                           scoreMax={continuePlaying ? null : (lobbySettings && lobbySettings.mode === "Doubles" ? "11" : "8")}
                           size={AVATAR_SIZE}
-                          isActive={act === enemySlot && screen === "play" && !awakenPhase}
+                          isActive={act === enemySlot && (screen === "play" || screen === "sd") && !awakenPhase}
                           isMine={false}
                           flipped={true}
                           scorePulse={scorePulseIdx === enemySlot}
@@ -6829,7 +6829,7 @@ function RiftboundGame() {
                   xp={myCur.xp || 0}
                   scoreMax={continuePlaying ? null : (lobbySettings && lobbySettings.mode === "Doubles" ? "11" : "8")}
                   size={AVATAR_SIZE}
-                  isActive={isMyTurnOnline && screen === "play" && !awakenPhase}
+                  isActive={isMyTurnOnline && (screen === "play" || screen === "sd") && !awakenPhase}
                   isMine={true}
                   onScoreInc={function() { var idx = myActIdx; var np = ps.slice(); np[idx] = Object.assign({}, np[idx], { score: np[idx].score + 1 }); setPs(np); _syncLive(np, null); }}
                   onScoreDec={function() { var idx = myActIdx; var np = ps.slice(); np[idx] = Object.assign({}, np[idx], { score: Math.max(0, np[idx].score - 1) }); setPs(np); _syncLive(np, null); }}
@@ -6897,12 +6897,12 @@ function RiftboundGame() {
             {/* Hand zone banner — straight dark backing bar with gold top border. Sized to
                 cover only the hand row (HAND_H + small overshoot) so it doesn't bleed into
                 the avatar / champion / legend row above it. */}
-            <div className={isMyTurnOnline && screen === "play" && !awakenPhase ? "anim-banner-pulse-bottom" : ""} style={{ position: "fixed", bottom: 0, left: 0, right: 0, height: HAND_H + Math.round(34 * vScale), borderRadius: "10px 10px 0 0", background: "linear-gradient(180deg, rgba(22,52,76,0.94) 0%, rgba(14,34,52,0.97) 55%, #06121e 100%)", borderTop: "1.5px solid rgba(155,118,26,0.58)", boxShadow: "0 -14px 44px rgba(0,0,0,0.92), 0 -4px 18px rgba(0,0,0,0.7), inset 0 1px 0 rgba(155,118,26,0.15)", zIndex: 1, pointerEvents: "none" }} />
+            <div className={isMyTurnOnline && (screen === "play" || screen === "sd") && !awakenPhase ? "anim-banner-pulse-bottom" : ""} style={{ position: "fixed", bottom: 0, left: 0, right: 0, height: HAND_H + Math.round(34 * vScale), borderRadius: "10px 10px 0 0", background: "linear-gradient(180deg, rgba(22,52,76,0.94) 0%, rgba(14,34,52,0.97) 55%, #06121e 100%)", borderTop: "1.5px solid rgba(155,118,26,0.58)", boxShadow: "0 -14px 44px rgba(0,0,0,0.92), 0 -4px 18px rgba(0,0,0,0.7), inset 0 1px 0 rgba(155,118,26,0.15)", zIndex: 1, pointerEvents: "none" }} />
             {/* Enemy hand banner — mirrored at top of viewport, full width to cover all
                 enemy hands (which fan down from the top of their respective columns).
                 z-index sits below the enemy hand wrappers (940) so the hands render in
                 front of the banner instead of being hidden behind it. */}
-            <div className={!isMyTurnOnline && screen === "play" && !awakenPhase ? "anim-banner-pulse-top" : ""} style={{ position: "fixed", top: 0, left: 0, right: 0, height: HAND_H + Math.round(34 * vScale), borderRadius: "0 0 10px 10px", background: "linear-gradient(0deg, rgba(22,52,76,0.94) 0%, rgba(14,34,52,0.97) 55%, #06121e 100%)", borderBottom: "1.5px solid rgba(155,118,26,0.58)", boxShadow: "0 14px 44px rgba(0,0,0,0.92), 0 4px 18px rgba(0,0,0,0.7), inset 0 -1px 0 rgba(155,118,26,0.15)", zIndex: 1, pointerEvents: "none" }} />
+            <div className={!isMyTurnOnline && (screen === "play" || screen === "sd") && !awakenPhase ? "anim-banner-pulse-top" : ""} style={{ position: "fixed", top: 0, left: 0, right: 0, height: HAND_H + Math.round(34 * vScale), borderRadius: "0 0 10px 10px", background: "linear-gradient(0deg, rgba(22,52,76,0.94) 0%, rgba(14,34,52,0.97) 55%, #06121e 100%)", borderBottom: "1.5px solid rgba(155,118,26,0.58)", boxShadow: "0 14px 44px rgba(0,0,0,0.92), 0 4px 18px rgba(0,0,0,0.7), inset 0 -1px 0 rgba(155,118,26,0.15)", zIndex: 1, pointerEvents: "none" }} />
             {/* Hand wrapper — z-index 980 sits above the avatar (970) so a hovered hand card scales up over the avatar instead of being clipped behind it. The OUTER fixed wrapper is pointer-events:none so it doesn't intercept clicks on the deck/bin/token piles or the rune/champion/legend piles that share the bottom band of the viewport; the INNER wrapper around the FannedHand re-enables pointer events for the actual hand drop/click target (drag-to-hand return + carry cancel). */}
             <div style={{ position: "fixed", bottom: -Math.round(HAND_H * 1.5 * 0.35), left: 0, right: 0, display: "flex", justifyContent: "center", alignItems: "flex-end", overflow: "visible", zIndex: 980, pointerEvents: "none", "--hand-ah": Math.round(HAND_H * 1.5) + "px" }}>
               <div style={{ pointerEvents: autoMode ? "none" : "auto", display: "flex", alignItems: "flex-end" }}
@@ -7172,7 +7172,7 @@ function RiftboundGame() {
       {/* End Turn + LOG/CHAT/SETTINGS share a column-flex wrapper. With alignItems:stretch
           the End Turn button matches the natural width of the LOG bar below it. */}
       {(function() {
-        var endTurnVisible = screen === "play" && !awakenPhase && !sd && !pendingSpell && !pendingBeginConquer && !autoPrompt && !showcaseCard && !tm && !fc;
+        var endTurnVisible = (screen === "play" || screen === "sd") && !awakenPhase && !sd && !pendingSpell && !pendingBeginConquer && !autoPrompt && !showcaseCard && !tm && !fc;
         if (endTurnVisible) {
           var isOnlineGame = (lobbyType === "host" || lobbyType === "join") && !_soloTestRef.current;
           if (isOnlineGame && (_gamePhaseRef.current !== "playing" || act !== mySlot)) endTurnVisible = false;
