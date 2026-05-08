@@ -6938,7 +6938,7 @@ function RiftboundGame() {
         var allReadySR = pending.length === 0;
         var _isWaitingSR = meReady && !allReadySR;
         var _srBorder = allReadySR ? "#4ADE80" : "#60a5fa";
-        return <div style={{ position: "fixed", top: "calc(50% + 185px)", right: "calc(2% + 8px)", zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, animation: resolvedPhase === "spell" ? "resolvedBoxFadeOut 2.2s ease-out forwards" : undefined }}>
+        return <div style={{ position: "fixed", top: "min(calc(50% + 185px), calc(100vh - " + (HAND_H + 110) + "px))", right: "calc(2% + 8px)", zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, animation: resolvedPhase === "spell" ? "resolvedBoxFadeOut 2.2s ease-out forwards" : undefined }}>
           <span style={{ fontSize: 12, color: allReadySR ? "#4ADE8099" : "#60a5fa99", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1 }}>{pendingSpell.name || "Spell"}</span>
           <button onClick={function(e) {
             e.stopPropagation();
@@ -6975,7 +6975,7 @@ function RiftboundGame() {
           {isOnline && pending.length > 0 && pendingNames.length > 0 && <span style={{ fontSize: 11, color: "#60a5fa99", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1 }}>Awaiting: {pendingNames.join(", ")}</span>}
         </div>;
       })()}
-      {spellResolving && !pendingSpell && <div style={{ position: "fixed", top: "calc(50% + 185px)", right: "calc(2% + 8px)", zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+      {spellResolving && !pendingSpell && <div style={{ position: "fixed", top: "min(calc(50% + 185px), calc(100vh - " + (HAND_H + 110) + "px))", right: "calc(2% + 8px)", zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
         <span style={{ fontSize: 12, color: "#60a5fa99", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1 }}>{spellResolving}</span>
         <button disabled style={{ padding: "12px 28px", borderRadius: 8, border: "2px solid #60a5fa44", background: "rgba(96,165,250,0.07)", color: "#60a5fa66", fontSize: 15, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", cursor: "not-allowed", letterSpacing: 1.5, boxShadow: "0 4px 16px #000c", textTransform: "uppercase" }}>Resolving…</button>
       </div>}
@@ -6985,7 +6985,7 @@ function RiftboundGame() {
         var isAttacker = isOnline ? pendingBeginConquer.playerIdx === mySlot : true;
         if (!isAttacker) return null;
         var pbcContested = !!pendingBeginConquer.contested;
-        return <div style={{ position: "fixed", top: "calc(50% + 185px)", right: "calc(2% + 8px)", zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+        return <div style={{ position: "fixed", top: "min(calc(50% + 185px), calc(100vh - " + (HAND_H + 110) + "px))", right: "calc(2% + 8px)", zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
           <span style={{ fontSize: 12, color: "#60a5fa99", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1 }}>{pendingBeginConquer.bfName} — {pbcContested ? "contested" : "uncontested"}</span>
           <button onClick={function(e) {
             e.stopPropagation();
@@ -7026,7 +7026,7 @@ function RiftboundGame() {
         var allReadyFL = pending.length === 0;
         var _isWaitingFL = meReady && !allReadyFL;
         var _flBorderColor = allReadyFL ? "#4ADE80" : "#60a5fa";
-        return <div style={{ position: "fixed", top: "calc(50% + 185px)", right: "calc(2% + 8px)", zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, animation: resolvedPhase === "sd" ? "resolvedBoxFadeOut 2.2s ease-out forwards" : undefined }}>
+        return <div style={{ position: "fixed", top: "min(calc(50% + 185px), calc(100vh - " + (HAND_H + 110) + "px))", right: "calc(2% + 8px)", zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, animation: resolvedPhase === "sd" ? "resolvedBoxFadeOut 2.2s ease-out forwards" : undefined }}>
           <span style={{ fontSize: 12, color: allReadyFL ? "#4ADE8099" : "#60a5fa99", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1 }}>Showdown: {bfLabel}</span>
           <button onClick={function(e) {
             e.stopPropagation();
@@ -7059,7 +7059,7 @@ function RiftboundGame() {
         var canPress = allAssigned && !meReady;
         var allReadyCFL = pending.length === 0;
         var _cflBorderColor = allReadyCFL ? "#4ADE80" : canPress ? "#60a5fa" : meReady ? "#60a5fa" : "#444";
-        return <div style={{ position: "fixed", top: "calc(50% + 185px)", right: "calc(2% + 8px)", zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, animation: resolvedPhase === "sd" ? "resolvedBoxFadeOut 2.2s ease-out forwards" : undefined }}>
+        return <div style={{ position: "fixed", top: "min(calc(50% + 185px), calc(100vh - " + (HAND_H + 110) + "px))", right: "calc(2% + 8px)", zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, animation: resolvedPhase === "sd" ? "resolvedBoxFadeOut 2.2s ease-out forwards" : undefined }}>
           <span style={{ fontSize: 12, color: allReadyCFL ? "#4ADE8099" : "#60a5fa99", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1 }}>Contested: {bfLabel}</span>
           <button onClick={function(e) {
             e.stopPropagation();
@@ -7076,7 +7076,7 @@ function RiftboundGame() {
       {screen === "play" && !awakenPhase && !sd && !pendingSpell && !pendingBeginConquer && !autoPrompt && !showcaseCard && !tm && !fc && (function() {
         var isOnlineGame = (lobbyType === "host" || lobbyType === "join") && !_soloTestRef.current;
         if (isOnlineGame) { if (_gamePhaseRef.current !== "playing") return null; if (act !== mySlot) return null; }
-        return <button onClick={endTurn} style={{ position: "fixed", top: "calc(50% + 185px)", right: "calc(2% + 8px)", padding: "12px 28px", borderRadius: 8, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70060,#FF8C0030)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", zIndex: 950, boxShadow: "0 4px 16px #000c, 0 0 24px rgba(255,215,0,0.2)", letterSpacing: 1 }}>END TURN</button>;
+        return <button onClick={endTurn} style={{ position: "fixed", top: "min(calc(50% + 185px), calc(100vh - " + (HAND_H + 110) + "px))", right: "calc(2% + 8px)", padding: "12px 28px", borderRadius: 8, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70060,#FF8C0030)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", zIndex: 950, boxShadow: "0 4px 16px #000c, 0 0 24px rgba(255,215,0,0.2)", letterSpacing: 1 }}>END TURN</button>;
       })()}
       {/* Bottom tabs (Log + Chat + Settings) — anchored bottom-right under the action button (END TURN etc.). All three buttons share the same grey palette so the panel reads as a single joined unit along the bottom. The settings popup is `position: absolute` relative to the gear so it hangs upward from this panel; the LOG/CHAT popup is `position: fixed` and right-shifts to sit above its own button. */}
       <div style={{ position: "fixed", bottom: HAND_H + 12, right: 24, zIndex: 970, display: "flex", flexDirection: "column", alignItems: "flex-end", pointerEvents: "auto" }}>
