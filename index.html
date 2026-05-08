@@ -1204,7 +1204,6 @@ function RiftboundGame() {
   // Compute average colors of BF card images via canvas (used to tint BF zone backgrounds in autoMode).
   // Falls back to a CSS blurred-image overlay (handled in render) when canvas read fails due to CORS.
   useEffect(function() {
-    if (!autoMode) return;
     var urls = (bfs || []).map(function(b) { return b && b.name && CI[b.name] ? imgSrc(CI[b.name]) : (b && b.name && PA[b.name] ? PA_CDN + PA[b.name] + ".webp" : null); }).filter(function(u) { return u && !bfAvgColors[u]; });
     var unique = {}; urls.forEach(function(u) { unique[u] = true; });
     Object.keys(unique).forEach(function(url) {
@@ -1233,7 +1232,7 @@ function RiftboundGame() {
       };
       img.src = url;
     });
-  }, [bfs, autoMode]);
+  }, [bfs]);
   function _lightenColor(rgbStr, amount) {
     var m = (rgbStr || "").match(/\d+/g); if (!m || m.length < 3) return null;
     var r = +m[0], g = +m[1], b = +m[2];
