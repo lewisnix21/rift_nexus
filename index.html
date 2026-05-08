@@ -1263,21 +1263,24 @@ function RiftboundGame() {
   var _rph = useState(null), resolvedPhase = _rph[0], setResolvedPhase = _rph[1];
   // Cursor position while a card is "carried" (click-to-attach play flow). Updated by a window-level
   // mousemove listener that's only active while pendingZonePlay is set.
-  var _pendingCursor = useState({ x: 0, y: 0, dx: 0 }), pendingCursor = _pendingCursor[0], setPendingCursor = _pendingCursor[1];
+  var _pendingCursor = useState({ x: 0, y: 0, dx: 0, dy: 0 }), pendingCursor = _pendingCursor[0], setPendingCursor = _pendingCursor[1];
   useEffect(function() {
     if (!pendingZonePlay) return;
-    var rafId = null, lastX = 0, lastY = 0, smoothDx = 0, decayT = null;
+    var rafId = null, lastX = 0, lastY = 0, smoothDx = 0, smoothDy = 0, decayT = null;
     var handler = function(e) {
       var rawDx = lastX ? e.clientX - lastX : 0;
+      var rawDy = lastY ? e.clientY - lastY : 0;
       lastX = e.clientX; lastY = e.clientY;
       smoothDx = smoothDx * 0.7 + rawDx * 0.3;
+      smoothDy = smoothDy * 0.7 + rawDy * 0.3;
       if (decayT) clearTimeout(decayT);
-      decayT = setTimeout(function() { smoothDx = 0; setPendingCursor(function(p) { return { x: p.x, y: p.y, dx: 0 }; }); }, 150);
+      decayT = setTimeout(function() { smoothDx = 0; smoothDy = 0; setPendingCursor(function(p) { return { x: p.x, y: p.y, dx: 0, dy: 0 }; }); }, 150);
       if (rafId) return;
       rafId = requestAnimationFrame(function() {
         rafId = null;
         var clampedDx = Math.max(-40, Math.min(40, smoothDx));
-        setPendingCursor({ x: lastX, y: lastY, dx: clampedDx });
+        var clampedDy = Math.max(-40, Math.min(40, smoothDy));
+        setPendingCursor({ x: lastX, y: lastY, dx: clampedDx, dy: clampedDy });
       });
     };
     window.addEventListener("mousemove", handler);
@@ -6099,8 +6102,9 @@ function RiftboundGame() {
         // (via pendingZonePlay). The next click on a valid drop target plays/casts the card.
         // Hand cards are no longer draggable — drag-and-drop has been replaced by this flow.
         var _isCarried = !!(pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.uid === c.uid);
-        var _mvTiltC = Math.max(-15, Math.min(15, (pendingCursor.dx || 0) * 0.7));
-        var _carriedStyle = { position: "fixed", left: pendingCursor.x - aw / 2, top: pendingCursor.y - ah / 2, width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: "3px solid #8B6914", boxShadow: "0 0 24px rgba(139,105,20,0.85), 0 8px 24px #000c", zIndex: 1600, pointerEvents: "none", transform: "rotate(" + _mvTiltC + "deg)", transformOrigin: "center center", marginLeft: 0, transition: "left 60ms linear, top 60ms linear, transform 120ms ease-out" };
+        var _mvRyC = Math.max(-15, Math.min(15, (pendingCursor.dx || 0) * 0.7));
+        var _mvRxC = Math.max(-15, Math.min(15, -(pendingCursor.dy || 0) * 0.7));
+        var _carriedStyle = { position: "fixed", left: pendingCursor.x - aw / 2, top: pendingCursor.y - ah / 2, width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: "3px solid #8B6914", boxShadow: "0 0 24px rgba(139,105,20,0.85), 0 8px 24px #000c", zIndex: 1600, pointerEvents: "none", transform: "perspective(900px) rotateX(" + _mvRxC + "deg) rotateY(" + _mvRyC + "deg)", transformOrigin: "center center", marginLeft: 0, transition: "left 60ms linear, top 60ms linear, transform 120ms ease-out" };
         var _hoverExtra = (i === handHovIdx) ? handHovTilt : 0;
         var _normalStyle = { width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: (autoMode && playable) ? "3px solid #3b82f6" : "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + "20"), flexShrink: 0, cursor: "pointer", transform: "rotate(" + (rot + _hoverExtra) + "deg) translateY(" + ty + "px)", transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -45 : total > 5 ? -24 : 0), transition: "transform 200ms ease-out, box-shadow 0.2s ease, border 0.15s ease, filter 200ms ease-out", position: "relative", zIndex: i === handHovIdx ? 998 : i, boxShadow: (autoMode && playable) ? "0 0 22px rgba(59,130,246,1), 0 0 44px rgba(59,130,246,0.65), 0 4px 16px #000a" : "0 4px 16px #000a", opacity: 1, pointerEvents: "auto" };
         return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover auto-hand-card" + animCls, draggable: false, onClick: (canMoveOwn && playable) ? function(e) { if (tm || fc) return; if (e && e.stopPropagation) e.stopPropagation(); if (_isCarried) { setPendingZonePlay(null); return; } if (e && e.clientX !== undefined) setPendingCursor({ x: e.clientX, y: e.clientY, dx: 0 }); onPlay(c); if (sd) markSdActed(); } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { if (!_isCarried) { setHandHovIdx(i); if (autoMode) setHoveredHandCard(c); } }, onMouseMove: function(e) { if (_isCarried || isEnemy) return; var rect = e.currentTarget.getBoundingClientRect(); var halfW = rect.width / 2; var t = ((e.clientX - rect.left - halfW) / halfW) * 6; if (t > 6) t = 6; else if (t < -6) t = -6; setHandHovTilt(t); }, onMouseLeave: function() { setHandCtxUid(null); setHandHovTilt(0); }, style: _isCarried ? _carriedStyle : _normalStyle },
@@ -6883,7 +6887,7 @@ function RiftboundGame() {
         }
         setPendingZonePlay(null);
       }} style={{ position: "fixed", inset: 0, zIndex: 1, pointerEvents: "auto", background: "transparent" }} />}
-      {pendingZonePlay && pendingZonePlay.card && (pendingZonePlay.fromBf !== undefined || pendingZonePlay.fromBase || pendingZonePlay.fromChamp || pendingZonePlay.fromShowcase) && (function() { var _pzc = pendingZonePlay.card; var _cw = Math.round(HAND_W * 1.5); var _ch = Math.round(HAND_H * 1.5); var _imgUrl = _pzc.img ? imgSrc(_pzc.img) : null; var _mvTilt = Math.max(-15, Math.min(15, (pendingCursor.dx || 0) * 0.7)); return <div style={{ position: "fixed", left: pendingCursor.x - _cw/2, top: pendingCursor.y - _ch/2, width: _cw, height: _ch, borderRadius: 6, overflow: "hidden", border: "3px solid #8B6914", boxShadow: "0 0 24px rgba(139,105,20,0.85), 0 8px 24px #000c", zIndex: 1600, pointerEvents: "none", transform: "rotate(" + _mvTilt + "deg)", transformOrigin: "center center", transition: "left 60ms linear, top 60ms linear, transform 120ms ease-out" }}>{_imgUrl ? <img src={_imgUrl} style={{ width: "100%", height: "100%", objectFit: "fill" }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 11, padding: 2, textAlign: "center" }}>{_pzc.name}</div>}</div>; })()}
+      {pendingZonePlay && pendingZonePlay.card && (pendingZonePlay.fromBf !== undefined || pendingZonePlay.fromBase || pendingZonePlay.fromChamp || pendingZonePlay.fromShowcase) && (function() { var _pzc = pendingZonePlay.card; var _cw = Math.round(HAND_W * 1.5); var _ch = Math.round(HAND_H * 1.5); var _imgUrl = _pzc.img ? imgSrc(_pzc.img) : null; var _mvRy = Math.max(-15, Math.min(15, (pendingCursor.dx || 0) * 0.7)); var _mvRx = Math.max(-15, Math.min(15, -(pendingCursor.dy || 0) * 0.7)); return <div style={{ position: "fixed", left: pendingCursor.x - _cw/2, top: pendingCursor.y - _ch/2, width: _cw, height: _ch, borderRadius: 6, overflow: "hidden", border: "3px solid #8B6914", boxShadow: "0 0 24px rgba(139,105,20,0.85), 0 8px 24px #000c", zIndex: 1600, pointerEvents: "none", transform: "perspective(900px) rotateX(" + _mvRx + "deg) rotateY(" + _mvRy + "deg)", transformOrigin: "center center", transition: "left 60ms linear, top 60ms linear, transform 120ms ease-out" }}>{_imgUrl ? <img src={_imgUrl} style={{ width: "100%", height: "100%", objectFit: "fill" }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 11, padding: 2, textAlign: "center" }}>{_pzc.name}</div>}</div>; })()}
       {/* entersReady ghost animation — card slides to showcase, pulses, slides back, then readies */}
       {readyGhostAnim && (function() {
         var rg = readyGhostAnim;
