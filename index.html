@@ -6094,7 +6094,7 @@ function RiftboundGame() {
             React.createElement("img", { src: CARD_BACK, style: { width: "100%", height: "100%", objectFit: "fill" } })
           );
         }
-        var _handAct = (canMoveOwn && !tm && !fc && !c.hidden && playable) ? (c.type === "Spell" ? "Cast" : "Play") : undefined;
+        var _handAct = undefined;
         // Click-to-attach play flow: clicking a playable hand card "carries" it on the cursor
         // (via pendingZonePlay). The next click on a valid drop target plays/casts the card.
         // Hand cards are no longer draggable — drag-and-drop has been replaced by this flow.
