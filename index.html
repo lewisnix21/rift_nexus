@@ -4780,15 +4780,36 @@ function RiftboundGame() {
     markShowcaseActed();
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
     var p = Object.assign({}, _me, { base: _me.base.slice(), trash: (_me.trash || []).slice() });
-    // Check battlefields
+    // Sweep ALL battlefields for the uid (defensive — splice every match across every BF and
+    // every player slot so a stale duplicate left behind by a sync echo can't survive). Push
+    // the first instance to base; drop any extras silently.
+    var foundUnit = null;
     for (var bk = 0; bk < nb.length; bk++) {
-      if (!nb[bk].units[idx]) continue;
-      var ui = nb[bk].units[idx].findIndex(function(u) { return u.uid === cardUid; });
-      if (ui >= 0) { var unit = nb[bk].units[idx].splice(ui, 1)[0]; p.base.push(Object.assign({}, unit, { exhausted: true })); aL(pName(idx) + " returns " + cName(unit) + " to base"); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); if (pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.uid === cardUid) setPendingZonePlay(null); _syncLive(np, nb); fireOnMoveToBaseEffect(unit); return; }
+      if (!nb[bk].units) continue;
+      var puArr = nb[bk].units;
+      for (var pIdxR = 0; pIdxR < puArr.length; pIdxR++) {
+        if (!puArr[pIdxR]) continue;
+        for (var ui = puArr[pIdxR].length - 1; ui >= 0; ui--) {
+          if (puArr[pIdxR][ui] && puArr[pIdxR][ui].uid === cardUid) {
+            var removed = puArr[pIdxR].splice(ui, 1)[0];
+            if (!foundUnit) foundUnit = removed;
+          }
+        }
+      }
+    }
+    if (foundUnit) {
+      p.base = p.base.filter(function(c) { return c.uid !== cardUid; });
+      p.base.push(Object.assign({}, foundUnit, { exhausted: true }));
+      aL(pName(idx) + " returns " + cName(foundUnit) + " to base");
+      var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb);
+      if (pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.uid === cardUid) setPendingZonePlay(null);
+      _syncLive(np, nb);
+      fireOnMoveToBaseEffect(foundUnit);
+      return;
     }
     // Check bin
     var ti = p.trash.findIndex(function(c) { return c.uid === cardUid; });
-    if (ti >= 0) { var card = Object.assign({}, p.trash[ti], { exhausted: p.trash[ti].type !== "Gear" }); p.trash.splice(ti, 1); p.base.push(card); aL(pName(idx) + " returns " + cName(card) + " to base from bin"); var np = ps.slice(); np[idx] = p; setPs(np); if (pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.uid === cardUid) setPendingZonePlay(null); _syncLive(np, null); return; }
+    if (ti >= 0) { var card = Object.assign({}, p.trash[ti], { exhausted: p.trash[ti].type !== "Gear" }); p.trash.splice(ti, 1); p.base = p.base.filter(function(c) { return c.uid !== cardUid; }); p.base.push(card); aL(pName(idx) + " returns " + cName(card) + " to base from bin"); var np = ps.slice(); np[idx] = p; setPs(np); if (pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.uid === cardUid) setPendingZonePlay(null); _syncLive(np, null); return; }
   }
   function returnChampionToSlot(cardUid) {
     if (!canMoveOwn) return;
