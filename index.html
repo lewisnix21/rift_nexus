@@ -6634,7 +6634,7 @@ function RiftboundGame() {
           })()}
 
           {/* ROW 3: BATTLEFIELDS — fixed static size */}
-          <div onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverBf(-1); }} style={{ display: "flex", gap: 3, padding: "2px 6px", flex: "0 0 auto", height: BF_ROW_H, minHeight: BF_ROW_H, maxHeight: BF_ROW_H, position: "relative", zIndex: 3, overflow: "hidden", backgroundColor: "#1c1710", backgroundImage: "linear-gradient(180deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.12) 20%, rgba(0,0,0,0.03) 48%, rgba(0,0,0,0.03) 52%, rgba(0,0,0,0.12) 80%, rgba(0,0,0,0.88) 100%), repeating-linear-gradient(90deg, transparent 0px, transparent 94px, rgba(0,0,0,0.07) 94px, rgba(0,0,0,0.07) 95px)" + (window.__stoneBgDark ? (", url('" + window.__stoneBgDark + "')") : ""), backgroundSize: window.__stoneBgDark ? "auto, auto, 512px 512px" : "auto", backgroundRepeat: window.__stoneBgDark ? "no-repeat, no-repeat, repeat" : "no-repeat", boxShadow: "0 -10px 28px rgba(0,0,0,0.9), 0 10px 28px rgba(0,0,0,0.9), inset 0 1px 0 rgba(140,115,65,0.35), inset 0 -1px 0 rgba(140,115,65,0.35)" }}>
+          <div onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverBf(-1); }} style={{ display: "flex", gap: 12, padding: "2px 5%", flex: "0 0 auto", height: BF_ROW_H, minHeight: BF_ROW_H, maxHeight: BF_ROW_H, position: "relative", zIndex: 3, overflow: "hidden", backgroundColor: "transparent" }}>
             {bfs.map(function(bf, bi) {
               var bottomPlayer = isOnlineGame ? mySlot : (isSD && sd ? sd.atkIdx : act);
               var bfImg = CI[bf.name] ? imgSrc(CI[bf.name]) : (PA[bf.name] ? PA_CDN + PA[bf.name] + ".webp" : "");
