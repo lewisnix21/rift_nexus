@@ -86,7 +86,7 @@ fbAuth.onAuthStateChanged(function(user) {
 function genRoomCode() { var chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; var code = ""; for (var i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)]; return code; }
 
 var _currentLobbyCode = null;
-function createLobby(mode, password, autoMode, cb) {
+function createLobby(mode, password, autoMode, cb, errCb) {
   // Clean up any previous lobby
   if (_currentLobbyCode) { fbDb.ref("lobbies/" + _currentLobbyCode).remove(); _currentLobbyCode = null; }
   var code = genRoomCode();
@@ -104,6 +104,8 @@ function createLobby(mode, password, autoMode, cb) {
       // Auto-remove player on disconnect
       fbDb.ref("lobbies/" + code + "/players/" + myUid).onDisconnect().remove();
       if (cb) cb(code);
+    } else {
+      if (errCb) errCb(err.message || "Failed to create lobby");
     }
   });
 }
@@ -2191,7 +2193,7 @@ function RiftboundGame() {
                       var uniqueR = []; (data.runes || []).forEach(function(r) { if (uniqueR.indexOf(r) < 0) uniqueR.push(r); });
                       var btnAccent = accent;
                       var setInfo = !isCustom && data.set ? SET[data.set] : null;
-                      return <button key={(isCustom ? item._id : item)} onClick={function() { if (hasLobby) { var pRef = "lobbies/" + roomCode + "/players/" + myUid; fbDb.ref(pRef + "/deck").set(name); fbDb.ref(pRef + "/ready").set(false); if (isCustom) { fbDb.ref(pRef + "/deckData").set({ name: item.name || "Custom Deck", legend: item.legend || null, champ: item.champ || null, cards: item.cards || [], bfs: item.bfs || [], runes: item.runes || [] }); } else { fbDb.ref(pRef + "/deckData").set(null); } } else { setPreselectedDeck(name); setPreselectedDeckData(isCustom ? item : null); } setDeckTab(null); setReadyErr(""); }} style={{ padding: "8px 12px", borderRadius: 6, border: s ? "2px solid " + btnAccent : "1px solid #2a2a3a", background: s ? btnAccent + "15" : "#1a1a3a", color: s ? btnAccent : "#cfd2dc", cursor: "pointer", textAlign: "left", fontSize: 15, display: "flex", alignItems: "center", gap: 12, transition: "border 200ms ease, background 200ms ease" }}>
+                      return <button key={(isCustom ? item._id : item)} onClick={function() { if (hasLobby) { var pRef = "lobbies/" + roomCode + "/players/" + myUid; fbDb.ref(pRef + "/deck").set(name); fbDb.ref(pRef + "/ready").set(false); if (isCustom) { fbDb.ref(pRef + "/deckData").set({ name: item.name || "Custom Deck", legend: item.legend || null, champ: item.champ || null, cards: item.cards || [], bfs: item.bfs || [], runes: item.runes || [] }); } else { fbDb.ref(pRef + "/deckData").set(null); } } else { setPreselectedDeck(name); setPreselectedDeckData(isCustom ? item : null); } if (_clearHoverCard) _clearHoverCard(); setDeckTab(null); setReadyErr(""); }} style={{ padding: "8px 12px", borderRadius: 6, border: s ? "2px solid " + btnAccent : "1px solid #2a2a3a", background: s ? btnAccent + "15" : "#1a1a3a", color: s ? btnAccent : "#cfd2dc", cursor: "pointer", textAlign: "left", fontSize: 15, display: "flex", alignItems: "center", gap: 12, transition: "border 200ms ease, background 200ms ease" }}>
                         <div style={{ display: "flex", gap: 3, flexShrink: 0 }}>
                           {lgImg && <img src={lgImg} onMouseEnter={function(e) { _hoverByName(data.legend, e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ width: 52, height: 73, objectFit: "fill", borderRadius: 4, border: "1px solid " + btnAccent + "44" }} />}
                           {chImg && <img src={chImg} onMouseEnter={function(e) { _hoverByName(data.champ, e, false); }} onMouseLeave={function() { _clearHoverCard(); }} style={{ width: 52, height: 73, objectFit: "fill", borderRadius: 4, border: "1px solid " + btnAccent + "44" }} />}
@@ -2357,6 +2359,7 @@ function RiftboundGame() {
         {/* Host: Create Lobby button (before lobby created) */}
         {lobbyType === "host" && !roomCode && <button onClick={function() {
           if (!lobbyMode) return;
+          if (_clearHoverCard) _clearHoverCard();
           setIsHost(true); setMySlot(0); setLobbyErr(null);
           createLobby(lobbyMode, hostPw || null, false, function(code) { // AUTO_MODE_REMOVED_2026_05_07: hostAutoMode arg pinned to false
             setRoomCode(code);
@@ -2367,7 +2370,7 @@ function RiftboundGame() {
               if (data) handleLobbyUpdate(data);
             });
             _lobbyUnsub.current = function() { ref.off("value", unsub); };
-          });
+          }, function(err) { setIsHost(false); setLobbyErr(err); });
         }} disabled={!lobbyMode} className="btn-primary-glow" style={{ padding: "12px 36px", borderRadius: 10, border: "2px solid " + (lobbyMode ? "#FFD700" : "#333"), background: lobbyMode ? "linear-gradient(135deg, #f5c542, #ffdd75)" : "#1a1a2a", color: lobbyMode ? "#1a1a2a" : "#555", cursor: lobbyMode ? "pointer" : "not-allowed", fontSize: 16, fontWeight: 800, fontFamily: "Inter,sans-serif", letterSpacing: 2, textTransform: "uppercase", boxShadow: lobbyMode ? "0 0 18px rgba(255,215,100,0.4), 0 6px 16px rgba(0,0,0,0.4)" : "none" }}>Create Lobby</button>}
 
         {/* In-lobby: Ready Up + Start Game (host) + Solo Test + Leave */}
