@@ -6612,11 +6612,13 @@ function RiftboundGame() {
                     {/* Enemy runes - horizontal (white), overlapping via absolute positioning */}
                     {(function() {
                       var erc = enemy.runes.length;
+                      var eUntapped = enemy.runes.filter(function(r) { return !r.exhausted; }).length;
                       var step = 1 / 11;
                       return <div key={"erunes"} style={{ display: "flex", flexDirection: "row", padding: "3px 4px", borderRadius: 6, border: bandBorder, alignItems: "center", flex: 1, overflow: "visible", height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H }}>
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, marginRight: 4 }}>
                           <div style={{ fontSize: 16, color: labelColor, fontFamily: "Rajdhani,sans-serif", letterSpacing: 1, fontWeight: 700 }}>RUNES</div>
-                          <div style={{ fontSize: 13, color: labelSubColor, fontFamily: "Rajdhani,sans-serif" }}>({erc}/12)</div>
+                          <div style={{ fontSize: 16, color: labelSubColor, fontFamily: "Rajdhani,sans-serif", fontWeight: 700 }}>{erc}/12</div>
+                          <div style={{ fontSize: 15, color: eUntapped > 0 ? "#4ADE80" : "#ff666688", fontFamily: "Rajdhani,sans-serif", fontWeight: 700 }}>{eUntapped} ready</div>
                         </div>
                         <div style={{ flex: 1, position: "relative", height: RUNE_H, minWidth: 0 }}>
                           {enemy.runes.sort(function(a, b) { return DOM[a.domain].o - DOM[b.domain].o; }).map(function(r, ri) {
