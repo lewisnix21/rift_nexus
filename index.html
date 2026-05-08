@@ -436,7 +436,7 @@ function PlayerAvatar({ photoURL, name, score, xp, scoreMax, size, isActive, isM
   var svgLeft = (size - svgW) / 2;
   // Diamond strip lives on whichever side the circle isn't using for the name arc.
   var diamondStyle = { position: "absolute", left: -Math.round(size * 0.05), right: -Math.round(size * 0.05), display: "flex", justifyContent: "space-between", alignItems: "center", pointerEvents: "auto" };
-  diamondStyle[flipped ? "top" : "bottom"] = -Math.round(size * 0.12);
+  diamondStyle.bottom = -Math.round(size * 0.12);
   // Active-turn pulse takes priority unless we're already animating a score pulse.
   var avatarClass = scorePulse ? "anim-score-pulse" : (isActive ? "anim-avatar-pulse" : "");
   return <div style={{ position: "relative", width: size, height: size, flexShrink: 0, pointerEvents: "auto" }}>
