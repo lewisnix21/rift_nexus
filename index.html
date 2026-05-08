@@ -1970,6 +1970,20 @@ function RiftboundGame() {
     showAutoBanner("AUTO · No defenders remain at " + b.name + " — Resolve to conquer");
   }, [bfs, sd, autoMode]);
 
+  // Cancel sd / pendingBeginConquer when the showdown BF has no units left at all
+  // (e.g. all attackers + defenders binned). The Resolve / Begin Showdown buttons
+  // shouldn't sit there pointing at an empty battlefield.
+  useEffect(function() {
+    var bi = sd ? sd.bfIdx : (pendingBeginConquer ? pendingBeginConquer.bi : -1);
+    if (bi < 0) return;
+    var bf = bfs[bi]; if (!bf || !bf.units) return;
+    var anyUnits = false;
+    for (var pi = 0; pi < bf.units.length; pi++) { if ((bf.units[pi] || []).length > 0) { anyUnits = true; break; } }
+    if (anyUnits) return;
+    if (sd) { setSd(null); setDamageAssignments({}); setConquerAcceptors({}); setArrows(function(prev) { return prev.filter(function(a) { return a.kind !== "showdown"; }); }); setDrawingArrow(null); if (screen === "sd") setScreen("play"); aL("Showdown cancelled — no units remain at " + bf.name); }
+    if (pendingBeginConquer) setPendingBeginConquer(null);
+  }, [bfs, sd, pendingBeginConquer]);
+
   useEffect(function() {
     if (!sd || screen !== "sd") return;
     if (!sd.contested) return; // Uncontested showdowns must be resolved manually via pass priority
@@ -4900,16 +4914,19 @@ function RiftboundGame() {
     var p = Object.assign({}, _me, { base: _me.base.slice(), hand: _me.hand.slice(), runes: _me.runes.slice(), trash: (_me.trash || []).slice() });
     // Check base
     var bi2 = p.base.findIndex(function(c) { return c.uid === cardUid; });
-    if (bi2 >= 0) { var card = p.base.splice(bi2, 1)[0]; binCard(card, p); var np = ps.slice(); np[idx] = p; setPs(np); return; }
+    if (bi2 >= 0) { var card = p.base.splice(bi2, 1)[0]; binCard(card, p); var np = ps.slice(); np[idx] = p; setPs(np); _syncLive(np, null); return; }
     // Check hand
     var hi = p.hand.findIndex(function(c) { return c.uid === cardUid; });
-    if (hi >= 0) { var card = p.hand.splice(hi, 1)[0]; binCard(card, p); var np = ps.slice(); np[idx] = p; setPs(np); fireOnDiscardEffect(card, "hand"); return; }
-    // Check battlefield units
+    if (hi >= 0) { var card = p.hand.splice(hi, 1)[0]; binCard(card, p); var np = ps.slice(); np[idx] = p; setPs(np); _syncLive(np, null); fireOnDiscardEffect(card, "hand"); return; }
+    // Check battlefield units — ALWAYS splice the source so no copy stays on the BF (even
+    // mid-showdown). Sync immediately so peers see the removal without waiting for the
+    // 150ms auto-sync timer (otherwise a fast receiver→writer round-trip during sd can
+    // echo back a stale bfs and resurrect the unit).
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
     for (var bk = 0; bk < nb.length; bk++) {
       if (!nb[bk].units[idx]) continue;
       var ui = nb[bk].units[idx].findIndex(function(u) { return u.uid === cardUid; });
-      if (ui >= 0) { var card = nb[bk].units[idx].splice(ui, 1)[0]; binCard(card, p); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); return; }
+      if (ui >= 0) { var card = nb[bk].units[idx].splice(ui, 1)[0]; binCard(card, p); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); _syncLive(np, nb); return; }
     }
   }
 
