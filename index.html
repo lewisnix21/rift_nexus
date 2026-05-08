@@ -6958,7 +6958,7 @@ function RiftboundGame() {
         var _isWaitingSR = meReady && !allReadySR;
         var _srBorder = allReadySR ? "#4ADE80" : "#60a5fa";
         return <div style={{ position: "fixed", top: "min(calc(50% + 185px), calc(100vh - " + (HAND_H + 110) + "px))", right: "calc(2% + 8px)", zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, animation: resolvedPhase === "spell" ? "resolvedBoxFadeOut 2.2s ease-out forwards" : undefined }}>
-          <span style={{ fontSize: 12, color: allReadySR ? "#4ADE8099" : "#60a5fa99", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1 }}>{pendingSpell.name || "Spell"}</span>
+          <span style={{ fontSize: 15, color: allReadySR ? "#4ADE80cc" : "#60a5facc", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1.2, fontWeight: 700 }}>{pendingSpell.name || "Spell"}</span>
           <button onClick={function(e) {
             e.stopPropagation();
             if (meReady) return;
@@ -7005,7 +7005,7 @@ function RiftboundGame() {
         if (!isAttacker) return null;
         var pbcContested = !!pendingBeginConquer.contested;
         return <div style={{ position: "fixed", top: "min(calc(50% + 185px), calc(100vh - " + (HAND_H + 110) + "px))", right: "calc(2% + 8px)", zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-          <span style={{ fontSize: 12, color: "#60a5fa99", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1 }}>{pendingBeginConquer.bfName} — {pbcContested ? "contested" : "uncontested"}</span>
+          <span style={{ fontSize: 15, color: "#60a5facc", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1.2, fontWeight: 700 }}>{pendingBeginConquer.bfName} — {pbcContested ? "contested" : "uncontested"}</span>
           <button onClick={function(e) {
             e.stopPropagation();
             var pbc = pendingBeginConquer;
@@ -7031,7 +7031,7 @@ function RiftboundGame() {
               var cleanBfsBC = bfs.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
               fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPsBC, bfs: cleanBfsBC, turn: turn, act: act, screen: pbcContested ? "sd" : screen, log: log.slice(-30), sd: newSd, ver: _lastSyncVersion.current, by: myUid })));
             }
-          }} style={{ padding: "8px 16px", borderRadius: 8, border: "2px solid #60a5fa", background: "linear-gradient(135deg,#3b82f6,#60a5fa)", color: "#fff", fontSize: 11, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", cursor: "pointer", letterSpacing: 0.5, boxShadow: "0 4px 16px #000c, 0 0 22px rgba(96,165,250,0.6)", textTransform: "uppercase" }}>{pbcContested ? "Start Showdown" : "Begin Showdown"}</button>
+          }} style={{ padding: "12px 28px", borderRadius: 8, border: "2px solid #60a5fa", background: "linear-gradient(135deg,#3b82f6,#60a5fa)", color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", cursor: "pointer", letterSpacing: 1.5, boxShadow: "0 4px 16px #000c, 0 0 22px rgba(96,165,250,0.6)", textTransform: "uppercase" }}>{pbcContested ? "Start Showdown" : "Begin Showdown"}</button>
         </div>;
       })()}
       {/* Conquer-Resolve button — shown to all players during uncontested showdown (both modes) */}
@@ -7046,7 +7046,7 @@ function RiftboundGame() {
         var _isWaitingFL = meReady && !allReadyFL;
         var _flBorderColor = allReadyFL ? "#4ADE80" : "#60a5fa";
         return <div style={{ position: "fixed", top: "min(calc(50% + 185px), calc(100vh - " + (HAND_H + 110) + "px))", right: "calc(2% + 8px)", zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, animation: resolvedPhase === "sd" ? "resolvedBoxFadeOut 2.2s ease-out forwards" : undefined }}>
-          <span style={{ fontSize: 12, color: allReadyFL ? "#4ADE8099" : "#60a5fa99", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1 }}>Showdown: {bfLabel}</span>
+          <span style={{ fontSize: 15, color: allReadyFL ? "#4ADE80cc" : "#60a5facc", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1.2, fontWeight: 700 }}>Showdown: {bfLabel}</span>
           <button onClick={function(e) {
             e.stopPropagation();
             if (meReady) return;
@@ -7079,7 +7079,7 @@ function RiftboundGame() {
         var allReadyCFL = pending.length === 0;
         var _cflBorderColor = allReadyCFL ? "#4ADE80" : canPress ? "#60a5fa" : meReady ? "#60a5fa" : "#444";
         return <div style={{ position: "fixed", top: "min(calc(50% + 185px), calc(100vh - " + (HAND_H + 110) + "px))", right: "calc(2% + 8px)", zIndex: 950, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, animation: resolvedPhase === "sd" ? "resolvedBoxFadeOut 2.2s ease-out forwards" : undefined }}>
-          <span style={{ fontSize: 12, color: allReadyCFL ? "#4ADE8099" : "#60a5fa99", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1 }}>Contested: {bfLabel}</span>
+          <span style={{ fontSize: 15, color: allReadyCFL ? "#4ADE80cc" : "#60a5facc", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1.2, fontWeight: 700 }}>Contested: {bfLabel}</span>
           <button onClick={function(e) {
             e.stopPropagation();
             if (!canPress) return;
