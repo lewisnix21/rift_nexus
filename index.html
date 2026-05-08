@@ -7113,49 +7113,53 @@ function RiftboundGame() {
           <button onClick={function() { setBottomTab(bottomTab === "chat" ? null : "chat"); }} style={{ padding: "6px 20px", border: "none", borderRight: "1px solid #ffffff18", background: bottomTab === "chat" ? "rgba(255,255,255,0.10)" : "transparent", color: "#aaa", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", letterSpacing: 1 }}>CHAT</button>
           <div style={{ position: "relative", display: "flex" }}>
             <button onClick={function() { setSettingsOpen(!settingsOpen); setEditingName(false); }} style={{ padding: "0 14px", border: "none", background: settingsOpen ? "rgba(255,255,255,0.10)" : "transparent", color: "#aaa", cursor: "pointer", fontSize: 23, lineHeight: 1, borderRadius: "0 5px 5px 0", display: "flex", alignItems: "center", justifyContent: "center" }}>&#9881;</button>
-            {settingsOpen && <div onClick={function(e) { e.stopPropagation(); }} style={{ position: "absolute", bottom: "100%", right: 0, marginBottom: 6, background: "#1a1a3a", border: "1px solid #ffffff20", borderRadius: 6, padding: 4, zIndex: 200, minWidth: 210, boxShadow: "0 -8px 24px #000a" }}>
-              {editingName ? <div style={{ padding: "4px 6px" }}>
-                <input autoFocus value={nameInput} onChange={function(e) { setNameInput(e.target.value); }} onKeyDown={function(e) { if (e.key === "Enter" && nameInput.trim()) { myName = nameInput.trim(); localStorage.setItem("riftNexusName", myName); if (roomCode) fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/name").set(myName); if (fbAuth.currentUser) { fbAuth.currentUser.updateProfile({ displayName: myName }); fbDb.ref("users/" + fbAuth.currentUser.uid + "/name").set(myName); } setEditingName(false); } }} style={{ width: "100%", padding: "4px 6px", borderRadius: 4, border: "1px solid #FFD70044", background: "#ffffff08", color: "#FFD700", fontSize: 13, outline: "none", fontFamily: "Rajdhani,sans-serif", textAlign: "center" }} />
-                <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
-                  <button onClick={function() { if (nameInput.trim()) { myName = nameInput.trim(); localStorage.setItem("riftNexusName", myName); if (roomCode) fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/name").set(myName); if (fbAuth.currentUser) { fbAuth.currentUser.updateProfile({ displayName: myName }); fbDb.ref("users/" + fbAuth.currentUser.uid + "/name").set(myName); } } setEditingName(false); }} style={{ flex: 1, padding: "3px 6px", borderRadius: 3, border: "1px solid #4ADE8044", background: "rgba(74,222,128,0.1)", color: "#4ADE80", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "Rajdhani,sans-serif" }}>Save</button>
-                  <button onClick={function() { setNameInput(myName); setEditingName(false); }} style={{ flex: 1, padding: "3px 6px", borderRadius: 3, border: "1px solid #ffffff15", background: "transparent", color: "#666", cursor: "pointer", fontSize: 11, fontFamily: "Rajdhani,sans-serif" }}>Cancel</button>
+            {settingsOpen && <div onClick={function(e) { e.stopPropagation(); }} style={{ position: "absolute", bottom: "100%", right: 0, marginBottom: 6, background: "linear-gradient(160deg,#06121e,#02080f)", border: "1.5px solid rgba(139,105,20,0.7)", borderRadius: 8, padding: 6, zIndex: 200, minWidth: 250, boxShadow: "0 -8px 28px #000c, 0 0 18px rgba(139,105,20,0.18)" }}>
+              {editingName ? <div style={{ padding: "6px 8px" }}>
+                <input autoFocus value={nameInput} onChange={function(e) { setNameInput(e.target.value); }} onKeyDown={function(e) { if (e.key === "Enter" && nameInput.trim()) { myName = nameInput.trim(); localStorage.setItem("riftNexusName", myName); if (roomCode) fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/name").set(myName); if (fbAuth.currentUser) { fbAuth.currentUser.updateProfile({ displayName: myName }); fbDb.ref("users/" + fbAuth.currentUser.uid + "/name").set(myName); } setEditingName(false); } }} style={{ width: "100%", padding: "6px 8px", borderRadius: 5, border: "1px solid rgba(139,105,20,0.55)", background: "rgba(139,105,20,0.08)", color: "#d4a017", fontSize: 15, outline: "none", fontFamily: "Rajdhani,sans-serif", textAlign: "center", boxSizing: "border-box" }} />
+                <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                  <button onClick={function() { if (nameInput.trim()) { myName = nameInput.trim(); localStorage.setItem("riftNexusName", myName); if (roomCode) fbDb.ref("lobbies/" + roomCode + "/players/" + myUid + "/name").set(myName); if (fbAuth.currentUser) { fbAuth.currentUser.updateProfile({ displayName: myName }); fbDb.ref("users/" + fbAuth.currentUser.uid + "/name").set(myName); } } setEditingName(false); }} style={{ flex: 1, padding: "5px 8px", borderRadius: 4, border: "1px solid rgba(139,105,20,0.6)", background: "rgba(139,105,20,0.18)", color: "#d4a017", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Rajdhani,sans-serif" }}>Save</button>
+                  <button onClick={function() { setNameInput(myName); setEditingName(false); }} style={{ flex: 1, padding: "5px 8px", borderRadius: 4, border: "1px solid #ffffff20", background: "transparent", color: "#888", cursor: "pointer", fontSize: 13, fontFamily: "Rajdhani,sans-serif" }}>Cancel</button>
                 </div>
               </div> : <>
-                <div style={{ padding: "4px 10px 6px", borderBottom: "1px solid #ffffff10", marginBottom: 4 }}>
-                  <div style={{ fontSize: 11, color: "#777", fontFamily: "Rajdhani,sans-serif", letterSpacing: 0.3, marginBottom: 3 }}>SORT BY</div>
-                  <select value={handSort} onChange={function(e) { setHandSort(e.target.value); }} style={{ fontSize: 13, padding: "3px 5px", borderRadius: 4, border: "1px solid #ffffff15", background: "rgba(255,255,255,0.06)", color: "#aaa", cursor: "pointer", fontFamily: "Rajdhani,sans-serif", outline: "none", width: "100%" }}>
-                    <option value="drawn" style={{ background: "#2a2a50" }}>Drawn Order</option>
-                    <option value="type" style={{ background: "#2a2a50" }}>Card Type</option>
-                    <option value="energy" style={{ background: "#2a2a50" }}>Energy Cost</option>
+                <div style={{ padding: "6px 12px 8px", borderBottom: "1px solid rgba(139,105,20,0.25)", marginBottom: 6 }}>
+                  <div style={{ fontSize: 13, color: "#9aa0a6", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1, fontWeight: 700, marginBottom: 4 }}>SORT BY</div>
+                  <select value={handSort} onChange={function(e) { setHandSort(e.target.value); }} style={{ fontSize: 15, padding: "5px 8px", borderRadius: 4, border: "1px solid rgba(139,105,20,0.4)", background: "rgba(139,105,20,0.08)", color: "#d4a017", cursor: "pointer", fontFamily: "Rajdhani,sans-serif", outline: "none", width: "100%" }}>
+                    <option value="drawn" style={{ background: "#06121e" }}>Drawn Order</option>
+                    <option value="type" style={{ background: "#06121e" }}>Card Type</option>
+                    <option value="energy" style={{ background: "#06121e" }}>Energy Cost</option>
                   </select>
                 </div>
-                <div style={{ padding: "4px 10px 6px", borderBottom: "1px solid #ffffff10", marginBottom: 4 }}>
-                  <div style={{ fontSize: 11, color: "#777", fontFamily: "Rajdhani,sans-serif", letterSpacing: 0.3, marginBottom: 3 }}>HOVER SIZE</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    <input type="range" min="1.5" max="5.5" step="0.5" value={hoverSize} onChange={function(e) { setHoverSize(parseFloat(e.target.value)); }} style={{ flex: 1, cursor: "pointer", accentColor: "#888" }} />
-                    <span style={{ fontSize: 12, color: "#aaa", fontFamily: "Rajdhani,sans-serif", minWidth: 24, textAlign: "center" }}>{hoverSize.toFixed(1)}x</span>
+                <div style={{ padding: "6px 12px 8px", borderBottom: "1px solid rgba(139,105,20,0.25)", marginBottom: 6 }}>
+                  <div style={{ fontSize: 13, color: "#9aa0a6", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1, fontWeight: 700, marginBottom: 4 }}>HOVER SIZE</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <input type="range" min="1.5" max="5.5" step="0.5" value={hoverSize} onChange={function(e) { setHoverSize(parseFloat(e.target.value)); }} style={{ flex: 1, cursor: "pointer", accentColor: "#8B6914" }} />
+                    <span style={{ fontSize: 14, color: "#d4a017", fontFamily: "Rajdhani,sans-serif", fontWeight: 700, minWidth: 30, textAlign: "center" }}>{hoverSize.toFixed(1)}x</span>
                   </div>
                 </div>
-                <div style={{ padding: "4px 10px 6px", borderBottom: "1px solid #ffffff10", marginBottom: 4 }}>
-                  <div style={{ fontSize: 11, color: "#777", fontFamily: "Rajdhani,sans-serif", letterSpacing: 0.3, marginBottom: 5 }}>AUDIO</div>
+                <div style={{ padding: "6px 12px 8px", borderBottom: "1px solid rgba(139,105,20,0.25)", marginBottom: 6 }}>
+                  <div style={{ fontSize: 13, color: "#9aa0a6", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1, fontWeight: 700, marginBottom: 6 }}>AUDIO</div>
                   {[{ label: "Master", key: "master" }, { label: "Music", key: "music" }, { label: "SFX", key: "sfx" }].map(function(item) {
-                    return <div key={item.key} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
-                      <span style={{ fontSize: 11, color: "#aaa", fontFamily: "Rajdhani,sans-serif", minWidth: 40 }}>{item.label}</span>
-                      <input type="range" min="0" max="1" step="0.05" value={audioVol[item.key]} onChange={function(e) { var next = Object.assign({}, audioVol); next[item.key] = parseFloat(e.target.value); setAudioVol(next); try { localStorage.setItem("riftNexusAudio", JSON.stringify(next)); } catch(ex) {} }} style={{ flex: 1, cursor: "pointer", accentColor: "#FFD700" }} />
-                      <span style={{ fontSize: 11, color: "#aaa", fontFamily: "Rajdhani,sans-serif", minWidth: 30, textAlign: "right" }}>{Math.round(audioVol[item.key] * 100)}%</span>
+                    return <div key={item.key} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <span style={{ fontSize: 13, color: "#bbb", fontFamily: "Rajdhani,sans-serif", fontWeight: 600, minWidth: 50 }}>{item.label}</span>
+                      <input type="range" min="0" max="1" step="0.05" value={audioVol[item.key]} onChange={function(e) { var next = Object.assign({}, audioVol); next[item.key] = parseFloat(e.target.value); setAudioVol(next); try { localStorage.setItem("riftNexusAudio", JSON.stringify(next)); } catch(ex) {} }} style={{ flex: 1, cursor: "pointer", accentColor: "#8B6914" }} />
+                      <span style={{ fontSize: 13, color: "#d4a017", fontFamily: "Rajdhani,sans-serif", fontWeight: 700, minWidth: 38, textAlign: "right" }}>{Math.round(audioVol[item.key] * 100)}%</span>
                     </div>;
                   })}
                 </div>
-                {!autoMode && <button onClick={function() { var next = !autoPay; setAutoPay(next); try { localStorage.setItem("riftNexusAutoPay", JSON.stringify(next)); } catch(ex) {} }} style={{ display: "flex", width: "100%", padding: "6px 10px", borderRadius: 4, border: "none", background: "transparent", color: "#ddd", cursor: "pointer", fontSize: 13, fontFamily: "Rajdhani,sans-serif", textAlign: "left", alignItems: "center", gap: 6 }}>
-                  <div style={{ width: 28, height: 16, borderRadius: 8, background: autoPay ? "#60a5fa" : "#333", position: "relative", transition: "background 0.2s ease", flexShrink: 0 }}><div style={{ width: 12, height: 12, borderRadius: "50%", background: autoPay ? "#fff" : "#666", position: "absolute", top: 2, left: autoPay ? 14 : 2, transition: "left 0.2s ease" }} /></div>
+                {!autoMode && <button onClick={function() { var next = !autoPay; setAutoPay(next); try { localStorage.setItem("riftNexusAutoPay", JSON.stringify(next)); } catch(ex) {} }} style={{ display: "flex", width: "100%", padding: "8px 12px", borderRadius: 5, border: "none", background: "transparent", color: "#ddd", cursor: "pointer", fontSize: 15, fontFamily: "Rajdhani,sans-serif", fontWeight: 600, textAlign: "left", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 32, height: 18, borderRadius: 9, background: autoPay ? "#8B6914" : "#333", position: "relative", transition: "background 0.2s ease", flexShrink: 0 }}><div style={{ width: 14, height: 14, borderRadius: "50%", background: autoPay ? "#fff" : "#666", position: "absolute", top: 2, left: autoPay ? 16 : 2, transition: "left 0.2s ease" }} /></div>
                   Auto pay
                 </button>}
-                <button onClick={function() { setEditingName(true); }} style={{ display: "block", width: "100%", padding: "6px 10px", borderRadius: 4, border: "none", background: "transparent", color: "#ddd", cursor: "pointer", fontSize: 13, fontFamily: "Rajdhani,sans-serif", textAlign: "left" }}>Change Name</button>
-                <button onClick={function() { setAltPing(!altPing); }} style={{ display: "flex", width: "100%", padding: "6px 10px", borderRadius: 4, border: "none", background: "transparent", color: "#ddd", cursor: "pointer", fontSize: 13, fontFamily: "Rajdhani,sans-serif", textAlign: "left", alignItems: "center", gap: 6 }}>
-                  <div style={{ width: 28, height: 16, borderRadius: 8, background: altPing ? "#FFD700" : "#333", position: "relative", transition: "background 0.2s ease", flexShrink: 0 }}><div style={{ width: 12, height: 12, borderRadius: "50%", background: altPing ? "#000" : "#666", position: "absolute", top: 2, left: altPing ? 14 : 2, transition: "left 0.2s ease" }} /></div>
+                <button onClick={function() { setEditingName(true); }} style={{ display: "block", width: "100%", padding: "8px 12px", borderRadius: 5, border: "none", background: "transparent", color: "#ddd", cursor: "pointer", fontSize: 15, fontFamily: "Rajdhani,sans-serif", fontWeight: 600, textAlign: "left" }}>Change Name</button>
+                <button onClick={function() { setAltPing(!altPing); }} style={{ display: "flex", width: "100%", padding: "8px 12px", borderRadius: 5, border: "none", background: "transparent", color: "#ddd", cursor: "pointer", fontSize: 15, fontFamily: "Rajdhani,sans-serif", fontWeight: 600, textAlign: "left", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 32, height: 18, borderRadius: 9, background: altPing ? "#8B6914" : "#333", position: "relative", transition: "background 0.2s ease", flexShrink: 0 }}><div style={{ width: 14, height: 14, borderRadius: "50%", background: altPing ? "#fff" : "#666", position: "absolute", top: 2, left: altPing ? 16 : 2, transition: "left 0.2s ease" }} /></div>
                   Alt-click to ping
                 </button>
-                <button onClick={function() { setSettingsOpen(false); setGameMsg("__forfeit__"); }} style={{ display: "block", width: "100%", padding: "6px 10px", borderRadius: 4, border: "none", background: "transparent", color: "#ff6666", cursor: "pointer", fontSize: 13, fontFamily: "Rajdhani,sans-serif", textAlign: "left" }}>Forfeit</button>
+                <div style={{ borderTop: "1px solid rgba(139,105,20,0.3)", marginTop: 6, paddingTop: 4 }}>
+                  <button onClick={function() { setSettingsOpen(false); setGameMsg("__forfeit__"); }} style={{ display: "flex", width: "100%", padding: "8px 12px", borderRadius: 5, border: "none", background: "transparent", color: "#ff6666", cursor: "pointer", fontSize: 15, fontFamily: "Rajdhani,sans-serif", fontWeight: 700, textAlign: "left", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 17 }}>🚪</span>Forfeit
+                  </button>
+                </div>
               </>}
             </div>}
           </div>
