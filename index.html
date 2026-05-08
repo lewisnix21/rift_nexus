@@ -427,7 +427,7 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
   var _act = (!zoomed && actionLabel) ? actionLabel : undefined;
   var _cardDragStart = dragData ? function(e) { e.dataTransfer.setData("text/plain", dragData); if (onDragStartCb) onDragStartCb(e); } : undefined;
   var _hov = useState(false), isHov = _hov[0], setIsHov = _hov[1];
-  var _hovT = useState(0), hovTilt = _hovT[0], setHovTilt = _hovT[1];
+  var _hovT = useState({x: 0, y: 0}), hovTilt = _hovT[0], setHovTilt = _hovT[1];
   var _gdo = useState(false), gearDragOver = _gdo[0], setGearDragOver = _gdo[1];
   var _ctx = useState(false), showCtx = _ctx[0], setShowCtx = _ctx[1];
   var _ghi = useState(-1), gearHovIdx = _ghi[0], setGearHovIdx = _ghi[1];
@@ -507,11 +507,15 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
   var gearCount = (card.gear && small) ? card.gear.length : 0;
   var gearExtra = gearCount > 0 ? Math.round(w * 0.3) * gearCount : 0;
   var _baseRot = (ex && !zoomed && !noRotate) ? 20 : 0;
-  var _zoomedTilt = zoomed ? 0 : hovTilt;
-  var _totalRot = _baseRot + _zoomedTilt;
-  var wrapS = { width: w, height: h, borderRadius: zoomed ? 10 : small ? 4 : 6, overflow: "visible", flexShrink: 0, position: "relative", border: gearDragOver ? "3px solid #4ADE80" : gankingGlow ? "2.5px solid #4ADE80cc" : (zoomed ? 3 : 2) + "px solid " + borderColor, boxShadow: gearDragOver ? "0 0 20px rgba(74,222,128,0.5), 0 0 40px rgba(74,222,128,0.2), inset 0 0 12px rgba(74,222,128,0.1)" : gankingGlow ? "0 0 14px rgba(74,222,128,0.55), inset 0 0 10px rgba(74,222,128,0.18)" : shadow, cursor: onClick ? "pointer" : "default", background: "#0c0c18", transition: "transform 0.15s ease, border 0.15s ease, box-shadow 0.15s ease", transform: _totalRot ? ("rotate(" + _totalRot + "deg)") : "none", filter: ex && !zoomed ? "brightness(0.58)" : "none", marginRight: gearExtra };
-  var _hovTiltMove = !zoomed ? function(e) { var rect = e.currentTarget.getBoundingClientRect(); var halfW = rect.width / 2; var t = ((e.clientX - rect.left - halfW) / halfW) * 5; if (t > 5) t = 5; else if (t < -5) t = -5; setHovTilt(t); } : undefined;
-  var _hovTiltLeave = !zoomed ? function() { setHovTilt(0); } : undefined;
+  var _tiltX = zoomed ? 0 : (hovTilt.y || 0);
+  var _tiltY = zoomed ? 0 : (hovTilt.x || 0);
+  var _hasTilt = _tiltX !== 0 || _tiltY !== 0;
+  var _wrapTransform = (_baseRot || _hasTilt)
+    ? ("perspective(900px) rotateX(" + _tiltX + "deg) rotateY(" + _tiltY + "deg)" + (_baseRot ? (" rotate(" + _baseRot + "deg)") : ""))
+    : "none";
+  var wrapS = { width: w, height: h, borderRadius: zoomed ? 10 : small ? 4 : 6, overflow: "visible", flexShrink: 0, position: "relative", border: gearDragOver ? "3px solid #4ADE80" : gankingGlow ? "2.5px solid #4ADE80cc" : (zoomed ? 3 : 2) + "px solid " + borderColor, boxShadow: gearDragOver ? "0 0 20px rgba(74,222,128,0.5), 0 0 40px rgba(74,222,128,0.2), inset 0 0 12px rgba(74,222,128,0.1)" : gankingGlow ? "0 0 14px rgba(74,222,128,0.55), inset 0 0 10px rgba(74,222,128,0.18)" : shadow, cursor: onClick ? "pointer" : "default", background: "#0c0c18", transition: "transform 0.15s ease, border 0.15s ease, box-shadow 0.15s ease", transform: _wrapTransform, transformStyle: "preserve-3d", filter: ex && !zoomed ? "brightness(0.58)" : "none", marginRight: gearExtra };
+  var _hovTiltMove = !zoomed ? function(e) { var rect = e.currentTarget.getBoundingClientRect(); var halfW = rect.width / 2; var halfH = rect.height / 2; var nx = (e.clientX - rect.left - halfW) / halfW; var ny = (e.clientY - rect.top - halfH) / halfH; if (nx > 1) nx = 1; else if (nx < -1) nx = -1; if (ny > 1) ny = 1; else if (ny < -1) ny = -1; setHovTilt({x: nx * 8, y: ny * 8}); } : undefined;
+  var _hovTiltLeave = !zoomed ? function() { setHovTilt({x: 0, y: 0}); } : undefined;
   var hCls = zoomed ? "" : (ex ? "card-tapped" : "card-hover");
   var hEnter = !zoomed ? function(e) { if (_setHoverCard) _setHoverCard(card, e); } : undefined;
   var hLeave = !zoomed ? function() { if (_clearHoverCard) _clearHoverCard(); } : undefined;
