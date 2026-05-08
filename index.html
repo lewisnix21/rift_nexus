@@ -6737,7 +6737,7 @@ function RiftboundGame() {
               var isSdBf = sd && sd.bfIdx === bi;
               // Auto-mode: when a base card is "picked up" (click-to-attach), every BF zone glows gold and is clickable to deploy.
               var isAutoBfTarget = autoMode && !!baseCardSelected;
-              var isPendingZoneBF = !!pendingZonePlay && pendingZonePlay.card && (pendingZonePlay.card.type === "Unit" || pendingZonePlay.card.type === "Champion" || pendingZonePlay.card.type === "Legend");
+              var isPendingZoneBF = !!pendingZonePlay && pendingZonePlay.card && (pendingZonePlay.card.type === "Unit" || pendingZonePlay.card.type === "Champion" || pendingZonePlay.card.type === "Legend" || pendingZonePlay.card.type === "Spell");
               // BF zone uses the auto-mode horizontal layout in both modes (manual mode previously used a
               // rotated absolute layout — kept identical visual treatment so card abilities don't fire in manual).
               var _bfTint = bfImg ? bfAvgColors[bfImg] : null;
@@ -6792,7 +6792,10 @@ function RiftboundGame() {
           <div style={{ display: "flex", alignItems: "stretch", flexShrink: 0, padding: "2px 6px", gap: 6, overflow: "visible", zIndex: 2, height: ZONE_H, minHeight: ZONE_H, maxHeight: ZONE_H, position: "relative" }}>
             {/* Player runes - horizontal (white), overlapping via absolute positioning */}
             {function() { var prc = myCur.runes.length; var untapped = myCur.runes.filter(function(r) { return !r.exhausted; }).length; var step = 1 / 11; return (
-            <div style={{ display: "flex", flexDirection: "row", padding: "3px 4px", borderRadius: 6, border: "1.5px solid #ffffff35", alignItems: "center", flex: 1, overflow: "visible", height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H }}>
+            <div onMouseEnter={pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.type === "Spell" ? function() { setPendingHoverZone("runes"); } : undefined}
+              onMouseLeave={function() { if (pendingHoverZone === "runes") setPendingHoverZone(null); }}
+              onClick={pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.type === "Spell" && !pendingZonePlay.fromShowcase ? function(e) { e.stopPropagation(); var _pzc = pendingZonePlay.card; setPendingZonePlay(null); castSpellFromHand(_pzc, null); } : undefined}
+              style={{ display: "flex", flexDirection: "row", padding: "3px 4px", borderRadius: 6, border: (pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.type === "Spell" && pendingHoverZone === "runes") ? "2.5px solid #8B6914" : "1.5px solid #ffffff35", background: (pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.type === "Spell" && pendingHoverZone === "runes") ? "rgba(139,105,20,0.13)" : "transparent", boxShadow: (pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.type === "Spell" && pendingHoverZone === "runes") ? "0 0 22px rgba(139,105,20,0.65), inset 0 0 18px rgba(139,105,20,0.14)" : "none", alignItems: "center", flex: 1, overflow: "visible", height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H, cursor: pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.type === "Spell" ? "pointer" : "default", transition: "border 0.15s ease, background 0.15s ease, box-shadow 0.15s ease", position: "relative", zIndex: pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.type === "Spell" ? 2 : undefined }}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, marginRight: 4 }}>
                 <div style={{ fontSize: 16, color: "#ffffff66", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1, fontWeight: 700 }}>RUNES</div>
                 <div style={{ fontSize: 16, color: "#ffffff55", fontFamily: "Rajdhani,sans-serif", fontWeight: 700 }}>{prc}/12</div>
@@ -6840,7 +6843,7 @@ function RiftboundGame() {
             <div onDragOver={canMoveOwn && !tm && !fc ? function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } : undefined}
               onDragEnter={canMoveOwn && !tm && !fc ? function(e) { e.preventDefault(); if (!dragUnit || (dragUnit.type !== "Spell")) setDragOverBase(true); } : undefined}
               onDragLeave={function() { setDragOverBase(false); }}
-              onMouseEnter={pendingZonePlay && pendingZonePlay.card && !pendingZonePlay.fromBf && pendingZonePlay.card.type !== "Spell" ? function() { setPendingHoverZone("base"); } : undefined}
+              onMouseEnter={pendingZonePlay && pendingZonePlay.card && !pendingZonePlay.fromBf ? function() { setPendingHoverZone("base"); } : undefined}
               onMouseLeave={function() { if (pendingHoverZone === "base") setPendingHoverZone(null); }}
               onDrop={canMoveOwn && !tm && !fc ? function(e) { e.preventDefault(); setDragOverBase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; if (type === "gear") { detachGear(uid2); } else if (type === "bf" || type === "bin") { returnToBase(uid2); } else { var card = null; if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } if (card && (card.type === "Unit" || card.type === "Champion" || card.type === "Gear")) { if (type === "champ" && (card.energy === 0 || card.energy === null)) { playChampionToBase(); } else { openPlay(card); } } } } : undefined}
               onClick={pendingZonePlay && pendingZonePlay.card && !pendingZonePlay.fromBf ? function(e) { e.stopPropagation(); var _pzc = pendingZonePlay.card; var _pzFromBase = pendingZonePlay.fromBase; setPendingZonePlay(null); if (_pzFromBase) { return; } if (_pzc.type === "Spell") { castSpellFromHand(_pzc, null); } else { openPlay(_pzc); } } : undefined}
