@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=3.0, user-scalable=yes">
 <title>Riftbound Arena - League of Legends TCG</title>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Spectral:wght@400;600;700&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
@@ -2135,7 +2135,7 @@ function RiftboundGame() {
     var _myLobbyP = lpArr.find(function(p) { return p.uid === myUid; });
     var soloTestReady = isHost && roomCode && lpArr.length === 1 && !!(_myLobbyP && _myLobbyP.deck && DECKS[_myLobbyP.deck] && _myLobbyP.name && _myLobbyP.name.trim() && _myLobbyP.ready);
     return (
-    <div style={{ height: "100vh", background: "radial-gradient(ellipse at 50% -10%, #0f2c40 0%, #0a1f30 32%, #06121e 65%, #02080f 100%)", color: "#eaeaf0", fontFamily: "Inter,sans-serif", display: "flex", flexDirection: "column", alignItems: "center", overflow: "auto", WebkitOverflowScrolling: "touch", padding: 0, position: "relative" }}>
+    <div style={{ height: "100vh", background: "radial-gradient(ellipse at 50% -10%, #0a2040 0%, #061633 32%, #030c20 65%, #00050f 100%)", color: "#eaeaf0", fontFamily: "Inter,sans-serif", display: "flex", flexDirection: "column", alignItems: "center", overflow: "auto", WebkitOverflowScrolling: "touch", padding: 0, position: "relative" }}>
       <div className="home-bg-particles" />
       {/* Top header bar */}
       <div style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "10px 20px", background: "linear-gradient(180deg, rgba(255,215,0,0.05), rgba(255,215,0,0.01))", borderBottom: "1px solid #FFD70022", boxShadow: "0 2px 12px rgba(0,0,0,0.3)", position: "relative", zIndex: 2 }}>
@@ -2175,7 +2175,7 @@ function RiftboundGame() {
       </div>
       {/* HERO — title, subtitle, host/join toggle, how-to-play */}
       <div className="lobby-hero" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "clamp(6px, 1vh, 12px)", padding: "clamp(8px, 1.4vh, 16px) 20px clamp(4px, 0.6vh, 8px)", position: "relative", zIndex: 1, flexShrink: 0 }}>
-        <h1 style={{ fontSize: "clamp(34px, 4.4vw, 60px)", fontFamily: "Rajdhani,sans-serif", fontWeight: 700, letterSpacing: "clamp(1px, 0.15vw, 3px)", lineHeight: 1, margin: 0, background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textAlign: "center", textShadow: "0 0 30px rgba(255,215,0,0.15)" }}>RIFTBOUND ARENA</h1>
+        <h1 style={{ fontSize: "clamp(34px, 4.4vw, 60px)", fontFamily: "Spectral,serif", fontWeight: 700, letterSpacing: "clamp(1px, 0.15vw, 3px)", lineHeight: 1, margin: 0, background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textAlign: "center", textShadow: "0 0 30px rgba(255,215,0,0.15)" }}>RIFTBOUND ARENA</h1>
         <p style={{ fontSize: "clamp(11px, 1.1vw, 15px)", fontFamily: "Rajdhani,sans-serif", fontWeight: 600, color: "#eaeaf0", letterSpacing: "clamp(3px, 0.4vw, 5px)", textTransform: "uppercase", margin: 0, opacity: 0.85 }}>Awaken <span style={{ color: "#FFD700cc", margin: "0 6px" }}>•</span> Battle <span style={{ color: "#FFD700cc", margin: "0 6px" }}>•</span> Conquer</p>
         <div className="lobby-mode-btns" style={{ display: "flex", gap: 12, marginTop: 2, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
           {[{id:"host",label:"Host a Game"},{id:"join",label:"Join a Game"}].map(function(t) {
@@ -2409,7 +2409,7 @@ function RiftboundGame() {
       </div>{/* end body row */}
 
       {/* BOTTOM ACTION BAR */}
-      <div style={{ width: "100%", maxWidth: 1500, padding: "10px 20px 14px", display: "flex", justifyContent: "center", alignItems: "center", gap: 10, flexShrink: 0, position: "sticky", bottom: 0, zIndex: 10, flexWrap: "wrap", background: "linear-gradient(0deg, rgba(4,12,20,0.97) 70%, rgba(4,12,20,0) 100%)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
+      <div style={{ width: "100%", maxWidth: 1500, padding: "10px 20px 14px", display: "flex", justifyContent: "center", alignItems: "center", gap: 10, flexShrink: 0, position: "sticky", bottom: 0, zIndex: 10, flexWrap: "wrap", background: "linear-gradient(0deg, rgba(3,10,22,0.97) 70%, rgba(3,10,22,0) 100%)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
         {readyErr && <div style={{ padding: "6px 10px", borderRadius: 4, border: "1px solid #ff444466", background: "rgba(255,50,50,0.1)", color: "#ff6666", fontSize: 12, fontFamily: "Inter,sans-serif", marginRight: 4 }}>{readyErr}</div>}
 
         {/* Host: Create Lobby button (before lobby created) */}
@@ -2613,11 +2613,11 @@ function RiftboundGame() {
     }
 
     return (
-    <div style={{ height: "100vh", maxHeight: "100vh", background: "radial-gradient(ellipse at 50% -10%, #0f2c40 0%, #0a1f30 32%, #06121e 65%, #02080f 100%)", color: "#eaeaf0", fontFamily: "Inter,sans-serif", display: "flex", flexDirection: "column", alignItems: "center", overflow: "auto", padding: "20px 20px 40px", position: "relative" }}>
+    <div style={{ height: "100vh", maxHeight: "100vh", background: "radial-gradient(ellipse at 50% -10%, #0a2040 0%, #061633 32%, #030c20 65%, #00050f 100%)", color: "#eaeaf0", fontFamily: "Inter,sans-serif", display: "flex", flexDirection: "column", alignItems: "center", overflow: "auto", padding: "20px 20px 40px", position: "relative" }}>
       <div className="home-bg-particles" />
       <div style={{ width: "100%", maxWidth: 900, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 20, position: "relative", zIndex: 1 }}>
         <button onClick={function() { setScreen("mode"); }} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 18px", borderRadius: 6, border: "1px solid #FFD70033", background: "rgba(255,255,255,0.02)", color: "#eaeaf0", cursor: "pointer", fontSize: 16, fontFamily: "Inter,sans-serif", fontWeight: 700, transition: "all 200ms ease" }}>← Back</button>
-        <h2 style={{ fontSize: "clamp(24px, 3vw, 40px)", fontFamily: "Rajdhani,sans-serif", fontWeight: 700, letterSpacing: "clamp(1px, 0.12vw, 2px)", lineHeight: 1, margin: 0, background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textAlign: "center", textShadow: "0 0 30px rgba(255,215,0,0.15)" }}>MY DECKS</h2>
+        <h2 style={{ fontSize: "clamp(24px, 3vw, 40px)", fontFamily: "Spectral,serif", fontWeight: 700, letterSpacing: "clamp(1px, 0.12vw, 2px)", lineHeight: 1, margin: 0, background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textAlign: "center", textShadow: "0 0 30px rgba(255,215,0,0.15)" }}>MY DECKS</h2>
         <div style={{ width: 90 }} />
       </div>
       <button onClick={newDeck} className="btn-mode-toggle" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 28px", borderRadius: 999, border: "2px solid rgba(255,255,255,0.85)", background: "linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06))", color: "#ffffff", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Inter,sans-serif", letterSpacing: 1, marginBottom: 24, position: "relative", zIndex: 1, boxShadow: "0 6px 18px rgba(0,0,0,0.35), 0 0 18px rgba(255,255,255,0.20)", transition: "transform 200ms ease, box-shadow 200ms ease" }}>Create New Deck</button>
@@ -2769,7 +2769,7 @@ function RiftboundGame() {
     }
 
     return (
-    <div style={{ height: "100vh", maxHeight: "100vh", background: "linear-gradient(180deg, #06121e 0%, #0a1f30 30%, #0f2c40 50%, #0a1f30 70%, #06121e 100%)", color: "#ddd", fontFamily: "sans-serif", display: "flex", flexDirection: "column", overflow: "auto" }}>
+    <div style={{ height: "100vh", maxHeight: "100vh", background: "linear-gradient(180deg, #030c20 0%, #061633 30%, #0a2040 50%, #061633 70%, #030c20 100%)", color: "#ddd", fontFamily: "sans-serif", display: "flex", flexDirection: "column", overflow: "auto" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderBottom: "1px solid #FFD70022", flexShrink: 0, background: "linear-gradient(180deg, rgba(255,215,0,0.05), rgba(255,215,0,0.01))", boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}>
         <button onClick={function() {
@@ -2778,7 +2778,7 @@ function RiftboundGame() {
           var isDirty = initial !== null && current !== initial;
           if (isDirty) { setDbExitConfirm(true); } else { setDbView("list"); }
         }} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 17px", borderRadius: 6, border: "1px solid #FFD70033", background: "rgba(255,255,255,0.02)", color: "#eaeaf0", cursor: "pointer", fontSize: 16, fontFamily: "Inter,sans-serif", fontWeight: 700, transition: "all 200ms ease" }}>← Back to Decks</button>
-        <h2 style={{ fontSize: "clamp(22px, 2.6vw, 36px)", fontFamily: "Rajdhani,sans-serif", fontWeight: 700, letterSpacing: "clamp(1px, 0.12vw, 2px)", lineHeight: 1, margin: 0, background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textAlign: "center", textShadow: "0 0 30px rgba(255,215,0,0.15)" }}>DECK BUILDER</h2>
+        <h2 style={{ fontSize: "clamp(22px, 2.6vw, 36px)", fontFamily: "Spectral,serif", fontWeight: 700, letterSpacing: "clamp(1px, 0.12vw, 2px)", lineHeight: 1, margin: 0, background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textAlign: "center", textShadow: "0 0 30px rgba(255,215,0,0.15)" }}>DECK BUILDER</h2>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {/* Import dropdown — bundles Import Text + Import Precon */}
           <div style={{ position: "relative" }}>
@@ -6244,7 +6244,7 @@ function RiftboundGame() {
         var iVoted = cpVotes[myUid];
         var otherVoted = Object.keys(cpVotes).some(function(k) { return k !== myUid && cpVotes[k]; });
         return <div style={{ position: "fixed", inset: 0, background: "#000d", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}><div style={{ textAlign: "center" }}>
-          <h1 style={{ fontSize: 42, fontFamily: "Rajdhani,sans-serif", background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>VICTORY</h1>
+          <h1 style={{ fontSize: 42, fontFamily: "Spectral,serif", background: "linear-gradient(135deg,#FFD700,#FF8C00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>VICTORY</h1>
           <p style={{ color: "#FFD700", fontFamily: "Rajdhani,sans-serif", fontSize: 18, marginTop: 8 }}>{pName(win || 0)}</p>
           <button onClick={resetAll} style={{ marginTop: 14, padding: "10px 24px", borderRadius: 5, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70040,#FF8C0030)", color: "#FFD700", cursor: "pointer", fontWeight: 700, fontFamily: "Rajdhani,sans-serif" }}>MAIN MENU</button>
           <br />
@@ -6330,7 +6330,7 @@ function RiftboundGame() {
       </div>}
       {/* Scry pick overlay */}
       {scryMode === "pick" && <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, zIndex: 1200 }}>
-        <h2 style={{ fontSize: 20, fontFamily: "Rajdhani,sans-serif", fontWeight: 700, color: "#FFD700" }}>Scry — Select Cards to Draw</h2>
+        <h2 style={{ fontSize: 20, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700" }}>Scry — Select Cards to Draw</h2>
         <p style={{ color: "#888", fontSize: 14 }}>Selected cards go to your hand. The rest go to the bottom of your deck.</p>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
           {scryCards.map(function(c) {
@@ -6367,7 +6367,7 @@ function RiftboundGame() {
         var _curActive = _curRound ? (_curRound.active || []) : [];
         var _curRolls = _curRound ? (_curRound.rolls || {}) : {};
         return <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20, zIndex: 1150 }}>
-        <h2 style={{ fontSize: 24, fontFamily: "Rajdhani,sans-serif", fontWeight: 700, color: "#FFD700", letterSpacing: 3 }}>{diceAnimDone ? "ROLLING FOR FIRST TURN" : (diceShowSettled ? "ROLLING FOR FIRST TURN" : "ROLLING...")}</h2>
+        <h2 style={{ fontSize: 24, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700", letterSpacing: 3 }}>{diceAnimDone ? "ROLLING FOR FIRST TURN" : (diceShowSettled ? "ROLLING FOR FIRST TURN" : "ROLLING...")}</h2>
         <div style={{ display: "flex", gap: 40, alignItems: "center" }}>
           {diceRoll.map(function(d) {
             var isEliminated = !!diceEliminated[d.uid];
@@ -6428,7 +6428,7 @@ function RiftboundGame() {
         var myBfPicked = iSkipBf || (ps[mySlot] && ps[mySlot].chosenBf);
         return <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, zIndex: 1100, overflow: "auto", padding: "40px 20px" }}>
           {!myBfPicked ? <>
-            <h2 style={{ fontSize: 22, fontFamily: "Rajdhani,sans-serif", fontWeight: 700, color: "#FFD700" }}>Choose Your Battlefield</h2>
+            <h2 style={{ fontSize: 22, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700" }}>Choose Your Battlefield</h2>
             <p style={{ color: "#4ADE80", fontSize: 14, fontFamily: "Rajdhani,sans-serif", fontWeight: 700 }}>{pName(firstPlayerIdx)} to draw first</p>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
               {ps[mySlot].battlefields.map(function(bf) {
@@ -6448,7 +6448,7 @@ function RiftboundGame() {
               aL("You chose " + selectedBf.name);
             }} disabled={!selectedBf} style={{ padding: "10px 30px", borderRadius: 6, border: "2px solid " + (selectedBf ? "#FFD700" : "#333"), background: selectedBf ? "linear-gradient(135deg,#FFD70040,#FF8C0020)" : "#222", color: selectedBf ? "#FFD700" : "#555", cursor: selectedBf ? "pointer" : "not-allowed", fontSize: 16, fontWeight: 700, fontFamily: "Rajdhani,sans-serif" }}>CONFIRM</button>
           </> : <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-            <h2 style={{ fontSize: 20, fontFamily: "Rajdhani,sans-serif", fontWeight: 700, color: "#FFD700" }}>Waiting for other players...</h2>
+            <h2 style={{ fontSize: 20, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700" }}>Waiting for other players...</h2>
             <div className="anim-pulse" style={{ fontSize: 28, opacity: 0.3 }}>⚔</div>
           </div>}
         </div>;
@@ -6471,7 +6471,7 @@ function RiftboundGame() {
         if (_mullScale < 0.25) _mullScale = 0.25;
         return <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, zIndex: 1100, overflow: "hidden", padding: "16px 20px" }}>
           {!mullDoneLocal ? <>
-            <h2 style={{ fontSize: 22, fontFamily: "Rajdhani,sans-serif", fontWeight: 700, color: "#FFD700", flexShrink: 0, margin: 0 }}>Your Mulligan</h2>
+            <h2 style={{ fontSize: 22, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700", flexShrink: 0, margin: 0 }}>Your Mulligan</h2>
             <p style={{ color: "#4ADE80", fontSize: 14, fontFamily: "Rajdhani,sans-serif", fontWeight: 700, flexShrink: 0, margin: 0 }}>{pName(firstPlayerIdx)} to draw first</p>
             <p style={{ color: "#888", fontSize: 15, flexShrink: 0, margin: 0 }}>Select up to 2 to replace</p>
             <div style={{ width: _mullRowW * _mullScale, height: _mullCardH * _mullScale, flexShrink: 0 }}>
@@ -6497,7 +6497,7 @@ function RiftboundGame() {
               _gamePhaseRef.current = "mullDone";
             }} style={{ padding: "12px 28px", borderRadius: 6, border: "2px solid #FFD700", background: "#FFD70040", color: "#FFD700", cursor: "pointer", fontSize: 18, fontWeight: 700, position: "relative", zIndex: 10, flexShrink: 0 }}>{mc.length > 0 ? "MULLIGAN " + mc.length : "KEEP"}</button>
           </> : <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-            <h2 style={{ fontSize: 20, fontFamily: "Rajdhani,sans-serif", fontWeight: 700, color: "#FFD700" }}>Waiting for other players...</h2>
+            <h2 style={{ fontSize: 20, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700" }}>Waiting for other players...</h2>
             <div className="anim-pulse" style={{ fontSize: 28, opacity: 0.3 }}>⚔</div>
           </div>}
         </div>;
