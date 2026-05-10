@@ -4998,6 +4998,33 @@ function RiftboundGame() {
       var ui = nb[bk].units[idx].findIndex(function(u) { return u.uid === cardUid; });
       if (ui >= 0) { var card = nb[bk].units[idx].splice(ui, 1)[0]; binCard(card, p); var np = ps.slice(); np[idx] = p; setPs(np); setBfs(nb); _syncLive(np, nb); return; }
     }
+    // Check showcase (manual mode only)
+    if (!autoMode) {
+      if (showcaseCard && showcaseCard.uid === cardUid) {
+        var scCard = showcaseCard;
+        if (showcaseHistory.length > 0) {
+          setShowcaseCard(showcaseHistory[0]);
+          setShowcaseHistory(function(prev) { return prev.slice(1); });
+        } else {
+          setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false);
+          setShowcaseAcceptors({}); setShowcasePriority(null); setShowcaseActed(false);
+          if (pendingSpell) { setPendingSpell(null); setResolveAcceptors({}); if (roomCode) { try { fbDb.ref("lobbies/" + roomCode + "/spellResolve").set({ card: null, acceptors: {}, by: myUid }); } catch(e) {} } }
+        }
+        binCard(scCard, p); var np = ps.slice(); np[idx] = p; setPs(np); _syncLive(np, null); return;
+      }
+      var shi = showcaseHistory.findIndex(function(c) { return c.uid === cardUid; });
+      if (shi >= 0) {
+        var hCard = showcaseHistory[shi];
+        setShowcaseHistory(function(prev) { return prev.filter(function(_, _i) { return _i !== shi; }); });
+        binCard(hCard, p); var np = ps.slice(); np[idx] = p; setPs(np); _syncLive(np, null); return;
+      }
+    }
+    // Check champion slot
+    if (_me.champion && _me.champion.uid === cardUid && !_me.championPlayed) {
+      var champCard = _me.champion;
+      p.champion = null;
+      binCard(champCard, p); var np = ps.slice(); np[idx] = p; setPs(np); _syncLive(np, null); return;
+    }
   }
 
   function attachGear(gearUid, unitUid) {
@@ -6878,7 +6905,7 @@ function RiftboundGame() {
                 {myCur.mainDeck.length > 0 && <button onClick={function(e) { e.stopPropagation(); setScryMode("prompt"); setScryCount(1); }} style={{ position: "absolute", top: -4, right: -4, padding: "1px 4px", borderRadius: 3, border: "1.5px solid #FFD70088", background: "rgba(255,215,0,0.85)", color: "#0a0a18", fontSize: 10, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", cursor: "pointer", zIndex: 6, letterSpacing: 0.5 }}>Scry</button>}
               </div>
               {/* Bin pile — between deck and token (token/bin order swapped per earlier request) */}
-              <div onClick={function() { setShowBin(!showBin); }} onDragOver={function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }} onDragEnter={function(e) { e.preventDefault(); setDragOverBin(true); }} onDragLeave={function() { setDragOverBin(false); }} onDrop={function(e) { e.preventDefault(); setDragOverBin(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var uid2 = parts.length > 1 ? parts[1] : parts[0]; sendToBin(uid2); }} style={{ cursor: "pointer", borderRadius: 6, outline: dragOverBin ? "2px solid #ff6666" : "none", outlineOffset: -2, boxShadow: dragOverBin ? "0 0 16px rgba(255,100,100,0.3), inset 0 0 12px rgba(255,100,100,0.05)" : "none", transition: "outline 0.15s ease, box-shadow 0.15s ease" }}><BinPile trash={myCur.trash} /></div>
+              <div onClick={pendingZonePlay && pendingZonePlay.card ? function(e) { e.stopPropagation(); var _pzc = pendingZonePlay.card; setPendingZonePlay(null); sendToBin(_pzc.uid); } : function() { setShowBin(!showBin); }} onDragOver={function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }} onDragEnter={function(e) { e.preventDefault(); setDragOverBin(true); }} onDragLeave={function() { setDragOverBin(false); }} onDrop={function(e) { e.preventDefault(); setDragOverBin(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var uid2 = parts.length > 1 ? parts[1] : parts[0]; sendToBin(uid2); }} style={{ cursor: pendingZonePlay && pendingZonePlay.card ? "copy" : "pointer", borderRadius: 6, outline: (dragOverBin || (pendingZonePlay && pendingZonePlay.card)) ? "2px solid #ff6666" : "none", outlineOffset: -2, boxShadow: (dragOverBin || (pendingZonePlay && pendingZonePlay.card)) ? "0 0 16px rgba(255,100,100,0.3), inset 0 0 12px rgba(255,100,100,0.05)" : "none", transition: "outline 0.15s ease, box-shadow 0.15s ease" }}><BinPile trash={myCur.trash} /></div>
               {/* Token pile — 80/20 split: top button opens the type-picker dropdown, bottom button creates a +1 token of the selected type. */}
               <div data-uid={"slot-" + mySlot + "-tokens"} style={{ width: HAND_W, height: HAND_H, borderRadius: 6, background: "linear-gradient(160deg,#1a1a1a,#050505)", border: "2px solid #b8b8b888", display: "flex", flexDirection: "column", flexShrink: 0, position: "relative", overflow: "visible" }}>
                 <div onClick={canMoveOwn ? function(e) { e.stopPropagation(); setShowTokenMenu(function(v) { return !v; }); } : undefined} style={{ flex: "0 0 70%", borderBottom: "1px solid #b8b8b855", display: "flex", alignItems: "center", justifyContent: "center", cursor: canMoveOwn ? "pointer" : "default", padding: "4px 2px", overflow: "hidden" }}>
