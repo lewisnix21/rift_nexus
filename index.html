@@ -6177,7 +6177,7 @@ function RiftboundGame() {
     // In auto-mode, hand cards render ~50% larger so they're easy to read when half is off-screen.
     var aw = Math.round(HAND_W * 1.5);
     var ah = Math.round(HAND_H * 1.5);
-    return React.createElement("div", { onMouseLeave: function() { setHandHovIdx(-1); if (!isEnemy) setHoveredHandCard(null); setPendingHoverZone(function(prev) { return prev === "hand" ? null : prev; }); }, style: { display: "flex", justifyContent: "center", alignItems: "flex-end", height: ah, flexShrink: 0, overflow: "visible", background: "transparent", padding: isEnemy ? "0 20px 0" : "2px 20px 0", transform: isEnemy ? "scaleY(-1)" : "none", pointerEvents: autoMode ? "none" : undefined } },
+    return React.createElement("div", { onMouseLeave: function() { setHandHovIdx(-1); if (!isEnemy) setHoveredHandCard(null); }, style: { display: "flex", justifyContent: "center", alignItems: "flex-end", height: ah, flexShrink: 0, overflow: "visible", background: "transparent", padding: isEnemy ? "0 20px 0" : "2px 20px 0", transform: isEnemy ? "scaleY(-1)" : "none", pointerEvents: autoMode ? "none" : undefined } },
       hand.map(function(c, i) {
         var rot = (i - mid) * (total > 6 ? 1.5 : 2.0);
         var ty = Math.abs(i - mid) * (total > 6 ? 1.2 : 1.8);
@@ -6933,6 +6933,7 @@ function RiftboundGame() {
             {/* Hand wrapper — z-index 980 sits above the avatar (970) so a hovered hand card scales up over the avatar instead of being clipped behind it. The OUTER fixed wrapper is pointer-events:none so it doesn't intercept clicks on the deck/bin/token piles or the rune/champion/legend piles that share the bottom band of the viewport; the INNER wrapper around the FannedHand re-enables pointer events for the actual hand drop/click target (drag-to-hand return + carry cancel). */}
             <div style={{ position: "fixed", bottom: -Math.round(HAND_H * 1.5 * 0.35), left: 0, right: 0, display: "flex", justifyContent: "center", alignItems: "flex-end", overflow: "visible", zIndex: 980, pointerEvents: "none", "--hand-ah": Math.round(HAND_H * 1.5) + "px" }}>
               <div style={{ pointerEvents: autoMode ? "none" : "auto", display: "flex", alignItems: "flex-end", background: dragOverHand ? "rgba(139,105,20,0.20)" : "transparent", boxShadow: dragOverHand ? "0 0 32px rgba(139,105,20,0.70), inset 0 0 20px rgba(139,105,20,0.16)" : "none", borderRadius: "10px 10px 0 0", transition: "background 0.15s ease, box-shadow 0.15s ease" }}
+                onMouseLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) { setPendingHoverZone(function(prev) { return prev === "hand" ? null : prev; }); setDragOverHand(false); } }}
                 onDragEnter={canMoveOwn ? function(e) { e.preventDefault(); setDragOverHand(true); } : undefined}
                 onDragOver={canMoveOwn ? function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } : undefined}
                 onDragLeave={canMoveOwn ? function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverHand(false); } : undefined}
