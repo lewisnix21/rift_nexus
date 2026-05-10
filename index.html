@@ -1038,6 +1038,7 @@ function RiftboundGame() {
   var _doBf = useState(-1), dragOverBf = _doBf[0], setDragOverBf = _doBf[1];
   var _phz = useState(null), pendingHoverZone = _phz[0], setPendingHoverZone = _phz[1];
   var _doBin = useState(false), dragOverBin = _doBin[0], setDragOverBin = _doBin[1];
+  var _doh = useState(false), dragOverHand = _doh[0], setDragOverHand = _doh[1];
   var _hc = useState(null), hoverCard = _hc[0], setHoverCard = _hc[1];
   _setHoverCard = function(card, e, inHand) { if (e && e.currentTarget) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: card, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2, inHand: !!inHand }); } else if (e && e.clientX !== undefined) { setHoverCard({ card: card, left: e.clientX, right: e.clientX, top: e.clientY, bottom: e.clientY, cx: e.clientX, cy: e.clientY, inHand: !!inHand }); } else { setHoverCard(card ? { card: card, left: 0, right: 0, top: 0, bottom: 0, cx: 0, cy: 0, inHand: !!inHand } : null); } };
   _clearHoverCard = function() { setHoverCard(null); };
@@ -5735,7 +5736,7 @@ function RiftboundGame() {
     var savedSd = sd;
     setSd(null);
     // Reset any leftover interaction state so the next action is not blocked
-    setTm(null); setFc(null); setTr([]); setSel(null); setDrawingArrow(null); setDragUnit(null); setDragOverBf(-1); setDragOverBase(false); setDragOverBin(false); setDragOverShowcase(false);
+    setTm(null); setFc(null); setTr([]); setSel(null); setDrawingArrow(null); setDragUnit(null); setDragOverBf(-1); setDragOverBase(false); setDragOverBin(false); setDragOverShowcase(false); setDragOverHand(false);
     aL("Showdown resolved.");
     var bi = savedSd.bfIdx;
     var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(x) { return x.slice(); }) }); });
@@ -6931,9 +6932,11 @@ function RiftboundGame() {
             <div className={!isMyTurnOnline && (screen === "play" || screen === "sd") && !awakenPhase ? "anim-banner-pulse-top" : ""} style={{ position: "fixed", top: 0, left: 0, right: 0, height: HAND_H + Math.round(34 * vScale), borderRadius: "0 0 10px 10px", background: "linear-gradient(0deg, rgba(22,52,76,0.94) 0%, rgba(14,34,52,0.97) 55%, #06121e 100%)", borderBottom: "1.5px solid rgba(155,118,26,0.58)", boxShadow: "0 14px 44px rgba(0,0,0,0.92), 0 4px 18px rgba(0,0,0,0.7), inset 0 -1px 0 rgba(155,118,26,0.15)", zIndex: 1, pointerEvents: "none" }} />
             {/* Hand wrapper — z-index 980 sits above the avatar (970) so a hovered hand card scales up over the avatar instead of being clipped behind it. The OUTER fixed wrapper is pointer-events:none so it doesn't intercept clicks on the deck/bin/token piles or the rune/champion/legend piles that share the bottom band of the viewport; the INNER wrapper around the FannedHand re-enables pointer events for the actual hand drop/click target (drag-to-hand return + carry cancel). */}
             <div style={{ position: "fixed", bottom: -Math.round(HAND_H * 1.5 * 0.35), left: 0, right: 0, display: "flex", justifyContent: "center", alignItems: "flex-end", overflow: "visible", zIndex: 980, pointerEvents: "none", "--hand-ah": Math.round(HAND_H * 1.5) + "px" }}>
-              <div style={{ pointerEvents: autoMode ? "none" : "auto", display: "flex", alignItems: "flex-end" }}
+              <div style={{ pointerEvents: autoMode ? "none" : "auto", display: "flex", alignItems: "flex-end", background: dragOverHand ? "rgba(139,105,20,0.20)" : "transparent", boxShadow: dragOverHand ? "0 0 32px rgba(139,105,20,0.70), inset 0 0 20px rgba(139,105,20,0.16)" : "none", borderRadius: "10px 10px 0 0", transition: "background 0.15s ease, box-shadow 0.15s ease" }}
+                onDragEnter={canMoveOwn ? function(e) { e.preventDefault(); setDragOverHand(true); } : undefined}
                 onDragOver={canMoveOwn ? function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } : undefined}
-                onDrop={canMoveOwn ? function(e) { e.preventDefault(); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var uid2 = parts.length > 1 ? parts[1] : parts[0]; returnToHand(uid2); } : undefined}
+                onDragLeave={canMoveOwn ? function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverHand(false); } : undefined}
+                onDrop={canMoveOwn ? function(e) { e.preventDefault(); setDragOverHand(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var uid2 = parts.length > 1 ? parts[1] : parts[0]; returnToHand(uid2); } : undefined}
                 onClick={!autoMode && pendingZonePlay && pendingZonePlay.card ? function(e) { if (pendingZonePlay.fromBf !== undefined || pendingZonePlay.fromBase || pendingZonePlay.fromShowcase) { returnToHand(pendingZonePlay.card.uid); } setPendingZonePlay(null); } : undefined}>
                 <FannedHand hand={handSort === "type" ? myCur.hand.slice().sort(function(a, b) { var order = { Champion: 0, Unit: 1, Gear: 2, Spell: 3 }; return (order[a.type] || 9) - (order[b.type] || 9); }) : handSort === "energy" ? myCur.hand.slice().sort(function(a, b) { return (a.energy || 0) - (b.energy || 0); }) : myCur.hand} isEnemy={false} onPlay={function(card) { if (pendingZonePlay && pendingZonePlay.card && (pendingZonePlay.fromBf !== undefined || pendingZonePlay.fromBase || pendingZonePlay.fromShowcase)) { returnToHand(pendingZonePlay.card.uid); setPendingZonePlay(null); return; } setPendingZonePlay({ card: card }); }} onZoom={setZoom} />
               </div>
