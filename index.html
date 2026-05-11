@@ -2077,22 +2077,14 @@ function RiftboundGame() {
     for (var j = 0; j < pc; j++) { if (j !== sd.atkIdx && bf.units[j] && bf.units[j].length > 0) defHasUnits = true; }
     // If one side is cleared, resolve
     if (atkHasUnits && !defHasUnits) {
-      // Attacker wins - conquer if not already controlled
+      // Attacker wins - take control of the BF if not already controlled. Points are never
+      // auto-awarded — players manage score manually via the avatar +/- buttons.
       if (bf.controller !== sd.atkIdx) {
         var nb2 = bfs.map(function(b) { return Object.assign({}, b); }); nb2[bi].controller = sd.atkIdx;
-        var np2 = ps.slice();
-        var _atkPriorAR = (np2[sd.atkIdx].lastScoredBfs || []).indexOf(bf.uid) >= 0;
-        if (_atkPriorAR) {
-          aL(pName(sd.atkIdx) + " takes " + bf.name + " — already scored from this battlefield this turn, no point");
-        } else {
-          np2[sd.atkIdx] = Object.assign({}, np2[sd.atkIdx], { score: np2[sd.atkIdx].score + 1, lastScoredBfs: (np2[sd.atkIdx].lastScoredBfs || []).concat([bf.uid]) });
-          aL(pName(sd.atkIdx) + " conquers " + bf.name + "! (" + np2[sd.atkIdx].score + "/8)");
-          _announcePoint(sd.atkIdx, "conquer");
-        }
-        setBfs(nb2); setPs(np2);
+        aL(pName(sd.atkIdx) + " conquers " + bf.name + "!");
+        setBfs(nb2);
         fireConquerEffects(sd.atkIdx, bi);
         setTimeout(recalcAuras, 0);
-        if (np2[sd.atkIdx].score >= 8 && !continuePlaying) { setWin(sd.atkIdx); setScreen("go"); setSd(null); return; }
       }
       aL("Showdown ends - attacker holds.");
       setSd(null); setScreen("play"); setAct(sd.atkIdx);
@@ -4676,32 +4668,21 @@ function RiftboundGame() {
         aL(pName(turnIdx) + " draws 1 (Loose Cannon — hand was " + ((p.hand.length - 1)) + ")");
         showAutoBanner("AUTO · Loose Cannon — drew 1 (low hand)");
       }
-      // Begin: score
+      // Begin: holding points are NEVER auto-awarded. Players manage score manually via the
+      // avatar +/- buttons. We still fire on-hold card effects for uncontested controlled BFs,
+      // since those are triggered abilities independent of scoring.
       var _isDoublesGame = lobbySettings && lobbySettings.mode === "Doubles";
       var _myTeammateIdx = -1;
       if (_isDoublesGame && p.team) {
         _myTeammateIdx = ps.findIndex(function(other, oi) { return oi !== turnIdx && other && other.team === p.team; });
       }
-      var _teammateLastScored = (_myTeammateIdx >= 0 && ps[_myTeammateIdx] && ps[_myTeammateIdx].lastScoredBfs) ? ps[_myTeammateIdx].lastScoredBfs : [];
-      var sc = 0;
-      var scoredBfUidsThisTurn = [];
       nb.forEach(function(bf, bfIdxLocal) {
         if (bf.controller === turnIdx && bf.units[turnIdx].length > 0) {
           var contested = false; for (var i = 0; i < pc; i++) { if (i !== turnIdx && bf.units[i].length > 0) contested = true; }
-          // Doubles rule: can't score on a battlefield teammate just conquered last turn
-          var blockedByTeammate = _isDoublesGame && _teammateLastScored.indexOf(bf.uid) >= 0;
-          if (!contested && !blockedByTeammate) {
-            sc++; scoredBfUidsThisTurn.push(bf.uid);
-            aL(pName(turnIdx) + " gets a holding point from " + bf.name + "!");
-            _announcePoint(turnIdx, "hold");
-            fireHoldEffects(turnIdx, bfIdxLocal, bf);
-          } else if (!contested && blockedByTeammate) {
-            aL("  " + bf.name + " skipped — teammate just scored here");
-          }
+          if (!contested) fireHoldEffects(turnIdx, bfIdxLocal, bf);
         }
       });
-      p.lastScoredBfs = scoredBfUidsThisTurn;
-      if (sc > 0) { p.score += sc; }
+      p.lastScoredBfs = [];
       var winThreshold = _isDoublesGame ? 11 : 8;
       if (p.score >= winThreshold && !continuePlaying) { setWin(turnIdx); setScreen("go"); aL(pName(turnIdx) + " wins!"); var npW = ps.slice(); npW[turnIdx] = p; if (_isDoublesGame && _myTeammateIdx >= 0) { npW[_myTeammateIdx] = Object.assign({}, npW[_myTeammateIdx], { score: p.score }); } setPs(npW); setBfs(nb); setAwakenPhase(null); return; }
       // Channel: gain runes (max 12) — on turn 1 the non-first player gets +1 to compensate for going second
@@ -5950,11 +5931,8 @@ function RiftboundGame() {
             base.push(s.unit); np[s.ownerIdx] = Object.assign({}, pp, { base: base }); addAnim(s.uid, "draw");
           });
           if (atkSurvived && !defSurvived) {
-            var atkP = np[savedSd.atkIdx]; if (atkP) {
-              var _alreadyScored = (atkP.lastScoredBfs || []).indexOf(bfNow.uid) >= 0;
-              if (_alreadyScored) { aL(pName(savedSd.atkIdx) + " takes " + bfNow.name + " — already scored from this battlefield this turn, no point"); }
-              else { np[savedSd.atkIdx] = Object.assign({}, atkP, { score: (atkP.score || 0) + 1, lastScoredBfs: (atkP.lastScoredBfs || []).concat([bfNow.uid]) }); aL(pName(savedSd.atkIdx) + " conquers " + bfNow.name + "!"); _announcePoint(savedSd.atkIdx, "conquer"); }
-            }
+            // No auto-score — players award conquer points manually via the avatar +/- buttons.
+            aL(pName(savedSd.atkIdx) + " conquers " + bfNow.name + "!");
           }
           return np;
         });
@@ -5990,13 +5968,9 @@ function RiftboundGame() {
             var base = (pp.base || []).slice();
             base.push(s.unit); np[s.ownerIdx] = Object.assign({}, pp, { base: base }); addAnim(s.uid, "draw");
           });
-          // Award conquer point if attacker holds the field
+          // No auto-score — players award conquer points manually via the avatar +/- buttons.
           if (atkSurvived && !defSurvived) {
-            var atkP = np[savedSd.atkIdx]; if (atkP) {
-              var _alreadyScored = (atkP.lastScoredBfs || []).indexOf(bfNow.uid) >= 0;
-              if (_alreadyScored) { aL(pName(savedSd.atkIdx) + " takes " + bfNow.name + " — already scored from this battlefield this turn, no point"); }
-              else { np[savedSd.atkIdx] = Object.assign({}, atkP, { score: (atkP.score || 0) + 1, lastScoredBfs: (atkP.lastScoredBfs || []).concat([bfNow.uid]) }); aL(pName(savedSd.atkIdx) + " conquers " + bfNow.name + "!"); _announcePoint(savedSd.atkIdx, "conquer"); }
-            }
+            aL(pName(savedSd.atkIdx) + " conquers " + bfNow.name + "!");
           }
           return np;
         });
