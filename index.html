@@ -1479,10 +1479,12 @@ function RiftboundGame() {
       if (state.screen && state.screen !== "bf" && state.screen !== "mull" && _gamePhaseRef.current === "playing") setScreen(state.screen);
       if (state.log) setLog(state.log);
       setSd(state.sd || null);
-      // pendingBeginConquer is opt-in per sync: only apply when the sender explicitly
-      // included it (set or null). Otherwise leave local state — most syncs don't touch
-      // it, and clobbering with undefined would clear a valid pending state on bystanders.
-      if ("pendingBeginConquer" in state) setPendingBeginConquer(state.pendingBeginConquer || null);
+      // pendingBeginConquer is opt-in per sync — most writes don't touch it. Firebase Realtime DB
+      // strips null on write (deletes the property), so we can't use null to mean "clear". Instead
+      // the writer sends `false` to signal an explicit clear, `{...}` to set, and omits the key to
+      // leave it alone. Listener applies in matching shape.
+      if (state.pendingBeginConquer === false) setPendingBeginConquer(null);
+      else if (state.pendingBeginConquer) setPendingBeginConquer(state.pendingBeginConquer);
       if (state.win !== undefined) setWin(state.win);
       _lastSyncVersion.current = state.ver || 0;
       // Was 500ms — that pinned the flag true across rapid 4-player receives and swallowed
@@ -7310,7 +7312,7 @@ function RiftboundGame() {
               _lastSyncVersion.current++;
               var cleanPsBC = ps.map(function(p) { if (!p) return p; return Object.assign({}, p, { hand: p.hand || [], base: (p.base || []).map(function(c) { return Object.assign({}, c, { gear: c.gear || [] }); }), trash: p.trash || [], runes: p.runes || [], runeDeck: p.runeDeck || [], mainDeck: p.mainDeck || [], battlefields: p.battlefields || [] }); });
               var cleanBfsBC = bfs.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
-              fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPsBC, bfs: cleanBfsBC, turn: turn, act: act, screen: pbcContested ? "sd" : screen, log: log.slice(-30), sd: newSd, pendingBeginConquer: null, ver: _lastSyncVersion.current, by: myUid })));
+              fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPsBC, bfs: cleanBfsBC, turn: turn, act: act, screen: pbcContested ? "sd" : screen, log: log.slice(-30), sd: newSd, pendingBeginConquer: false, ver: _lastSyncVersion.current, by: myUid })));
             }
           }} className="anim-action-pulse" style={{ padding: "12px 14px", borderRadius: 8, border: "2px solid #60a5fa", background: "linear-gradient(135deg,#3b82f6,#60a5fa)", color: "#fff", fontSize: 14, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", cursor: "pointer", letterSpacing: 1.2, textTransform: "uppercase" }}>{pbcContested ? "Start Showdown" : "Begin Showdown"}</button>
         </div>;
