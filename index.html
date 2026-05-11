@@ -1065,6 +1065,7 @@ function RiftboundGame() {
   var _phz = useState(null), pendingHoverZone = _phz[0], setPendingHoverZone = _phz[1];
   var _doBin = useState(false), dragOverBin = _doBin[0], setDragOverBin = _doBin[1];
   var _doh = useState(false), dragOverHand = _doh[0], setDragOverHand = _doh[1];
+  var _doDeck = useState(false), dragOverDeck = _doDeck[0], setDragOverDeck = _doDeck[1];
   var _hc = useState(null), hoverCard = _hc[0], setHoverCard = _hc[1];
   var _hovT = useState({ x: 0, y: 0 }), hoverTilt = _hovT[0], setHoverTilt = _hovT[1];
   _setHoverCard = function(card, e, inHand) { setHoverTilt({ x: 0, y: 0 }); if (e && e.currentTarget) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: card, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2, inHand: !!inHand }); } else if (e && e.clientX !== undefined) { setHoverCard({ card: card, left: e.clientX, right: e.clientX, top: e.clientY, bottom: e.clientY, cx: e.clientX, cy: e.clientY, inHand: !!inHand }); } else { setHoverCard(card ? { card: card, left: 0, right: 0, top: 0, bottom: 0, cx: 0, cy: 0, inHand: !!inHand } : null); } };
@@ -1327,6 +1328,10 @@ function RiftboundGame() {
   var _ghostAfterFnRef = useRef(null);
   var _readyGhostAnim = useState(null), readyGhostAnim = _readyGhostAnim[0], setReadyGhostAnim = _readyGhostAnim[1];
   var _pendingZonePlay = useState(null), pendingZonePlay = _pendingZonePlay[0], setPendingZonePlay = _pendingZonePlay[1];
+  // Deck-drop prompt: when a card is dragged or click-carried onto the deck pile, hold the
+  // source info here until the player picks Top or Bottom. Shape:
+  // { card, type: "hand"|"base"|"bf"|"showcase"|"bin"|"champ", uid, fromBfIdx? }
+  var _deckDropPrompt = useState(null), deckDropPrompt = _deckDropPrompt[0], setDeckDropPrompt = _deckDropPrompt[1];
   var _cguid = useState(null), champPlayGlowUid = _cguid[0], setChampPlayGlowUid = _cguid[1];
   var _rph = useState(null), resolvedPhase = _rph[0], setResolvedPhase = _rph[1];
   // Cursor position while a card is "carried" (click-to-attach play flow). Updated by a window-level
@@ -5038,6 +5043,69 @@ function RiftboundGame() {
     else { p.trash.push(cleanCard); aL(pName(myActIdx) + " bins " + cName(cleanCard)); }
   }
 
+  // Move a card from any source (hand / base / bf / showcase / bin / champ slot) to the
+  // local player's deck at the chosen position. Used by the deck drop/click-carry prompt.
+  function moveCardToDeck(src, position) {
+    if (!canMoveOwn || !src || !src.card) return;
+    if (sd) markSdActed();
+    markShowcaseActed();
+    var idx = myActIdx;
+    var _me = ps[idx]; if (!_me) return;
+    var p = Object.assign({}, _me, { base: (_me.base || []).slice(), hand: (_me.hand || []).slice(), trash: (_me.trash || []).slice(), mainDeck: (_me.mainDeck || []).slice() });
+    var card = null;
+    var t = src.type;
+    if (t === "hand") {
+      var hi = p.hand.findIndex(function(c) { return c.uid === src.uid; });
+      if (hi >= 0) card = p.hand.splice(hi, 1)[0];
+    } else if (t === "base") {
+      var bi2 = p.base.findIndex(function(c) { return c.uid === src.uid; });
+      if (bi2 >= 0) card = p.base.splice(bi2, 1)[0];
+    } else if (t === "bin") {
+      var ti = p.trash.findIndex(function(c) { return c.uid === src.uid; });
+      if (ti >= 0) card = p.trash.splice(ti, 1)[0];
+    } else if (t === "champ") {
+      if (_me.champion && _me.champion.uid === src.uid && !_me.championPlayed) {
+        card = _me.champion; p.champion = null;
+      }
+    }
+    var nb = null;
+    if (t === "bf") {
+      nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); });
+      for (var bk = 0; bk < nb.length; bk++) {
+        if (!nb[bk].units[idx]) continue;
+        var ui = nb[bk].units[idx].findIndex(function(u) { return u.uid === src.uid; });
+        if (ui >= 0) { card = nb[bk].units[idx].splice(ui, 1)[0]; break; }
+      }
+    }
+    if (t === "showcase") {
+      // Live showcase card or history — splice from whichever holds it.
+      if (showcaseCard && showcaseCard.uid === src.uid) {
+        card = showcaseCard;
+        if (showcaseHistory.length > 0) {
+          setShowcaseCard(showcaseHistory[0]);
+          setShowcaseHistory(function(prev) { return prev.slice(1); });
+        } else {
+          setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false);
+          setShowcaseAcceptors({}); setShowcasePriority(null); setShowcaseActed(false);
+          if (pendingSpell) { setPendingSpell(null); setResolveAcceptors({}); if (roomCode) { try { fbDb.ref("lobbies/" + roomCode + "/spellResolve").set({ card: null, acceptors: {}, by: myUid }); } catch(e) {} } }
+        }
+      } else {
+        var shi = showcaseHistory.findIndex(function(c) { return c.uid === src.uid; });
+        if (shi >= 0) {
+          card = showcaseHistory[shi];
+          setShowcaseHistory(function(prev) { return prev.filter(function(_, _i) { return _i !== shi; }); });
+        }
+      }
+    }
+    if (!card) return;
+    var cleanCard = Object.assign({}, card, { exhausted: false, gear: [] });
+    if (position === "top") p.mainDeck.unshift(cleanCard); else p.mainDeck.push(cleanCard);
+    var np = ps.slice(); np[idx] = p; setPs(np);
+    if (nb) setBfs(nb);
+    _syncLive(np, nb);
+    aL(pName(idx) + " sends " + cName(card) + " to " + (position === "top" ? "top" : "bottom") + " of deck");
+  }
+
   function sendToBin(cardUid) {
     if (!canMoveOwn) return;
     markShowcaseActed();
@@ -6469,6 +6537,18 @@ function RiftboundGame() {
           )}
         </div>
       </div>}
+      {/* Deck-drop top/bottom prompt — fires when a card is dragged or click-carried onto the player's deck */}
+      {deckDropPrompt && deckDropPrompt.card && <div onClick={function(e) { if (e.target === e.currentTarget) setDeckDropPrompt(null); }} style={{ position: "fixed", inset: 0, background: "#000a", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1250, cursor: "pointer" }}>
+        <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "linear-gradient(160deg, #1a1a3a, #12122a)", borderRadius: 12, padding: "26px 36px", border: "2px solid #FFD70055", boxShadow: "0 8px 40px #0008, 0 0 20px #FFD70015", textAlign: "center", cursor: "default", minWidth: 360 }}>
+          <div style={{ fontSize: 22, color: "#FFD700", fontFamily: "Rajdhani,sans-serif", fontWeight: 700, marginBottom: 6, letterSpacing: 1.5 }}>Send to deck</div>
+          <div style={{ fontSize: 15, color: "#bbb", fontFamily: "Rajdhani,sans-serif", marginBottom: 18 }}>{cName(deckDropPrompt.card)} — top or bottom?</div>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+            <button onClick={function() { moveCardToDeck(deckDropPrompt, "top"); setDeckDropPrompt(null); }} style={{ padding: "11px 26px", borderRadius: 7, border: "2px solid #FFD700", background: "rgba(255,215,0,0.2)", color: "#FFD700", cursor: "pointer", fontSize: 17, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", letterSpacing: 1 }}>Top</button>
+            <button onClick={function() { moveCardToDeck(deckDropPrompt, "bottom"); setDeckDropPrompt(null); }} style={{ padding: "11px 26px", borderRadius: 7, border: "2px solid #FFD700", background: "rgba(255,215,0,0.2)", color: "#FFD700", cursor: "pointer", fontSize: 17, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", letterSpacing: 1 }}>Bottom</button>
+            <button onClick={function() { setDeckDropPrompt(null); }} style={{ padding: "11px 18px", borderRadius: 7, border: "1px solid #ffffff20", background: "transparent", color: "#999", cursor: "pointer", fontSize: 15, fontFamily: "Rajdhani,sans-serif" }}>Cancel</button>
+          </div>
+        </div>
+      </div>}
       {/* Reveal prompt overlay */}
       {revealMode === "prompt" && <div onClick={function(e) { if (e.target === e.currentTarget) setRevealMode(null); }} style={{ position: "fixed", inset: 0, background: "#000a", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1200, cursor: "pointer" }}>
         <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "linear-gradient(160deg, #1a1a3a, #12122a)", borderRadius: 12, padding: "32px 44px", border: "2px solid #FFD70055", boxShadow: "0 8px 40px #0008, 0 0 20px #FFD70015", textAlign: "center", cursor: "default", minWidth: 460 }}>
@@ -7017,11 +7097,11 @@ function RiftboundGame() {
                 The LOG/CHAT/SETTINGS bar sits above this group (between the hand cards and
                 these piles). */}
             <div style={{ position: "fixed", right: 8, bottom: 4, display: "flex", flexDirection: "row", gap: 3, alignItems: "center", padding: "4px 2px", zIndex: 960 }}>
-              {/* Main deck */}
-              <div style={{ position: "relative" }} onDragOver={canMoveOwn ? function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } : undefined} onDrop={canMoveOwn ? function(e) { e.preventDefault(); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts.length > 1 ? parts[1] : parts[0]; var idx = myActIdx; var _me = ps[idx]; if (!_me) return; var p = Object.assign({}, _me, { hand: _me.hand.slice(), base: _me.base.slice(), mainDeck: _me.mainDeck.slice() }); var card = null; if (type === "hand") { var hi = p.hand.findIndex(function(c) { return c.uid === uid2; }); if (hi >= 0) card = p.hand.splice(hi, 1)[0]; } else if (type === "base") { var bi2 = p.base.findIndex(function(c) { return c.uid === uid2; }); if (bi2 >= 0) card = p.base.splice(bi2, 1)[0]; } else if (type === "bf") { var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); }); for (var bk = 0; bk < nb.length; bk++) { if (!nb[bk].units[idx]) continue; var ui = nb[bk].units[idx].findIndex(function(u) { return u.uid === uid2; }); if (ui >= 0) { card = nb[bk].units[idx].splice(ui, 1)[0]; setBfs(nb); break; } } } if (card) { p.mainDeck.push(Object.assign({}, card, { exhausted: false })); aL(pName(idx) + " recycles " + cName(card) + " to deck"); var np = ps.slice(); np[idx] = p; setPs(np); } } : undefined}>
-                <div data-uid={"slot-" + mySlot + "-deck"} onClick={canMoveOwn && myCur.mainDeck.length > 0 ? function() { var idx = myActIdx; var _me = ps[idx]; if (!_me) return; if (sd) markSdActed(); var p = Object.assign({}, _me, { mainDeck: _me.mainDeck.slice(), hand: _me.hand.slice() }); var c = p.mainDeck.shift(); p.hand.push(c); addAnim(c.uid, "draw"); aL(pName(idx) + " draws 1 card"); var np = ps.slice(); np[idx] = p; setPs(np); } : undefined} style={{ cursor: canMoveOwn && myCur.mainDeck.length > 0 ? "pointer" : "default" }}><CardBack w={HAND_W} h={HAND_H} count={myCur.mainDeck.length} label="DECK" /></div>
+              {/* Main deck — drag a card here or click-carry to it to open the top/bottom prompt. */}
+              {(function() { var _deckCarrying = !!(pendingZonePlay && pendingZonePlay.card); var _deckActive = dragOverDeck || _deckCarrying; return <div style={{ position: "relative", borderRadius: 8, padding: _deckActive ? 10 : 4, margin: _deckActive ? -10 : -4, outline: _deckActive ? "2.5px solid #FFD700" : "none", outlineOffset: -2, background: _deckActive ? "rgba(255,215,0,0.10)" : "transparent", boxShadow: _deckActive ? "0 0 22px rgba(255,215,0,0.55), inset 0 0 18px rgba(255,215,0,0.10)" : "none", transition: "outline 0.12s ease, box-shadow 0.12s ease, padding 0.12s ease, background 0.12s ease", zIndex: _deckActive ? 1 : 0 }} onDragOver={canMoveOwn ? function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; if (!dragOverDeck) setDragOverDeck(true); } : undefined} onDragEnter={canMoveOwn ? function(e) { e.preventDefault(); setDragOverDeck(true); } : undefined} onDragLeave={canMoveOwn ? function(e) { var rt = e.relatedTarget; if (!e.currentTarget.contains(rt)) setDragOverDeck(false); } : undefined} onDrop={canMoveOwn ? function(e) { e.preventDefault(); e.stopPropagation(); setDragOverDeck(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts.length > 1 ? parts[1] : parts[0]; var _me = ps[myActIdx]; if (!_me) return; var card = null; if (type === "hand") { card = (_me.hand || []).find(function(c) { return c.uid === uid2; }); } else if (type === "base") { card = (_me.base || []).find(function(c) { return c.uid === uid2; }); } else if (type === "bin") { card = (_me.trash || []).find(function(c) { return c.uid === uid2; }); } else if (type === "bf") { for (var bk = 0; bk < bfs.length; bk++) { var arr = bfs[bk].units[myActIdx]; if (!arr) continue; var f = arr.find(function(u) { return u.uid === uid2; }); if (f) { card = f; break; } } } else if (type === "showcase") { if (showcaseCard && showcaseCard.uid === uid2) card = showcaseCard; else card = showcaseHistory.find(function(c) { return c.uid === uid2; }); } if (card) setDeckDropPrompt({ card: card, type: type, uid: uid2 }); } : undefined}>
+                <div data-uid={"slot-" + mySlot + "-deck"} onClick={(_deckCarrying ? function(e) { e.stopPropagation(); var _pz = pendingZonePlay; var srcType = _pz.fromBf !== undefined ? "bf" : _pz.fromBase ? "base" : _pz.fromShowcase ? "showcase" : _pz.fromChamp ? "champ" : "hand"; setPendingZonePlay(null); setDeckDropPrompt({ card: _pz.card, type: srcType, uid: _pz.card.uid }); } : (canMoveOwn && myCur.mainDeck.length > 0 ? function() { var idx = myActIdx; var _me = ps[idx]; if (!_me) return; if (sd) markSdActed(); var p = Object.assign({}, _me, { mainDeck: _me.mainDeck.slice(), hand: _me.hand.slice() }); var c = p.mainDeck.shift(); p.hand.push(c); addAnim(c.uid, "draw"); aL(pName(idx) + " draws 1 card"); var np = ps.slice(); np[idx] = p; setPs(np); } : undefined))} style={{ cursor: _deckCarrying ? "copy" : (canMoveOwn && myCur.mainDeck.length > 0 ? "pointer" : "default") }}><CardBack w={HAND_W} h={HAND_H} count={myCur.mainDeck.length} label="DECK" /></div>
                 {myCur.mainDeck.length > 0 && <button onClick={function(e) { e.stopPropagation(); setRevealMode("prompt"); setRevealCount(1); setRevealAudience("me"); setRevealSelDest(""); setRevealUnselDest(""); setRevealSel([]); setRevealCards([]); }} style={{ position: "absolute", top: -4, right: -4, padding: "1px 4px", borderRadius: 3, border: "1.5px solid #FFD70088", background: "rgba(255,215,0,0.85)", color: "#0a0a18", fontSize: 10, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", cursor: "pointer", zIndex: 6, letterSpacing: 0.5 }}>Reveal</button>}
-              </div>
+              </div>; })()}
               {/* Bin pile — between deck and token. Padding expands the hit area when a card
                   is being dragged/carried so dropping into the bin feels less fiddly.
                   onDragLeave checks relatedTarget so the glow doesn't flicker as the cursor
