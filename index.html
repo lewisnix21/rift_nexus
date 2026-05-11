@@ -1106,6 +1106,8 @@ function RiftboundGame() {
   var lr = useRef(null);
   var _chatMsgs = useState([]), chatMsgs = _chatMsgs[0], setChatMsgs = _chatMsgs[1];
   var _chatInput = useState(""), chatInput = _chatInput[0], setChatInput = _chatInput[1];
+  var _chatUnread = useState(0), chatUnread = _chatUnread[0], setChatUnread = _chatUnread[1];
+  var _lastSeenChatLen = useRef(0);
   var chatRef = useRef(null);
   var _ltype = useState(null), lobbyType = _ltype[0], setLobbyType = _ltype[1];
   var _profMenu = useState(false), profileMenuOpen = _profMenu[0], setProfileMenuOpen = _profMenu[1];
@@ -1779,6 +1781,21 @@ function RiftboundGame() {
     });
     return function() { ref.off("value", handler); };
   }, [roomCode, lobbyType]);
+
+  // Chat unread badge — bump the counter for messages from others that arrive
+  // while the chat tab is closed; clear on open.
+  useEffect(function() {
+    if (bottomTab === "chat") {
+      _lastSeenChatLen.current = chatMsgs.length;
+      if (chatUnread !== 0) setChatUnread(0);
+      return;
+    }
+    if (chatMsgs.length > _lastSeenChatLen.current) {
+      var fresh = chatMsgs.slice(_lastSeenChatLen.current).filter(function(m) { return m && m.uid !== myUid; });
+      _lastSeenChatLen.current = chatMsgs.length;
+      if (fresh.length > 0) setChatUnread(function(prev) { return prev + fresh.length; });
+    }
+  }, [chatMsgs, bottomTab]);
 
   function sendChat() {
     if (!chatInput.trim() || !roomCode) return;
@@ -7118,6 +7135,8 @@ function RiftboundGame() {
                     {hImg ? <img src={hImg} style={{ width: scCardW, height: scCardH, objectFit: "fill", display: "block" }} /> : <div style={{ width: scCardW, height: scCardH, background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#FFD700" }}>{hc.name}</div>}
                   </div>
                   {_ownsHist && (hc.type !== "Spell" || !autoMode) && isHovered && <button onClick={function(e) { e.stopPropagation(); var idx = myActIdx; var _me = ps[idx]; if (_me) { var p = Object.assign({}, _me, { trash: (_me.trash || []).slice() }); p.trash.push(Object.assign({}, hc, { exhausted: false, gear: [] })); var np = ps.slice(); np[idx] = p; setPs(np); aL(pName(idx) + " bins " + cName(hc)); if (sd) markSdActed(); } setShowcaseHistory(function(prev) { return prev.filter(function(_, _i) { return _i !== hi; }); }); }} style={{ position: "absolute", bottom: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.75)", color: "#ffaaaa", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 4 }}>🗑</button>}
+                  {isHovered && <button onClick={function(e) { e.stopPropagation(); startArrow(hc.uid); }} title="Target a unit" style={{ position: "absolute", top: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #3B82F688", background: "rgba(59,130,246,0.75)", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 4 }}>↗</button>}
+                  {isHovered && cardHasArrow(hc.uid) && <button onClick={function(e) { e.stopPropagation(); removeArrow(hc.uid); }} title="Remove targeting arrow" style={{ position: "absolute", top: -8, left: 22, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(200,40,40,0.85)", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 4 }}>↙</button>}
                 </div>;
               })}
               {(function() { var _ownsMain = showcaseOwner === myUid; var _draggableMain = !autoMode && _ownsMain && canMoveOwn; var _scIsSpell = showcaseCard.type === "Spell"; var _scCanPickup = !autoMode && _ownsMain && _scIsSpell && canMoveOwn && !tm && !fc && !sd && !drawingArrow && !autoPrompt; var _isCarriedSc = !!(pendingZonePlay && pendingZonePlay.fromShowcase && pendingZonePlay.card && pendingZonePlay.card.uid === showcaseCard.uid); return (
@@ -7128,8 +7147,8 @@ function RiftboundGame() {
                 {showcaseCard.counter2 !== 0 && showcaseCard.counter2 !== undefined && <div style={{ position: "absolute", top: -8, right: -8, background: "#991b1b", color: "#fecaca", borderRadius: 12, minWidth: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, boxShadow: "0 2px 6px #000a", padding: "0 4px", zIndex: 3 }}>{showcaseCard.counter2 > 0 ? "+" : ""}{showcaseCard.counter2}</div>}
                 {showcaseCard.counter !== 0 && showcaseCard.counter !== undefined && <div style={{ position: "absolute", top: -8, right: showcaseCard.counter2 ? 30 : -8, background: "#166534", color: "#4ADE80", borderRadius: 12, minWidth: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, boxShadow: "0 2px 6px #000a", padding: "0 4px", zIndex: 3 }}>{showcaseCard.counter > 0 ? "+" : ""}{showcaseCard.counter}</div>}
                 {showcaseOwner === myUid && (showcaseCard.type !== "Spell" || !autoMode) && <button onClick={function(e) { e.stopPropagation(); var idx = myActIdx; var _me = ps[idx]; if (_me) { var p = Object.assign({}, _me, { trash: (_me.trash || []).slice() }); p.trash.push(Object.assign({}, showcaseCard, { exhausted: false, gear: [] })); var np = ps.slice(); np[idx] = p; setPs(np); aL(pName(idx) + " bins " + cName(showcaseCard)); if (sd) markSdActed(); } if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false); setShowcaseAcceptors({}); setShowcasePriority(null); setShowcaseActed(false); } }} style={{ position: "absolute", bottom: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.75)", color: "#ffaaaa", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>🗑</button>}
-                {showcaseCard.type !== "Spell" && <button onClick={function(e) { e.stopPropagation(); startArrow(showcaseCard.uid); }} style={{ position: "absolute", top: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #3B82F688", background: "rgba(59,130,246,0.75)", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>↗</button>}
-                {showcaseCard.type !== "Spell" && cardHasArrow(showcaseCard.uid) && <button onClick={function(e) { e.stopPropagation(); removeArrow(showcaseCard.uid); }} style={{ position: "absolute", top: -8, left: 22, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(200,40,40,0.85)", color: "#fff", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, fontWeight: 700, zIndex: 3 }}>✕</button>}
+                <button onClick={function(e) { e.stopPropagation(); startArrow(showcaseCard.uid); }} title="Target a unit" style={{ position: "absolute", top: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #3B82F688", background: "rgba(59,130,246,0.75)", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>↗</button>
+                {cardHasArrow(showcaseCard.uid) && <button onClick={function(e) { e.stopPropagation(); removeArrow(showcaseCard.uid); }} title="Remove targeting arrow" style={{ position: "absolute", top: -8, left: 22, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(200,40,40,0.85)", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>↙</button>}
               </div>); })()}
             </div>
           </div>;
@@ -7289,7 +7308,7 @@ function RiftboundGame() {
           {endTurnVisible && <button onClick={endTurn} style={{ padding: "10px 0", marginBottom: 6, borderRadius: 6, border: "2px solid #FFD700", background: "linear-gradient(135deg,#FFD70060,#FF8C0030)", color: "#FFD700", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", letterSpacing: 1.5, boxShadow: "0 4px 16px #000c, 0 0 24px rgba(255,215,0,0.2)", textTransform: "uppercase" }}>END TURN</button>}
         <div style={{ display: "flex", margin: "6px 0", alignItems: "stretch", background: "rgba(20,20,40,0.6)", border: "1px solid #ffffff20", borderRadius: 6, boxShadow: "0 2px 8px #000a" }}>
           <button onClick={function() { setBottomTab(bottomTab === "log" ? null : "log"); }} style={{ padding: "6px 20px", border: "none", borderRight: "1px solid #ffffff18", background: bottomTab === "log" ? "rgba(255,255,255,0.10)" : "transparent", color: "#aaa", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", letterSpacing: 1, borderRadius: "5px 0 0 5px" }}>LOG</button>
-          <button onClick={function() { setBottomTab(bottomTab === "chat" ? null : "chat"); }} style={{ padding: "6px 20px", border: "none", borderRight: "1px solid #ffffff18", background: bottomTab === "chat" ? "rgba(255,255,255,0.10)" : "transparent", color: "#aaa", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", letterSpacing: 1 }}>CHAT</button>
+          <button onClick={function() { setBottomTab(bottomTab === "chat" ? null : "chat"); }} style={{ position: "relative", padding: "6px 20px", border: "none", borderRight: "1px solid #ffffff18", background: bottomTab === "chat" ? "rgba(255,255,255,0.10)" : "transparent", color: "#aaa", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", letterSpacing: 1 }}>CHAT{chatUnread > 0 && <span style={{ position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, padding: "0 5px", borderRadius: 9, background: "#ef4444", color: "#fff", fontSize: 11, fontWeight: 800, fontFamily: "Rajdhani,sans-serif", display: "flex", alignItems: "center", justifyContent: "center", border: "1.5px solid #1a0a0a", boxShadow: "0 0 8px rgba(239,68,68,0.7)", lineHeight: 1 }}>{chatUnread > 99 ? "99+" : chatUnread}</span>}</button>
           <div style={{ position: "relative", display: "flex" }}>
             <button onClick={function() { setSettingsOpen(!settingsOpen); setEditingName(false); }} style={{ padding: "0 14px", border: "none", background: settingsOpen ? "rgba(255,255,255,0.10)" : "transparent", color: "#aaa", cursor: "pointer", fontSize: 23, lineHeight: 1, borderRadius: "0 5px 5px 0", display: "flex", alignItems: "center", justifyContent: "center" }}>&#9881;</button>
             {settingsOpen && <div onClick={function(e) { e.stopPropagation(); }} style={{ position: "absolute", bottom: "100%", right: 0, marginBottom: 6, background: "linear-gradient(160deg,#06121e,#02080f)", border: "1.5px solid rgba(139,105,20,0.7)", borderRadius: 8, padding: 6, zIndex: 200, minWidth: 250, boxShadow: "0 -8px 28px #000c, 0 0 18px rgba(139,105,20,0.18)" }}>
