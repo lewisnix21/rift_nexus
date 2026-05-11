@@ -776,16 +776,30 @@ function RiftboundGame() {
     // If the previous chain was already accepted/resolved, bin the leftover cards
     // to the previous owner's trash and start a fresh chain with the new caster.
     if (showcaseAccepted && (showcaseCard || showcaseHistory.length > 0)) {
+      // Per-caster routing: each leftover showcase card returns to its own caster's deck top,
+      // not to a single player's bin. The live showcaseCard isn't tagged with _caster yet, so
+      // use showcaseOwner as its caster. History cards already carry _caster from when they
+      // were displaced.
       var leftovers = [];
-      if (showcaseCard) leftovers.push(showcaseCard);
+      if (showcaseCard) leftovers.push(Object.assign({}, showcaseCard, { _caster: showcaseCard._caster || showcaseOwner || myUid }));
       leftovers = leftovers.concat(showcaseHistory);
-      var prevOwnerIdx = myActIdx;
       var isOnlineGame2 = (lobbyType === "host" || lobbyType === "join") && !_soloTestRef.current;
-      if (showcaseOwner && isOnlineGame2 && lobbyPlayers[showcaseOwner] && typeof lobbyPlayers[showcaseOwner].slot === "number") {
-        prevOwnerIdx = lobbyPlayers[showcaseOwner].slot;
+      function _slotForCasterUid(uid) {
+        if (isOnlineGame2 && uid && lobbyPlayers && lobbyPlayers[uid] && typeof lobbyPlayers[uid].slot === "number") return lobbyPlayers[uid].slot;
+        return myActIdx;
       }
-      setPs(function(prev) { var np = prev.slice(); if (np[prevOwnerIdx]) { var p = Object.assign({}, np[prevOwnerIdx], { trash: (np[prevOwnerIdx].trash || []).slice() }); leftovers.forEach(function(sc2) { p.trash.push(Object.assign({}, sc2, { exhausted: false, gear: [] })); }); np[prevOwnerIdx] = p; } return np; });
-      aL(leftovers.length + " previous showcase card" + (leftovers.length > 1 ? "s" : "") + " sent to bin");
+      setPs(function(prev) {
+        var np = prev.slice();
+        leftovers.forEach(function(sc2) {
+          var idx = _slotForCasterUid(sc2._caster);
+          if (!np[idx]) return;
+          var p = Object.assign({}, np[idx], { mainDeck: (np[idx].mainDeck || []).slice() });
+          p.mainDeck.unshift(Object.assign({}, sc2, { exhausted: false, gear: [] }));
+          np[idx] = p;
+        });
+        return np;
+      });
+      aL(leftovers.length + " previous showcase card" + (leftovers.length > 1 ? "s" : "") + " returned to top of caster's deck");
       setShowcaseHistory([]);
       setShowcaseCard(card);
       setShowcaseOwner(myUid);
@@ -7145,7 +7159,7 @@ function RiftboundGame() {
                   <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: 6 }}>
                     {hImg ? <img src={hImg} style={{ width: scCardW, height: scCardH, objectFit: "fill", display: "block" }} /> : <div style={{ width: scCardW, height: scCardH, background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#FFD700" }}>{hc.name}</div>}
                   </div>
-                  {_ownsHist && (hc.type !== "Spell" || !autoMode) && isHovered && <button onClick={function(e) { e.stopPropagation(); var idx = myActIdx; var _me = ps[idx]; if (_me) { var p = Object.assign({}, _me, { trash: (_me.trash || []).slice() }); p.trash.push(Object.assign({}, hc, { exhausted: false, gear: [] })); var np = ps.slice(); np[idx] = p; setPs(np); aL(pName(idx) + " bins " + cName(hc)); if (sd) markSdActed(); } setShowcaseHistory(function(prev) { return prev.filter(function(_, _i) { return _i !== hi; }); }); }} style={{ position: "absolute", bottom: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.75)", color: "#ffaaaa", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 4 }}>🗑</button>}
+                  {_ownsHist && (hc.type !== "Spell" || !autoMode) && isHovered && <button onClick={function(e) { e.stopPropagation(); var idx = myActIdx; var _me = ps[idx]; if (_me) { var p = Object.assign({}, _me, { mainDeck: (_me.mainDeck || []).slice() }); p.mainDeck.unshift(Object.assign({}, hc, { exhausted: false, gear: [] })); var np = ps.slice(); np[idx] = p; setPs(np); aL(pName(idx) + " returns " + cName(hc) + " to top of deck"); if (sd) markSdActed(); } setShowcaseHistory(function(prev) { return prev.filter(function(_, _i) { return _i !== hi; }); }); }} title="Return to top of your deck" style={{ position: "absolute", bottom: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #FFD70088", background: "rgba(255,215,0,0.85)", color: "#1a1208", fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 4, lineHeight: 1 }}>⤴</button>}
                   {isHovered && <button onClick={function(e) { e.stopPropagation(); startArrow(hc.uid); }} title="Target a unit" style={{ position: "absolute", top: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #3B82F688", background: "rgba(59,130,246,0.75)", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 4 }}>↗</button>}
                   {isHovered && cardHasArrow(hc.uid) && <button onClick={function(e) { e.stopPropagation(); removeArrow(hc.uid); }} title="Remove targeting arrow" style={{ position: "absolute", top: -8, left: 22, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(200,40,40,0.85)", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 4 }}>↙</button>}
                 </div>;
@@ -7157,7 +7171,7 @@ function RiftboundGame() {
                 </div>
                 {showcaseCard.counter2 !== 0 && showcaseCard.counter2 !== undefined && <div style={{ position: "absolute", top: -8, right: -8, background: "#991b1b", color: "#fecaca", borderRadius: 12, minWidth: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, boxShadow: "0 2px 6px #000a", padding: "0 4px", zIndex: 3 }}>{showcaseCard.counter2 > 0 ? "+" : ""}{showcaseCard.counter2}</div>}
                 {showcaseCard.counter !== 0 && showcaseCard.counter !== undefined && <div style={{ position: "absolute", top: -8, right: showcaseCard.counter2 ? 30 : -8, background: "#166534", color: "#4ADE80", borderRadius: 12, minWidth: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, boxShadow: "0 2px 6px #000a", padding: "0 4px", zIndex: 3 }}>{showcaseCard.counter > 0 ? "+" : ""}{showcaseCard.counter}</div>}
-                {showcaseOwner === myUid && (showcaseCard.type !== "Spell" || !autoMode) && <button onClick={function(e) { e.stopPropagation(); var idx = myActIdx; var _me = ps[idx]; if (_me) { var p = Object.assign({}, _me, { trash: (_me.trash || []).slice() }); p.trash.push(Object.assign({}, showcaseCard, { exhausted: false, gear: [] })); var np = ps.slice(); np[idx] = p; setPs(np); aL(pName(idx) + " bins " + cName(showcaseCard)); if (sd) markSdActed(); } if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false); setShowcaseAcceptors({}); setShowcasePriority(null); setShowcaseActed(false); } }} style={{ position: "absolute", bottom: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.75)", color: "#ffaaaa", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>🗑</button>}
+                {showcaseOwner === myUid && (showcaseCard.type !== "Spell" || !autoMode) && <button onClick={function(e) { e.stopPropagation(); var idx = myActIdx; var _me = ps[idx]; if (_me) { var p = Object.assign({}, _me, { mainDeck: (_me.mainDeck || []).slice() }); p.mainDeck.unshift(Object.assign({}, showcaseCard, { exhausted: false, gear: [] })); var np = ps.slice(); np[idx] = p; setPs(np); aL(pName(idx) + " returns " + cName(showcaseCard) + " to top of deck"); if (sd) markSdActed(); } if (showcaseHistory.length > 0) { setShowcaseCard(showcaseHistory[0]); setShowcaseHistory(function(prev) { return prev.slice(1); }); } else { setShowcaseCard(null); setShowcaseOwner(null); setShowcaseAccepted(false); setShowcaseAcceptors({}); setShowcasePriority(null); setShowcaseActed(false); } }} title="Return to top of your deck" style={{ position: "absolute", bottom: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #FFD70088", background: "rgba(255,215,0,0.85)", color: "#1a1208", fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3, lineHeight: 1 }}>⤴</button>}
                 <button onClick={function(e) { e.stopPropagation(); startArrow(showcaseCard.uid); }} title="Target a unit" style={{ position: "absolute", top: -8, left: -8, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #3B82F688", background: "rgba(59,130,246,0.75)", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>↗</button>
                 {cardHasArrow(showcaseCard.uid) && <button onClick={function(e) { e.stopPropagation(); removeArrow(showcaseCard.uid); }} title="Remove targeting arrow" style={{ position: "absolute", top: -8, left: 22, width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #cc555588", background: "rgba(200,40,40,0.85)", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 3 }}>↙</button>}
               </div>); })()}
