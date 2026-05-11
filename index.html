@@ -329,6 +329,11 @@ function _effMight(u) {
 var useState=React.useState;var useCallback=React.useCallback;var useEffect=React.useEffect;var useRef=React.useRef;
 var _setHoverCard = null;
 var _clearHoverCard = null;
+// Global tilt push for the hover preview. Cards that already track per-card tilt
+// (FannedHand hand cards, TiltCard board cards) call _setHoverTilt with the same
+// rotateX/rotateY values they apply to themselves, so the duplicate pop-out
+// (renderHoverPreview) mirrors the original card's tilt.
+var _setHoverTilt = null;
 var _binGearRef = null;
 var _detachGearRef = null;
 var _gvScale = (typeof window !== "undefined" ? Math.min(window.innerHeight / 1080, window.innerWidth / 1920) : 1);
@@ -359,11 +364,14 @@ function TiltCard(props) {
       var ny = (e.clientY - rect.top - halfH) / halfH;
       if (nx > 1) nx = 1; else if (nx < -1) nx = -1;
       if (ny > 1) ny = 1; else if (ny < -1) ny = -1;
-      setTilt({x: nx * 12, y: -ny * 12});
+      var _t = {x: nx * 12, y: -ny * 12};
+      setTilt(_t);
+      if (_setHoverTilt) _setHoverTilt(_t);
       if (passthroughOnMove) passthroughOnMove(e);
     },
     onMouseLeave: function(e) {
       setTilt({x: 0, y: 0});
+      if (_setHoverTilt) _setHoverTilt({ x: 0, y: 0 });
       if (passthroughOnLeave) passthroughOnLeave(e);
     }
   });
@@ -1044,8 +1052,10 @@ function RiftboundGame() {
   var _doBin = useState(false), dragOverBin = _doBin[0], setDragOverBin = _doBin[1];
   var _doh = useState(false), dragOverHand = _doh[0], setDragOverHand = _doh[1];
   var _hc = useState(null), hoverCard = _hc[0], setHoverCard = _hc[1];
-  _setHoverCard = function(card, e, inHand) { if (e && e.currentTarget) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: card, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2, inHand: !!inHand }); } else if (e && e.clientX !== undefined) { setHoverCard({ card: card, left: e.clientX, right: e.clientX, top: e.clientY, bottom: e.clientY, cx: e.clientX, cy: e.clientY, inHand: !!inHand }); } else { setHoverCard(card ? { card: card, left: 0, right: 0, top: 0, bottom: 0, cx: 0, cy: 0, inHand: !!inHand } : null); } };
-  _clearHoverCard = function() { setHoverCard(null); };
+  var _hovT = useState({ x: 0, y: 0 }), hoverTilt = _hovT[0], setHoverTilt = _hovT[1];
+  _setHoverCard = function(card, e, inHand) { setHoverTilt({ x: 0, y: 0 }); if (e && e.currentTarget) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: card, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2, inHand: !!inHand }); } else if (e && e.clientX !== undefined) { setHoverCard({ card: card, left: e.clientX, right: e.clientX, top: e.clientY, bottom: e.clientY, cx: e.clientX, cy: e.clientY, inHand: !!inHand }); } else { setHoverCard(card ? { card: card, left: 0, right: 0, top: 0, bottom: 0, cx: 0, cy: 0, inHand: !!inHand } : null); } };
+  _clearHoverCard = function() { setHoverCard(null); setHoverTilt({ x: 0, y: 0 }); };
+  _setHoverTilt = function(t) { setHoverTilt(t || { x: 0, y: 0 }); };
   // When a card is played/moved, React unmounts the source DOM while the cursor is still "over" it,
   // so onMouseLeave never fires and the hover bubble sticks. Clearing hoverCard on any in-game state
   // change forces a re-hover, which is cheap and avoids the stuck-bubble bug. Lobby/deck-builder hovers
@@ -1086,8 +1096,11 @@ function RiftboundGame() {
       </div>;
     }
     if (tx < 4) tx = 4; if (tx + tw > vw - 4) tx = vw - tw - 4;
-    return <div style={{ position: "fixed", left: tx, top: ty, zIndex: 9999, pointerEvents: "none" }}>
-      <div style={{ position: "relative" }}>
+    var _ht = hoverTilt || { x: 0, y: 0 };
+    var _hasTilt = _ht.x || _ht.y;
+    var _tiltTransform = _hasTilt ? ("perspective(900px) rotateX(" + _ht.y + "deg) rotateY(" + _ht.x + "deg)") : "none";
+    return <div style={{ position: "fixed", left: tx, top: ty, zIndex: 9999, pointerEvents: "none", perspective: 1200 }}>
+      <div style={{ position: "relative", transform: _tiltTransform, transformStyle: "preserve-3d", transition: "transform 80ms ease-out" }}>
         {hc.img ? <img src={imgSrc(hc.img)} onError={function(e) { if (PA[hc.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[hc.name] + ".webp"; } }} style={{ width: tw, height: th, objectFit: "fill", display: "block", borderRadius: 6, border: "1px solid #ffffff25", boxShadow: "0 8px 32px #000c" }} /> : <div style={{ width: tw, height: th, display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 18, fontFamily: "Rajdhani,sans-serif", padding: 12, textAlign: "center", borderRadius: 6, border: "1px solid #ffffff25", background: "#0c0c18", boxShadow: "0 8px 32px #000c" }}>{hc.name}</div>}
       </div>
     </div>;
@@ -6229,15 +6242,13 @@ function RiftboundGame() {
         var _isHov = i === handHovIdx;
         var _tiltX = _isHov ? (handHovTilt.y || 0) : 0;
         var _tiltY = _isHov ? (handHovTilt.x || 0) : 0;
-        // On hover: straighten the card, lift it up by 35% of its height, scale 1.91x, optional perspective tilt.
-        // Matches the prior `.auto-hand-card:hover` CSS but kept inline so manual-mode tilt isn't overridden.
-        var _hovLift = Math.round(-0.35 * ah);
+        // Original card stays in the fan — no scale/lift. A duplicate pop-out renders above the
+        // card via the shared hoverCard preview (see renderHoverPreview, inHand branch). The
+        // perspective tilt is kept on both the original and the pop-out so they mirror each other.
         var _tiltStr = (_isHov && (_tiltX || _tiltY)) ? ("perspective(900px) rotateX(" + _tiltX + "deg) rotateY(" + _tiltY + "deg) ") : "";
-        var _normTransform = _isHov
-          ? (_tiltStr + "translateY(" + _hovLift + "px) scale(1.91)")
-          : ("rotate(" + rot + "deg) translateY(" + ty + "px)");
-        var _normalStyle = { width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: (autoMode && playable) ? "3px solid #3b82f6" : "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + "20"), flexShrink: 0, cursor: "pointer", transform: _normTransform, transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -45 : total > 5 ? -24 : 0), transition: "transform 200ms ease-out, box-shadow 0.2s ease, border 0.15s ease, filter 200ms ease-out", position: "relative", zIndex: _isHov ? 999 : i, boxShadow: (autoMode && playable) ? "0 0 22px rgba(59,130,246,1), 0 0 44px rgba(59,130,246,0.65), 0 4px 16px #000a" : "0 4px 16px #000a", opacity: 1, pointerEvents: "auto" };
-        return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover" + animCls, draggable: false, onClick: (canMoveOwn && playable) ? function(e) { if (tm || fc) return; if (e && e.stopPropagation) e.stopPropagation(); if (_isCarried) { setPendingZonePlay(null); return; } if (e && e.clientX !== undefined) setPendingCursor({ x: e.clientX, y: e.clientY, dx: 0 }); onPlay(c); if (sd) markSdActed(); } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { if (!_isCarried) { setHandHovIdx(i); if (autoMode) setHoveredHandCard(c); } if (!isEnemy && !autoMode && pendingZonePlay && pendingZonePlay.card && (pendingZonePlay.fromBf !== undefined || pendingZonePlay.fromBase || pendingZonePlay.fromShowcase)) { setPendingHoverZone("hand"); } }, onMouseMove: function(e) { if (_isCarried || isEnemy) return; var rect = e.currentTarget.getBoundingClientRect(); var halfW = rect.width / 2; var halfH = rect.height / 2; var nx = (e.clientX - rect.left - halfW) / halfW; var ny = (e.clientY - rect.top - halfH) / halfH; if (nx > 1) nx = 1; else if (nx < -1) nx = -1; if (ny > 1) ny = 1; else if (ny < -1) ny = -1; setHandHovTilt({x: nx * 12, y: -ny * 12}); }, onMouseLeave: function() { setHandCtxUid(null); setHandHovTilt({x: 0, y: 0}); }, style: _isCarried ? _carriedStyle : _normalStyle },
+        var _normTransform = _tiltStr + "rotate(" + rot + "deg) translateY(" + ty + "px)";
+        var _normalStyle = { width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: (autoMode && playable) ? "3px solid #3b82f6" : "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + "20"), flexShrink: 0, cursor: "pointer", transform: _normTransform, transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -45 : total > 5 ? -24 : 0), transition: "transform 200ms ease-out, box-shadow 0.2s ease, border 0.15s ease, filter 200ms ease-out", position: "relative", zIndex: _isHov ? 50 : i, boxShadow: (autoMode && playable) ? "0 0 22px rgba(59,130,246,1), 0 0 44px rgba(59,130,246,0.65), 0 4px 16px #000a" : "0 4px 16px #000a", opacity: 1, pointerEvents: "auto" };
+        return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover" + animCls, draggable: false, onClick: (canMoveOwn && playable) ? function(e) { if (tm || fc) return; if (e && e.stopPropagation) e.stopPropagation(); if (_isCarried) { setPendingZonePlay(null); return; } if (e && e.clientX !== undefined) setPendingCursor({ x: e.clientX, y: e.clientY, dx: 0 }); onPlay(c); if (sd) markSdActed(); } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { if (!_isCarried) { setHandHovIdx(i); if (autoMode) setHoveredHandCard(c); if (!c.hidden && _setHoverCard) _setHoverCard(c, e, true); } if (!isEnemy && !autoMode && pendingZonePlay && pendingZonePlay.card && (pendingZonePlay.fromBf !== undefined || pendingZonePlay.fromBase || pendingZonePlay.fromShowcase)) { setPendingHoverZone("hand"); } }, onMouseMove: function(e) { if (_isCarried || isEnemy) return; var rect = e.currentTarget.getBoundingClientRect(); var halfW = rect.width / 2; var halfH = rect.height / 2; var nx = (e.clientX - rect.left - halfW) / halfW; var ny = (e.clientY - rect.top - halfH) / halfH; if (nx > 1) nx = 1; else if (nx < -1) nx = -1; if (ny > 1) ny = 1; else if (ny < -1) ny = -1; var _nt = {x: nx * 12, y: -ny * 12}; setHandHovTilt(_nt); if (_setHoverTilt) _setHoverTilt({ x: _nt.x, y: _nt.y }); }, onMouseLeave: function() { setHandCtxUid(null); setHandHovTilt({x: 0, y: 0}); if (_clearHoverCard) _clearHoverCard(); }, style: _isCarried ? _carriedStyle : _normalStyle },
           c.hidden ? React.createElement("img", { src: CARD_BACK, style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : (c.img ? React.createElement("img", { src: imgSrc(c.img), style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : React.createElement("div", { style: { width: "100%", height: "100%", background: "linear-gradient(180deg," + (DOM[c.domain] || DOM.Colorless).c + "15,#0a0a18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#666", padding: 4, textAlign: "center" } }, c.name)),
           handCtxUid === c.uid ? React.createElement("button", { onClick: function(e) { e.stopPropagation(); toggleHide(c.uid); setHandCtxUid(null); }, style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 10, padding: "4px 12px", borderRadius: 4, border: "1.5px solid #ffffff40", background: "rgba(20,20,50,0.92)", color: "#ddd", fontSize: 12, cursor: "pointer", fontFamily: "Rajdhani,sans-serif", fontWeight: 700, boxShadow: "0 4px 12px #000a", whiteSpace: "nowrap" } }, c.hidden ? "Reveal" : "Hide") : null
         );
