@@ -742,10 +742,14 @@ function RiftboundGame() {
   var _btab = useState(null), bottomTab = _btab[0], setBottomTab = _btab[1];
   var _pings = useState([]), pings = _pings[0], setPings = _pings[1];
   var _altPing = useState(false), altPing = _altPing[0], setAltPing = _altPing[1];
-  var _scryMode = useState(null), scryMode = _scryMode[0], setScryMode = _scryMode[1];
-  var _scryCount = useState(1), scryCount = _scryCount[0], setScryCount = _scryCount[1];
-  var _scryCards = useState([]), scryCards = _scryCards[0], setScryCards = _scryCards[1];
-  var _scrySel = useState([]), scrySel = _scrySel[0], setScrySel = _scrySel[1];
+  var _revealMode = useState(null), revealMode = _revealMode[0], setRevealMode = _revealMode[1];
+  var _revealCount = useState(1), revealCount = _revealCount[0], setRevealCount = _revealCount[1];
+  var _revealCards = useState([]), revealCards = _revealCards[0], setRevealCards = _revealCards[1];
+  var _revealSel = useState([]), revealSel = _revealSel[0], setRevealSel = _revealSel[1];
+  var _revealAudience = useState("me"), revealAudience = _revealAudience[0], setRevealAudience = _revealAudience[1];
+  var _revealSelDest = useState(""), revealSelDest = _revealSelDest[0], setRevealSelDest = _revealSelDest[1];
+  var _revealUnselDest = useState(""), revealUnselDest = _revealUnselDest[0], setRevealUnselDest = _revealUnselDest[1];
+  var _revealRemote = useState(null), revealRemote = _revealRemote[0], setRevealRemote = _revealRemote[1];
   var _cp = useState(false), continuePlaying = _cp[0], setContinuePlaying = _cp[1];
   var _cpVotes = useState({}), cpVotes = _cpVotes[0], setCpVotes = _cpVotes[1];
   var _settingsOpen = useState(false), settingsOpen = _settingsOpen[0], setSettingsOpen = _settingsOpen[1];
@@ -1549,6 +1553,36 @@ function RiftboundGame() {
     return function() { ref.off("value", handler); };
   }, [roomCode, lobbyType]);
 
+  // Sync reveal state (initiator → all players) so bystanders see the popup.
+  // We only write when the local player is the initiator (revealMode is set).
+  // audience="me" → strip card data (others see card backs); audience="all" → broadcast cards.
+  useEffect(function() {
+    if (!roomCode) return;
+    if (_gamePhaseRef.current !== "playing") return;
+    try {
+      var ref = fbDb.ref("lobbies/" + roomCode + "/reveal");
+      if (revealMode === "view") {
+        var payload = { owner: myUid, ownerSlot: myActIdx, audience: revealAudience, count: revealCards.length, cards: revealAudience === "all" ? revealCards.map(serializeCard) : null, by: myUid, t: Date.now() };
+        ref.set(payload);
+      } else if (revealMode === null) {
+        // Only clear if we previously owned the reveal (avoid stomping another player's reveal).
+        ref.once("value", function(snap) { var d = snap.val(); if (d && d.owner === myUid) ref.set(null); });
+      }
+    } catch(e) { console.error("Reveal sync error:", e); }
+  }, [revealMode, revealCards, revealAudience]);
+
+  // Listen for reveal from other players (drives the bystander popup).
+  useEffect(function() {
+    if (!roomCode) return;
+    var ref = fbDb.ref("lobbies/" + roomCode + "/reveal");
+    var handler = ref.on("value", function(snap) {
+      var data = snap.val();
+      if (!data || data.owner === myUid) { setRevealRemote(null); return; }
+      setRevealRemote(data);
+    });
+    return function() { ref.off("value", handler); };
+  }, [roomCode, lobbyType]);
+
   // Sync conquerAcceptors to Firebase so all players see each other's Resolve state
   var _pcSyncFromRemote = useRef(false);
   useEffect(function() {
@@ -1811,7 +1845,7 @@ function RiftboundGame() {
   var _gameBoardRef = useRef(null);
   function doPing(cardUid, isAlt) {
     if (altPing && !isAlt) return;
-    if (scryMode) return;
+    if (revealMode) return;
     if (screen === "bf" || screen === "mull" || screen === "mode") return;
     var id = uid();
     setPings(function(prev) { return prev.concat([{ cardUid: cardUid, id: id }]); });
@@ -4796,7 +4830,7 @@ function RiftboundGame() {
   // Update the spacebar handler each render so it sees current state.
   // (The useRef + useEffect are declared at the top of the component to satisfy hook rules.)
   endTurnKeyRef.current = function() {
-    if (awakenPhase || sd || tm || fc || scryMode || showcaseCard) return;
+    if (awakenPhase || sd || tm || fc || revealMode || showcaseCard) return;
     var isOnlineGameKey = (lobbyType === "host" || lobbyType === "join") && !_soloTestRef.current;
     if (isOnlineGameKey) {
       if (_gamePhaseRef.current !== "playing") return;
@@ -6409,60 +6443,117 @@ function RiftboundGame() {
           )}
         </div>
       </div>}
-      {/* Scry prompt overlay */}
-      {scryMode === "prompt" && <div onClick={function(e) { if (e.target === e.currentTarget) setScryMode(null); }} style={{ position: "fixed", inset: 0, background: "#000a", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1200, cursor: "pointer" }}>
-        <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "linear-gradient(160deg, #1a1a3a, #12122a)", borderRadius: 10, padding: "20px 28px", border: "2px solid #FFD70055", boxShadow: "0 8px 40px #0008, 0 0 20px #FFD70015", textAlign: "center", cursor: "default" }}>
-          <div style={{ fontSize: 16, color: "#FFD700", fontFamily: "Rajdhani,sans-serif", fontWeight: 700, marginBottom: 12 }}>Scry</div>
+      {/* Reveal prompt overlay */}
+      {revealMode === "prompt" && <div onClick={function(e) { if (e.target === e.currentTarget) setRevealMode(null); }} style={{ position: "fixed", inset: 0, background: "#000a", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1200, cursor: "pointer" }}>
+        <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "linear-gradient(160deg, #1a1a3a, #12122a)", borderRadius: 10, padding: "20px 28px", border: "2px solid #FFD70055", boxShadow: "0 8px 40px #0008, 0 0 20px #FFD70015", textAlign: "center", cursor: "default", minWidth: 320 }}>
+          <div style={{ fontSize: 16, color: "#FFD700", fontFamily: "Rajdhani,sans-serif", fontWeight: 700, marginBottom: 12 }}>Reveal</div>
           <p style={{ color: "#888", fontSize: 14, marginBottom: 10 }}>How many cards to look at?</p>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 14 }}>
-            <button onClick={function() { setScryCount(function(c) { return Math.max(1, c - 1); }); }} style={{ width: 30, height: 30, borderRadius: "50%", border: "1.5px solid #FFD70044", background: "rgba(255,215,0,0.15)", color: "#FFD700", fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
-            <span style={{ fontSize: 28, fontWeight: 700, color: "#FFD700", fontFamily: "Rajdhani,sans-serif", minWidth: 40, textAlign: "center" }}>{scryCount}</span>
-            <button onClick={function() { var max = myCur ? myCur.mainDeck.length : 1; setScryCount(function(c) { return Math.min(max, c + 1); }); }} style={{ width: 30, height: 30, borderRadius: "50%", border: "1.5px solid #FFD70044", background: "rgba(255,215,0,0.15)", color: "#FFD700", fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+            <button onClick={function() { setRevealCount(function(c) { return Math.max(1, c - 1); }); }} style={{ width: 30, height: 30, borderRadius: "50%", border: "1.5px solid #FFD70044", background: "rgba(255,215,0,0.15)", color: "#FFD700", fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+            <span style={{ fontSize: 28, fontWeight: 700, color: "#FFD700", fontFamily: "Rajdhani,sans-serif", minWidth: 40, textAlign: "center" }}>{revealCount}</span>
+            <button onClick={function() { var max = myCur ? myCur.mainDeck.length : 1; setRevealCount(function(c) { return Math.min(max, c + 1); }); }} style={{ width: 30, height: 30, borderRadius: "50%", border: "1.5px solid #FFD70044", background: "rgba(255,215,0,0.15)", color: "#FFD700", fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
           </div>
+          {isOnlineGame && <div style={{ marginBottom: 14 }}>
+            <p style={{ color: "#888", fontSize: 14, marginBottom: 8 }}>Reveal to:</p>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+              {[{ k: "me", l: "Just me" }, { k: "all", l: "All players" }].map(function(opt) { var sel = revealAudience === opt.k; return <button key={opt.k} onClick={function() { setRevealAudience(opt.k); }} style={{ padding: "6px 14px", borderRadius: 6, border: sel ? "2px solid #FFD700" : "1.5px solid #FFD70033", background: sel ? "rgba(255,215,0,0.18)" : "transparent", color: sel ? "#FFD700" : "#aaa", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Rajdhani,sans-serif" }}>{opt.l}</button>; })}
+            </div>
+          </div>}
           <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
             <button onClick={function() {
               var idx = myActIdx; var _me = ps[idx]; if (!_me) return;
-              var top = _me.mainDeck.slice(0, scryCount);
-              setScryCards(top); setScrySel([]); setScryMode("pick");
-              aL(pName(idx) + " scries " + top.length);
-            }} style={{ padding: "8px 20px", borderRadius: 6, border: "2px solid #FFD700", background: "rgba(255,215,0,0.2)", color: "#FFD700", cursor: "pointer", fontSize: 15, fontWeight: 700, fontFamily: "Rajdhani,sans-serif" }}>Scry</button>
-            <button onClick={function() { setScryMode(null); }} style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #ffffff20", background: "transparent", color: "#666", cursor: "pointer", fontSize: 13, fontFamily: "Rajdhani,sans-serif" }}>Cancel</button>
+              var top = _me.mainDeck.slice(0, revealCount);
+              setRevealCards(top); setRevealSel([]); setRevealSelDest(""); setRevealUnselDest(""); setRevealMode("view");
+              aL(pName(idx) + " reveals " + top.length + (isOnlineGame && revealAudience === "all" ? " to all" : " (privately)"));
+            }} style={{ padding: "8px 20px", borderRadius: 6, border: "2px solid #FFD700", background: "rgba(255,215,0,0.2)", color: "#FFD700", cursor: "pointer", fontSize: 15, fontWeight: 700, fontFamily: "Rajdhani,sans-serif" }}>Reveal</button>
+            <button onClick={function() { setRevealMode(null); }} style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #ffffff20", background: "transparent", color: "#666", cursor: "pointer", fontSize: 13, fontFamily: "Rajdhani,sans-serif" }}>Cancel</button>
           </div>
         </div>
       </div>}
-      {/* Scry pick overlay */}
-      {scryMode === "pick" && <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, zIndex: 1200 }}>
-        <h2 style={{ fontSize: 20, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700" }}>Scry — Select Cards to Draw</h2>
-        <p style={{ color: "#888", fontSize: 14 }}>Selected cards go to your hand. The rest go to the bottom of your deck.</p>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
-          {scryCards.map(function(c) {
-            var isSel = scrySel.indexOf(c.uid) >= 0;
-            return <div key={c.uid} onClick={function() { setScrySel(function(prev) { return prev.indexOf(c.uid) >= 0 ? prev.filter(function(x) { return x !== c.uid; }) : prev.concat([c.uid]); }); }} style={{ cursor: "pointer", border: isSel ? "3px solid #FFD700" : "3px solid transparent", borderRadius: 8, boxShadow: isSel ? "0 0 16px #FFD70066" : "none", transform: isSel ? "scale(1.05)" : "none", transition: "all 0.15s ease" }}><Card card={c} /></div>;
-          })}
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={function() {
-            var idx = myActIdx; var _me = ps[idx]; if (!_me) return;
-            var p = Object.assign({}, _me, { mainDeck: _me.mainDeck.slice(), hand: _me.hand.slice() });
-            var drawn = []; var recycled = [];
-            scryCards.forEach(function(c) {
-              var di = p.mainDeck.findIndex(function(dc) { return dc.uid === c.uid; });
-              if (di >= 0) {
-                var card = p.mainDeck.splice(di, 1)[0];
-                if (scrySel.indexOf(c.uid) >= 0) { drawn.push(card); } else { recycled.push(card); }
+      {/* Reveal view overlay (initiator) */}
+      {revealMode === "view" && (function() {
+        var selCount = revealSel.length;
+        var unselCount = revealCards.length - selCount;
+        var selNeeded = selCount > 0;
+        var unselNeeded = unselCount > 0;
+        var canConfirm = (!selNeeded || !!revealSelDest) && (!unselNeeded || !!revealUnselDest);
+        var destOpts = [{ k: "hand", l: "Hand" }, { k: "base", l: "Base" }].concat(bfs.map(function(b, bi) { return { k: "bf:" + bi, l: b.name || ("Battlefield " + (bi + 1)) }; })).concat([{ k: "deckTop", l: "Top of deck" }, { k: "deckBottom", l: "Bottom of deck" }, { k: "bin", l: "Bin" }]);
+        function _renderDestSelect(value, setter, enabled, labelText) {
+          return React.createElement("div", { style: { display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4 } },
+            React.createElement("label", { style: { fontSize: 11, color: enabled ? "#aaa" : "#555", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1.5, textTransform: "uppercase" } }, labelText),
+            React.createElement("select", { value: value, disabled: !enabled, onChange: function(e) { setter(e.target.value); }, style: { padding: "7px 10px", borderRadius: 5, border: "1.5px solid " + (enabled ? "#FFD70066" : "#33333366"), background: enabled ? "rgba(255,215,0,0.08)" : "rgba(30,30,30,0.4)", color: enabled ? "#FFD700" : "#555", fontSize: 13, fontFamily: "Rajdhani,sans-serif", fontWeight: 700, cursor: enabled ? "pointer" : "not-allowed", minWidth: 200 } },
+              React.createElement("option", { value: "" }, "— choose —"),
+              destOpts.map(function(o) { return React.createElement("option", { key: o.k, value: o.k }, o.l); })
+            )
+          );
+        }
+        return <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, zIndex: 1200, padding: 20, overflowY: "auto" }}>
+          <h2 style={{ fontSize: 20, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700" }}>Reveal — Select Cards</h2>
+          <p style={{ color: "#888", fontSize: 13, textAlign: "center", maxWidth: 600 }}>Click cards to select them. Then choose where the selected and unselected cards should go.</p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", maxWidth: "92vw" }}>
+            {revealCards.map(function(c) {
+              var isSel = revealSel.indexOf(c.uid) >= 0;
+              return <div key={c.uid} onClick={function() { setRevealSel(function(prev) { return prev.indexOf(c.uid) >= 0 ? prev.filter(function(x) { return x !== c.uid; }) : prev.concat([c.uid]); }); }} style={{ cursor: "pointer", border: isSel ? "3px solid #FFD700" : "3px solid transparent", borderRadius: 8, boxShadow: isSel ? "0 0 16px #FFD70066" : "none", transform: isSel ? "scale(1.05)" : "none", transition: "all 0.15s ease" }}><Card card={c} /></div>;
+            })}
+          </div>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center", marginTop: 8 }}>
+            {_renderDestSelect(revealSelDest, setRevealSelDest, selNeeded, "Send selected cards to (" + selCount + ")")}
+            {_renderDestSelect(revealUnselDest, setRevealUnselDest, unselNeeded, "Send unselected cards to (" + unselCount + ")")}
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button disabled={!canConfirm} onClick={!canConfirm ? undefined : function() {
+              var idx = myActIdx; var _me = ps[idx]; if (!_me) return;
+              var p = Object.assign({}, _me, { mainDeck: _me.mainDeck.slice(), hand: _me.hand.slice(), base: _me.base.slice(), trash: (_me.trash || []).slice() });
+              var newBfs = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(arr) { return (arr || []).slice(); }) }); });
+              var bfTouched = false;
+              function _placeCard(card, destKey) {
+                if (destKey === "hand") { p.hand.push(card); addAnim(card.uid, "draw"); }
+                else if (destKey === "base") { p.base.push(Object.assign({}, card, { exhausted: false, gear: [] })); }
+                else if (destKey === "bin") { p.trash.push(Object.assign({}, card, { exhausted: false, gear: [] })); }
+                else if (destKey === "deckTop") { p.mainDeck.unshift(card); }
+                else if (destKey === "deckBottom") { p.mainDeck.push(card); }
+                else if (destKey && destKey.indexOf("bf:") === 0) {
+                  var bi = parseInt(destKey.slice(3), 10);
+                  if (newBfs[bi] && newBfs[bi].units) {
+                    if (!newBfs[bi].units[idx]) newBfs[bi].units[idx] = [];
+                    newBfs[bi].units[idx].push(Object.assign({}, card, { exhausted: false, gear: [] }));
+                    bfTouched = true;
+                  }
+                }
               }
-            });
-            p.hand = p.hand.concat(drawn);
-            p.mainDeck = p.mainDeck.concat(recycled);
-            drawn.forEach(function(c) { addAnim(c.uid, "draw"); });
-            if (drawn.length > 0) aL(pName(idx) + " draws " + drawn.length + " from scry");
-            if (recycled.length > 0) aL("  " + recycled.length + " recycled to bottom");
-            var np = ps.slice(); np[idx] = p; setPs(np);
-            setScryMode(null); setScryCards([]); setScrySel([]);
-          }} style={{ padding: "10px 24px", borderRadius: 6, border: "2px solid #FFD700", background: "rgba(255,215,0,0.2)", color: "#FFD700", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "Rajdhani,sans-serif" }}>Confirm ({scrySel.length} to hand, {scryCards.length - scrySel.length} to bottom)</button>
-          <button onClick={function() { setScryMode(null); setScryCards([]); setScrySel([]); }} style={{ padding: "10px 14px", borderRadius: 6, border: "1px solid #ffffff20", background: "transparent", color: "#666", cursor: "pointer", fontSize: 13, fontFamily: "Rajdhani,sans-serif" }}>Cancel</button>
-        </div>
-      </div>}
+              var picked = [];
+              revealCards.forEach(function(c) {
+                var di = p.mainDeck.findIndex(function(dc) { return dc.uid === c.uid; });
+                if (di >= 0) { var card = p.mainDeck.splice(di, 1)[0]; picked.push({ card: card, sel: revealSel.indexOf(c.uid) >= 0 }); }
+              });
+              picked.forEach(function(it) { _placeCard(it.card, it.sel ? revealSelDest : revealUnselDest); });
+              var np = ps.slice(); np[idx] = p; setPs(np);
+              if (bfTouched) setBfs(newBfs);
+              var _destLabel = function(k) { var o = destOpts.find(function(d) { return d.k === k; }); return o ? o.l : k; };
+              if (selCount > 0) aL("  " + selCount + " selected → " + _destLabel(revealSelDest));
+              if (unselCount > 0) aL("  " + unselCount + " unselected → " + _destLabel(revealUnselDest));
+              setRevealMode(null); setRevealCards([]); setRevealSel([]); setRevealSelDest(""); setRevealUnselDest("");
+            }} style={{ padding: "10px 24px", borderRadius: 6, border: canConfirm ? "2px solid #FFD700" : "2px solid #444", background: canConfirm ? "rgba(255,215,0,0.2)" : "rgba(40,40,40,0.4)", color: canConfirm ? "#FFD700" : "#555", cursor: canConfirm ? "pointer" : "not-allowed", fontSize: 16, fontWeight: 700, fontFamily: "Rajdhani,sans-serif" }}>Confirm Choices</button>
+            <button onClick={function() { setRevealMode(null); setRevealCards([]); setRevealSel([]); setRevealSelDest(""); setRevealUnselDest(""); }} style={{ padding: "10px 14px", borderRadius: 6, border: "1px solid #ffffff20", background: "transparent", color: "#666", cursor: "pointer", fontSize: 13, fontFamily: "Rajdhani,sans-serif" }}>Cancel</button>
+          </div>
+        </div>;
+      })()}
+      {/* Reveal bystander popup (non-initiator) — fires from the synced reveal node */}
+      {revealRemote && (function() {
+        var ownerName = (typeof revealRemote.ownerSlot === "number") ? pName(revealRemote.ownerSlot) : "Someone";
+        var isAll = revealRemote.audience === "all";
+        var count = revealRemote.count || (revealRemote.cards ? revealRemote.cards.length : 0);
+        var cw = Math.round(HAND_W * 1.35); var ch = Math.round(HAND_H * 1.35);
+        return <div style={{ position: "fixed", inset: 0, background: "#000a", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, zIndex: 1180, pointerEvents: "none" }}>
+          <div style={{ pointerEvents: "auto", background: "linear-gradient(160deg, #1a1a3a, #12122a)", borderRadius: 10, padding: "18px 24px", border: "2px solid #FFD70055", boxShadow: "0 8px 40px #0008, 0 0 20px #FFD70015", display: "flex", flexDirection: "column", alignItems: "center", gap: 12, maxWidth: "92vw" }}>
+            <div style={{ fontSize: 11, color: "#FFD70099", fontFamily: "Rajdhani,sans-serif", letterSpacing: 3, textTransform: "uppercase" }}>Reveal</div>
+            <div style={{ fontSize: 16, color: "#FFD700", fontFamily: "Rajdhani,sans-serif", fontWeight: 700, textAlign: "center" }}>{ownerName + " is revealing " + count + " card" + (count === 1 ? "" : "s") + "…"}</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", maxWidth: "88vw" }}>
+              {isAll && revealRemote.cards ? revealRemote.cards.map(function(c, i) { return <div key={(c && c.uid) || i} style={{ borderRadius: 6, border: "1.5px solid #FFD70055", boxShadow: "0 2px 8px #0006", overflow: "hidden", width: cw, height: ch }}>{c && c.img ? <img src={imgSrc(c.img)} style={{ width: "100%", height: "100%", objectFit: "fill", display: "block" }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#FFD700", padding: 4, textAlign: "center" }}>{c && c.name}</div>}</div>; }) : Array.from({ length: count }).map(function(_, i) { return <div key={i} style={{ width: cw, height: ch, borderRadius: 6, border: "1.5px solid #FFD70055", overflow: "hidden", boxShadow: "0 2px 8px #0006" }}><img src={CARD_BACK} style={{ width: "100%", height: "100%", objectFit: "fill", display: "block" }} /></div>; })}
+            </div>
+          </div>
+        </div>;
+      })()}
       {/* Dice roll overlay */}
       {diceRoll && (function() {
         var _curRound = (diceSeq && diceSeq.rounds && diceSeq.rounds[diceRoundIdx]) || null;
@@ -6903,7 +6994,7 @@ function RiftboundGame() {
               {/* Main deck */}
               <div style={{ position: "relative" }} onDragOver={canMoveOwn ? function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } : undefined} onDrop={canMoveOwn ? function(e) { e.preventDefault(); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts.length > 1 ? parts[1] : parts[0]; var idx = myActIdx; var _me = ps[idx]; if (!_me) return; var p = Object.assign({}, _me, { hand: _me.hand.slice(), base: _me.base.slice(), mainDeck: _me.mainDeck.slice() }); var card = null; if (type === "hand") { var hi = p.hand.findIndex(function(c) { return c.uid === uid2; }); if (hi >= 0) card = p.hand.splice(hi, 1)[0]; } else if (type === "base") { var bi2 = p.base.findIndex(function(c) { return c.uid === uid2; }); if (bi2 >= 0) card = p.base.splice(bi2, 1)[0]; } else if (type === "bf") { var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu) { return pu.slice(); }) }); }); for (var bk = 0; bk < nb.length; bk++) { if (!nb[bk].units[idx]) continue; var ui = nb[bk].units[idx].findIndex(function(u) { return u.uid === uid2; }); if (ui >= 0) { card = nb[bk].units[idx].splice(ui, 1)[0]; setBfs(nb); break; } } } if (card) { p.mainDeck.push(Object.assign({}, card, { exhausted: false })); aL(pName(idx) + " recycles " + cName(card) + " to deck"); var np = ps.slice(); np[idx] = p; setPs(np); } } : undefined}>
                 <div data-uid={"slot-" + mySlot + "-deck"} onClick={canMoveOwn && myCur.mainDeck.length > 0 ? function() { var idx = myActIdx; var _me = ps[idx]; if (!_me) return; if (sd) markSdActed(); var p = Object.assign({}, _me, { mainDeck: _me.mainDeck.slice(), hand: _me.hand.slice() }); var c = p.mainDeck.shift(); p.hand.push(c); addAnim(c.uid, "draw"); aL(pName(idx) + " draws 1 card"); var np = ps.slice(); np[idx] = p; setPs(np); } : undefined} style={{ cursor: canMoveOwn && myCur.mainDeck.length > 0 ? "pointer" : "default" }}><CardBack w={HAND_W} h={HAND_H} count={myCur.mainDeck.length} label="DECK" /></div>
-                {myCur.mainDeck.length > 0 && <button onClick={function(e) { e.stopPropagation(); setScryMode("prompt"); setScryCount(1); }} style={{ position: "absolute", top: -4, right: -4, padding: "1px 4px", borderRadius: 3, border: "1.5px solid #FFD70088", background: "rgba(255,215,0,0.85)", color: "#0a0a18", fontSize: 10, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", cursor: "pointer", zIndex: 6, letterSpacing: 0.5 }}>Scry</button>}
+                {myCur.mainDeck.length > 0 && <button onClick={function(e) { e.stopPropagation(); setRevealMode("prompt"); setRevealCount(1); setRevealAudience("me"); setRevealSelDest(""); setRevealUnselDest(""); setRevealSel([]); setRevealCards([]); }} style={{ position: "absolute", top: -4, right: -4, padding: "1px 4px", borderRadius: 3, border: "1.5px solid #FFD70088", background: "rgba(255,215,0,0.85)", color: "#0a0a18", fontSize: 10, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", cursor: "pointer", zIndex: 6, letterSpacing: 0.5 }}>Reveal</button>}
               </div>
               {/* Bin pile — between deck and token (token/bin order swapped per earlier request) */}
               <div onClick={pendingZonePlay && pendingZonePlay.card ? function(e) { e.stopPropagation(); var _pzc = pendingZonePlay.card; setPendingZonePlay(null); sendToBin(_pzc.uid); } : function() { setShowBin(!showBin); }} onDragOver={function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }} onDragEnter={function(e) { e.preventDefault(); setDragOverBin(true); }} onDragLeave={function() { setDragOverBin(false); }} onDrop={function(e) { e.preventDefault(); setDragOverBin(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var uid2 = parts.length > 1 ? parts[1] : parts[0]; sendToBin(uid2); }} style={{ cursor: pendingZonePlay && pendingZonePlay.card ? "copy" : "pointer", borderRadius: 6, outline: (dragOverBin || (pendingZonePlay && pendingZonePlay.card)) ? "2px solid #ff6666" : "none", outlineOffset: -2, boxShadow: (dragOverBin || (pendingZonePlay && pendingZonePlay.card)) ? "0 0 16px rgba(255,100,100,0.3), inset 0 0 12px rgba(255,100,100,0.05)" : "none", transition: "outline 0.15s ease, box-shadow 0.15s ease" }}><BinPile trash={myCur.trash} /></div>
@@ -7022,7 +7113,7 @@ function RiftboundGame() {
         onMouseEnter={!autoMode && pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.type === "Spell" ? function() { setPendingHoverZone("showcase"); } : undefined}
         onMouseLeave={function() { if (pendingHoverZone === "showcase") setPendingHoverZone(null); }}
         onDrop={function(e) { e.preventDefault(); e.stopPropagation(); setDragOverShowcase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; var card = null; if (myCur) { if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } else if (type === "base") { card = myCur.base.find(function(c) { return c.uid === uid2; }); } else if (type === "bf") { for (var bk = 0; bk < bfs.length; bk++) { var uArr = bfs[bk].units[myActIdx]; if (!uArr) continue; var found = uArr.find(function(u) { return u.uid === uid2; }); if (found) { card = found; break; } } } else if (type === "bin") { card = (myCur.trash || []).find(function(c) { return c.uid === uid2; }); } } if (card) { if (autoMode && type === "hand" && card.type === "Spell") { var _idx = myActIdx; setPs(function(prev) { var p = prev[_idx]; if (!p) return prev; var np = prev.slice(); np[_idx] = Object.assign({}, p, { hand: p.hand.filter(function(h) { return h.uid !== card.uid; }) }); return np; }); aL(pName(_idx) + " casts " + cName(card)); } pushShowcase(card); if (card.type === "Spell") { setPendingSpell(card); setResolveAcceptors({}); } } }}
-        style={{ position: "fixed", right: "2%", top: "50%", transform: "translateY(-50%)", padding: "6px 4px", display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "center", overflow: "visible", zIndex: scryMode && showcaseCard ? 1250 : 800, pointerEvents: "auto" }}>
+        style={{ position: "fixed", right: "2%", top: "50%", transform: "translateY(-50%)", padding: "6px 4px", display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "center", overflow: "visible", zIndex: revealMode && showcaseCard ? 1250 : 800, pointerEvents: "auto" }}>
         {showcaseCard ? (function() {
           var scCardW = Math.round(258 * vScale); var scCardH = Math.round(361 * vScale);
           var scPeek = Math.round(scCardW * 0.3);
