@@ -4663,21 +4663,9 @@ function RiftboundGame() {
       // Awaken: untap everything
       var p = Object.assign({}, turnPlayer, { runes: turnPlayer.runes.map(function(r) { return Object.assign({}, r, { exhausted: false }); }), base: turnPlayer.base.map(function(c) { return Object.assign({}, c, { exhausted: false, stunned: false }); }), legend: Object.assign({}, turnPlayer.legend, { exhausted: false }), runeDeck: turnPlayer.runeDeck.slice(), mainDeck: turnPlayer.mainDeck.slice(), hand: turnPlayer.hand.slice() });
       var nb = bfs.map(function(b) { return Object.assign({}, b, { units: b.units.map(function(pu, i) { return i === turnIdx ? pu.map(function(u) { return Object.assign({}, u, { exhausted: false, stunned: false, tempMight: 0 }); }) : pu.slice(); }) }); });
-      // The Arena's Greatest: +1 point on each player's first beginning phase
-      // Stored as a per-player flag (p._arenaPointFired) so it syncs via setPs/liveState and resets
-      // automatically each new game (since ps is rebuilt). The previous useRef variant didn't fire
-      // for player B reliably if the ref had stale values from a prior game.
-      if (autoMode && !p._arenaPointFired && bfs.some(function(b) { return b.name === "The Arena's Greatest"; })) {
-        p._arenaPointFired = true;
-        p.score = (p.score || 0) + 1;
-        aL(pName(turnIdx) + " gains 1 point (The Arena's Greatest — first beginning phase)");
-        var _arenaBf = bfs.find(function(b) { return b.name === "The Arena's Greatest"; });
-        if (_arenaBf) {
-          triggerEffectGhost(_arenaBf, function() { _announcePoint(turnIdx, "conquer"); });
-        } else {
-          _announcePoint(turnIdx, "conquer");
-        }
-      }
+      // The Arena's Greatest: previously auto-awarded +1 point on each player's first beginning phase.
+      // Disabled per the "never auto-assign points" rule — players award the point manually via the
+      // avatar +/- buttons if/when they want to apply it. The _arenaPointFired flag is no longer set.
       // Fading Memories — kill any [Temporary] units at the start of their controller's Beginning Phase.
       if (autoMode) {
         var _tempVictims = [];
@@ -5878,34 +5866,17 @@ function RiftboundGame() {
       aL("Showdown resolved — resolve any remaining showcase cards.");
     }
     if (mode === "attacker") {
+      // No auto-score — players award conquer points manually via the avatar +/- buttons.
       nb[bi].controller = savedSd.atkIdx;
-      var _atkPrior = (np[savedSd.atkIdx].lastScoredBfs || []).indexOf(nb[bi].uid) >= 0;
-      if (_atkPrior) {
-        aL(pName(savedSd.atkIdx) + " takes " + nb[bi].name + " — already scored from this battlefield this turn, no point");
-      } else {
-        np[savedSd.atkIdx].score++;
-        np[savedSd.atkIdx].lastScoredBfs = (np[savedSd.atkIdx].lastScoredBfs || []).concat([nb[bi].uid]);
-        aL(pName(savedSd.atkIdx) + " conquers " + nb[bi].name + "! (" + np[savedSd.atkIdx].score + (continuePlaying ? "" : "/8") + ")");
-        _announcePoint(savedSd.atkIdx, "conquer");
-      }
+      aL(pName(savedSd.atkIdx) + " conquers " + nb[bi].name + "!");
       fireConquerEffects(savedSd.atkIdx, bi);
       setTimeout(recalcAuras, 0);
-      if (np[savedSd.atkIdx].score >= 8 && !continuePlaying) { setWin(savedSd.atkIdx); setScreen("go"); setBfs(nb); setPs(np); return; }
     } else if (mode === "defender") {
       var defIdx = 0; for (var j = 0; j < pc; j++) { if (j !== savedSd.atkIdx) { defIdx = j; break; } }
       nb[bi].controller = defIdx;
-      var _defPrior = (np[defIdx].lastScoredBfs || []).indexOf(nb[bi].uid) >= 0;
-      if (_defPrior) {
-        aL(pName(defIdx) + " holds " + nb[bi].name + " — already scored from this battlefield this turn, no point");
-      } else {
-        np[defIdx].score++;
-        np[defIdx].lastScoredBfs = (np[defIdx].lastScoredBfs || []).concat([nb[bi].uid]);
-        aL(pName(defIdx) + " holds " + nb[bi].name + "! (" + np[defIdx].score + (continuePlaying ? "" : "/8") + ")");
-        _announcePoint(defIdx, "conquer");
-      }
+      aL(pName(defIdx) + " holds " + nb[bi].name + "!");
       fireConquerEffects(defIdx, bi);
       setTimeout(recalcAuras, 0);
-      if (np[defIdx].score >= 8 && !continuePlaying) { setWin(defIdx); setScreen("go"); setBfs(nb); setPs(np); return; }
     } else {
       aL("No points awarded.");
     }
