@@ -1105,7 +1105,7 @@ function RiftboundGame() {
     setHoverTilt(v);
     if (popoutTiltRef.current) {
       var hasTilt = v.x || v.y;
-      var _amp = 1.6;
+      var _amp = 2.4;
       popoutTiltRef.current.style.transform = hasTilt
         ? ("perspective(500px) rotateX(" + (v.y * _amp) + "deg) rotateY(" + (v.x * _amp) + "deg)")
         : "perspective(500px)";
@@ -1148,7 +1148,7 @@ function RiftboundGame() {
       // image may already have rotate(90deg) for the portrait orientation, so the perspective
       // tilt wraps a separate parent div above that rotation.
       var _htBf = hoverTilt || { x: 0, y: 0 };
-      var _ampBf = 1.6;
+      var _ampBf = 2.4;
       var _hasTiltBf = _htBf.x || _htBf.y;
       var _tiltTransformBf = _hasTiltBf
         ? ("perspective(500px) rotateX(" + (_htBf.y * _ampBf) + "deg) rotateY(" + (_htBf.x * _ampBf) + "deg)")
@@ -1166,7 +1166,7 @@ function RiftboundGame() {
     // clearly on the larger pop-out. Tilt vector x → rotateY, y → rotateX (matches the source
     // card's perspective(...) rotateX(tiltY) rotateY(tiltX) layout in FannedHand / TiltCard / Card).
     var _ht = hoverTilt || { x: 0, y: 0 };
-    var _amp = 1.6;
+    var _amp = 2.4;
     var _hasTilt = _ht.x || _ht.y;
     var _tiltTransform = _hasTilt
       ? ("perspective(500px) rotateX(" + (_ht.y * _amp) + "deg) rotateY(" + (_ht.x * _amp) + "deg)")
@@ -6402,8 +6402,8 @@ function RiftboundGame() {
         // (via pendingZonePlay). The next click on a valid drop target plays/casts the card.
         // Hand cards are no longer draggable — drag-and-drop has been replaced by this flow.
         var _isCarried = !!(pendingZonePlay && pendingZonePlay.card && pendingZonePlay.card.uid === c.uid);
-        var _mvRyC = Math.max(-22, Math.min(22, (pendingCursor.dx || 0) * 1.05));
-        var _mvRxC = Math.max(-22, Math.min(22, -(pendingCursor.dy || 0) * 1.05));
+        var _mvRyC = Math.max(-35, Math.min(35, (pendingCursor.dx || 0) * 1.6));
+        var _mvRxC = Math.max(-35, Math.min(35, -(pendingCursor.dy || 0) * 1.6));
         var _carriedStyle = { position: "fixed", left: pendingCursor.x - aw / 2, top: pendingCursor.y - ah / 2, width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: "3px solid #8B6914", boxShadow: "0 0 24px rgba(139,105,20,0.85), 0 8px 24px #000c", zIndex: 1600, pointerEvents: "none", transform: "perspective(900px) rotateX(" + _mvRxC + "deg) rotateY(" + _mvRyC + "deg)", transformOrigin: "center center", marginLeft: 0, transition: "left 60ms linear, top 60ms linear, transform 120ms ease-out" };
         var _isHov = i === handHovIdx;
         // Card image is rendered at its FULL hovered dimensions (aw*1.91 × ah*1.91) and the
@@ -7368,7 +7368,7 @@ function RiftboundGame() {
         setPendingZonePlay(null);
       }} style={{ position: "fixed", inset: 0, zIndex: 1, pointerEvents: "auto", background: "transparent" }} />}
       {!autoMode && pendingZonePlay && pendingZonePlay.card && (pendingZonePlay.fromBf !== undefined || pendingZonePlay.fromBase || pendingZonePlay.fromShowcase) && (function() { var _hc = (myCur.hand || []).length; var _cardW = Math.round(HAND_W * 1.5); var _ml = _hc > 7 ? -45 : _hc > 5 ? -24 : 0; var _fanW = _hc > 0 ? (_cardW + Math.max(0, _hc - 1) * (_cardW + _ml)) + 40 : (_cardW + 40); var _dropW = Math.min(window.innerWidth - 24, Math.round((_fanW + 180) * 1.15)); var _dropH = HAND_H + Math.round(34 * vScale); return <div data-hand-overlay="1" onClick={function(e) { e.stopPropagation(); var _pzc = pendingZonePlay.card; setPendingZonePlay(null); returnToHand(_pzc.uid); }} onMouseEnter={function() { setPendingHoverZone("hand"); }} onMouseLeave={function(e) { var rt = e.relatedTarget; var stayInZone = rt && rt.closest && rt.closest("[data-hand-zone='1'],[data-hand-overlay='1']"); if (!stayInZone) setPendingHoverZone(function(prev) { return prev === "hand" ? null : prev; }); }} style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: _dropW, height: _dropH, zIndex: 5, pointerEvents: "auto", border: pendingHoverZone === "hand" ? "2.5px solid #8B6914" : "2.5px solid transparent", borderBottom: "none", borderRadius: "10px 10px 0 0", background: pendingHoverZone === "hand" ? "rgba(139,105,20,0.22)" : "transparent", boxShadow: pendingHoverZone === "hand" ? "0 0 32px rgba(139,105,20,0.85), inset 0 0 22px rgba(139,105,20,0.20)" : "none", cursor: "pointer", transition: "background 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease" }} />; })()}
-      {pendingZonePlay && pendingZonePlay.card && (pendingZonePlay.fromBf !== undefined || pendingZonePlay.fromBase || pendingZonePlay.fromChamp || pendingZonePlay.fromShowcase) && (function() { var _pzc = pendingZonePlay.card; var _cw = Math.round(HAND_W * 1.5); var _ch = Math.round(HAND_H * 1.5); var _imgUrl = _pzc.img ? imgSrc(_pzc.img) : null; var _mvRy = Math.max(-22, Math.min(22, (pendingCursor.dx || 0) * 1.05)); var _mvRx = Math.max(-22, Math.min(22, -(pendingCursor.dy || 0) * 1.05)); return <div style={{ position: "fixed", left: pendingCursor.x - _cw/2, top: pendingCursor.y - _ch/2, width: _cw, height: _ch, borderRadius: 6, overflow: "hidden", border: "3px solid #8B6914", boxShadow: "0 0 24px rgba(139,105,20,0.85), 0 8px 24px #000c", zIndex: 1600, pointerEvents: "none", transform: "perspective(900px) rotateX(" + _mvRx + "deg) rotateY(" + _mvRy + "deg)", transformOrigin: "center center", transition: "left 60ms linear, top 60ms linear, transform 120ms ease-out" }}>{_imgUrl ? <img src={_imgUrl} style={{ width: "100%", height: "100%", objectFit: "fill" }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 11, padding: 2, textAlign: "center" }}>{_pzc.name}</div>}</div>; })()}
+      {pendingZonePlay && pendingZonePlay.card && (pendingZonePlay.fromBf !== undefined || pendingZonePlay.fromBase || pendingZonePlay.fromChamp || pendingZonePlay.fromShowcase) && (function() { var _pzc = pendingZonePlay.card; var _cw = Math.round(HAND_W * 1.5); var _ch = Math.round(HAND_H * 1.5); var _imgUrl = _pzc.img ? imgSrc(_pzc.img) : null; var _mvRy = Math.max(-35, Math.min(35, (pendingCursor.dx || 0) * 1.6)); var _mvRx = Math.max(-35, Math.min(35, -(pendingCursor.dy || 0) * 1.6)); return <div style={{ position: "fixed", left: pendingCursor.x - _cw/2, top: pendingCursor.y - _ch/2, width: _cw, height: _ch, borderRadius: 6, overflow: "hidden", border: "3px solid #8B6914", boxShadow: "0 0 24px rgba(139,105,20,0.85), 0 8px 24px #000c", zIndex: 1600, pointerEvents: "none", transform: "perspective(900px) rotateX(" + _mvRx + "deg) rotateY(" + _mvRy + "deg)", transformOrigin: "center center", transition: "left 60ms linear, top 60ms linear, transform 120ms ease-out" }}>{_imgUrl ? <img src={_imgUrl} style={{ width: "100%", height: "100%", objectFit: "fill" }} /> : <div style={{ width: "100%", height: "100%", background: "#151530", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 11, padding: 2, textAlign: "center" }}>{_pzc.name}</div>}</div>; })()}
       {/* entersReady ghost animation — card slides to showcase, pulses, slides back, then readies */}
       {readyGhostAnim && (function() {
         var rg = readyGhostAnim;
