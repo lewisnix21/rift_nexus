@@ -557,8 +557,8 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
     ? ("perspective(900px) rotateX(" + _tiltX + "deg) rotateY(" + _tiltY + "deg)" + (_baseRot ? (" rotate(" + _baseRot + "deg)") : ""))
     : "none";
   var wrapS = { width: w, height: h, borderRadius: zoomed ? 10 : small ? 4 : 6, overflow: "visible", flexShrink: 0, position: "relative", border: gearDragOver ? "3px solid #4ADE80" : gankingGlow ? "2.5px solid #4ADE80cc" : (zoomed ? 3 : 2) + "px solid " + borderColor, boxShadow: gearDragOver ? "0 0 20px rgba(74,222,128,0.5), 0 0 40px rgba(74,222,128,0.2), inset 0 0 12px rgba(74,222,128,0.1)" : gankingGlow ? "0 0 14px rgba(74,222,128,0.55), inset 0 0 10px rgba(74,222,128,0.18)" : shadow, cursor: onClick ? "pointer" : "default", background: "#0c0c18", transition: "transform 0.15s ease, border 0.15s ease, box-shadow 0.15s ease", transform: _wrapTransform, transformStyle: "preserve-3d", filter: ex && !zoomed ? "brightness(0.58)" : "none", marginRight: gearExtra };
-  var _hovTiltMove = !zoomed ? function(e) { var rect = e.currentTarget.getBoundingClientRect(); var halfW = rect.width / 2; var halfH = rect.height / 2; var nx = (e.clientX - rect.left - halfW) / halfW; var ny = (e.clientY - rect.top - halfH) / halfH; if (nx > 1) nx = 1; else if (nx < -1) nx = -1; if (ny > 1) ny = 1; else if (ny < -1) ny = -1; setHovTilt({x: nx * 12, y: -ny * 12}); } : undefined;
-  var _hovTiltLeave = !zoomed ? function() { setHovTilt({x: 0, y: 0}); } : undefined;
+  var _hovTiltMove = !zoomed ? function(e) { var rect = e.currentTarget.getBoundingClientRect(); var halfW = rect.width / 2; var halfH = rect.height / 2; var nx = (e.clientX - rect.left - halfW) / halfW; var ny = (e.clientY - rect.top - halfH) / halfH; if (nx > 1) nx = 1; else if (nx < -1) nx = -1; if (ny > 1) ny = 1; else if (ny < -1) ny = -1; var _t = {x: nx * 12, y: -ny * 12}; setHovTilt(_t); if (_setHoverTilt) _setHoverTilt(_t); } : undefined;
+  var _hovTiltLeave = !zoomed ? function() { setHovTilt({x: 0, y: 0}); if (_setHoverTilt) _setHoverTilt({x: 0, y: 0}); } : undefined;
   var hCls = zoomed ? "" : (ex ? "card-tapped" : "card-hover");
   var hEnter = !zoomed ? function(e) { if (_setHoverCard) _setHoverCard(card, e); } : undefined;
   var hLeave = !zoomed ? function() { if (_clearHoverCard) _clearHoverCard(); } : undefined;
@@ -1884,14 +1884,26 @@ function RiftboundGame() {
     return function() { ref.off("value", handler); };
   }, [roomCode, screen]);
 
-  // Listen for pings from other player
+  // Listen for pings from other player. Two shapes:
+  //   {cardUid}            — anchored to a card with that data-uid (legacy)
+  //   {xPct, yPct}         — free ping in viewport-relative coords (any click on the board)
   useEffect(function() {
     if (!roomCode) return;
     var ref = fbDb.ref("lobbies/" + roomCode + "/pings");
     var handler = ref.on("child_added", function(snap) {
       var p = snap.val(); if (!p) return;
       var id = p.id || snap.key;
-      setPings(function(prev) { return prev.concat([{ cardUid: p.cardUid, id: id }]); });
+      var pingObj;
+      if (p.cardUid) {
+        pingObj = { cardUid: p.cardUid, id: id };
+      } else if (typeof p.xPct === "number" && typeof p.yPct === "number") {
+        var vw = (typeof window !== "undefined" ? window.innerWidth : 1920);
+        var vh = (typeof window !== "undefined" ? window.innerHeight : 1080);
+        pingObj = { x: p.xPct * vw, y: p.yPct * vh, id: id };
+      } else {
+        return;
+      }
+      setPings(function(prev) { return prev.concat([pingObj]); });
       setTimeout(function() { setPings(function(prev) { return prev.filter(function(pp) { return pp.id !== id; }); }); snap.ref.remove(); }, 900);
     });
     return function() { ref.off("child_added", handler); };
@@ -1907,6 +1919,22 @@ function RiftboundGame() {
     setTimeout(function() { setPings(function(prev) { return prev.filter(function(pp) { return pp.id !== id; }); }); }, 900);
     if (roomCode) {
       fbDb.ref("lobbies/" + roomCode + "/pings").push({ cardUid: cardUid, id: id });
+    }
+  }
+  // Free ping at raw viewport coordinates. Used when the player clicks anywhere on the board
+  // that isn't a specific card — synced cross-client via viewport-relative percentages so other
+  // players see the ping in the same logical spot regardless of window size.
+  function doFreePing(x, y, isAlt) {
+    if (altPing && !isAlt) return;
+    if (revealMode) return;
+    if (screen === "bf" || screen === "mull" || screen === "mode") return;
+    var id = uid();
+    setPings(function(prev) { return prev.concat([{ x: x, y: y, id: id }]); });
+    setTimeout(function() { setPings(function(prev) { return prev.filter(function(pp) { return pp.id !== id; }); }); }, 900);
+    if (roomCode) {
+      var vw = (typeof window !== "undefined" ? window.innerWidth : 1920);
+      var vh = (typeof window !== "undefined" ? window.innerHeight : 1080);
+      fbDb.ref("lobbies/" + roomCode + "/pings").push({ xPct: x / vw, yPct: y / vh, id: id });
     }
   }
 
@@ -6297,11 +6325,12 @@ function RiftboundGame() {
         var _isHov = i === handHovIdx;
         var _tiltX = _isHov ? (handHovTilt.y || 0) : 0;
         var _tiltY = _isHov ? (handHovTilt.x || 0) : 0;
-        // Original card stays in the fan — no scale/lift. A duplicate pop-out renders above the
-        // card via the shared hoverCard preview (see renderHoverPreview, inHand branch). The
-        // perspective tilt is kept on both the original and the pop-out so they mirror each other.
+        // Original card stays in the fan but lifts ~20% of its height on hover so it visibly
+        // separates from neighbours. A duplicate pop-out renders above via renderHoverPreview
+        // (inHand branch). The perspective tilt is kept on both so they mirror each other.
         var _tiltStr = (_isHov && (_tiltX || _tiltY)) ? ("perspective(900px) rotateX(" + _tiltX + "deg) rotateY(" + _tiltY + "deg) ") : "";
-        var _normTransform = _tiltStr + "rotate(" + rot + "deg) translateY(" + ty + "px)";
+        var _hovLift = _isHov ? Math.round(ah * 0.2) : 0;
+        var _normTransform = _tiltStr + "rotate(" + rot + "deg) translateY(" + (ty - _hovLift) + "px)";
         var _normalStyle = { width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: (autoMode && playable) ? "3px solid #3b82f6" : "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + "20"), flexShrink: 0, cursor: "pointer", transform: _normTransform, transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -45 : total > 5 ? -24 : 0), transition: "transform 200ms ease-out, box-shadow 0.2s ease, border 0.15s ease, filter 200ms ease-out", position: "relative", zIndex: _isHov ? 50 : i, boxShadow: (autoMode && playable) ? "0 0 22px rgba(59,130,246,1), 0 0 44px rgba(59,130,246,0.65), 0 4px 16px #000a" : "0 4px 16px #000a", opacity: 1, pointerEvents: "auto" };
         return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover" + animCls, draggable: false, onClick: (canMoveOwn && playable) ? function(e) { if (tm || fc) return; if (e && e.stopPropagation) e.stopPropagation(); if (_isCarried) { setPendingZonePlay(null); return; } if (e && e.clientX !== undefined) setPendingCursor({ x: e.clientX, y: e.clientY, dx: 0 }); onPlay(c); if (sd) markSdActed(); } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { if (!_isCarried) { setHandHovIdx(i); if (autoMode) setHoveredHandCard(c); if (!c.hidden && _setHoverCard) _setHoverCard(c, e, true); } if (!isEnemy && !autoMode && pendingZonePlay && pendingZonePlay.card && (pendingZonePlay.fromBf !== undefined || pendingZonePlay.fromBase || pendingZonePlay.fromShowcase)) { setPendingHoverZone("hand"); } }, onMouseMove: function(e) { if (_isCarried || isEnemy) return; var rect = e.currentTarget.getBoundingClientRect(); var halfW = rect.width / 2; var halfH = rect.height / 2; var nx = (e.clientX - rect.left - halfW) / halfW; var ny = (e.clientY - rect.top - halfH) / halfH; if (nx > 1) nx = 1; else if (nx < -1) nx = -1; if (ny > 1) ny = 1; else if (ny < -1) ny = -1; var _nt = {x: nx * 12, y: -ny * 12}; setHandHovTilt(_nt); if (_setHoverTilt) _setHoverTilt({ x: _nt.x, y: _nt.y }); }, onMouseLeave: function() { setHandCtxUid(null); setHandHovTilt({x: 0, y: 0}); if (_clearHoverCard) _clearHoverCard(); }, style: _isCarried ? _carriedStyle : _normalStyle },
           c.hidden ? React.createElement("img", { src: CARD_BACK, style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : (c.img ? React.createElement("img", { src: imgSrc(c.img), style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : React.createElement("div", { style: { width: "100%", height: "100%", background: "linear-gradient(180deg," + (DOM[c.domain] || DOM.Colorless).c + "15,#0a0a18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#666", padding: 4, textAlign: "center" } }, c.name)),
@@ -6342,7 +6371,7 @@ function RiftboundGame() {
   }
 
   return (
-    <div onClick={function(e) { if (settingsOpen) { setSettingsOpen(false); return; } if (drawingArrow) { var tgt = e.target.closest("[data-uid]"); if (tgt && tgt.getAttribute("data-uid") !== drawingArrow.fromUid) { if (drawingArrow.mode === "attachGear") { attachGear(drawingArrow.fromUid, tgt.getAttribute("data-uid")); } else { setArrows(function(prev) { return prev.concat([{ fromUid: drawingArrow.fromUid, toUid: tgt.getAttribute("data-uid"), id: uid() }]); }); } } setDrawingArrow(null); return; } var pingTgt = e.target.closest("[data-uid]"); if (pingTgt && !e.target.closest("button")) { doPing(pingTgt.getAttribute("data-uid"), e.altKey); } }} onMouseMove={drawingArrow ? function(e) { setDrawingArrow(function(prev) { return prev ? { fromUid: prev.fromUid, x: e.clientX, y: e.clientY } : null; }); } : undefined} style={{ height: "100vh", background: "transparent", color: "#ddd", fontFamily: "'Inter',sans-serif", display: "flex", flexDirection: "column", overflow: "hidden", cursor: drawingArrow ? "crosshair" : undefined }}>
+    <div onClick={function(e) { if (settingsOpen) { setSettingsOpen(false); return; } if (drawingArrow) { var tgt = e.target.closest("[data-uid]"); if (tgt && tgt.getAttribute("data-uid") !== drawingArrow.fromUid) { if (drawingArrow.mode === "attachGear") { attachGear(drawingArrow.fromUid, tgt.getAttribute("data-uid")); } else { setArrows(function(prev) { return prev.concat([{ fromUid: drawingArrow.fromUid, toUid: tgt.getAttribute("data-uid"), id: uid() }]); }); } } setDrawingArrow(null); return; } if (e.target.closest("button")) return; var pingTgt = e.target.closest("[data-uid]"); if (pingTgt) { doPing(pingTgt.getAttribute("data-uid"), e.altKey); } else if (e.clientX !== undefined && e.clientY !== undefined) { doFreePing(e.clientX, e.clientY, e.altKey); } }} onMouseMove={drawingArrow ? function(e) { setDrawingArrow(function(prev) { return prev ? { fromUid: prev.fromUid, x: e.clientX, y: e.clientY } : null; }); } : undefined} style={{ height: "100vh", background: "transparent", color: "#ddd", fontFamily: "'Inter',sans-serif", display: "flex", flexDirection: "column", overflow: "hidden", cursor: drawingArrow ? "crosshair" : undefined }}>
 
       {/* Auto-mode floating banner removed */}
 
@@ -7468,7 +7497,7 @@ function RiftboundGame() {
       {/* Centered point announcement — fires on conquer/hold (auto-mode flow only by data path; harmless render guard otherwise) */}
       {pointMessage && <div key={pointMessage.ts} className="anim-point-msg" style={{ position: "fixed", top: "40%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 1600, padding: "20px 44px", borderRadius: 10, background: "linear-gradient(135deg,rgba(255,215,0,0.18),rgba(255,140,0,0.10))", border: "2px solid #FFD700", color: "#FFD700", fontFamily: "Rajdhani,sans-serif", fontSize: 28, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", textShadow: "0 0 14px #FFD700aa, 0 0 36px #FFD70066", boxShadow: "0 0 36px rgba(255,215,0,0.45), 0 0 72px rgba(255,215,0,0.25), 0 12px 36px #000c", pointerEvents: "none" }}>{pointMessage.text}</div>}
       {/* Ping effects */}
-      {pings.map(function(p) { var el = document.querySelector("[data-uid='" + p.cardUid + "']"); if (!el) return null; var r = el.getBoundingClientRect(); return <div key={p.id} className="ping-dot" style={{ left: r.left + r.width / 2, top: r.top + r.height / 2 }} />; })}
+      {pings.map(function(p) { if (p.cardUid) { var el = document.querySelector("[data-uid='" + p.cardUid + "']"); if (!el) return null; var r = el.getBoundingClientRect(); return <div key={p.id} className="ping-dot" style={{ left: r.left + r.width / 2, top: r.top + r.height / 2 }} />; } if (typeof p.x === "number" && typeof p.y === "number") { return <div key={p.id} className="ping-dot" style={{ left: p.x, top: p.y }} />; } return null; })}
       {/* Arrow SVG overlay */}
       {(drawingArrow || arrows.length > 0 || (showcaseCard && showcaseHistory.length > 0)) && (function() {
         var vw2 = typeof window !== "undefined" ? window.innerWidth : 1920;
