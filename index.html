@@ -7283,9 +7283,13 @@ function RiftboundGame() {
         <span style={{ fontSize: 12, color: "#60a5fa99", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1 }}>{spellResolving}</span>
         <button disabled style={{ padding: "12px 28px", borderRadius: 8, border: "2px solid #60a5fa44", background: "rgba(96,165,250,0.07)", color: "#60a5fa66", fontSize: 15, fontWeight: 700, fontFamily: "Rajdhani,sans-serif", cursor: "not-allowed", letterSpacing: 1.5, boxShadow: "0 4px 16px #000c", textTransform: "uppercase" }}>Resolving…</button>
       </div>}
-      {/* Begin Showdown button — visible to all players (pendingBeginConquer syncs via liveState).
-          Any player can press to confirm the showdown the attacker set up. */}
+      {/* Begin Showdown button — only the attacker (whoever moved the unit and triggered the CTA)
+          sees it. pendingBeginConquer still syncs across clients so on-confirm state stays in
+          sync, but the render itself is gated on the local player being the attacker. */}
       {pendingBeginConquer && !pendingConquer && !pendingSpell && !autoPrompt && (function() {
+        var isOnline = lobbyType === "host" || lobbyType === "join";
+        var isAttacker = isOnline ? pendingBeginConquer.playerIdx === mySlot : true;
+        if (!isAttacker) return null;
         var pbcContested = !!pendingBeginConquer.contested;
         return <div style={{ position: "fixed", bottom: 50, right: 3 * HAND_W + 24, width: 180, zIndex: 950, display: "flex", flexDirection: "column", alignItems: "stretch", gap: 6 }}>
           <span style={{ fontSize: 15, color: "#60a5facc", fontFamily: "Rajdhani,sans-serif", letterSpacing: 1.2, fontWeight: 700, textAlign: "right" }}>{pendingBeginConquer.bfName} — {pbcContested ? "contested" : "uncontested"}</span>
