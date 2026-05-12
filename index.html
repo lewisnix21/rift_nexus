@@ -466,7 +466,7 @@ function PlayerAvatar({ photoURL, name, score, xp, scoreMax, size, isActive, isM
   </div>;
 }
 
-function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin, onPlus, onMinus, onPlus2, onMinus2, onGearDrop, onGearDetach, onHide, onArrow, hasArrow, onRemoveArrow, isMine, dragData, onDragStartCb, onDragEnd: _onDragEnd, actionLabel, tiny, noRotate, onTap }) {
+function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin, onPlus, onMinus, onPlus2, onMinus2, onGearDrop, onGearDetach, onHide, onArrow, hasArrow, onRemoveArrow, isMine, dragData, onDragStartCb, onDragEnd: _onDragEnd, actionLabel, tiny, noRotate, onTap, noTilt }) {
   var _act = (!zoomed && actionLabel) ? actionLabel : undefined;
   var _cardDragStart = dragData ? function(e) { e.dataTransfer.setData("text/plain", dragData); if (onDragStartCb) onDragStartCb(e); } : undefined;
   var _hov = useState(false), isHov = _hov[0], setIsHov = _hov[1];
@@ -550,15 +550,15 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
   var gearCount = (card.gear && small) ? card.gear.length : 0;
   var gearExtra = gearCount > 0 ? Math.round(w * 0.3) * gearCount : 0;
   var _baseRot = (ex && !zoomed && !noRotate) ? 20 : 0;
-  var _tiltX = zoomed ? 0 : (hovTilt.y || 0);
-  var _tiltY = zoomed ? 0 : (hovTilt.x || 0);
+  var _tiltX = (zoomed || noTilt) ? 0 : (hovTilt.y || 0);
+  var _tiltY = (zoomed || noTilt) ? 0 : (hovTilt.x || 0);
   var _hasTilt = _tiltX !== 0 || _tiltY !== 0;
   var _wrapTransform = (_baseRot || _hasTilt)
     ? ("perspective(900px) rotateX(" + _tiltX + "deg) rotateY(" + _tiltY + "deg)" + (_baseRot ? (" rotate(" + _baseRot + "deg)") : ""))
     : "none";
   var wrapS = { width: w, height: h, borderRadius: zoomed ? 10 : small ? 4 : 6, overflow: "visible", flexShrink: 0, position: "relative", border: gearDragOver ? "3px solid #4ADE80" : gankingGlow ? "2.5px solid #4ADE80cc" : (zoomed ? 3 : 2) + "px solid " + borderColor, boxShadow: gearDragOver ? "0 0 20px rgba(74,222,128,0.5), 0 0 40px rgba(74,222,128,0.2), inset 0 0 12px rgba(74,222,128,0.1)" : gankingGlow ? "0 0 14px rgba(74,222,128,0.55), inset 0 0 10px rgba(74,222,128,0.18)" : shadow, cursor: onClick ? "pointer" : "default", background: "#0c0c18", transition: "transform 0.15s ease, border 0.15s ease, box-shadow 0.15s ease", transform: _wrapTransform, transformStyle: "preserve-3d", filter: ex && !zoomed ? "brightness(0.58)" : "none", marginRight: gearExtra };
-  var _hovTiltMove = !zoomed ? function(e) { var rect = e.currentTarget.getBoundingClientRect(); var halfW = rect.width / 2; var halfH = rect.height / 2; var nx = (e.clientX - rect.left - halfW) / halfW; var ny = (e.clientY - rect.top - halfH) / halfH; if (nx > 1) nx = 1; else if (nx < -1) nx = -1; if (ny > 1) ny = 1; else if (ny < -1) ny = -1; var _t = {x: nx * 12, y: -ny * 12}; setHovTilt(_t); if (_setHoverTilt) _setHoverTilt(_t); } : undefined;
-  var _hovTiltLeave = !zoomed ? function() { setHovTilt({x: 0, y: 0}); if (_setHoverTilt) _setHoverTilt({x: 0, y: 0}); } : undefined;
+  var _hovTiltMove = (!zoomed && !noTilt) ? function(e) { var rect = e.currentTarget.getBoundingClientRect(); var halfW = rect.width / 2; var halfH = rect.height / 2; var nx = (e.clientX - rect.left - halfW) / halfW; var ny = (e.clientY - rect.top - halfH) / halfH; if (nx > 1) nx = 1; else if (nx < -1) nx = -1; if (ny > 1) ny = 1; else if (ny < -1) ny = -1; var _t = {x: nx * 12, y: -ny * 12}; setHovTilt(_t); if (_setHoverTilt) _setHoverTilt(_t); } : undefined;
+  var _hovTiltLeave = (!zoomed && !noTilt) ? function() { setHovTilt({x: 0, y: 0}); if (_setHoverTilt) _setHoverTilt({x: 0, y: 0}); } : undefined;
   var hCls = zoomed ? "" : (ex ? "card-tapped" : "card-hover");
   var hEnter = !zoomed ? function(e) { if (_setHoverCard) _setHoverCard(card, e); } : undefined;
   var hLeave = !zoomed ? function() { if (_clearHoverCard) _clearHoverCard(); } : undefined;
@@ -6383,18 +6383,24 @@ function RiftboundGame() {
         var _mvRxC = Math.max(-22, Math.min(22, -(pendingCursor.dy || 0) * 1.05));
         var _carriedStyle = { position: "fixed", left: pendingCursor.x - aw / 2, top: pendingCursor.y - ah / 2, width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: "3px solid #8B6914", boxShadow: "0 0 24px rgba(139,105,20,0.85), 0 8px 24px #000c", zIndex: 1600, pointerEvents: "none", transform: "perspective(900px) rotateX(" + _mvRxC + "deg) rotateY(" + _mvRyC + "deg)", transformOrigin: "center center", marginLeft: 0, transition: "left 60ms linear, top 60ms linear, transform 120ms ease-out" };
         var _isHov = i === handHovIdx;
-        var _tiltX = _isHov ? (handHovTilt.y || 0) : 0;
-        var _tiltY = _isHov ? (handHovTilt.x || 0) : 0;
-        // On hover: lift the card by 35% of its height + scale 1.91x so it expands out of the fan
-        // (no duplicate pop-out — the original card itself grows). Perspective tilt kept inline.
-        var _hovLift = Math.round(-0.35 * ah);
-        var _tiltStr = (_isHov && (_tiltX || _tiltY)) ? ("perspective(900px) rotateX(" + _tiltX + "deg) rotateY(" + _tiltY + "deg) ") : "";
+        // Card image is rendered at its FULL hovered dimensions (aw*1.91 × ah*1.91) and the
+        // browser draws it at that bitmap resolution. The default fan view sets the image's
+        // CSS width/height to the smaller fan size, so the bitmap is re-rasterised at that
+        // size — i.e. always crisp at whichever size is on screen, instead of upscaling a
+        // small-rendered bitmap with transform: scale (which is what was causing the blur).
+        // Tilt removed per request — original card just lifts + grows on hover.
+        var _hovLift = _isHov ? Math.round(0.35 * ah) : 0;
         var _normTransform = _isHov
-          ? (_tiltStr + "translateY(" + _hovLift + "px) scale(1.91)")
-          : ("rotate(" + rot + "deg) translateY(" + ty + "px)");
-        var _normalStyle = { width: aw, height: ah, borderRadius: 6, overflow: "hidden", border: (autoMode && playable) ? "3px solid #3b82f6" : "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + "20"), flexShrink: 0, cursor: "pointer", transform: _normTransform, transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -45 : total > 5 ? -24 : 0), transition: "transform 200ms ease-out, box-shadow 0.2s ease, border 0.15s ease, filter 200ms ease-out", position: "relative", zIndex: _isHov ? 999 : i, boxShadow: (autoMode && playable) ? "0 0 22px rgba(59,130,246,1), 0 0 44px rgba(59,130,246,0.65), 0 4px 16px #000a" : "0 4px 16px #000a", opacity: 1, pointerEvents: "auto" };
-        return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover" + animCls, draggable: false, onClick: (canMoveOwn && playable) ? function(e) { if (tm || fc) return; if (e && e.stopPropagation) e.stopPropagation(); if (_isCarried) { setPendingZonePlay(null); return; } if (e && e.clientX !== undefined) setPendingCursor({ x: e.clientX, y: e.clientY, dx: 0 }); onPlay(c); if (sd) markSdActed(); } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { if (!_isCarried) { setHandHovIdx(i); if (autoMode) setHoveredHandCard(c); } if (!isEnemy && !autoMode && pendingZonePlay && pendingZonePlay.card && (pendingZonePlay.fromBf !== undefined || pendingZonePlay.fromBase || pendingZonePlay.fromShowcase)) { setPendingHoverZone("hand"); } }, onMouseMove: function(e) { if (_isCarried || isEnemy) return; var rect = e.currentTarget.getBoundingClientRect(); var halfW = rect.width / 2; var halfH = rect.height / 2; var nx = (e.clientX - rect.left - halfW) / halfW; var ny = (e.clientY - rect.top - halfH) / halfH; if (nx > 1) nx = 1; else if (nx < -1) nx = -1; if (ny > 1) ny = 1; else if (ny < -1) ny = -1; setHandHovTilt({x: nx * 12, y: -ny * 12}); }, onMouseLeave: function() { setHandCtxUid(null); setHandHovTilt({x: 0, y: 0}); }, style: _isCarried ? _carriedStyle : _normalStyle },
-          c.hidden ? React.createElement("img", { src: CARD_BACK, style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : (c.img ? React.createElement("img", { src: imgSrc(c.img), style: { width: "100%", height: "100%", objectFit: "fill", display: "block" } }) : React.createElement("div", { style: { width: "100%", height: "100%", background: "linear-gradient(180deg," + (DOM[c.domain] || DOM.Colorless).c + "15,#0a0a18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#666", padding: 4, textAlign: "center" } }, c.name)),
+          ? "rotate(0deg) translateY(" + (ty - _hovLift) + "px)"
+          : "rotate(" + rot + "deg) translateY(" + ty + "px)";
+        var _imgW = _isHov ? Math.round(aw * 1.91) : aw;
+        var _imgH = _isHov ? Math.round(ah * 1.91) : ah;
+        var _imgBorder = (autoMode && playable) ? "3px solid #3b82f6" : "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + "20");
+        var _imgBoxShadow = (autoMode && playable) ? "0 0 22px rgba(59,130,246,1), 0 0 44px rgba(59,130,246,0.65), 0 4px 16px #000a" : "0 4px 16px #000a";
+        var _imgStyle = { position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)", width: _imgW + "px", height: _imgH + "px", objectFit: "fill", display: "block", border: _imgBorder, borderRadius: 6, boxShadow: _imgBoxShadow, boxSizing: "border-box", transition: "width 200ms ease-out, height 200ms ease-out, border 0.15s ease, box-shadow 0.2s ease" };
+        var _normalStyle = { width: aw, height: ah, borderRadius: 6, overflow: "visible", flexShrink: 0, cursor: "pointer", transform: _normTransform, transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -45 : total > 5 ? -24 : 0), transition: "transform 200ms ease-out", position: "relative", zIndex: _isHov ? 999 : i, opacity: 1, pointerEvents: "auto" };
+        return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover" + animCls, draggable: false, onClick: (canMoveOwn && playable) ? function(e) { if (tm || fc) return; if (e && e.stopPropagation) e.stopPropagation(); if (_isCarried) { setPendingZonePlay(null); return; } if (e && e.clientX !== undefined) setPendingCursor({ x: e.clientX, y: e.clientY, dx: 0 }); onPlay(c); if (sd) markSdActed(); } : undefined, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { if (!_isCarried) { setHandHovIdx(i); if (autoMode) setHoveredHandCard(c); } if (!isEnemy && !autoMode && pendingZonePlay && pendingZonePlay.card && (pendingZonePlay.fromBf !== undefined || pendingZonePlay.fromBase || pendingZonePlay.fromShowcase)) { setPendingHoverZone("hand"); } }, onMouseLeave: function() { setHandCtxUid(null); }, style: _isCarried ? _carriedStyle : _normalStyle },
+          c.hidden ? React.createElement("img", { src: CARD_BACK, style: _imgStyle }) : (c.img ? React.createElement("img", { src: imgSrc(c.img), style: _imgStyle }) : React.createElement("div", { style: Object.assign({}, _imgStyle, { background: "linear-gradient(180deg," + (DOM[c.domain] || DOM.Colorless).c + "15,#0a0a18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#666", padding: 4, textAlign: "center" }) }, c.name)),
           handCtxUid === c.uid ? React.createElement("button", { onClick: function(e) { e.stopPropagation(); toggleHide(c.uid); setHandCtxUid(null); }, style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 10, padding: "4px 12px", borderRadius: 4, border: "1.5px solid #ffffff40", background: "rgba(20,20,50,0.92)", color: "#ddd", fontSize: 12, cursor: "pointer", fontFamily: "Rajdhani,sans-serif", fontWeight: 700, boxShadow: "0 4px 12px #000a", whiteSpace: "nowrap" } }, c.hidden ? "Reveal" : "Hide") : null
         );
       })
@@ -6568,7 +6574,7 @@ function RiftboundGame() {
             {myCur.trash.length === 0 ? <div style={{ color: "#ffffff44", fontFamily: "Rajdhani,sans-serif", fontSize: 14, padding: "16px 0" }}>Graveyard is empty</div> : myCur.trash.map(function(c) {
               var isSel = binSelected.indexOf(c.uid) >= 0;
               return <div key={c.uid} style={{ position: "relative", cursor: "pointer" }}>
-                <div onClick={function() { setBinSelected(function(prev) { return prev.indexOf(c.uid) >= 0 ? prev.filter(function(x) { return x !== c.uid; }) : prev.concat([c.uid]); }); }} style={{ border: isSel ? "2px solid #ffffff" : "2px solid transparent", borderRadius: 6, boxShadow: isSel ? "0 0 12px #ffffff44" : "none" }}><Card card={c} small isMine dragData={canMoveOwn ? "bin:" + c.uid : undefined} /></div>
+                <div onClick={function() { setBinSelected(function(prev) { return prev.indexOf(c.uid) >= 0 ? prev.filter(function(x) { return x !== c.uid; }) : prev.concat([c.uid]); }); }} style={{ border: isSel ? "2px solid #ffffff" : "2px solid transparent", borderRadius: 6, boxShadow: isSel ? "0 0 12px #ffffff44" : "none" }}><Card card={c} small isMine noTilt dragData={canMoveOwn ? "bin:" + c.uid : undefined} /></div>
               </div>;
             })}
           </div>
@@ -6582,7 +6588,7 @@ function RiftboundGame() {
             <button onClick={function() { setShowEnemyBin(null); }} style={{ padding: "4px 12px", borderRadius: 4, border: "1px solid #333", background: "transparent", color: "#666", cursor: "pointer", fontSize: 13 }}>Close</button>
           </div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center" }}>
-            {showEnemyBin.cards.length === 0 ? <div style={{ color: "#ffffff44", fontFamily: "Rajdhani,sans-serif", fontSize: 14, padding: "16px 0" }}>Graveyard is empty</div> : showEnemyBin.cards.map(function(c, i) { return <Card key={c.uid || i} card={c} small />; })}
+            {showEnemyBin.cards.length === 0 ? <div style={{ color: "#ffffff44", fontFamily: "Rajdhani,sans-serif", fontSize: 14, padding: "16px 0" }}>Graveyard is empty</div> : showEnemyBin.cards.map(function(c, i) { return <Card key={c.uid || i} card={c} small noTilt />; })}
           </div>
         </div>
       </div>}
