@@ -2262,6 +2262,15 @@ function RiftboundGame() {
   if (_validSpotlight(effectiveSpotlight) && spotlightHovIdx === null) {
     _lastSpotlightRef.current = effectiveSpotlight;
   }
+  // 4-player only: enemy slot list + which slot the focused enemy lives in. Lifted out of the
+  // enemy-zone IIFE so the top banner can pull its left/right offsets from the same numbers
+  // that drive the panel widths (keeps the banner reduced over the side-tab areas).
+  var _enemyIdxList4P = (pc === 4)
+    ? ps.reduce(function(acc, _p, i) { if (i !== viewSlot) acc.push(i); return acc; }, [])
+    : null;
+  var _focused4PSlotPos = (pc === 4 && _enemyIdxList4P)
+    ? _enemyIdxList4P.indexOf(effectiveSpotlight)
+    : -1;
   var cur = ps[act] || null; // Active player's data (used by all game logic)
   var myCur = ps[viewSlot] || null; // My own data (used for rendering my hand/runes/base)
   var numBfs = pc === 2 ? 2 : 3;
@@ -6883,6 +6892,13 @@ function RiftboundGame() {
               ? ps.reduce(function(acc, _p, i) { if (i !== viewSlot) acc.push(i); return acc; }, [])
               : [effectiveSpotlight];
             var is4P = pc === 4;
+            // Pre-compute the two 4-player widths so width transitions interpolate smoothly
+            // when focus shifts from one slot to another (CSS can animate `width` but not the
+            // discrete `flex-grow: 1` → `flex-grow: 0` jump that `flex: 1` / `flex: 0 0 76px`
+            // would otherwise cause).
+            var _vw4P = is4P ? ((typeof window !== "undefined" ? window.innerWidth : 1920)) : 0;
+            var _TAB_W4P = is4P ? Math.round(76 * vScale) : 0;
+            var _FOCUSED_W4P = is4P ? Math.max(120, _vw4P - 8 - 2 * _TAB_W4P) : 0;
             return <div style={{ display: "flex", flexDirection: "row", margin: "4px 4px 4px", flexShrink: 0, overflow: "visible", gap: 0 }}>
               {enemyIdxList.map(function(eIdx, slotPos) {
                 var enemy = ps[eIdx];
@@ -6921,7 +6937,7 @@ function RiftboundGame() {
                     onMouseLeave={function() { setSpotlightHovIdx(function(prev) { return prev === enemySlot ? null : prev; }); }}
                     onClick={function() { setSpotlightClickIdx(enemySlot); setSpotlightHovIdx(null); }}
                     title={pName(enemySlot) + " — click to focus"}
-                    style={{ flex: "0 0 " + TAB_W + "px", minWidth: 0, padding: Math.round(10 * vScale) + "px 4px", overflow: "hidden", border: "2px solid " + (_isAct ? accent : (accent + "aa")), borderRadius: 8, background: fourPSlot.tabBg, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", gap: 0, transition: "border 0.15s ease, box-shadow 0.15s ease", boxShadow: _isAct ? ("0 0 14px " + accent + "80, inset 0 0 14px " + accent + "33") : "inset 0 0 12px rgba(0,0,0,0.45)" }}>
+                    style={{ flex: "0 0 auto", width: TAB_W + "px", minWidth: 0, padding: Math.round(10 * vScale) + "px 4px", overflow: "hidden", border: "2px solid " + (_isAct ? accent : (accent + "aa")), borderRadius: 8, background: fourPSlot.tabBg, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", gap: 0, transition: "width 0.25s ease-out, border 0.15s ease, box-shadow 0.15s ease", boxShadow: _isAct ? ("0 0 14px " + accent + "80, inset 0 0 14px " + accent + "33") : "inset 0 0 12px rgba(0,0,0,0.45)" }}>
                     {/* Avatar (just the photo + active ring — no curved name arc) */}
                     <div style={{ width: _avSize, height: _avSize, borderRadius: "50%", overflow: "hidden", border: "2px solid " + (_isAct ? accent : accent + "88"), flexShrink: 0, background: "#1a1a2a", boxShadow: _isAct ? "0 0 12px " + accent + "aa" : "0 1px 4px #0008" }}>
                       {enemyPhoto
@@ -6942,7 +6958,7 @@ function RiftboundGame() {
                 return <div key={"epanel-" + enemySlot} className={pulseClass}
                   onMouseLeave={is4P ? function() { setSpotlightHovIdx(function(prev) { return prev === enemySlot ? null : prev; }); } : undefined}
                   onClick={is4P ? function() { setSpotlightClickIdx(enemySlot); setSpotlightHovIdx(null); } : undefined}
-                  style={{ flex: 1, minWidth: 0, padding: 2, overflow: "visible", border: accent ? ("2px solid " + accent + (is4P ? "88" : "55")) : "2px solid transparent", borderRadius: 8, background: is4P && fourPSlot ? fourPSlot.panelBg : (accent ? ("linear-gradient(180deg, " + accent + "0a, transparent 60%)") : "transparent"), position: "relative", cursor: is4P ? "pointer" : undefined }}>
+                  style={{ flex: is4P ? "0 0 auto" : 1, width: is4P ? (_FOCUSED_W4P + "px") : undefined, minWidth: 0, padding: 2, overflow: "visible", border: accent ? ("2px solid " + accent + (is4P ? "88" : "55")) : "2px solid transparent", borderRadius: 8, background: is4P && fourPSlot ? fourPSlot.panelBg : (accent ? ("linear-gradient(180deg, " + accent + "0a, transparent 60%)") : "transparent"), position: "relative", cursor: is4P ? "pointer" : undefined, transition: is4P ? "width 0.25s ease-out, border 0.15s ease, background 0.15s ease, box-shadow 0.15s ease" : undefined }}>
                   {/* ROW 1: ENEMY HAND — hand spans this column's width and centers; bin/deck/champ/legend/rune float on the edges via absolute positioning so they don't push the hand off-center. */}
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center", flexShrink: 0, overflow: "visible", padding: "4px 6px 2px", zIndex: 5, position: "relative", gap: 0, height: HAND_H + Math.round(22 * vScale), minHeight: HAND_H + Math.round(22 * vScale), maxHeight: HAND_H + Math.round(22 * vScale) }}>
                     <div style={{ position: "relative", width: "100%", height: "100%", overflow: "visible" }}>
@@ -6955,7 +6971,7 @@ function RiftboundGame() {
                           fanned hand has to peek over the actual focused panel, not the equal-
                           share percentage the other modes use, so compute left/right offsets
                           from the count of tabs on each side. */}
-                      <div style={{ position: "fixed", top: -Math.round(HAND_H * 1.5 * 0.5), left: (is4P ? (4 + slotPos * Math.round(76 * vScale)) + "px" : handLeftPct), right: (is4P ? (4 + (totalSlots - 1 - slotPos) * Math.round(76 * vScale)) + "px" : handRightPct), display: "flex", justifyContent: "center", alignItems: "flex-start", overflow: "visible", zIndex: 940, pointerEvents: "none" }}>
+                      <div style={{ position: "fixed", top: -Math.round(HAND_H * 1.5 * 0.5), left: (is4P ? (4 + slotPos * Math.round(76 * vScale)) + "px" : handLeftPct), right: (is4P ? (4 + (totalSlots - 1 - slotPos) * Math.round(76 * vScale)) + "px" : handRightPct), display: "flex", justifyContent: "center", alignItems: "flex-start", overflow: "visible", zIndex: 940, pointerEvents: "none", transition: is4P ? "left 0.25s ease-out, right 0.25s ease-out" : undefined }}>
                         {(function() {
                           var eaw = Math.round(HAND_W * 1.5);
                           var eah = Math.round(HAND_H * 1.5);
@@ -7246,7 +7262,19 @@ function RiftboundGame() {
                 enemy hands (which fan down from the top of their respective columns).
                 z-index sits below the enemy hand wrappers (940) so the hands render in
                 front of the banner instead of being hidden behind it. */}
-            <div className={!isMyTurnOnline && (screen === "play" || screen === "sd") && !awakenPhase ? "anim-banner-pulse-top" : ""} style={{ position: "fixed", top: 0, left: 0, right: 0, height: HAND_H + Math.round(34 * vScale), borderRadius: "0 0 10px 10px", background: "linear-gradient(0deg, rgba(22,52,76,0.94) 0%, rgba(14,34,52,0.97) 55%, #06121e 100%)", borderBottom: "1.5px solid rgba(155,118,26,0.58)", boxShadow: "0 14px 44px rgba(0,0,0,0.92), 0 4px 18px rgba(0,0,0,0.7), inset 0 -1px 0 rgba(155,118,26,0.15)", zIndex: 1, pointerEvents: "none" }} />
+            {(function() {
+              // In 4-player, inset the top banner by the tab width on whichever side has a
+              // folded tab, so the navy strip terminates at the tab's inner edge instead of
+              // running underneath. The base/rune banners follow the same idea via their flex
+              // siblings — this brings the hand banner into alignment with them.
+              var _topLeft = 0, _topRight = 0;
+              if (pc === 4 && _focused4PSlotPos >= 0) {
+                var _TAB_W = Math.round(76 * vScale);
+                _topLeft = _focused4PSlotPos > 0 ? (4 + _focused4PSlotPos * _TAB_W) : 0;
+                _topRight = _focused4PSlotPos < 2 ? (4 + (2 - _focused4PSlotPos) * _TAB_W) : 0;
+              }
+              return <div className={!isMyTurnOnline && (screen === "play" || screen === "sd") && !awakenPhase ? "anim-banner-pulse-top" : ""} style={{ position: "fixed", top: 0, left: _topLeft, right: _topRight, height: HAND_H + Math.round(34 * vScale), borderRadius: "0 0 10px 10px", background: "linear-gradient(0deg, rgba(22,52,76,0.94) 0%, rgba(14,34,52,0.97) 55%, #06121e 100%)", borderBottom: "1.5px solid rgba(155,118,26,0.58)", boxShadow: "0 14px 44px rgba(0,0,0,0.92), 0 4px 18px rgba(0,0,0,0.7), inset 0 -1px 0 rgba(155,118,26,0.15)", zIndex: 1, pointerEvents: "none", transition: "left 0.25s ease-out, right 0.25s ease-out" }} />;
+            })()}
             {/* Hand wrapper — z-index 980 sits above the avatar (970) so a hovered hand card scales up over the avatar instead of being clipped behind it. The OUTER fixed wrapper is pointer-events:none so it doesn't intercept clicks on the deck/bin/token piles or the rune/champion/legend piles that share the bottom band of the viewport; the INNER wrapper around the FannedHand re-enables pointer events for the actual hand drop/click target (drag-to-hand return + carry cancel). */}
             <div style={{ position: "fixed", bottom: -Math.round(HAND_H * 1.5 * 0.35), left: 0, right: 0, display: "flex", justifyContent: "center", alignItems: "flex-end", overflow: "visible", zIndex: 980, pointerEvents: "none", "--hand-ah": Math.round(HAND_H * 1.5) + "px" }}>
               <div data-hand-zone="1" style={{ pointerEvents: autoMode ? "none" : "auto", display: "flex", alignItems: "flex-end", background: dragOverHand ? "rgba(139,105,20,0.20)" : "transparent", boxShadow: dragOverHand ? "0 0 32px rgba(139,105,20,0.70), inset 0 0 20px rgba(139,105,20,0.16)" : "none", borderRadius: "10px 10px 0 0", transition: "background 0.15s ease, box-shadow 0.15s ease" }}
