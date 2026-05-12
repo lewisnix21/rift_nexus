@@ -7087,11 +7087,12 @@ function RiftboundGame() {
               // BF zone uses the auto-mode horizontal layout in both modes (manual mode previously used a
               // rotated absolute layout — kept identical visual treatment so card abilities don't fire in manual).
               var _bfTint = bfImg ? bfAvgColors[bfImg] : null;
-              // Zone background: use the neutral dark fill we always used pre-proxy. The
-              // computed _bfTint now drives only the wave pulse colour, not the zone fill,
-              // because tinting the fill with the avg made every zone read coloured. null
-              // here falls through to the rgba(16,20,24,…) fallback below.
-              var _bfBgAuto = null;
+              // Zone background: lightened version of the BF's centre-60% RGB average so each
+              // zone reads tinted toward its card art (Veiled Temple → muted purple, Grand
+              // Plaza → muted blue, etc.). Alpha 0.64 — ~20% less opaque than the original
+              // 0.8 so the stone board behind shows through more.
+              var _bfBgAuto = (_bfTint && _bfTint !== "__fallback__") ? _lightenColor(_bfTint, 0.55) : null;
+              if (_bfBgAuto) _bfBgAuto = _bfBgAuto.replace("rgb(", "rgba(").replace(")", ", 0.64)");
               var _bfUseBlurFallback = bfImg && (!_bfTint || _bfTint === "__fallback__");
               var _bfAutoH = BF_ROW_H - Math.round(14 * vScale);
               var _bfAutoW = Math.round(_bfAutoH * 744 / 1038);
