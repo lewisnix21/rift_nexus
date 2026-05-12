@@ -2285,15 +2285,44 @@ function RiftboundGame() {
   if (_validSpotlight(effectiveSpotlight) && spotlightHovIdx === null) {
     _lastSpotlightRef.current = effectiveSpotlight;
   }
-  // 4-player only: enemy slot list + which slot the focused enemy lives in. Lifted out of the
-  // enemy-zone IIFE so the top banner can pull its left/right offsets from the same numbers
-  // that drive the panel widths (keeps the banner reduced over the side-tab areas).
-  var _enemyIdxList4P = (pc === 4)
+  // 3- and 4-player enemy slot list + which slot the focused enemy lives in. Lifted out of
+  // the enemy-zone IIFE so the top banner can pull its left/right offsets from the same
+  // numbers that drive the panel widths (keeps the banner reduced over the side-tab areas).
+  var _enemyIdxListMP = (pc === 3 || pc === 4)
     ? ps.reduce(function(acc, _p, i) { if (i !== viewSlot) acc.push(i); return acc; }, [])
     : null;
-  var _focused4PSlotPos = (pc === 4 && _enemyIdxList4P)
-    ? _enemyIdxList4P.indexOf(effectiveSpotlight)
+  var _focused4PSlotPos = (pc === 4 && _enemyIdxListMP)
+    ? _enemyIdxListMP.indexOf(effectiveSpotlight)
     : -1;
+  // Pixel bounds (viewport-relative) of the currently-active enemy's column so the top-banner
+  // gold pulse can be localised to that one player's elements rather than running across the
+  // full width of the screen. Returns null when it's the local player's turn or 2-player mode
+  // (2P uses the full-width pulse since the single enemy already fills the banner).
+  var _activeEnemyBannerBounds = (function() {
+    if (!_enemyIdxListMP || _enemyIdxListMP.length === 0) return null;
+    if (typeof act !== "number" || act === viewSlot) return null;
+    if (_enemyIdxListMP.indexOf(act) < 0) return null;
+    var _vwHere = (typeof window !== "undefined" ? window.innerWidth : 1920);
+    var _outer = 4;
+    var idx = _enemyIdxListMP.indexOf(act);
+    if (pc === 4) {
+      var _TAB_W = Math.round(76 * vScale);
+      var _focusedW = Math.max(120, _vwHere - 8 - 2 * _TAB_W);
+      var widths = _enemyIdxListMP.map(function(s) { return s === effectiveSpotlight ? _focusedW : _TAB_W; });
+      var left = _outer;
+      for (var i = 0; i < idx; i++) left += widths[i];
+      var right = _vwHere - left - widths[idx];
+      return { left: left, right: right };
+    }
+    if (pc === 3) {
+      // Two enemies, each takes half the viewport (mirrors the flex: 1 panels in 3P).
+      var halfW = (_vwHere - 8) / 2;
+      var left3 = _outer + idx * halfW;
+      var right3 = _vwHere - left3 - halfW;
+      return { left: left3, right: right3 };
+    }
+    return null;
+  })();
   var cur = ps[act] || null; // Active player's data (used by all game logic)
   var myCur = ps[viewSlot] || null; // My own data (used for rendering my hand/runes/base)
   var numBfs = pc === 2 ? 2 : 3;
@@ -7309,8 +7338,18 @@ function RiftboundGame() {
                 _topLeft = _focused4PSlotPos > 0 ? (4 + _focused4PSlotPos * _TAB_W) : 0;
                 _topRight = _focused4PSlotPos < 2 ? (4 + (2 - _focused4PSlotPos) * _TAB_W) : 0;
               }
-              return <div className={!isMyTurnOnline && (screen === "play" || screen === "sd") && !awakenPhase ? "anim-banner-pulse-top" : ""} style={{ position: "fixed", top: 0, left: _topLeft, right: _topRight, height: HAND_H + Math.round(34 * vScale), borderRadius: "0 0 10px 10px", background: "linear-gradient(0deg, rgba(22,52,76,0.94) 0%, rgba(14,34,52,0.97) 55%, #06121e 100%)", borderBottom: "1.5px solid rgba(155,118,26,0.58)", boxShadow: "0 14px 44px rgba(0,0,0,0.92), 0 4px 18px rgba(0,0,0,0.7), inset 0 -1px 0 rgba(155,118,26,0.15)", zIndex: 1, pointerEvents: "none", transition: "left 0.25s ease-out, right 0.25s ease-out" }} />;
+              // In multi-player (3P / 4P) the gold turn-pulse runs only over the active
+              // enemy's column (via the separate overlay below). The main banner just paints
+              // the navy fill — no animation. 2P keeps the original behaviour: pulse runs on
+              // the whole banner since the single enemy already fills it.
+              var _isMP = pc === 3 || pc === 4;
+              var _bannerPulseCls = (!_isMP && !isMyTurnOnline && (screen === "play" || screen === "sd") && !awakenPhase) ? "anim-banner-pulse-top" : "";
+              return <div className={_bannerPulseCls} style={{ position: "fixed", top: 0, left: _topLeft, right: _topRight, height: HAND_H + Math.round(34 * vScale), borderRadius: "0 0 10px 10px", background: "linear-gradient(0deg, rgba(22,52,76,0.94) 0%, rgba(14,34,52,0.97) 55%, #06121e 100%)", borderBottom: "1.5px solid rgba(155,118,26,0.58)", boxShadow: "0 14px 44px rgba(0,0,0,0.92), 0 4px 18px rgba(0,0,0,0.7), inset 0 -1px 0 rgba(155,118,26,0.15)", zIndex: 1, pointerEvents: "none", transition: "left 0.25s ease-out, right 0.25s ease-out" }} />;
             })()}
+            {/* Active-enemy localised pulse overlay (3P / 4P): same anim-banner-pulse-top
+                animation but bounded to the column of whichever enemy currently has the turn.
+                Only renders during play/sd, off your turn, with a valid active-enemy slot. */}
+            {_activeEnemyBannerBounds && !isMyTurnOnline && (screen === "play" || screen === "sd") && !awakenPhase && <div className="anim-banner-pulse-top" style={{ position: "fixed", top: 0, left: _activeEnemyBannerBounds.left, right: _activeEnemyBannerBounds.right, height: HAND_H + Math.round(34 * vScale), borderRadius: "0 0 10px 10px", background: "transparent", zIndex: 2, pointerEvents: "none", transition: "left 0.25s ease-out, right 0.25s ease-out" }} />}
             {/* Hand wrapper — z-index 980 sits above the avatar (970) so a hovered hand card scales up over the avatar instead of being clipped behind it. The OUTER fixed wrapper is pointer-events:none so it doesn't intercept clicks on the deck/bin/token piles or the rune/champion/legend piles that share the bottom band of the viewport; the INNER wrapper around the FannedHand re-enables pointer events for the actual hand drop/click target (drag-to-hand return + carry cancel). */}
             <div style={{ position: "fixed", bottom: -Math.round(HAND_H * 1.5 * 0.35), left: 0, right: 0, display: "flex", justifyContent: "center", alignItems: "flex-end", overflow: "visible", zIndex: 980, pointerEvents: "none", "--hand-ah": Math.round(HAND_H * 1.5) + "px" }}>
               <div data-hand-zone="1" style={{ pointerEvents: autoMode ? "none" : "auto", display: "flex", alignItems: "flex-end", background: dragOverHand ? "rgba(139,105,20,0.20)" : "transparent", boxShadow: dragOverHand ? "0 0 32px rgba(139,105,20,0.70), inset 0 0 20px rgba(139,105,20,0.16)" : "none", borderRadius: "10px 10px 0 0", transition: "background 0.15s ease, box-shadow 0.15s ease" }}
