@@ -1070,7 +1070,22 @@ function RiftboundGame() {
   var _hovT = useState({ x: 0, y: 0 }), hoverTilt = _hovT[0], setHoverTilt = _hovT[1];
   _setHoverCard = function(card, e, inHand) { setHoverTilt({ x: 0, y: 0 }); if (e && e.currentTarget) { var r = e.currentTarget.getBoundingClientRect(); setHoverCard({ card: card, left: r.left, right: r.right, top: r.top, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2, inHand: !!inHand }); } else if (e && e.clientX !== undefined) { setHoverCard({ card: card, left: e.clientX, right: e.clientX, top: e.clientY, bottom: e.clientY, cx: e.clientX, cy: e.clientY, inHand: !!inHand }); } else { setHoverCard(card ? { card: card, left: 0, right: 0, top: 0, bottom: 0, cx: 0, cy: 0, inHand: !!inHand } : null); } };
   _clearHoverCard = function() { setHoverCard(null); setHoverTilt({ x: 0, y: 0 }); };
-  _setHoverTilt = function(t) { setHoverTilt(t || { x: 0, y: 0 }); };
+  // Pop-out tilt mirror: in addition to setting hoverTilt state (so React renders the tilt on
+  // mount), we also write directly to the pop-out div via a ref so the tilt updates immediately
+  // on every cursor move without waiting for a full re-render. _setHoverTilt is the public push
+  // point used by FannedHand / TiltCard / Card.
+  var popoutTiltRef = useRef(null);
+  _setHoverTilt = function(t) {
+    var v = t || { x: 0, y: 0 };
+    setHoverTilt(v);
+    if (popoutTiltRef.current) {
+      var hasTilt = v.x || v.y;
+      var _amp = 1.6;
+      popoutTiltRef.current.style.transform = hasTilt
+        ? ("perspective(500px) rotateX(" + (v.y * _amp) + "deg) rotateY(" + (v.x * _amp) + "deg)")
+        : "perspective(500px)";
+    }
+  };
   // When a card is played/moved, React unmounts the source DOM while the cursor is still "over" it,
   // so onMouseLeave never fires and the hover bubble sticks. Clearing hoverCard on any in-game state
   // change forces a re-hover, which is cheap and avoids the stuck-bubble bug. Lobby/deck-builder hovers
@@ -1111,11 +1126,19 @@ function RiftboundGame() {
       </div>;
     }
     if (tx < 4) tx = 4; if (tx + tw > vw - 4) tx = vw - tw - 4;
+    // Mirror the cursor tilt from the source card. Single perspective in the transform (not on
+    // the parent) so the 3D effect is consistent regardless of stacking context, with a tighter
+    // perspective (500px) and a 1.6× amplification of the source-card tilt so the rotation reads
+    // clearly on the larger pop-out. Tilt vector x → rotateY, y → rotateX (matches the source
+    // card's perspective(...) rotateX(tiltY) rotateY(tiltX) layout in FannedHand / TiltCard / Card).
     var _ht = hoverTilt || { x: 0, y: 0 };
+    var _amp = 1.6;
     var _hasTilt = _ht.x || _ht.y;
-    var _tiltTransform = _hasTilt ? ("perspective(900px) rotateX(" + _ht.y + "deg) rotateY(" + _ht.x + "deg)") : "none";
-    return <div style={{ position: "fixed", left: tx, top: ty, zIndex: 9999, pointerEvents: "none", perspective: 1200 }}>
-      <div style={{ position: "relative", transform: _tiltTransform, transformStyle: "preserve-3d", transition: "transform 80ms ease-out" }}>
+    var _tiltTransform = _hasTilt
+      ? ("perspective(500px) rotateX(" + (_ht.y * _amp) + "deg) rotateY(" + (_ht.x * _amp) + "deg)")
+      : "perspective(500px)";
+    return <div style={{ position: "fixed", left: tx, top: ty, zIndex: 9999, pointerEvents: "none" }}>
+      <div ref={popoutTiltRef} style={{ position: "relative", transform: _tiltTransform, transformOrigin: "center center", transition: "transform 60ms ease-out", willChange: "transform" }}>
         {hc.img ? <img src={imgSrc(hc.img)} onError={function(e) { if (PA[hc.name] && e.target.src.indexOf("piltover") < 0) { e.target.src = PA_CDN + PA[hc.name] + ".webp"; } }} style={{ width: tw, height: th, objectFit: "fill", display: "block", borderRadius: 6, border: "1px solid #ffffff25", boxShadow: "0 8px 32px #000c" }} /> : <div style={{ width: tw, height: th, display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 18, fontFamily: "Rajdhani,sans-serif", padding: 12, textAlign: "center", borderRadius: 6, border: "1px solid #ffffff25", background: "#0c0c18", boxShadow: "0 8px 32px #000c" }}>{hc.name}</div>}
       </div>
     </div>;
