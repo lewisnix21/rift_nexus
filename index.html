@@ -6909,46 +6909,54 @@ function RiftboundGame() {
                 var handLeftPct = (slotPos / totalSlots) * 100 + "%";
                 var handRightPct = (1 - (slotPos + 1) / totalSlots) * 100 + "%";
                 var pulseClass = "";
-                var ENEMY_ACCENTS = is4P ? ["#F87171", "#FACC15", "#38BDF8"] : ["#F87171", "#38BDF8"]; // distinct hue per stable slot
+                // Darker, saturated accents for the 4-player tab/zone palette so the tab block
+                // reads as a solid dark accent rather than a translucent pastel tint.
+                var FOUR_P_PALETTE = [
+                  { accent: "#DC2626", tabBg: "#2a1010", panelBg: "rgba(40,12,12,0.55)" },
+                  { accent: "#CA8A04", tabBg: "#2a210a", panelBg: "rgba(38,30,8,0.55)" },
+                  { accent: "#0284C7", tabBg: "#0a1c2e", panelBg: "rgba(10,28,46,0.55)" }
+                ];
+                var ENEMY_ACCENTS_TWOP = ["#F87171", "#38BDF8"];
                 var useAccent = totalSlots > 1;
-                var accent = useAccent ? ENEMY_ACCENTS[slotPos % ENEMY_ACCENTS.length] : null;
+                var accent = useAccent ? (is4P ? FOUR_P_PALETTE[slotPos % 3].accent : ENEMY_ACCENTS_TWOP[slotPos % 2]) : null;
+                var fourPSlot = is4P ? FOUR_P_PALETTE[slotPos % 3] : null;
                 var bandBorder = accent ? ("1.5px solid " + accent + "88") : "1.5px solid #ffffff35";
                 var labelColor = accent ? (accent + "cc") : "#ffffff55";
                 var labelSubColor = accent ? (accent + "99") : "#ffffff44";
-                // Folded tab in 4-player: compact width, click to pin, hover to preview.
+                // Folded tab in 4-player: solid dark accent block, full enemy-zone height (flex
+                // siblings stretch to row height), vertical "book-spine" name. Click anywhere on
+                // the tab to pin focus to this enemy.
                 if (is4P && !isFocusedPanel) {
                   var TAB_W = Math.round(76 * vScale);
                   var _isAct = act === enemySlot;
+                  var _avSize = Math.round(54 * vScale);
                   return <div key={"epanel-" + enemySlot}
                     onMouseEnter={function() { setSpotlightHovIdx(enemySlot); }}
                     onMouseLeave={function() { setSpotlightHovIdx(function(prev) { return prev === enemySlot ? null : prev; }); }}
                     onClick={function() { setSpotlightClickIdx(enemySlot); setSpotlightHovIdx(null); }}
                     title={pName(enemySlot) + " — click to focus"}
-                    style={{ flex: "0 0 " + TAB_W + "px", minWidth: 0, padding: 4, overflow: "visible", border: "2px solid " + (accent ? (accent + (_isAct ? "ee" : "66")) : "rgba(255,255,255,0.25)"), borderRadius: 8, background: "linear-gradient(180deg, " + (accent ? accent + "1a" : "rgba(255,255,255,0.04)") + ", transparent 70%)", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, transition: "border 0.15s ease, background 0.15s ease, box-shadow 0.15s ease", boxShadow: _isAct ? ("0 0 16px " + (accent || "#FFD700") + "80, inset 0 0 12px " + (accent || "#FFD700") + "40") : "none" }}>
-                    <PlayerAvatar
-                      photoURL={enemyPhoto}
-                      name={pName(enemySlot)}
-                      score={enemy.score || 0}
-                      xp={enemy.xp || 0}
-                      scoreMax={continuePlaying ? null : (lobbySettings && lobbySettings.mode === "Doubles" ? "11" : "8")}
-                      size={Math.round(AVATAR_SIZE * 0.55)}
-                      isActive={_isAct && (screen === "play" || screen === "sd") && !awakenPhase}
-                      isMine={false}
-                      flipped={true}
-                      scorePulse={scorePulseIdx === enemySlot}
-                      accentColor={accent}
-                    />
-                    <div style={{ fontSize: Math.round(11 * vScale), color: accent || "#bbb", fontFamily: "Rajdhani,sans-serif", fontWeight: 700, letterSpacing: 1, textAlign: "center", lineHeight: 1.1, maxWidth: TAB_W - 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pName(enemySlot)}</div>
-                    <div style={{ fontSize: Math.round(10 * vScale), color: "#888", fontFamily: "Rajdhani,sans-serif", letterSpacing: 0.5 }}>
-                      <span style={{ color: "#FFD700" }}>{enemy.score || 0}</span>
-                      <span> · </span>
-                      <span title="Hand">✋ {(enemy.hand || []).length}</span>
+                    style={{ flex: "0 0 " + TAB_W + "px", minWidth: 0, padding: Math.round(10 * vScale) + "px 4px", overflow: "hidden", border: "2px solid " + (_isAct ? accent : (accent + "aa")), borderRadius: 8, background: fourPSlot.tabBg, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", gap: 0, transition: "border 0.15s ease, box-shadow 0.15s ease", boxShadow: _isAct ? ("0 0 14px " + accent + "80, inset 0 0 14px " + accent + "33") : "inset 0 0 12px rgba(0,0,0,0.45)" }}>
+                    {/* Avatar (just the photo + active ring — no curved name arc) */}
+                    <div style={{ width: _avSize, height: _avSize, borderRadius: "50%", overflow: "hidden", border: "2px solid " + (_isAct ? accent : accent + "88"), flexShrink: 0, background: "#1a1a2a", boxShadow: _isAct ? "0 0 12px " + accent + "aa" : "0 1px 4px #0008" }}>
+                      {enemyPhoto
+                        ? <img src={enemyPhoto} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                        : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}><SilhouetteIcon size={Math.round(_avSize * 0.85)} /></div>
+                      }
+                    </div>
+                    {/* Score — sits below the avatar with a deliberate gap so it reads as its own
+                        counter, not part of the avatar's diamond strip. */}
+                    <div style={{ marginTop: Math.round(10 * vScale), fontSize: Math.round(22 * vScale), color: "#FFD700", fontFamily: "Rajdhani,sans-serif", fontWeight: 800, lineHeight: 1, letterSpacing: 0.5, textShadow: "0 1px 3px #000a" }}>{enemy.score || 0}</div>
+                    {/* Vertical name — fills the remaining tab height. writing-mode: vertical-rl
+                        gives the book-spine look (read top → bottom). */}
+                    <div style={{ flex: 1, marginTop: Math.round(12 * vScale), marginBottom: Math.round(4 * vScale), display: "flex", alignItems: "center", justifyContent: "center", writingMode: "vertical-rl", textOrientation: "mixed", color: _isAct ? accent : accent + "cc", fontFamily: "Rajdhani,sans-serif", fontWeight: 700, fontSize: Math.round(15 * vScale), letterSpacing: 2, textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxHeight: "100%" }}>
+                      {pName(enemySlot)}
                     </div>
                   </div>;
                 }
                 return <div key={"epanel-" + enemySlot} className={pulseClass}
                   onMouseLeave={is4P ? function() { setSpotlightHovIdx(function(prev) { return prev === enemySlot ? null : prev; }); } : undefined}
-                  style={{ flex: 1, minWidth: 0, padding: 2, overflow: "visible", border: accent ? ("2px solid " + accent + "55") : "2px solid transparent", borderRadius: 8, background: accent ? ("linear-gradient(180deg, " + accent + "0a, transparent 60%)") : "transparent", position: "relative" }}>
+                  onClick={is4P ? function() { setSpotlightClickIdx(enemySlot); setSpotlightHovIdx(null); } : undefined}
+                  style={{ flex: 1, minWidth: 0, padding: 2, overflow: "visible", border: accent ? ("2px solid " + accent + (is4P ? "88" : "55")) : "2px solid transparent", borderRadius: 8, background: is4P && fourPSlot ? fourPSlot.panelBg : (accent ? ("linear-gradient(180deg, " + accent + "0a, transparent 60%)") : "transparent"), position: "relative", cursor: is4P ? "pointer" : undefined }}>
                   {/* ROW 1: ENEMY HAND — hand spans this column's width and centers; bin/deck/champ/legend/rune float on the edges via absolute positioning so they don't push the hand off-center. */}
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center", flexShrink: 0, overflow: "visible", padding: "4px 6px 2px", zIndex: 5, position: "relative", gap: 0, height: HAND_H + Math.round(22 * vScale), minHeight: HAND_H + Math.round(22 * vScale), maxHeight: HAND_H + Math.round(22 * vScale) }}>
                     <div style={{ position: "relative", width: "100%", height: "100%", overflow: "visible" }}>
