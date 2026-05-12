@@ -6921,24 +6921,17 @@ function RiftboundGame() {
                       base/rune drop targets sit above the carry-cancel overlay (z 1) but
                       below the BF row (z 3). */}
                   <div style={{ display: "flex", alignItems: "stretch", flexShrink: 0, padding: "2px 6px", gap: 6, overflow: "visible", zIndex: 2, height: ZONE_H, minHeight: ZONE_H, maxHeight: ZONE_H, position: "relative" }}>
-                    {/* Enemy base - cards spread evenly across the full band via absolute positioning so 1 card sits left, 5 cards spread out, and many cards naturally overlap when they don't fit. */}
-                    <div key={"ebase"} style={{ padding: "3px 4px", borderRadius: 6, border: bandBorder, flex: 1, height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H, overflow: "hidden", position: "relative" }}>
+                    {/* Enemy base — mirror the local player's base layout: flex-row, left-to-right
+                        with a fixed gap so positions stay consistent between viewers. (Previously
+                        we spread cards across the band with absolute positioning, which produced
+                        a different visual order than the owner's own view — e.g. 3 cards rendered
+                        as left/centre/right for the enemy but left-to-right with small gaps for
+                        the owner.) */}
+                    <div key={"ebase"} style={{ display: "flex", flexDirection: "row", gap: 3, padding: "3px 4px", borderRadius: 6, border: bandBorder, alignItems: "center", flexWrap: "nowrap", flex: 1, height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H, overflow: "visible", position: "relative" }}>
                       <div style={{ position: "absolute", left: 6, top: "50%", transform: "translateY(-50%)", fontSize: 16, color: labelColor, fontFamily: "Rajdhani,sans-serif", letterSpacing: 1, fontWeight: 700, zIndex: 0, pointerEvents: "none" }}>BASE</div>
-                      {(function() {
-                        var bcount = enemy.base.length;
-                        if (bcount === 0) return null;
-                        var ebcw = Math.round(125 * vScale);
-                        return enemy.base.map(function(u, i) {
-                          var leftCalc;
-                          if (bcount === 1) {
-                            leftCalc = "0px";
-                          } else {
-                            var pct = (i / (bcount - 1)) * 100;
-                            leftCalc = "calc(" + pct + "% - " + (pct / 100 * ebcw) + "px)";
-                          }
-                          return <div key={u.uid} style={{ position: "absolute", left: leftCalc, top: "50%", transform: "translateY(-50%)", zIndex: i + 1 }}><Card card={u} small onClick={tm ? function() { resTarget(u, enemySlot, null); } : undefined} /></div>;
-                        });
-                      })()}
+                      {enemy.base.map(function(u) {
+                        return <div key={u.uid} style={{ display: "inline-block" }}><Card card={u} small onClick={tm ? function() { resTarget(u, enemySlot, null); } : undefined} /></div>;
+                      })}
                     </div>
                     {/* Avatar gap — visible reserved space between the enemy base and rune banners. */}
                     <div style={{ width: AVATAR_GAP_W, flexShrink: 0, position: "relative" }}>
