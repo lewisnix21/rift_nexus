@@ -6727,17 +6727,20 @@ function RiftboundGame() {
         // 4-player: first player skips the BF pick — treat as already picked so they see the waiting screen.
         var iSkipBf = pc === 4 && mySlot === firstPlayerIdx;
         var myBfPicked = iSkipBf || (ps[mySlot] && ps[mySlot].chosenBf);
-        return <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, zIndex: 1100, overflow: "auto", padding: "40px 20px" }}>
+        // Everything in this overlay scales by vScale so the layout holds its proportions on any
+        // window size (matches the in-game UI which scales the same way).
+        var _s = function(n) { return Math.round(n * vScale); };
+        return <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: _s(16), zIndex: 1100, overflow: "auto", padding: _s(40) + "px " + _s(20) + "px" }}>
           {!myBfPicked ? <>
-            <h2 style={{ fontSize: 22, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700" }}>Choose Your Battlefield</h2>
-            <p style={{ color: "#4ADE80", fontSize: 14, fontFamily: "Rajdhani,sans-serif", fontWeight: 700 }}>{pName(firstPlayerIdx)} to draw first</p>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
+            <h2 style={{ fontSize: _s(28), fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700", letterSpacing: vScale * 1.5 }}>Choose Your Battlefield</h2>
+            <p style={{ color: "#4ADE80", fontSize: _s(18), fontFamily: "Rajdhani,sans-serif", fontWeight: 700 }}>{pName(firstPlayerIdx)} to draw first</p>
+            <div style={{ display: "flex", gap: _s(12), flexWrap: "wrap", justifyContent: "center" }}>
               {ps[mySlot].battlefields.map(function(bf) {
                 var bfHash = CI[bf.name] || (PA[bf.name] ? PA_CDN + PA[bf.name] + ".webp" : null);
                 var bfUrl = bfHash ? imgSrc(bfHash) : "";
                 var isSel = selectedBf && selectedBf.uid === bf.uid;
-                return <div key={bf.uid} onClick={function() { setSelectedBf(isSel ? null : bf); }} style={{ border: "3px solid " + (isSel ? "#FFD700" : "#FFD70044"), borderRadius: 8, background: "#1a1a3a", cursor: "pointer", width: Math.round(480 * vScale), height: Math.round(345 * vScale), overflow: "hidden", boxShadow: isSel ? "0 0 20px #FFD70044" : "none", opacity: selectedBf && !isSel ? 0.5 : 1, position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {bfUrl ? <img src={bfUrl} style={(bfUrl.indexOf("1038x744") > -1 || bfUrl.indexOf("1039x744") > -1 || bfUrl.indexOf("OGN-284") > -1 || bfUrl.indexOf("OGN-281") > -1 || bfUrl.indexOf("OGN-290") > -1) ? { width: "100%", height: "100%", objectFit: "fill" } : { width: Math.round(345 * vScale), height: Math.round(480 * vScale), objectFit: "fill", transform: "rotate(90deg)" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: 16, fontFamily: "Rajdhani,sans-serif" }}>{bf.name}</div>}
+                return <div key={bf.uid} onClick={function() { setSelectedBf(isSel ? null : bf); }} style={{ border: "3px solid " + (isSel ? "#FFD700" : "#FFD70044"), borderRadius: _s(8), background: "#1a1a3a", cursor: "pointer", width: _s(480), height: _s(345), overflow: "hidden", boxShadow: isSel ? "0 0 20px #FFD70044" : "none", opacity: selectedBf && !isSel ? 0.5 : 1, position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {bfUrl ? <img src={bfUrl} style={(bfUrl.indexOf("1038x744") > -1 || bfUrl.indexOf("1039x744") > -1 || bfUrl.indexOf("OGN-284") > -1 || bfUrl.indexOf("OGN-281") > -1 || bfUrl.indexOf("OGN-290") > -1) ? { width: "100%", height: "100%", objectFit: "fill" } : { width: _s(345), height: _s(480), objectFit: "fill", transform: "rotate(90deg)" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFD700", fontSize: _s(20), fontFamily: "Rajdhani,sans-serif" }}>{bf.name}</div>}
                 </div>;
               })}
             </div>
@@ -6747,10 +6750,10 @@ function RiftboundGame() {
               var np = ps.map(function(p) { return Object.assign({}, p); });
               np[mySlot].chosenBf = selectedBf; setPs(np); setSelectedBf(null);
               aL("You chose " + selectedBf.name);
-            }} disabled={!selectedBf} style={{ padding: "10px 30px", borderRadius: 6, border: "2px solid " + (selectedBf ? "#FFD700" : "#333"), background: selectedBf ? "linear-gradient(135deg,#FFD70040,#FF8C0020)" : "#222", color: selectedBf ? "#FFD700" : "#555", cursor: selectedBf ? "pointer" : "not-allowed", fontSize: 16, fontWeight: 700, fontFamily: "Rajdhani,sans-serif" }}>CONFIRM</button>
-          </> : <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-            <h2 style={{ fontSize: 20, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700" }}>Waiting for other players...</h2>
-            <div className="anim-pulse" style={{ fontSize: 28, opacity: 0.3 }}>⚔</div>
+            }} disabled={!selectedBf} style={{ padding: _s(10) + "px " + _s(30) + "px", borderRadius: _s(6), border: "2px solid " + (selectedBf ? "#FFD700" : "#333"), background: selectedBf ? "linear-gradient(135deg,#FFD70040,#FF8C0020)" : "#222", color: selectedBf ? "#FFD700" : "#555", cursor: selectedBf ? "pointer" : "not-allowed", fontSize: _s(20), fontWeight: 700, fontFamily: "Rajdhani,sans-serif", letterSpacing: vScale }}>CONFIRM</button>
+          </> : <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: _s(12) }}>
+            <h2 style={{ fontSize: _s(24), fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700" }}>Waiting for other players...</h2>
+            <div className="anim-pulse" style={{ fontSize: _s(32), opacity: 0.3 }}>⚔</div>
           </div>}
         </div>;
       })()}
@@ -6760,23 +6763,28 @@ function RiftboundGame() {
         var myMullDone = roomCode && lobbyPlayers[myUid] && false; // check via ref
         // Simple check: if we already wrote mulled, show waiting
         var mullDoneLocal = _gamePhaseRef.current === "mullDone";
-        // Compute a card scale that fits the row inside the viewport, leaving headroom for
-        // the title block above and the MULLIGAN/KEEP button below — no scrolling needed.
+        // Scale chrome (typography, gaps, padding) by vScale so it matches the rest of the UI.
+        var _s = function(n) { return Math.round(n * vScale); };
+        // Compute a card scale that fits the row inside the viewport, leaving headroom for the
+        // title block above and the MULLIGAN/KEEP button below. The "scale" here applies on top
+        // of the zoomed-card base size — the chrome reservation also scales with vScale so the
+        // card row gets bigger on big screens and smaller on small ones, proportionally.
         var _mullVH = (typeof window !== "undefined") ? window.innerHeight : 1080;
         var _mullVW = (typeof window !== "undefined") ? window.innerWidth : 1920;
         var _mullCardW = 374, _mullCardH = 524;
         var _mullCount = ((ps[mySlot] && ps[mySlot].hand) || []).length || 4;
-        var _mullRowW = _mullCount * _mullCardW + Math.max(0, _mullCount - 1) * 8;
-        // Reserved chrome: title (~24) + subtitle (~20) + help (~20) + button (~50) + 4×gap (~48) + padding (~32) ≈ 200
-        var _mullScale = Math.min(0.95, (_mullVH - 200) / _mullCardH, (_mullVW - 60) / _mullRowW);
+        var _mullGap = _s(8);
+        var _mullRowW = _mullCount * _mullCardW + Math.max(0, _mullCount - 1) * _mullGap;
+        var _reservedChrome = _s(200);
+        var _mullScale = Math.min(0.95, (_mullVH - _reservedChrome) / _mullCardH, (_mullVW - _s(60)) / _mullRowW);
         if (_mullScale < 0.25) _mullScale = 0.25;
-        return <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, zIndex: 1100, overflow: "hidden", padding: "16px 20px" }}>
+        return <div style={{ position: "fixed", inset: 0, background: "#000c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: _s(12), zIndex: 1100, overflow: "hidden", padding: _s(16) + "px " + _s(20) + "px" }}>
           {!mullDoneLocal ? <>
-            <h2 style={{ fontSize: 22, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700", flexShrink: 0, margin: 0 }}>Your Mulligan</h2>
-            <p style={{ color: "#4ADE80", fontSize: 14, fontFamily: "Rajdhani,sans-serif", fontWeight: 700, flexShrink: 0, margin: 0 }}>{pName(firstPlayerIdx)} to draw first</p>
-            <p style={{ color: "#888", fontSize: 15, flexShrink: 0, margin: 0 }}>Select up to 2 to replace</p>
+            <h2 style={{ fontSize: _s(28), fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700", flexShrink: 0, margin: 0, letterSpacing: vScale * 1.5 }}>Your Mulligan</h2>
+            <p style={{ color: "#4ADE80", fontSize: _s(18), fontFamily: "Rajdhani,sans-serif", fontWeight: 700, flexShrink: 0, margin: 0 }}>{pName(firstPlayerIdx)} to draw first</p>
+            <p style={{ color: "#888", fontSize: _s(18), flexShrink: 0, margin: 0, fontFamily: "Rajdhani,sans-serif" }}>Select up to 2 to replace</p>
             <div style={{ width: _mullRowW * _mullScale, height: _mullCardH * _mullScale, flexShrink: 0 }}>
-              <div style={{ display: "flex", gap: 8, flexWrap: "nowrap", alignItems: "center", width: _mullRowW, height: _mullCardH, transform: "scale(" + _mullScale + ")", transformOrigin: "top left" }}>
+              <div style={{ display: "flex", gap: _mullGap, flexWrap: "nowrap", alignItems: "center", width: _mullRowW, height: _mullCardH, transform: "scale(" + _mullScale + ")", transformOrigin: "top left" }}>
                 {ps[mySlot].hand.map(function(c) { return <Card key={c.uid} card={c} selected={mc.indexOf(c.uid) >= 0} onClick={function() { setMc(function(p) { return p.indexOf(c.uid) >= 0 ? p.filter(function(x) { return x !== c.uid; }) : p.length < 2 ? p.concat([c.uid]) : p; }); }} zoomed />; })}
               </div>
             </div>
@@ -6796,10 +6804,10 @@ function RiftboundGame() {
                 fbDb.ref("lobbies/" + roomCode + "/gameState/mulled/" + myUid).set(true);
               }
               _gamePhaseRef.current = "mullDone";
-            }} style={{ padding: "12px 28px", borderRadius: 6, border: "2px solid #FFD700", background: "#FFD70040", color: "#FFD700", cursor: "pointer", fontSize: 18, fontWeight: 700, position: "relative", zIndex: 10, flexShrink: 0 }}>{mc.length > 0 ? "MULLIGAN " + mc.length : "KEEP"}</button>
-          </> : <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-            <h2 style={{ fontSize: 20, fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700" }}>Waiting for other players...</h2>
-            <div className="anim-pulse" style={{ fontSize: 28, opacity: 0.3 }}>⚔</div>
+            }} style={{ padding: _s(12) + "px " + _s(28) + "px", borderRadius: _s(6), border: "2px solid #FFD700", background: "#FFD70040", color: "#FFD700", cursor: "pointer", fontSize: _s(22), fontWeight: 700, position: "relative", zIndex: 10, flexShrink: 0, fontFamily: "Rajdhani,sans-serif", letterSpacing: vScale }}>{mc.length > 0 ? "MULLIGAN " + mc.length : "KEEP"}</button>
+          </> : <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: _s(12) }}>
+            <h2 style={{ fontSize: _s(24), fontFamily: "Spectral,serif", fontWeight: 700, color: "#FFD700" }}>Waiting for other players...</h2>
+            <div className="anim-pulse" style={{ fontSize: _s(32), opacity: 0.3 }}>⚔</div>
           </div>}
         </div>;
       })()}
