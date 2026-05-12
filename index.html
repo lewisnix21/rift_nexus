@@ -7125,7 +7125,10 @@ function RiftboundGame() {
               var _bfBgAuto = (_bfTint && _bfTint !== "__fallback__") ? _lightenColor(_bfTint, 0.55) : null;
               if (_bfBgAuto) _bfBgAuto = _bfBgAuto.replace("rgb(", "rgba(").replace(")", ", 0.64)");
               var _bfUseBlurFallback = bfImg && (!_bfTint || _bfTint === "__fallback__");
-              var _bfAutoH = BF_ROW_H - Math.round(14 * vScale);
+              // BF card portrait: was BF_ROW_H − 14 px (~95.6% of zone height). Bump to
+              // BF_ROW_H − 6 px (~98.1%) so the card reads as a more prominent landmark in
+              // its zone without quite reaching the top/bottom borders.
+              var _bfAutoH = BF_ROW_H - Math.round(6 * vScale);
               var _bfAutoW = Math.round(_bfAutoH * 744 / 1038);
               // Use the BF card's dominant (mode) colour directly. The colour picker already
               // strips near-white/near-black and quantises to find the most-frequent hue, so
