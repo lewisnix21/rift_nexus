@@ -955,6 +955,17 @@ function RiftboundGame() {
   // null = use the default (active player). Hover takes priority over click.
   var _spotlightClick = useState(null), spotlightClickIdx = _spotlightClick[0], setSpotlightClickIdx = _spotlightClick[1];
   var _spotlightHov = useState(null), spotlightHovIdx = _spotlightHov[0], setSpotlightHovIdx = _spotlightHov[1];
+  // 4-player tab refocus: when the active turn shifts to an enemy, force focus to their
+  // panel — clear both the user's pin and any hover preview so the default-spotlight rule
+  // (which follows `act`) takes over and the new active enemy's panel auto-expands. The
+  // user can re-pin afterwards by clicking a different tab.
+  useEffect(function() {
+    if (pc !== 4) return;
+    if (act === undefined || act === null) return;
+    if (typeof mySlot === "number" && act === mySlot) return; // my turn — leave whatever the user pinned
+    if (spotlightClickIdx !== null) setSpotlightClickIdx(null);
+    if (spotlightHovIdx !== null) setSpotlightHovIdx(null);
+  }, [act]);
   var _dbSavedDecks = useState([]), dbSavedDecks = _dbSavedDecks[0], setDbSavedDecks = _dbSavedDecks[1];
   var _dbEditId = useState(null), dbEditId = _dbEditId[0], setDbEditId = _dbEditId[1];
   var _dbSearch = useState(""), dbSearch = _dbSearch[0], setDbSearch = _dbSearch[1];
@@ -6872,29 +6883,67 @@ function RiftboundGame() {
         {/* Main column — all rows fixed height, content centered vertically with equal dead space top/bottom */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", overflow: "hidden", position: "relative" }}>
 
-          {/* ENEMY ZONE wrapper — in 3-player games both enemies share the top half (each takes half-width); otherwise just the spotlight enemy is shown. Pulse animation is per-panel so only the active enemy's column highlights. */}
+          {/* ENEMY ZONE wrapper — in 3- and 4-player games all enemies render side-by-side in
+              stable slot order (left → right by slot index, viewSlot skipped). In 4-player the
+              non-focused enemies fold to compact tabs on the sides; hovering a tab previews it,
+              clicking pins it, and turn changes auto-shift focus to the new active player. */}
           {(function() {
-            var enemyIdxList = (pc === 3)
+            var enemyIdxList = (pc === 3 || pc === 4)
               ? ps.reduce(function(acc, _p, i) { if (i !== viewSlot) acc.push(i); return acc; }, [])
               : [effectiveSpotlight];
+            var is4P = pc === 4;
             return <div style={{ display: "flex", flexDirection: "row", margin: "4px 4px 4px", flexShrink: 0, overflow: "visible", gap: 0 }}>
               {enemyIdxList.map(function(eIdx, slotPos) {
                 var enemy = ps[eIdx];
                 if (!enemy) return null;
                 var enemySlot = eIdx;
                 var totalSlots = enemyIdxList.length;
+                var isFocusedPanel = !is4P || (eIdx === effectiveSpotlight);
                 var enemyP = lobbyPlayers && Object.keys(lobbyPlayers).map(function(k) { return lobbyPlayers[k]; }).find(function(p) { return p && p.slot === enemySlot; });
                 var enemyPhoto = (enemyP && enemyP.photoURL) || "";
                 var handLeftPct = (slotPos / totalSlots) * 100 + "%";
                 var handRightPct = (1 - (slotPos + 1) / totalSlots) * 100 + "%";
                 var pulseClass = "";
-                var ENEMY_ACCENTS = ["#F87171", "#38BDF8"]; // left panel red, right panel sky-blue
+                var ENEMY_ACCENTS = is4P ? ["#F87171", "#FACC15", "#38BDF8"] : ["#F87171", "#38BDF8"]; // distinct hue per stable slot
                 var useAccent = totalSlots > 1;
                 var accent = useAccent ? ENEMY_ACCENTS[slotPos % ENEMY_ACCENTS.length] : null;
                 var bandBorder = accent ? ("1.5px solid " + accent + "88") : "1.5px solid #ffffff35";
                 var labelColor = accent ? (accent + "cc") : "#ffffff55";
                 var labelSubColor = accent ? (accent + "99") : "#ffffff44";
-                return <div key={"epanel-" + enemySlot} className={pulseClass} style={{ flex: 1, minWidth: 0, padding: 2, overflow: "visible", border: accent ? ("2px solid " + accent + "55") : "2px solid transparent", borderRadius: 8, background: accent ? ("linear-gradient(180deg, " + accent + "0a, transparent 60%)") : "transparent" }}>
+                // Folded tab in 4-player: compact width, click to pin, hover to preview.
+                if (is4P && !isFocusedPanel) {
+                  var TAB_W = Math.round(76 * vScale);
+                  var _isAct = act === enemySlot;
+                  return <div key={"epanel-" + enemySlot}
+                    onMouseEnter={function() { setSpotlightHovIdx(enemySlot); }}
+                    onMouseLeave={function() { setSpotlightHovIdx(function(prev) { return prev === enemySlot ? null : prev; }); }}
+                    onClick={function() { setSpotlightClickIdx(enemySlot); setSpotlightHovIdx(null); }}
+                    title={pName(enemySlot) + " — click to focus"}
+                    style={{ flex: "0 0 " + TAB_W + "px", minWidth: 0, padding: 4, overflow: "visible", border: "2px solid " + (accent ? (accent + (_isAct ? "ee" : "66")) : "rgba(255,255,255,0.25)"), borderRadius: 8, background: "linear-gradient(180deg, " + (accent ? accent + "1a" : "rgba(255,255,255,0.04)") + ", transparent 70%)", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, transition: "border 0.15s ease, background 0.15s ease, box-shadow 0.15s ease", boxShadow: _isAct ? ("0 0 16px " + (accent || "#FFD700") + "80, inset 0 0 12px " + (accent || "#FFD700") + "40") : "none" }}>
+                    <PlayerAvatar
+                      photoURL={enemyPhoto}
+                      name={pName(enemySlot)}
+                      score={enemy.score || 0}
+                      xp={enemy.xp || 0}
+                      scoreMax={continuePlaying ? null : (lobbySettings && lobbySettings.mode === "Doubles" ? "11" : "8")}
+                      size={Math.round(AVATAR_SIZE * 0.55)}
+                      isActive={_isAct && (screen === "play" || screen === "sd") && !awakenPhase}
+                      isMine={false}
+                      flipped={true}
+                      scorePulse={scorePulseIdx === enemySlot}
+                      accentColor={accent}
+                    />
+                    <div style={{ fontSize: Math.round(11 * vScale), color: accent || "#bbb", fontFamily: "Rajdhani,sans-serif", fontWeight: 700, letterSpacing: 1, textAlign: "center", lineHeight: 1.1, maxWidth: TAB_W - 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pName(enemySlot)}</div>
+                    <div style={{ fontSize: Math.round(10 * vScale), color: "#888", fontFamily: "Rajdhani,sans-serif", letterSpacing: 0.5 }}>
+                      <span style={{ color: "#FFD700" }}>{enemy.score || 0}</span>
+                      <span> · </span>
+                      <span title="Hand">✋ {(enemy.hand || []).length}</span>
+                    </div>
+                  </div>;
+                }
+                return <div key={"epanel-" + enemySlot} className={pulseClass}
+                  onMouseLeave={is4P ? function() { setSpotlightHovIdx(function(prev) { return prev === enemySlot ? null : prev; }); } : undefined}
+                  style={{ flex: 1, minWidth: 0, padding: 2, overflow: "visible", border: accent ? ("2px solid " + accent + "55") : "2px solid transparent", borderRadius: 8, background: accent ? ("linear-gradient(180deg, " + accent + "0a, transparent 60%)") : "transparent", position: "relative" }}>
                   {/* ROW 1: ENEMY HAND — hand spans this column's width and centers; bin/deck/champ/legend/rune float on the edges via absolute positioning so they don't push the hand off-center. */}
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center", flexShrink: 0, overflow: "visible", padding: "4px 6px 2px", zIndex: 5, position: "relative", gap: 0, height: HAND_H + Math.round(22 * vScale), minHeight: HAND_H + Math.round(22 * vScale), maxHeight: HAND_H + Math.round(22 * vScale) }}>
                     <div style={{ position: "relative", width: "100%", height: "100%", overflow: "visible" }}>
@@ -6902,7 +6951,12 @@ function RiftboundGame() {
                         <div onClick={function() { setShowEnemyBin({name: pName(enemySlot), cards: enemy.trash || []}); }} style={{ cursor: "pointer" }}><BinPile trash={enemy.trash} /></div>
                         <div data-uid={"slot-" + enemySlot + "-deck"} style={{ marginLeft: 3 }}><CardBack w={HAND_W} h={HAND_H} count={enemy.mainDeck ? enemy.mainDeck.length : 0} label="DECK" /></div>
                       </div>
-                      <div style={{ position: "fixed", top: -Math.round(HAND_H * 1.5 * 0.5), left: handLeftPct, right: handRightPct, display: "flex", justifyContent: "center", alignItems: "flex-start", overflow: "visible", zIndex: 940, pointerEvents: "none" }}>
+                      {/* In 4-player the focused panel's viewport span is variable depending
+                          on which slot is focused (the other slots are TAB_W-wide tabs). The
+                          fanned hand has to peek over the actual focused panel, not the equal-
+                          share percentage the other modes use, so compute left/right offsets
+                          from the count of tabs on each side. */}
+                      <div style={{ position: "fixed", top: -Math.round(HAND_H * 1.5 * 0.5), left: (is4P ? (4 + slotPos * Math.round(76 * vScale)) + "px" : handLeftPct), right: (is4P ? (4 + (totalSlots - 1 - slotPos) * Math.round(76 * vScale)) + "px" : handRightPct), display: "flex", justifyContent: "center", alignItems: "flex-start", overflow: "visible", zIndex: 940, pointerEvents: "none" }}>
                         {(function() {
                           var eaw = Math.round(HAND_W * 1.5);
                           var eah = Math.round(HAND_H * 1.5);
