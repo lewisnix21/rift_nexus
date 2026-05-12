@@ -1278,6 +1278,14 @@ function RiftboundGame() {
     Object.keys(unique).forEach(function(url) {
       var img = new Image();
       img.crossOrigin = "anonymous";
+      // The Riot CMS host (cmsassets.rgpub.io) — where most BF card images live — doesn't
+      // send Access-Control-Allow-Origin headers, so a CORS image load fails entirely and
+      // every BF falls through to the gold default. Route the *colour-sample* request
+      // through wsrv.nl (free public image proxy that adds CORS headers) so the canvas
+      // read actually succeeds. The on-screen <img> render still uses the direct URL.
+      var sampleUrl = (url.indexOf("wsrv.nl") < 0)
+        ? ("https://wsrv.nl/?url=" + encodeURIComponent(url) + "&output=jpg")
+        : url;
       img.onerror = function() { setBfAvgColors(function(prev) { var next = Object.assign({}, prev); next[url] = "__fallback__"; return next; }); };
       img.onload = function() {
         try {
@@ -1308,7 +1316,7 @@ function RiftboundGame() {
           setBfAvgColors(function(prev) { var next = Object.assign({}, prev); next[url] = "__fallback__"; return next; });
         }
       };
-      img.src = url;
+      img.src = sampleUrl;
     });
   }, [bfs]);
   function _lightenColor(rgbStr, amount) {
