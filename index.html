@@ -7071,8 +7071,11 @@ function RiftboundGame() {
               // BF zone uses the auto-mode horizontal layout in both modes (manual mode previously used a
               // rotated absolute layout — kept identical visual treatment so card abilities don't fire in manual).
               var _bfTint = bfImg ? bfAvgColors[bfImg] : null;
-              var _bfBgAuto = (_bfTint && _bfTint !== "__fallback__") ? _lightenColor(_bfTint, 0.55) : null;
-              if (_bfBgAuto) _bfBgAuto = _bfBgAuto.replace("rgb(", "rgba(").replace(")", ", 0.8)");
+              // Zone background: use the neutral dark fill we always used pre-proxy. The
+              // computed _bfTint now drives only the wave pulse colour, not the zone fill,
+              // because tinting the fill with the avg made every zone read coloured. null
+              // here falls through to the rgba(16,20,24,…) fallback below.
+              var _bfBgAuto = null;
               var _bfUseBlurFallback = bfImg && (!_bfTint || _bfTint === "__fallback__");
               var _bfAutoH = BF_ROW_H - Math.round(14 * vScale);
               var _bfAutoW = Math.round(_bfAutoH * 744 / 1038);
@@ -7092,7 +7095,7 @@ function RiftboundGame() {
                 onDrop={canMoveOwn ? function(e) { e.preventDefault(); setDragOverBf(-1); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts.length > 1 ? parts[1] : parts[0]; if (type === "hand") { var card = myCur.hand.find(function(c) { return c.uid === uid2; }); if (card && (card.type === "Unit" || card.type === "Champion")) playToBattlefield(card, bi); } else if (type === "champ") { if (myCur.champion && myCur.champion.uid === uid2 && !myCur.championPlayed) playToBattlefield(myCur.champion, bi); } else if (type === "gear") { /* ignore gear on battlefield */ } else { moveUnit(uid2, bi); } setDragUnit(null); } : undefined}
                 onMouseEnter={isPendingZoneBF ? function() { setPendingHoverZone("bf" + bi); } : undefined}
                 onMouseLeave={isPendingZoneBF ? function() { setPendingHoverZone(null); } : undefined}
-                style={{ flex: 1, background: (isBfOver || isAutoBfTarget || (isPendingZoneBF && pendingZonePlay && pendingZonePlay.card.type !== "Spell" && (autoMode || pendingHoverZone === "bf" + bi))) ? "rgba(139,105,20,0.128)" : (_bfBgAuto || "rgba(16,20,24,0.48)"), borderRadius: 8, border: isSdBf ? "2px solid #FF6B35" : ("2.5px solid " + ((isBfOver || isAutoBfTarget || (isPendingZoneBF && pendingZonePlay && pendingZonePlay.card.type !== "Spell" && (autoMode || pendingHoverZone === "bf" + bi))) ? "#8B6914" : "rgba(180,165,120,0.28)")), display: "flex", alignItems: "stretch", justifyContent: "flex-start", overflow: "visible", position: "relative", cursor: (isAutoBfTarget || isPendingZoneBF) ? "pointer" : "default", outline: "none", transition: "background 0.15s ease, box-shadow 0.15s ease, border 0.15s ease", "--zone-glow-c": _zoneGlowC }}>
+                style={{ flex: 1, background: (isBfOver || isAutoBfTarget || (isPendingZoneBF && pendingZonePlay && pendingZonePlay.card.type !== "Spell" && (autoMode || pendingHoverZone === "bf" + bi))) ? "rgba(139,105,20,0.128)" : (_bfBgAuto || "rgba(16,20,24,0.38)"), borderRadius: 8, border: isSdBf ? "2px solid #FF6B35" : ("2.5px solid " + ((isBfOver || isAutoBfTarget || (isPendingZoneBF && pendingZonePlay && pendingZonePlay.card.type !== "Spell" && (autoMode || pendingHoverZone === "bf" + bi))) ? "#8B6914" : "rgba(180,165,120,0.28)")), display: "flex", alignItems: "stretch", justifyContent: "flex-start", overflow: "visible", position: "relative", cursor: (isAutoBfTarget || isPendingZoneBF) ? "pointer" : "default", outline: "none", transition: "background 0.15s ease, box-shadow 0.15s ease, border 0.15s ease", "--zone-glow-c": _zoneGlowC }}>
                 {_bfUseBlurFallback && <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: 8, pointerEvents: "none", zIndex: 0 }}><img src={bfImg} alt="" aria-hidden="true" style={{ position: "absolute", top: "-15%", left: "-15%", width: "130%", height: "130%", objectFit: "cover", filter: "blur(45px) saturate(1.6) brightness(1.5)", opacity: 0.55 }} /></div>}
                 {(
                   <div style={{ display: "flex", flexDirection: "row", alignItems: "stretch", width: "100%", height: "100%", padding: Math.round(4 * vScale) + "px", overflow: "visible", position: "relative", zIndex: 1 }}>
