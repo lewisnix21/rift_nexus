@@ -4928,7 +4928,7 @@ function RiftboundGame() {
         var cleanBfs2 = nb.map(function(b) { return Object.assign({}, b, { units: (b.units || []).map(function(pu) { return (pu || []).map(function(u) { return Object.assign({}, u, { gear: u.gear || [] }); }); }) }); });
         fbDb.ref("lobbies/" + roomCode + "/liveState").set(JSON.parse(JSON.stringify({ ps: cleanPs2, bfs: cleanBfs2, turn: turn, act: act, screen: "play", log: log.slice(-30), sd: null, ver: _lastSyncVersion.current, by: myUid })));
       }
-    }, 800);
+    }, 1800);
   }
 
   function endTurn() {
@@ -6991,8 +6991,8 @@ function RiftboundGame() {
         </div>;
       })()}
 
-      {/* Awaken phase overlay — centered, opaque notice while the new turn awakens */}
-      {awakenPhase && <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", padding: "26px 56px", borderRadius: 12, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2.5px solid #FFD700", boxShadow: "0 0 36px rgba(255,215,0,0.55), 0 0 80px rgba(255,215,0,0.25), 0 14px 44px #000c", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1500, pointerEvents: "none" }}>
+      {/* Awaken phase overlay — opaque full-width strip across the middle of the screen */}
+      {awakenPhase && <div style={{ position: "fixed", top: "50%", left: 0, right: 0, transform: "translateY(-50%)", padding: "13px 0", background: "linear-gradient(160deg,#1a1a3a,#12122a)", borderTop: "2px solid #FFD700", borderBottom: "2px solid #FFD700", boxShadow: "0 0 36px rgba(255,215,0,0.55), 0 0 80px rgba(255,215,0,0.25), 0 14px 44px #000c", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1500, pointerEvents: "none" }}>
         <span className="anim-pulse" style={{ fontFamily: "Rajdhani,sans-serif", fontSize: 28, fontWeight: 700, color: "#FFD700", letterSpacing: 4, textTransform: "uppercase", textShadow: "0 0 14px #FFD700aa, 0 0 32px #FFD70055" }}>{pName(act)} — New Turn</span>
       </div>}
 
