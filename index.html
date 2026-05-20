@@ -7154,7 +7154,7 @@ function RiftboundGame() {
                         as left/centre/right for the enemy but left-to-right with small gaps for
                         the owner.) */}
                     <div key={"ebase"} style={{ display: "flex", flexDirection: "row-reverse", gap: 3, padding: "3px 4px", borderRadius: 6, border: bandBorder, alignItems: "center", justifyContent: "center", flexWrap: "nowrap", flex: 1, height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H, overflow: "visible", position: "relative" }}>
-                      <div style={{ position: "absolute", left: 6, top: "50%", transform: "translateY(-50%)", fontSize: 16, color: labelColor, fontFamily: "Spectral,serif", letterSpacing: 1, fontWeight: 700, zIndex: 0, pointerEvents: "none" }}>BASE</div>
+                      <div style={{ position: "absolute", left: 6, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: labelColor, fontFamily: "Spectral,serif", letterSpacing: 1, fontWeight: 700, zIndex: 0, pointerEvents: "none" }}>BASE</div>
                       {enemy.base.map(function(u) {
                         return <div key={u.uid} style={{ display: "inline-block" }}><Card card={u} small onClick={tm ? function() { resTarget(u, enemySlot, null); } : undefined} /></div>;
                       })}
@@ -7184,7 +7184,7 @@ function RiftboundGame() {
                       var step = 1 / 11;
                       return <div key={"erunes"} style={{ display: "flex", flexDirection: "row", padding: "3px 4px", borderRadius: 6, border: bandBorder, alignItems: "center", flex: 1, overflow: "visible", height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H }}>
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, marginRight: 4 }}>
-                          <div style={{ fontSize: 16, color: labelColor, fontFamily: "Spectral,serif", letterSpacing: 1, fontWeight: 700 }}>RUNES</div>
+                          <div style={{ fontSize: 12, color: labelColor, fontFamily: "Spectral,serif", letterSpacing: 1, fontWeight: 700 }}>RUNES</div>
                           <div style={{ fontSize: 16, color: labelSubColor, fontFamily: "Spectral,serif", fontWeight: 700 }}>{erc}/12</div>
                           <div style={{ fontSize: 15, color: eUntapped > 0 ? "#4ADE80" : "#ff666688", fontFamily: "Spectral,serif", fontWeight: 700 }}>{eUntapped} ready</div>
                         </div>
@@ -7283,7 +7283,7 @@ function RiftboundGame() {
             {function() { var prc = myCur.runes.length; var untapped = myCur.runes.filter(function(r) { return !r.exhausted; }).length; var step = 1 / 11; return (
             <div style={{ display: "flex", flexDirection: "row", padding: "3px 4px", borderRadius: 6, border: "1.5px solid #ffffff35", background: "transparent", alignItems: "center", flex: 1, overflow: "visible", height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H, transition: "border 0.15s ease, background 0.15s ease, box-shadow 0.15s ease", position: "relative" }}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, marginRight: 4 }}>
-                <div style={{ fontSize: 16, color: "#ffffff66", fontFamily: "Spectral,serif", letterSpacing: 1, fontWeight: 700 }}>RUNES</div>
+                <div style={{ fontSize: 12, color: "#ffffff66", fontFamily: "Spectral,serif", letterSpacing: 1, fontWeight: 700 }}>RUNES</div>
                 <div style={{ fontSize: 16, color: "#ffffff55", fontFamily: "Spectral,serif", fontWeight: 700 }}>{prc}/12</div>
                 <div style={{ fontSize: 15, color: untapped > 0 ? "#4ADE80" : "#ff666688", fontFamily: "Spectral,serif", fontWeight: 700 }}>{untapped} ready</div>
               </div>
@@ -7331,7 +7331,7 @@ function RiftboundGame() {
               onDragLeave={function() { setDragOverBase(false); }}
               onDrop={canMoveOwn && !tm && !fc ? function(e) { e.preventDefault(); setDragOverBase(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var type = parts[0]; var uid2 = parts[1]; if (type === "gear") { detachGear(uid2); } else if (type === "bf" || type === "bin") { returnToBase(uid2); } else { var card = null; if (type === "hand") { card = myCur.hand.find(function(c) { return c.uid === uid2; }); } else if (type === "champ") { card = myCur.champion && myCur.champion.uid === uid2 ? myCur.champion : null; } if (card && (card.type === "Unit" || card.type === "Champion" || card.type === "Gear")) { if (type === "champ" && (card.energy === 0 || card.energy === null)) { playChampionToBase(); } else { openPlay(card); } } } } : undefined}
               style={{ display: "flex", flexDirection: "row", gap: 3, padding: "3px 4px", borderRadius: 6, border: dragOverBase ? "2px solid #38bdf8" : "1.5px solid #ffffff35", background: dragOverBase ? "rgba(56,189,248,0.12)" : "transparent", boxShadow: dragOverBase ? "0 0 18px rgba(56,189,248,0.55), inset 0 0 14px rgba(56,189,248,0.18)" : "none", alignItems: "center", justifyContent: "center", flexWrap: "nowrap", flex: 1, height: INNER_H, minHeight: INNER_H, maxHeight: INNER_H, overflow: "visible", transition: "border 0.15s ease, background 0.15s ease, box-shadow 0.15s ease", position: "relative" }}>
-              <div style={{ position: "absolute", left: 6, top: "50%", transform: "translateY(-50%)", fontSize: 16, color: "#ffffff55", fontFamily: "Spectral,serif", letterSpacing: 1, fontWeight: 700, zIndex: 0, pointerEvents: "none" }}>BASE</div>
+              <div style={{ position: "absolute", left: 6, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: "#ffffff55", fontFamily: "Spectral,serif", letterSpacing: 1, fontWeight: 700, zIndex: 0, pointerEvents: "none" }}>BASE</div>
               {myCur.base.map(function(u) {
                 var _wmGear = autoPrompt && autoPrompt.kind === "weaponmasterGear"; var _isAffGear = _wmGear && (autoPrompt.gearUids || []).indexOf(u.uid) >= 0; var _isSelGear = _wmGear && autoPrompt.selectedGearUid === u.uid;
                 var _isGear = u.type === "Gear";
@@ -7369,7 +7369,7 @@ function RiftboundGame() {
               {/* Token pile — 80/20 split: top button opens the type-picker dropdown, bottom button creates a +1 token of the selected type. */}
               <div data-uid={"slot-" + mySlot + "-tokens"} style={{ width: HAND_W, height: HAND_H, borderRadius: 6, background: "linear-gradient(160deg,#1a1a1a,#050505)", border: "2px solid #b8b8b888", display: "flex", flexDirection: "column", flexShrink: 0, position: "relative", overflow: "visible" }}>
                 <div onClick={canMoveOwn ? function(e) { e.stopPropagation(); setShowTokenMenu(function(v) { return !v; }); } : undefined} style={{ flex: "0 0 70%", borderBottom: "1px solid #b8b8b855", display: "flex", alignItems: "center", justifyContent: "center", cursor: canMoveOwn ? "pointer" : "default", padding: "4px 2px", overflow: "hidden" }}>
-                  <span style={{ fontSize: 16, color: "#888", fontFamily: "Spectral,serif", letterSpacing: 2, fontWeight: 700, textShadow: "0 1px 4px #000a", display: "inline-flex", alignItems: "center", gap: 4 }}>TOKEN <span style={{ fontSize: 12 }}>▾</span></span>
+                  <span style={{ fontSize: 12, color: "#888", fontFamily: "Spectral,serif", letterSpacing: 2, fontWeight: 700, textShadow: "0 1px 4px #000a", display: "inline-flex", alignItems: "center", gap: 4 }}>TOKENS <span style={{ fontSize: 10 }}>▾</span></span>
                 </div>
                 <div onClick={canMoveOwn ? function(e) { e.stopPropagation(); var tk = mkToken(tokenType); if (!tk) return; var idx = myActIdx; var _me = ps[idx]; if (!_me) return; if (sd) markSdActed(); var p = Object.assign({}, _me, { base: _me.base.slice() }); p.base.push(Object.assign({}, tk, { exhausted: true, counter: 1 })); aL(pName(idx) + " creates " + tk.name + " token"); var np = ps.slice(); np[idx] = p; setPs(np); } : undefined} style={{ flex: "0 0 30%", display: "flex", alignItems: "center", justifyContent: "center", cursor: canMoveOwn ? "pointer" : "default", background: "rgba(184,184,184,0.14)", borderRadius: "0 0 4px 4px" }}>
                   <span style={{ fontSize: 13, color: "#888", fontFamily: "Spectral,serif", fontWeight: 700, letterSpacing: 1 }}>+1</span>
