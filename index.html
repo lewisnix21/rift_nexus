@@ -337,33 +337,83 @@ var _setHoverTilt = null;
 var _binGearRef = null;
 var _detachGearRef = null;
 var _gvScale = (typeof window !== "undefined" ? Math.min(window.innerHeight / 1080, window.innerWidth / 1920) : 1);
-// Solid drag image: clone the dragged element offscreen at full opacity and hand it to
-// setDragImage, so HTML5 drag shows the actual card visual under the cursor instead of
-// the browser's default translucent ghost. The clone is removed on the next tick (after
-// the browser snapshots it) — no visibility tricks on the source, no custom listeners,
-// so native dragover/drop semantics are untouched.
+// Drag the actual card: suppress the browser's translucent ghost with a 1x1 transparent
+// drag image, then move the source element itself with the cursor by switching it to
+// position:fixed and updating left/top on every drag event. On dragend we restore the
+// original inline styles so React re-renders snap the card back into its slot (or, if the
+// drop removed the card from state, the React unmount takes care of cleanup).
+var _BLANK_DRAG_IMG = (function() {
+  if (typeof Image === "undefined") return null;
+  var img = new Image();
+  img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+  return img;
+})();
 function _solidDragImage(e) {
   try {
     var src = e.currentTarget;
-    if (!src || !e.dataTransfer || !e.dataTransfer.setDragImage) return;
+    if (!src || !e.dataTransfer) return;
+    if (e.dataTransfer.setDragImage && _BLANK_DRAG_IMG) {
+      e.dataTransfer.setDragImage(_BLANK_DRAG_IMG, 0, 0);
+    }
     var r = src.getBoundingClientRect();
-    var clone = src.cloneNode(true);
-    clone.style.position = "fixed";
-    clone.style.top = "-2000px";
-    clone.style.left = "-2000px";
-    clone.style.width = r.width + "px";
-    clone.style.height = r.height + "px";
-    clone.style.opacity = "1";
-    clone.style.pointerEvents = "none";
-    clone.style.margin = "0";
-    clone.style.zIndex = "99999";
-    clone.style.transform = "none";
-    clone.style.transition = "none";
-    document.body.appendChild(clone);
+    var saved = {
+      position: src.style.position,
+      left: src.style.left,
+      top: src.style.top,
+      right: src.style.right,
+      bottom: src.style.bottom,
+      width: src.style.width,
+      height: src.style.height,
+      zIndex: src.style.zIndex,
+      pointerEvents: src.style.pointerEvents,
+      margin: src.style.margin,
+      transform: src.style.transform,
+      transition: src.style.transition
+    };
     var ox = e.clientX - r.left;
     var oy = e.clientY - r.top;
-    e.dataTransfer.setDragImage(clone, ox, oy);
-    setTimeout(function() { try { document.body.removeChild(clone); } catch (_) {} }, 0);
+    src.style.position = "fixed";
+    src.style.left = r.left + "px";
+    src.style.top = r.top + "px";
+    src.style.right = "auto";
+    src.style.bottom = "auto";
+    src.style.width = r.width + "px";
+    src.style.height = r.height + "px";
+    src.style.zIndex = "99999";
+    src.style.pointerEvents = "none";
+    src.style.margin = "0";
+    src.style.transform = "none";
+    src.style.transition = "none";
+    var moveHandler = function(ev) {
+      if (!ev) return;
+      // Source-side 'drag' event reports (0,0) when the cursor isn't over a valid drop target
+      // in some browsers; skip those frames so the card doesn't snap to the corner.
+      if (ev.clientX === 0 && ev.clientY === 0) return;
+      src.style.left = (ev.clientX - ox) + "px";
+      src.style.top = (ev.clientY - oy) + "px";
+    };
+    var endHandler = function() {
+      try { document.removeEventListener("dragover", moveHandler); } catch (_) {}
+      try { document.removeEventListener("drag", moveHandler); } catch (_) {}
+      try {
+        src.style.position = saved.position;
+        src.style.left = saved.left;
+        src.style.top = saved.top;
+        src.style.right = saved.right;
+        src.style.bottom = saved.bottom;
+        src.style.width = saved.width;
+        src.style.height = saved.height;
+        src.style.zIndex = saved.zIndex;
+        src.style.pointerEvents = saved.pointerEvents;
+        src.style.margin = saved.margin;
+        src.style.transform = saved.transform;
+        src.style.transition = saved.transition;
+      } catch (_) {}
+      try { src.removeEventListener("dragend", endHandler); } catch (_) {}
+    };
+    document.addEventListener("dragover", moveHandler);
+    document.addEventListener("drag", moveHandler);
+    src.addEventListener("dragend", endHandler);
   } catch (_) {}
 }
 if (typeof window !== "undefined") { window.addEventListener("resize", function() { _gvScale = Math.min(window.innerHeight / 1080, window.innerWidth / 1920); }); }
