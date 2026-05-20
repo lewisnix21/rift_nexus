@@ -791,12 +791,15 @@ function RiftboundGame() {
     return function() { document.removeEventListener("dragend", clear); document.removeEventListener("drop", clear); };
   }, []);
   // Fire the turn-change banner for every connected client when the active player changes.
+  // Gated to the actual play/showdown screens so it doesn't pop during BF selection,
+  // dice-rolling, mulligan, or other pre-game phases.
   useEffect(function() {
     if (typeof act !== "number") return;
+    if (screen !== "play" && screen !== "sd") return;
     setTurnBanner({ ts: Date.now() });
     var t = setTimeout(function() { setTurnBanner(null); }, 1800);
     return function() { clearTimeout(t); };
-  }, [act]);
+  }, [act, screen]);
   var _dob = useState(false), dragOverBase = _dob[0], setDragOverBase = _dob[1];
   var _hs = useState("drawn"), handSort = _hs[0], setHandSort = _hs[1];
   var _hovSize = useState(function() { try { var v = parseFloat(localStorage.getItem("riftNexusHoverSize")); return isFinite(v) && v >= 1.5 && v <= 5.5 ? v : 3.5; } catch(e) { return 3.5; } }), hoverSize = _hovSize[0], setHoverSize = _hovSize[1];
