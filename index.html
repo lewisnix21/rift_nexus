@@ -337,83 +337,33 @@ var _setHoverTilt = null;
 var _binGearRef = null;
 var _detachGearRef = null;
 var _gvScale = (typeof window !== "undefined" ? Math.min(window.innerHeight / 1080, window.innerWidth / 1920) : 1);
-// Drag the actual card: suppress the browser's translucent ghost with a 1x1 transparent
-// drag image, then move the source element itself with the cursor by switching it to
-// position:fixed and updating left/top on every drag event. On dragend we restore the
-// original inline styles so React re-renders snap the card back into its slot (or, if the
-// drop removed the card from state, the React unmount takes care of cleanup).
-var _BLANK_DRAG_IMG = (function() {
-  if (typeof Image === "undefined") return null;
-  var img = new Image();
-  img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-  return img;
-})();
+// Solid drag image: feed setDragImage an offscreen full-opacity clone of the source so
+// the cursor carries an opaque copy of the actual card instead of the browser's default
+// translucent ghost. The clone lives for one frame (just long enough for the browser to
+// snapshot it) then gets removed. No source-element mutation, no extra listeners — the
+// native HTML5 drag/drop flow is untouched.
 function _solidDragImage(e) {
   try {
     var src = e.currentTarget;
-    if (!src || !e.dataTransfer) return;
-    if (e.dataTransfer.setDragImage && _BLANK_DRAG_IMG) {
-      e.dataTransfer.setDragImage(_BLANK_DRAG_IMG, 0, 0);
-    }
+    if (!src || !e.dataTransfer || !e.dataTransfer.setDragImage) return;
     var r = src.getBoundingClientRect();
-    var saved = {
-      position: src.style.position,
-      left: src.style.left,
-      top: src.style.top,
-      right: src.style.right,
-      bottom: src.style.bottom,
-      width: src.style.width,
-      height: src.style.height,
-      zIndex: src.style.zIndex,
-      pointerEvents: src.style.pointerEvents,
-      margin: src.style.margin,
-      transform: src.style.transform,
-      transition: src.style.transition
-    };
+    var clone = src.cloneNode(true);
+    clone.style.position = "fixed";
+    clone.style.top = "-2000px";
+    clone.style.left = "-2000px";
+    clone.style.width = r.width + "px";
+    clone.style.height = r.height + "px";
+    clone.style.opacity = "1";
+    clone.style.pointerEvents = "none";
+    clone.style.margin = "0";
+    clone.style.zIndex = "99999";
+    clone.style.transform = "none";
+    clone.style.transition = "none";
+    document.body.appendChild(clone);
     var ox = e.clientX - r.left;
     var oy = e.clientY - r.top;
-    src.style.position = "fixed";
-    src.style.left = r.left + "px";
-    src.style.top = r.top + "px";
-    src.style.right = "auto";
-    src.style.bottom = "auto";
-    src.style.width = r.width + "px";
-    src.style.height = r.height + "px";
-    src.style.zIndex = "99999";
-    src.style.pointerEvents = "none";
-    src.style.margin = "0";
-    src.style.transform = "none";
-    src.style.transition = "none";
-    var moveHandler = function(ev) {
-      if (!ev) return;
-      // Source-side 'drag' event reports (0,0) when the cursor isn't over a valid drop target
-      // in some browsers; skip those frames so the card doesn't snap to the corner.
-      if (ev.clientX === 0 && ev.clientY === 0) return;
-      src.style.left = (ev.clientX - ox) + "px";
-      src.style.top = (ev.clientY - oy) + "px";
-    };
-    var endHandler = function() {
-      try { document.removeEventListener("dragover", moveHandler); } catch (_) {}
-      try { document.removeEventListener("drag", moveHandler); } catch (_) {}
-      try {
-        src.style.position = saved.position;
-        src.style.left = saved.left;
-        src.style.top = saved.top;
-        src.style.right = saved.right;
-        src.style.bottom = saved.bottom;
-        src.style.width = saved.width;
-        src.style.height = saved.height;
-        src.style.zIndex = saved.zIndex;
-        src.style.pointerEvents = saved.pointerEvents;
-        src.style.margin = saved.margin;
-        src.style.transform = saved.transform;
-        src.style.transition = saved.transition;
-      } catch (_) {}
-      try { src.removeEventListener("dragend", endHandler); } catch (_) {}
-    };
-    document.addEventListener("dragover", moveHandler);
-    document.addEventListener("drag", moveHandler);
-    src.addEventListener("dragend", endHandler);
+    e.dataTransfer.setDragImage(clone, ox, oy);
+    setTimeout(function() { try { document.body.removeChild(clone); } catch (_) {} }, 0);
   } catch (_) {}
 }
 if (typeof window !== "undefined") { window.addEventListener("resize", function() { _gvScale = Math.min(window.innerHeight / 1080, window.innerWidth / 1920); }); }
@@ -675,18 +625,17 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
         {card.damage > 0 && <div title={dmgTitle} style={{ position: "absolute", bottom: zoomed ? 8 : 3, right: zoomed ? 8 : 3, background: "#DC2626ee", color: "#fff", borderRadius: 20, padding: zoomed ? "2px 10px" : "0 4px", fontSize: zoomed ? 17 : small ? 7 : 9, fontWeight: 800, boxShadow: "0 2px 6px #000a", border: "1px solid #fff3", zIndex: 4, cursor: dmgTitle ? "help" : "default", animation: dmgPulse ? "damageBadgePulse 500ms ease-out 1" : "none", transformOrigin: "center center" }}>-{card.damage}</div>}
         {card.stunned && (function() { var T = Math.max(4, Math.round(w / 18)); var A = Math.max(3, Math.round(T * 0.65)); var pts = []; var x, y; for (x = 0; x <= w; x += T) pts.push([x, (Math.round(x / T) % 2 === 0) ? 0 : A]); for (y = T; y <= h; y += T) pts.push([(Math.round(y / T) % 2 === 0) ? w : w - A, y]); for (x = w - T; x >= 0; x -= T) pts.push([x, (Math.round(x / T) % 2 === 0) ? h : h - A]); for (y = h - T; y > 0; y -= T) pts.push([(Math.round(y / T) % 2 === 0) ? 0 : A, y]); var dPath = "M " + pts[0][0] + "," + pts[0][1] + " " + pts.slice(1).map(function(p){return "L " + p[0] + "," + p[1];}).join(" ") + " Z"; return <svg className="anim-stun-pulse" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 5, overflow: "visible" }} viewBox={"0 0 " + w + " " + h} preserveAspectRatio="none"><path d={dPath} fill="none" stroke="#7dd3fc" strokeWidth="2.5" strokeLinejoin="miter" style={{ filter: "drop-shadow(0 0 4px #38bdf8) drop-shadow(0 0 8px #38bdf8aa)" }} /></svg>; })()}
         {card.counter2 !== 0 && card.counter2 !== undefined && card.type !== "Gear" && <div style={{ position: "absolute", top: -8, right: -8, background: "#991b1b", color: "#fecaca", borderRadius: 10, minWidth: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, boxShadow: "0 2px 6px #000a", zIndex: 5, padding: "0 3px" }}>{card.counter2 > 0 ? "+" : ""}{card.counter2}</div>}
-        {card.counter !== 0 && card.counter !== undefined && card.type !== "Gear" && <div style={{ position: "absolute", top: -8, right: (card.counter2 ? 18 : -8), background: "#166534", color: "#4ADE80", borderRadius: 10, minWidth: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, boxShadow: "0 2px 6px #000a", zIndex: 5, padding: "0 3px" }}>{card.counter > 0 ? "+" : ""}{card.counter}</div>}
         {isUnit && (buff + gearMight + (card.counter || 0)) > 0 && <div style={{ position: "absolute", top: small ? 2 : 3, right: small ? 2 : 3, background: "#16A34Aee", color: "#fff", borderRadius: "50%", width: small ? Math.round(15 * _tinyMul) : 20, height: small ? Math.round(15 * _tinyMul) : 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: small ? Math.round(7 * _tinyMul) : 10, fontWeight: 800, zIndex: 4, boxShadow: "0 1px 4px #000a", border: "1px solid #fff4", animation: mightPulse ? "mightBadgePulse 600ms ease-out 1" : "none", transformOrigin: "center center" }}>{(card.might || 0) + buff + gearMight + (card.counter || 0)}</div>}
         {isHov && small && !zoomed && <>
           {onBin && <button onClick={function(e) { e.stopPropagation(); onBin(card.uid); }} style={{ position: "absolute", bottom: -8, left: -8, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.75)", color: "#ffaaaa", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 6 }}>🗑</button>}
-          {onPlus && card.type !== "Gear" && <button onClick={function(e) { e.stopPropagation(); onPlus(card.uid); }} style={{ position: "absolute", top: "15%", right: -12, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #16653488", background: "#166534", color: "#4ADE80", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 6 }}>+</button>}
-          {onMinus && card.type !== "Gear" && <button onClick={function(e) { e.stopPropagation(); onMinus(card.uid); }} style={{ position: "absolute", top: "33%", right: -12, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #16653488", background: "#166534", color: "#4ADE80", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 6 }}>−</button>}
+          {onPlus && card.type !== "Gear" && <button onClick={function(e) { e.stopPropagation(); onPlus(card.uid); }} style={{ position: "absolute", top: -8, right: -8, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #16653488", background: "#166534", color: "#4ADE80", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 6 }}>+</button>}
+          {onMinus && card.type !== "Gear" && <button onClick={function(e) { e.stopPropagation(); onMinus(card.uid); }} style={{ position: "absolute", top: -8, right: 18, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #16653488", background: "#166534", color: "#4ADE80", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 6 }}>−</button>}
           {onPlus2 && card.type !== "Gear" && (showExtraCounter || (card.counter2 || 0) !== 0) && <button onClick={function(e) { e.stopPropagation(); onPlus2(card.uid); }} style={{ position: "absolute", top: "53%", right: -12, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #991b1b88", background: "#991b1b", color: "#fecaca", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 6 }}>+</button>}
           {onMinus2 && card.type !== "Gear" && (showExtraCounter || (card.counter2 || 0) !== 0) && <button onClick={function(e) { e.stopPropagation(); onMinus2(card.uid); }} style={{ position: "absolute", top: "71%", right: -12, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #991b1b88", background: "#991b1b", color: "#fecaca", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 6 }}>−</button>}
           {onArrow && <button onClick={function(e) { e.stopPropagation(); onArrow(card.uid); }} style={{ position: "absolute", top: -8, left: -8, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #3B82F688", background: "rgba(59,130,246,0.75)", color: "#fff", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 6 }}>↗</button>}
           {hasArrow && onRemoveArrow && <button onClick={function(e) { e.stopPropagation(); onRemoveArrow(card.uid); }} title="Remove targeting arrow" style={{ position: "absolute", top: -8, left: 18, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #cc555588", background: "rgba(200,40,40,0.85)", color: "#fff", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 6 }}>↙</button>}
-          {isMine && (onStun || onPlus2) && <button draggable={false} onPointerDown={function(e) { e.preventDefault(); e.stopPropagation(); }} onMouseDown={function(e) { e.preventDefault(); e.stopPropagation(); }} onDragStart={function(e) { e.preventDefault(); e.stopPropagation(); }} onClick={function(e) { e.stopPropagation(); e.preventDefault(); var r = e.currentTarget.getBoundingClientRect(); setMenuPos({ left: r.right + 10, top: r.top + r.height / 2 }); setMenuOpen(!menuOpen); }} title="More" style={{ position: "absolute", bottom: -8, right: -8, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #ffffff55", background: "rgba(40,40,60,0.92)", color: "#e8e8f0", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 1001, fontWeight: 800 }}>☰</button>}
         </>}
+        {isMine && small && !zoomed && (onStun || onPlus2) && <button draggable={false} onMouseDown={function(e) { e.stopPropagation(); }} onClick={function(e) { e.stopPropagation(); var r = e.currentTarget.getBoundingClientRect(); setMenuPos({ left: r.right + 10, top: r.top + r.height / 2 }); setMenuOpen(!menuOpen); }} title="More" style={{ position: "absolute", bottom: -8, right: -8, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #ffffff55", background: "rgba(40,40,60,0.95)", color: "#e8e8f0", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 1001, fontWeight: 800 }}>☰</button>}
         {menuOpen && <>
           <div onClick={function(e) { e.stopPropagation(); setMenuOpen(false); }} style={{ position: "fixed", inset: 0, zIndex: 1099, background: "transparent" }} />
           <div onClick={function(e) { e.stopPropagation(); }} style={{ position: "fixed", left: menuPos.left, top: menuPos.top, transform: "translateY(-50%)", background: "rgba(20,20,38,0.96)", border: "1.5px solid #ffffff40", borderRadius: 6, padding: 4, zIndex: 1100, boxShadow: "0 8px 22px #000c", display: "flex", flexDirection: "column", gap: 2, minWidth: 160 }}>
@@ -748,14 +697,14 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
       {card.counter !== 0 && card.counter !== undefined && card.type !== "Gear" && <div style={{ position: "absolute", top: -8, right: -8, background: card.counter < 0 ? "#DC2626" : "#FFD700", color: card.counter < 0 ? "#fff" : "#000", borderRadius: 10, minWidth: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, boxShadow: "0 2px 6px #000a", zIndex: 5 }}>{card.counter}</div>}
       {isHov && small && !zoomed && <>
         {onBin && <button onClick={function(e) { e.stopPropagation(); onBin(card.uid); }} style={{ position: "absolute", bottom: -8, left: -8, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #cc555588", background: "rgba(160,40,40,0.75)", color: "#ffaaaa", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 6 }}>🗑</button>}
-        {onPlus && card.type !== "Gear" && <button onClick={function(e) { e.stopPropagation(); onPlus(card.uid); }} style={{ position: "absolute", top: "15%", right: -12, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #16653488", background: "#166534", color: "#4ADE80", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 6 }}>+</button>}
-        {onMinus && card.type !== "Gear" && <button onClick={function(e) { e.stopPropagation(); onMinus(card.uid); }} style={{ position: "absolute", top: "33%", right: -12, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #16653488", background: "#166534", color: "#4ADE80", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 6 }}>−</button>}
+        {onPlus && card.type !== "Gear" && <button onClick={function(e) { e.stopPropagation(); onPlus(card.uid); }} style={{ position: "absolute", top: -8, right: -8, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #16653488", background: "#166534", color: "#4ADE80", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 6 }}>+</button>}
+        {onMinus && card.type !== "Gear" && <button onClick={function(e) { e.stopPropagation(); onMinus(card.uid); }} style={{ position: "absolute", top: -8, right: 18, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #16653488", background: "#166534", color: "#4ADE80", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 6 }}>−</button>}
         {onPlus2 && card.type !== "Gear" && (showExtraCounter || (card.counter2 || 0) !== 0) && <button onClick={function(e) { e.stopPropagation(); onPlus2(card.uid); }} style={{ position: "absolute", top: "53%", right: -12, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #991b1b88", background: "#991b1b", color: "#fecaca", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 6 }}>+</button>}
         {onMinus2 && card.type !== "Gear" && (showExtraCounter || (card.counter2 || 0) !== 0) && <button onClick={function(e) { e.stopPropagation(); onMinus2(card.uid); }} style={{ position: "absolute", top: "71%", right: -12, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #991b1b88", background: "#991b1b", color: "#fecaca", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 6 }}>−</button>}
         {onArrow && <button onClick={function(e) { e.stopPropagation(); onArrow(card.uid); }} style={{ position: "absolute", top: -8, left: -8, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #3B82F688", background: "rgba(59,130,246,0.75)", color: "#fff", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 6 }}>↗</button>}
         {hasArrow && onRemoveArrow && <button onClick={function(e) { e.stopPropagation(); onRemoveArrow(card.uid); }} title="Remove targeting arrow" style={{ position: "absolute", top: -8, left: 18, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #cc555588", background: "rgba(200,40,40,0.85)", color: "#fff", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 6 }}>↙</button>}
-        {isMine && (onStun || onPlus2) && <button draggable={false} onPointerDown={function(e) { e.preventDefault(); e.stopPropagation(); }} onMouseDown={function(e) { e.preventDefault(); e.stopPropagation(); }} onDragStart={function(e) { e.preventDefault(); e.stopPropagation(); }} onClick={function(e) { e.stopPropagation(); e.preventDefault(); var r = e.currentTarget.getBoundingClientRect(); setMenuPos({ left: r.right + 10, top: r.top + r.height / 2 }); setMenuOpen(!menuOpen); }} title="More" style={{ position: "absolute", bottom: -8, right: -8, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #ffffff55", background: "rgba(40,40,60,0.92)", color: "#e8e8f0", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 1001, fontWeight: 800 }}>☰</button>}
       </>}
+      {isMine && small && !zoomed && (onStun || onPlus2) && <button draggable={false} onMouseDown={function(e) { e.stopPropagation(); }} onClick={function(e) { e.stopPropagation(); var r = e.currentTarget.getBoundingClientRect(); setMenuPos({ left: r.right + 10, top: r.top + r.height / 2 }); setMenuOpen(!menuOpen); }} title="More" style={{ position: "absolute", bottom: -8, right: -8, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #ffffff55", background: "rgba(40,40,60,0.95)", color: "#e8e8f0", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 1001, fontWeight: 800 }}>☰</button>}
       {menuOpen && <>
         <div onClick={function(e) { e.stopPropagation(); setMenuOpen(false); }} style={{ position: "fixed", inset: 0, zIndex: 1099, background: "transparent" }} />
         <div onClick={function(e) { e.stopPropagation(); }} style={{ position: "fixed", left: menuPos.left, top: menuPos.top, transform: "translateY(-50%)", background: "rgba(20,20,38,0.96)", border: "1.5px solid #ffffff40", borderRadius: 6, padding: 4, zIndex: 1100, boxShadow: "0 8px 22px #000c", display: "flex", flexDirection: "column", gap: 2, minWidth: 160 }}>
