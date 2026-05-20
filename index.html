@@ -589,8 +589,8 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
     ? ("perspective(900px) rotateX(" + _tiltX + "deg) rotateY(" + _tiltY + "deg)" + (_baseRot ? (" rotate(" + _baseRot + "deg)") : ""))
     : "none";
   var wrapS = { width: w, height: h, borderRadius: zoomed ? 10 : small ? 4 : 6, overflow: "visible", flexShrink: 0, position: "relative", border: gearDragOver ? "3px solid #4ADE80" : gankingGlow ? "2.5px solid #4ADE80cc" : (zoomed ? 3 : 2) + "px solid " + borderColor, boxShadow: gearDragOver ? "0 0 20px rgba(74,222,128,0.5), 0 0 40px rgba(74,222,128,0.2), inset 0 0 12px rgba(74,222,128,0.1)" : gankingGlow ? "0 0 14px rgba(74,222,128,0.55), inset 0 0 10px rgba(74,222,128,0.18)" : shadow, cursor: onClick ? "pointer" : "default", background: "#0c0c18", transition: "transform 0.15s ease, border 0.15s ease, box-shadow 0.15s ease", transform: _wrapTransform, transformStyle: "preserve-3d", filter: ex && !zoomed ? "brightness(0.58)" : "none", marginRight: gearExtra };
-  // Source-card tilt removed; pop-out preview still tilts via _setHoverTilt seeded on enter.
-  var _hovTiltMove = undefined;
+  // Subtle source-card tilt (~4deg max); pop-out preview gets a fuller tilt seeded via _setHoverTilt.
+  var _hovTiltMove = (!zoomed && !noTilt) ? function(e) { var rect = e.currentTarget.getBoundingClientRect(); var halfW = rect.width / 2; var halfH = rect.height / 2; var nx = (e.clientX - rect.left - halfW) / halfW; var ny = (e.clientY - rect.top - halfH) / halfH; if (nx > 1) nx = 1; else if (nx < -1) nx = -1; if (ny > 1) ny = 1; else if (ny < -1) ny = -1; setHovTilt({x: nx * 4, y: -ny * 4}); if (_setHoverTilt) _setHoverTilt({x: nx * 12, y: -ny * 12}); } : undefined;
   var _hovTiltLeave = (!zoomed && !noTilt) ? function() { setHovTilt({x: 0, y: 0}); if (_setHoverTilt) _setHoverTilt({x: 0, y: 0}); } : undefined;
   var hCls = zoomed ? "" : (ex ? "card-tapped" : "card-hover");
   var hEnter = !zoomed ? function(e) {
