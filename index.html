@@ -788,6 +788,16 @@ function RiftboundGame() {
   var _anim = useState([]), anims = _anim[0], setAnims = _anim[1];
   var _sbf = useState(null), selectedBf = _sbf[0], setSelectedBf = _sbf[1];
   var _du = useState(null), dragUnit = _du[0], setDragUnit = _du[1];
+  // Global dragend safety net: when the source element unmounts mid-drag (e.g. a hand
+  // spell that just dropped on the showcase is removed by castSpellFromHand), its React
+  // onDragEnd never fires, leaving dragUnit set and the spell-drag highlight stuck on.
+  // Listening at document level guarantees dragUnit always clears once the drag finishes.
+  useEffect(function() {
+    function clear() { setDragUnit(null); }
+    document.addEventListener("dragend", clear);
+    document.addEventListener("drop", clear);
+    return function() { document.removeEventListener("dragend", clear); document.removeEventListener("drop", clear); };
+  }, []);
   var _dob = useState(false), dragOverBase = _dob[0], setDragOverBase = _dob[1];
   var _hs = useState("drawn"), handSort = _hs[0], setHandSort = _hs[1];
   var _hovSize = useState(function() { try { var v = parseFloat(localStorage.getItem("riftNexusHoverSize")); return isFinite(v) && v >= 1.5 && v <= 5.5 ? v : 3.5; } catch(e) { return 3.5; } }), hoverSize = _hovSize[0], setHoverSize = _hovSize[1];
