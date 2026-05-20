@@ -7006,7 +7006,7 @@ function RiftboundGame() {
                             // total = eaw + (total - 1) * (eaw + ml) ≤ _maxHandW
                             var _maxMl = (_maxHandW - eaw) / (total - 1) - eaw;
                             ml = Math.floor(Math.min(_maxMl, -12));
-                            if (ml < -(eaw - 25)) ml = -(eaw - 25);
+                            if (ml < -(eaw - 6)) ml = -(eaw - 6);
                           } else {
                             ml = total > 7 ? -68 : total > 5 ? -38 : -12;
                           }
