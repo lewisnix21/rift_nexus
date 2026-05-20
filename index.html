@@ -337,33 +337,19 @@ var _setHoverTilt = null;
 var _binGearRef = null;
 var _detachGearRef = null;
 var _gvScale = (typeof window !== "undefined" ? Math.min(window.innerHeight / 1080, window.innerWidth / 1920) : 1);
-// Solid drag image: feed setDragImage an offscreen full-opacity clone of the source so
-// the cursor carries an opaque copy of the actual card instead of the browser's default
-// translucent ghost. The clone lives for one frame (just long enough for the browser to
-// snapshot it) then gets removed. No source-element mutation, no extra listeners — the
-// native HTML5 drag/drop flow is untouched.
+// Drag image: hand the source element straight to setDragImage with a cursor-relative
+// offset. No cloneNode/appendChild — those were adding a layout pass during dragstart
+// that made fast click+drag feel unresponsive (the browser would sometimes drop the
+// drag because the handler hadn't returned by the time the user had moved past the
+// drag threshold). Using the source directly is what the browser does by default; this
+// call just locks in the cursor offset so the drag image sits exactly under the grab
+// point regardless of where on the card the user clicked.
 function _solidDragImage(e) {
   try {
     var src = e.currentTarget;
     if (!src || !e.dataTransfer || !e.dataTransfer.setDragImage) return;
     var r = src.getBoundingClientRect();
-    var clone = src.cloneNode(true);
-    clone.style.position = "fixed";
-    clone.style.top = "-2000px";
-    clone.style.left = "-2000px";
-    clone.style.width = r.width + "px";
-    clone.style.height = r.height + "px";
-    clone.style.opacity = "1";
-    clone.style.pointerEvents = "none";
-    clone.style.margin = "0";
-    clone.style.zIndex = "99999";
-    clone.style.transform = "none";
-    clone.style.transition = "none";
-    document.body.appendChild(clone);
-    var ox = e.clientX - r.left;
-    var oy = e.clientY - r.top;
-    e.dataTransfer.setDragImage(clone, ox, oy);
-    setTimeout(function() { try { document.body.removeChild(clone); } catch (_) {} }, 0);
+    e.dataTransfer.setDragImage(src, e.clientX - r.left, e.clientY - r.top);
   } catch (_) {}
 }
 if (typeof window !== "undefined") { window.addEventListener("resize", function() { _gvScale = Math.min(window.innerHeight / 1080, window.innerWidth / 1920); }); }
