@@ -6990,9 +6990,9 @@ function RiftboundGame() {
         </div>;
       })()}
 
-      {/* Awaken phase overlay */}
-      {awakenPhase && <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: 40, background: "linear-gradient(90deg,transparent,#FFD70015,transparent)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 800, pointerEvents: "none" }}>
-        <span className="anim-pulse" style={{ fontFamily: "Rajdhani,sans-serif", fontSize: 18, fontWeight: 700, color: "#FFD700", letterSpacing: 3, textTransform: "uppercase" }}>{pName(act)} — New Turn</span>
+      {/* Awaken phase overlay — centered, opaque notice while the new turn awakens */}
+      {awakenPhase && <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", padding: "26px 56px", borderRadius: 12, background: "linear-gradient(160deg,#1a1a3a,#12122a)", border: "2.5px solid #FFD700", boxShadow: "0 0 36px rgba(255,215,0,0.55), 0 0 80px rgba(255,215,0,0.25), 0 14px 44px #000c", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1500, pointerEvents: "none" }}>
+        <span className="anim-pulse" style={{ fontFamily: "Rajdhani,sans-serif", fontSize: 28, fontWeight: 700, color: "#FFD700", letterSpacing: 4, textTransform: "uppercase", textShadow: "0 0 14px #FFD700aa, 0 0 32px #FFD70055" }}>{pName(act)} — New Turn</span>
       </div>}
 
       <div style={{ flex: 1, minHeight: 0, display: "flex", overflow: "visible", backgroundColor: "#3a2a20", backgroundImage: "radial-gradient(ellipse 90% 60% at 50% 50%, transparent 0%, rgba(0,0,0,0.45) 100%), url('bg-stone.png')", backgroundSize: "auto, 512px 512px", backgroundRepeat: "no-repeat, repeat" }}>
