@@ -337,66 +337,33 @@ var _setHoverTilt = null;
 var _binGearRef = null;
 var _detachGearRef = null;
 var _gvScale = (typeof window !== "undefined" ? Math.min(window.innerHeight / 1080, window.innerWidth / 1920) : 1);
-// Live drag follower: instead of the browser's translucent ghost, clone the dragged
-// element at full opacity into a fixed-position node that tracks the cursor on every
-// dragover. The source element is hidden via visibility:hidden so the card visibly
-// "leaves" its slot during the drag, and is restored on dragend.
-var _dragState = null;
-function _customDragEnd() {
-  var st = _dragState;
-  if (!st) return;
-  try { document.removeEventListener("dragover", st.moveHandler); } catch (_) {}
-  try { document.removeEventListener("drag", st.moveHandler); } catch (_) {}
-  try { if (st.clone && st.clone.parentNode) st.clone.parentNode.removeChild(st.clone); } catch (_) {}
-  try { if (st.src) st.src.style.visibility = st.prevVisibility || ""; } catch (_) {}
-  _dragState = null;
-}
+// Solid drag image: clone the dragged element offscreen at full opacity and hand it to
+// setDragImage, so HTML5 drag shows the actual card visual under the cursor instead of
+// the browser's default translucent ghost. The clone is removed on the next tick (after
+// the browser snapshots it) — no visibility tricks on the source, no custom listeners,
+// so native dragover/drop semantics are untouched.
 function _solidDragImage(e) {
   try {
     var src = e.currentTarget;
-    if (!src || !e.dataTransfer) return;
-    // Clean up any stale state from a previous drag that didn't fire dragend.
-    if (_dragState) _customDragEnd();
+    if (!src || !e.dataTransfer || !e.dataTransfer.setDragImage) return;
     var r = src.getBoundingClientRect();
     var clone = src.cloneNode(true);
     clone.style.position = "fixed";
-    clone.style.left = r.left + "px";
-    clone.style.top = r.top + "px";
+    clone.style.top = "-2000px";
+    clone.style.left = "-2000px";
     clone.style.width = r.width + "px";
     clone.style.height = r.height + "px";
     clone.style.opacity = "1";
     clone.style.pointerEvents = "none";
     clone.style.margin = "0";
     clone.style.zIndex = "99999";
-    // Strip any inherited transforms (card hover tilt etc.) so the clone reads as a clean
-    // upright copy of the source asset.
     clone.style.transform = "none";
     clone.style.transition = "none";
     document.body.appendChild(clone);
-    // Hide the browser's default translucent drag image by handing it a 1x1 transparent pixel.
-    try {
-      if (e.dataTransfer.setDragImage) {
-        var blank = new Image();
-        blank.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-        e.dataTransfer.setDragImage(blank, 0, 0);
-      }
-    } catch (_) {}
-    var prevVisibility = src.style.visibility || "";
-    src.style.visibility = "hidden";
     var ox = e.clientX - r.left;
     var oy = e.clientY - r.top;
-    var moveHandler = function(ev) {
-      if (!ev) return;
-      // Browsers sometimes report (0,0) on the source-side 'drag' event when not over a target;
-      // ignore those frames to avoid the clone snapping to the corner.
-      if (ev.clientX === 0 && ev.clientY === 0) return;
-      clone.style.left = (ev.clientX - ox) + "px";
-      clone.style.top = (ev.clientY - oy) + "px";
-    };
-    document.addEventListener("dragover", moveHandler);
-    document.addEventListener("drag", moveHandler);
-    _dragState = { clone: clone, src: src, moveHandler: moveHandler, prevVisibility: prevVisibility };
-    src.addEventListener("dragend", _customDragEnd, { once: true });
+    e.dataTransfer.setDragImage(clone, ox, oy);
+    setTimeout(function() { try { document.body.removeChild(clone); } catch (_) {} }, 0);
   } catch (_) {}
 }
 if (typeof window !== "undefined") { window.addEventListener("resize", function() { _gvScale = Math.min(window.innerHeight / 1080, window.innerWidth / 1920); }); }
