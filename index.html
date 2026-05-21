@@ -337,80 +337,20 @@ var _setHoverTilt = null;
 var _binGearRef = null;
 var _detachGearRef = null;
 var _gvScale = (typeof window !== "undefined" ? Math.min(window.innerHeight / 1080, window.innerWidth / 1920) : 1);
-// Drag image + custom follower:
-// - The browser's native drag image is suppressed with a 1x1 transparent setDragImage
-//   so we control the visual entirely.
-// - The source itself is faded to opacity:0 via React state (each render checks
-//   dragUnit.uid === card.uid), so the slot reads as empty during the drag.
-// - A clone of the source is appended to document.body at full opacity and tracked
-//   to the cursor on every drag/dragover event. It tilts based on cursor velocity
-//   for a "card swinging with the move direction" feel.
-// - On dragend (or as a safety net from the document-level dragend listener) the
-//   follower is removed.
-var _BLANK_DRAG_IMG = (function() {
-  if (typeof Image === "undefined") return null;
-  var img = new Image();
-  img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-  return img;
-})();
-var _dragFollow = null;
-function _dragFollowMove(ev) {
-  var st = _dragFollow;
-  if (!st || !ev) return;
-  if (ev.clientX === 0 && ev.clientY === 0) return;
-  var now = (typeof performance !== "undefined" ? performance.now() : Date.now());
-  var dt = Math.max(1, now - st.lastT);
-  var rawVx = (ev.clientX - st.lastX) / dt;
-  var rawVy = (ev.clientY - st.lastY) / dt;
-  st.vx = st.vx * 0.55 + rawVx * 0.45;
-  st.vy = st.vy * 0.55 + rawVy * 0.45;
-  st.lastX = ev.clientX; st.lastY = ev.clientY; st.lastT = now;
-  var tiltY = Math.max(-22, Math.min(22, st.vx * 80));
-  var tiltX = Math.max(-22, Math.min(22, -st.vy * 80));
-  st.el.style.left = (ev.clientX - st.ox) + "px";
-  st.el.style.top = (ev.clientY - st.oy) + "px";
-  st.el.style.transform = "perspective(900px) rotateY(" + tiltY + "deg) rotateX(" + tiltX + "deg)";
-}
-function _dragFollowCleanup() {
-  var st = _dragFollow;
-  if (!st) return;
-  try { document.removeEventListener("drag", _dragFollowMove); } catch (_) {}
-  try { document.removeEventListener("dragover", _dragFollowMove); } catch (_) {}
-  try { if (st.el && st.el.parentNode) st.el.parentNode.removeChild(st.el); } catch (_) {}
-  _dragFollow = null;
-}
+// Drag image: hand the source straight to setDragImage with a cursor-relative offset.
+// Browser draws its own (slightly translucent) snapshot of the source under the cursor.
+// State-driven opacity (dragUnit.uid === card.uid -> opacity:0) hides the original in
+// its slot so visually the card "leaves" and the ghost follows. Native HTML5 drag/drop
+// wiring is completely untouched — drops fire reliably.
 function _solidDragImage(e) {
   try {
     var src = e.currentTarget;
-    if (!src || !e.dataTransfer) return;
-    // Replace any stale follower from a drag that didn't fire its dragend.
-    if (_dragFollow) _dragFollowCleanup();
-    // Suppress the browser's native (translucent) drag ghost.
-    if (e.dataTransfer.setDragImage && _BLANK_DRAG_IMG) {
-      e.dataTransfer.setDragImage(_BLANK_DRAG_IMG, 0, 0);
-    }
+    if (!src || !e.dataTransfer || !e.dataTransfer.setDragImage) return;
     var r = src.getBoundingClientRect();
-    var ox = e.clientX - r.left;
-    var oy = e.clientY - r.top;
-    var follower = src.cloneNode(true);
-    follower.style.position = "fixed";
-    follower.style.left = r.left + "px";
-    follower.style.top = r.top + "px";
-    follower.style.width = r.width + "px";
-    follower.style.height = r.height + "px";
-    follower.style.margin = "0";
-    follower.style.opacity = "1";
-    follower.style.pointerEvents = "none";
-    follower.style.zIndex = "99999";
-    follower.style.transform = "none";
-    follower.style.transition = "transform 90ms ease-out";
-    document.body.appendChild(follower);
-    var now = (typeof performance !== "undefined" ? performance.now() : Date.now());
-    _dragFollow = { el: follower, ox: ox, oy: oy, lastX: e.clientX, lastY: e.clientY, lastT: now, vx: 0, vy: 0 };
-    document.addEventListener("drag", _dragFollowMove);
-    document.addEventListener("dragover", _dragFollowMove);
+    e.dataTransfer.setDragImage(src, e.clientX - r.left, e.clientY - r.top);
   } catch (_) {}
 }
+function _dragFollowCleanup() { /* no-op; kept so the existing useEffect cleaner stays valid */ }
 if (typeof window !== "undefined") { window.addEventListener("resize", function() { _gvScale = Math.min(window.innerHeight / 1080, window.innerWidth / 1920); }); }
 
 // Default silhouette icon — rendered when a player has no photoURL.
@@ -6602,7 +6542,7 @@ function RiftboundGame() {
         var _imgBoxShadow = (autoMode && playable) ? "0 0 22px rgba(59,130,246,1), 0 0 44px rgba(59,130,246,0.65), 0 4px 16px #000a" : "0 4px 16px #000a";
         var _imgStyle = { position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)", width: _imgW + "px", height: _imgH + "px", objectFit: "fill", display: "block", border: _imgBorder, borderRadius: 6, boxShadow: _imgBoxShadow, boxSizing: "border-box", pointerEvents: "auto", transition: "width 200ms ease-out, height 200ms ease-out, border 0.15s ease, box-shadow 0.2s ease" };
         var _isBeingDragged = !!(dragUnit && dragUnit.uid === c.uid);
-        var _normalStyle = { width: aw, height: ah, borderRadius: 6, overflow: "visible", flexShrink: 0, cursor: "pointer", transform: _normTransform, transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -45 : total > 5 ? -24 : 0), transition: "transform 200ms ease-out", position: "relative", zIndex: _isHov ? 999 : i, opacity: _isBeingDragged ? 0 : 1, pointerEvents: _isBeingDragged ? "none" : "auto" };
+        var _normalStyle = { width: aw, height: ah, borderRadius: 6, overflow: "visible", flexShrink: 0, cursor: "pointer", transform: _normTransform, transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -45 : total > 5 ? -24 : 0), transition: "transform 200ms ease-out", position: "relative", zIndex: _isHov ? 999 : i, opacity: _isBeingDragged ? 0 : 1 };
         var _handDraggable = canMoveOwn && playable && !tm && !fc;
         var _handPlayNow = canMoveOwn && playable && !tm && !fc ? function() { if (c.type === "Spell") { castSpellFromHand(c, null); } else { onPlay(c); } if (sd) markSdActed(); } : null;
         var _handClick = _handPlayNow ? function(e) { if (e && e.stopPropagation) e.stopPropagation(); _handPlayNow(); } : undefined;
