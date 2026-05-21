@@ -337,18 +337,31 @@ var _setHoverTilt = null;
 var _binGearRef = null;
 var _detachGearRef = null;
 var _gvScale = (typeof window !== "undefined" ? Math.min(window.innerHeight / 1080, window.innerWidth / 1920) : 1);
-// Drag image: hand the source element to setDragImage with a cursor-relative offset.
-// Uses the browser's native HTML5 drag (slightly translucent snapshot follows the cursor).
-// No source mutation, no extra listeners — drops fire reliably on every target.
+// Drag image + source hide: browser snapshots the source at dragstart and uses that
+// snapshot as the drag image that follows the cursor. We then fade the source to
+// opacity:0 (and pointer-events:none so drop targets underneath still receive events)
+// so visually only the moving snapshot is on screen — the original slot reads as empty
+// and the card "follows the cursor". No clones, no source-relocation, no document
+// listeners — native HTML5 drag/drop wiring is untouched and drops fire reliably.
 function _solidDragImage(e) {
   try {
     var src = e.currentTarget;
     if (!src || !e.dataTransfer || !e.dataTransfer.setDragImage) return;
     var r = src.getBoundingClientRect();
     e.dataTransfer.setDragImage(src, e.clientX - r.left, e.clientY - r.top);
+    var savedOpacity = src.style.opacity;
+    var savedPE = src.style.pointerEvents;
+    // Defer one frame so the browser's snapshot of the source is taken at full opacity.
+    requestAnimationFrame(function() {
+      try { src.style.opacity = "0"; src.style.pointerEvents = "none"; } catch (_) {}
+    });
+    src.addEventListener("dragend", function _e() {
+      try { src.style.opacity = savedOpacity; src.style.pointerEvents = savedPE; } catch (_) {}
+      try { src.removeEventListener("dragend", _e); } catch (_) {}
+    });
   } catch (_) {}
 }
-function _dragFollowCleanup() { /* no-op — kept so useEffect cleaner that calls this stays valid */ }
+function _dragFollowCleanup() { /* no-op — preserved so the existing useEffect cleaner remains valid */ }
 if (typeof window !== "undefined") { window.addEventListener("resize", function() { _gvScale = Math.min(window.innerHeight / 1080, window.innerWidth / 1920); }); }
 
 // Default silhouette icon — rendered when a player has no photoURL.
@@ -793,12 +806,14 @@ function RiftboundGame() {
     document.addEventListener("mouseup", clear);
     return function() { document.removeEventListener("dragend", clear); document.removeEventListener("drop", clear); document.removeEventListener("mouseup", clear); };
   }, []);
-  // Fire the turn-change banner for every connected client when the active player changes.
-  // Gated to the actual play/showdown screens so it doesn't pop during BF selection,
-  // dice-rolling, mulligan, or other pre-game phases.
+  // Fire the turn-change banner only when the active player actually changes (track
+  // previous via ref). Screen flips like play->sd shouldn't re-fire the banner.
+  var _prevActRef = useRef(null);
   useEffect(function() {
     if (typeof act !== "number") return;
-    if (screen !== "play" && screen !== "sd") return;
+    if (screen !== "play" && screen !== "sd") { _prevActRef.current = act; return; }
+    if (_prevActRef.current === act) return;
+    _prevActRef.current = act;
     setTurnBanner({ ts: Date.now() });
     var t = setTimeout(function() { setTurnBanner(null); }, 1800);
     return function() { clearTimeout(t); };
@@ -7222,7 +7237,7 @@ function RiftboundGame() {
           })()}
 
           {/* ROW 3: BATTLEFIELDS — fixed static size */}
-          <div onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverBf(-1); }} style={{ display: "flex", gap: 12, padding: "2px 5%", flex: "0 0 auto", height: BF_ROW_H, minHeight: BF_ROW_H, maxHeight: BF_ROW_H, position: "relative", zIndex: 3, overflow: "hidden", backgroundColor: "transparent" }}>
+          <div onDragLeave={function(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverBf(-1); }} style={{ display: "flex", gap: 12, padding: "2px 5%", flex: "0 0 auto", height: BF_ROW_H, minHeight: BF_ROW_H, maxHeight: BF_ROW_H, position: "relative", zIndex: 50, overflow: "visible", backgroundColor: "transparent" }}>
             {bfs.map(function(bf, bi) {
               var bottomPlayer = isOnlineGame ? mySlot : (isSD && sd ? sd.atkIdx : act);
               var bfImg = CI[bf.name] ? imgSrc(CI[bf.name]) : (PA[bf.name] ? PA_CDN + PA[bf.name] + ".webp" : "");
@@ -7275,7 +7290,7 @@ function RiftboundGame() {
                       </div>
                     </div>
                     {/* RIGHT: column with enemy units (top) + friendly units (bottom) */}
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "center", overflow: "visible", minWidth: 0, padding: "2px 0" }}>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "center", overflow: "visible", minWidth: 0, padding: "0 0 2px 0" }}>
                       {/* Enemy units (top) */}
                       <div style={{ display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "flex-start", flexWrap: "nowrap", overflow: "visible" }}>
                         {ps.map(function(p, pi) { if (pi === bottomPlayer || !bf.units[pi] || bf.units[pi].length === 0) return null; var isMyUnits = pi === myActIdx; var units = bf.units[pi]; var totalU = units.length; var overlapPx = totalU <= 2 ? 0 : totalU === 3 ? 12 : totalU === 4 ? 24 : totalU === 5 ? 36 : 48; return units.map(function(u, ui) { var wrapStyle = { marginLeft: ui === 0 ? 0 : Math.round(-overlapPx * vScale), zIndex: totalU - ui, position: "relative", flexShrink: 0 }; var _fizzle = getAnimType(u.uid) === "fizzle" ? "anim-fizzle" : ""; var _deadCls = u.dead ? " card-dead" : ""; var _sdGlow = (isMyUnits && sd && sd.assignmentPhase && bi === sd.bfIdx) ? (damageAssignments[u.uid] ? " sd-glow-red" : " sd-glow-blue") : ""; var _tilt = !!(_sdGlow && u.exhausted); var _glowStyle = { borderRadius: 6, transform: _tilt ? "rotate(20deg)" : "none", transition: "box-shadow 0.18s ease, transform 0.18s ease" }; return isMyUnits ? <div key={u.uid} className={_fizzle + _deadCls} style={wrapStyle}><div className={_sdGlow.trim()} style={_glowStyle}><Card card={u} small tiny isMine noRotate={_tilt} dragData={undefined} onClick={function() { if (showdownUnitClick(u, true)) return; if (autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0))) { toggleAutoSel(u.uid); return; } toggleTap(u.uid); }} actionLabel={autoPrompt && (autoPrompt.kind === "pickFriendlyUnits" || (autoPrompt.kind === "pickAnyUnit" && (autoPrompt.validUids || []).indexOf(u.uid) >= 0)) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (u.exhausted ? "Untap" : "Tap")} selected={!!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} onBin={function(uid2) { sendToBin(uid2); }} onPlus={function(uid2) { addCounter(uid2, 1); }} onMinus={function(uid2) { addCounter(uid2, -1); }} onPlus2={function(uid2) { addCounter2(uid2, 1); }} onMinus2={function(uid2) { addCounter2(uid2, -1); }} onResetCounter2={function(uid2) { resetCounter2(uid2); }} onStun={function(uid2) { toggleStun(uid2); }} onGearDrop={function(gUid, uUid) { attachGear(gUid, uUid); }} onHide={function(uid2) { toggleHide(uid2); }} onArrow={function(uid2) { startArrow(uid2); }} hasArrow={cardHasArrow(u.uid)} onRemoveArrow={function(uid2) { removeArrow(uid2); }} onTap={function(uid2) { toggleTap(uid2); }} /></div></div> : <div key={u.uid} className={_fizzle + _deadCls} style={wrapStyle}><Card card={u} small tiny onClick={function() { if (showdownUnitClick(u, false)) return; if (autoPrompt && (autoPrompt.kind === "pickEnemyUnit" || autoPrompt.kind === "pickAnyUnit") && (autoPrompt.validUids || []).indexOf(u.uid) >= 0) { toggleAutoSel(u.uid); return; } if (tm) { resTarget(u, pi, bi); } }} actionLabel={(autoPrompt && (autoPrompt.kind === "pickEnemyUnit" || autoPrompt.kind === "pickAnyUnit") && (autoPrompt.validUids || []).indexOf(u.uid) >= 0) ? ((autoPrompt._sel || []).indexOf(u.uid) >= 0 ? "Selected" : "Pick") : (tm ? "Target" : undefined)} selected={!!(autoPrompt && (autoPrompt._sel || []).indexOf(u.uid) >= 0)} /></div>; }); })}
