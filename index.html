@@ -337,69 +337,16 @@ var _setHoverTilt = null;
 var _binGearRef = null;
 var _detachGearRef = null;
 var _gvScale = (typeof window !== "undefined" ? Math.min(window.innerHeight / 1080, window.innerWidth / 1920) : 1);
-// Drag follower: suppress the browser's translucent ghost with a 1x1 transparent
-// setDragImage, then move the source element itself with the cursor (position:fixed +
-// left/top updates on every drag/dragover) so the actual card visibly leaves its slot
-// while the user drags it. No cloneNode (clones were adding a layout pass that delayed
-// dragstart on fast gestures). On dragend, the original inline styles are restored.
-var _BLANK_DRAG_IMG = (function() {
-  if (typeof Image === "undefined") return null;
-  var img = new Image();
-  img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-  return img;
-})();
+// Drag image: hand the source element straight to setDragImage with a cursor-relative
+// offset. Browser draws its own (slightly translucent) snapshot of the source under
+// the cursor. No cloning, no source mutation, no extra listeners — keeps drop wiring
+// rock solid.
 function _solidDragImage(e) {
   try {
     var src = e.currentTarget;
-    if (!src || !e.dataTransfer) return;
-    if (e.dataTransfer.setDragImage && _BLANK_DRAG_IMG) {
-      e.dataTransfer.setDragImage(_BLANK_DRAG_IMG, 0, 0);
-    }
+    if (!src || !e.dataTransfer || !e.dataTransfer.setDragImage) return;
     var r = src.getBoundingClientRect();
-    var saved = {
-      position: src.style.position, left: src.style.left, top: src.style.top,
-      right: src.style.right, bottom: src.style.bottom,
-      width: src.style.width, height: src.style.height,
-      zIndex: src.style.zIndex, pointerEvents: src.style.pointerEvents,
-      margin: src.style.margin, transform: src.style.transform, transition: src.style.transition
-    };
-    var ox = e.clientX - r.left, oy = e.clientY - r.top;
-    src.style.position = "fixed";
-    src.style.left = r.left + "px";
-    src.style.top = r.top + "px";
-    src.style.right = "auto";
-    src.style.bottom = "auto";
-    src.style.width = r.width + "px";
-    src.style.height = r.height + "px";
-    src.style.zIndex = "99999";
-    src.style.pointerEvents = "none";
-    src.style.margin = "0";
-    src.style.transform = "none";
-    src.style.transition = "none";
-    var moveHandler = function(ev) {
-      if (!ev || (ev.clientX === 0 && ev.clientY === 0)) return;
-      src.style.left = (ev.clientX - ox) + "px";
-      src.style.top = (ev.clientY - oy) + "px";
-    };
-    function cleanup() {
-      try { document.removeEventListener("dragover", moveHandler); } catch (_) {}
-      try { document.removeEventListener("drag", moveHandler); } catch (_) {}
-      try {
-        src.style.position = saved.position;
-        src.style.left = saved.left; src.style.top = saved.top;
-        src.style.right = saved.right; src.style.bottom = saved.bottom;
-        src.style.width = saved.width; src.style.height = saved.height;
-        src.style.zIndex = saved.zIndex;
-        src.style.pointerEvents = saved.pointerEvents;
-        src.style.margin = saved.margin;
-        src.style.transform = saved.transform;
-        src.style.transition = saved.transition;
-      } catch (_) {}
-      try { src.removeEventListener("dragend", cleanup); } catch (_) {}
-    }
-    document.addEventListener("dragover", moveHandler);
-    document.addEventListener("drag", moveHandler);
-    src.addEventListener("dragend", cleanup);
+    e.dataTransfer.setDragImage(src, e.clientX - r.left, e.clientY - r.top);
   } catch (_) {}
 }
 if (typeof window !== "undefined") { window.addEventListener("resize", function() { _gvScale = Math.min(window.innerHeight / 1080, window.innerWidth / 1920); }); }
@@ -6578,7 +6525,7 @@ function RiftboundGame() {
         var _normalStyle = { width: aw, height: ah, borderRadius: 6, overflow: "visible", flexShrink: 0, cursor: "pointer", transform: _normTransform, transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -45 : total > 5 ? -24 : 0), transition: "transform 200ms ease-out", position: "relative", zIndex: _isHov ? 999 : i, opacity: 1, pointerEvents: "auto" };
         var _handDraggable = canMoveOwn && playable && !tm && !fc;
         var _handPlayNow = canMoveOwn && playable && !tm && !fc ? function() { if (c.type === "Spell") { castSpellFromHand(c, null); } else { onPlay(c); } if (sd) markSdActed(); } : null;
-        var _handClick = _handPlayNow ? function(e) { if (e && e.stopPropagation) e.stopPropagation(); var now = Date.now(); var last = _lastClickRef.current; if (last.uid === c.uid && (now - last.t) < 350) { _lastClickRef.current = { uid: null, t: 0 }; _handPlayNow(); } else { _lastClickRef.current = { uid: c.uid, t: now }; } } : undefined;
+        var _handClick = _handPlayNow ? function(e) { if (e && e.stopPropagation) e.stopPropagation(); _handPlayNow(); } : undefined;
         return React.createElement("div", { key: c.uid, "data-action": _handAct, className: "hand-card-hover" + animCls, draggable: _handDraggable, onDragStart: _handDraggable ? function(e) { e.dataTransfer.setData("text/plain", "hand:" + c.uid); e.dataTransfer.effectAllowed = "move"; _solidDragImage(e); setDragUnit(c); } : undefined, onDragEnd: _handDraggable ? function() { setDragUnit(null); } : undefined, onClick: _handClick, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { setHandHovIdx(i); if (autoMode) setHoveredHandCard(c); if (_setHoverCard) _setHoverCard(c, e, false, true); }, onMouseLeave: function() { setHandCtxUid(null); if (_clearHoverCard) _clearHoverCard(); }, style: _normalStyle },
           c.hidden ? React.createElement("img", { src: CARD_BACK, style: _imgStyle }) : (c.img ? React.createElement("img", { src: imgSrc(c.img), style: _imgStyle }) : React.createElement("div", { style: Object.assign({}, _imgStyle, { background: "linear-gradient(180deg," + (DOM[c.domain] || DOM.Colorless).c + "15,#0a0a18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#666", padding: 4, textAlign: "center" }) }, c.name)),
           handCtxUid === c.uid ? React.createElement("button", { onClick: function(e) { e.stopPropagation(); toggleHide(c.uid); setHandCtxUid(null); }, style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 10, padding: "4px 12px", borderRadius: 4, border: "1.5px solid #ffffff40", background: "rgba(20,20,50,0.92)", color: "#ddd", fontSize: 12, cursor: "pointer", fontFamily: "Spectral,serif", fontWeight: 700, boxShadow: "0 4px 12px #000a", whiteSpace: "nowrap" } }, c.hidden ? "Reveal" : "Hide") : null
@@ -7585,7 +7532,7 @@ function RiftboundGame() {
               </div>); })()}
             </div>
           </div>;
-        })() : <div style={{ width: Math.round(258 * vScale), height: Math.round(361 * vScale) }} />}
+        })() : <div style={{ width: Math.round(258 * vScale), height: Math.round(361 * vScale), display: "flex", alignItems: "center", justifyContent: "center" }}>{_scArm && <span style={{ color: "#8B6914", fontFamily: "Spectral,serif", fontSize: Math.round(26 * vScale), fontWeight: 700, letterSpacing: 4, textTransform: "uppercase", textShadow: "0 0 12px rgba(184,134,11,0.6)" }}>Spell Pile</span>}</div>}
       </div>; })()}
       {/* Spell chain Resolve button — floating bottom-right in both modes */}
       {pendingSpell && (function() {
