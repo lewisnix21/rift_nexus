@@ -337,16 +337,71 @@ var _setHoverTilt = null;
 var _binGearRef = null;
 var _detachGearRef = null;
 var _gvScale = (typeof window !== "undefined" ? Math.min(window.innerHeight / 1080, window.innerWidth / 1920) : 1);
-// Drag image: hand the source element straight to setDragImage with a cursor-relative
-// offset. Browser draws its own (slightly translucent) snapshot of the source under
-// the cursor. No cloning, no source mutation, no extra listeners — keeps drop wiring
-// rock solid.
+// Drag follower: suppress the browser's translucent ghost (1x1 transparent setDragImage),
+// then move the actual source element with the cursor by switching it to position:fixed
+// and updating left/top on every drag/dragover event. pointer-events:none on the source
+// so drop targets underneath still receive dragover. Original inline styles saved and
+// restored on dragend (document-level listener — see RiftboundGame useEffect cleaner).
+var _BLANK_DRAG_IMG = (function() {
+  if (typeof Image === "undefined") return null;
+  var img = new Image();
+  img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+  return img;
+})();
+var _dragFollow = null;
+function _dragFollowMove(ev) {
+  var st = _dragFollow;
+  if (!st || !ev) return;
+  if (ev.clientX === 0 && ev.clientY === 0) return;
+  st.src.style.left = (ev.clientX - st.ox) + "px";
+  st.src.style.top = (ev.clientY - st.oy) + "px";
+}
+function _dragFollowCleanup() {
+  var st = _dragFollow;
+  if (!st) return;
+  try { document.removeEventListener("dragover", _dragFollowMove); } catch (_) {}
+  try { document.removeEventListener("drag", _dragFollowMove); } catch (_) {}
+  try {
+    var s = st.src.style, sv = st.saved;
+    s.position = sv.position; s.left = sv.left; s.top = sv.top;
+    s.right = sv.right; s.bottom = sv.bottom; s.width = sv.width; s.height = sv.height;
+    s.zIndex = sv.zIndex; s.pointerEvents = sv.pointerEvents;
+    s.margin = sv.margin; s.transform = sv.transform; s.transition = sv.transition;
+  } catch (_) {}
+  _dragFollow = null;
+}
 function _solidDragImage(e) {
   try {
     var src = e.currentTarget;
-    if (!src || !e.dataTransfer || !e.dataTransfer.setDragImage) return;
+    if (!src || !e.dataTransfer) return;
+    // Clean up any stale follow state from a previous drag that didn't fire dragend.
+    if (_dragFollow) _dragFollowCleanup();
+    if (e.dataTransfer.setDragImage && _BLANK_DRAG_IMG) {
+      e.dataTransfer.setDragImage(_BLANK_DRAG_IMG, 0, 0);
+    }
     var r = src.getBoundingClientRect();
-    e.dataTransfer.setDragImage(src, e.clientX - r.left, e.clientY - r.top);
+    var saved = {
+      position: src.style.position, left: src.style.left, top: src.style.top,
+      right: src.style.right, bottom: src.style.bottom,
+      width: src.style.width, height: src.style.height,
+      zIndex: src.style.zIndex, pointerEvents: src.style.pointerEvents,
+      margin: src.style.margin, transform: src.style.transform, transition: src.style.transition
+    };
+    src.style.position = "fixed";
+    src.style.left = r.left + "px";
+    src.style.top = r.top + "px";
+    src.style.right = "auto";
+    src.style.bottom = "auto";
+    src.style.width = r.width + "px";
+    src.style.height = r.height + "px";
+    src.style.zIndex = "99999";
+    src.style.pointerEvents = "none";
+    src.style.margin = "0";
+    src.style.transform = "none";
+    src.style.transition = "none";
+    _dragFollow = { src: src, ox: e.clientX - r.left, oy: e.clientY - r.top, saved: saved };
+    document.addEventListener("dragover", _dragFollowMove);
+    document.addEventListener("drag", _dragFollowMove);
   } catch (_) {}
 }
 if (typeof window !== "undefined") { window.addEventListener("resize", function() { _gvScale = Math.min(window.innerHeight / 1080, window.innerWidth / 1920); }); }
@@ -782,7 +837,7 @@ function RiftboundGame() {
   // onDragEnd never fires, leaving dragUnit set and the spell-drag highlight stuck on.
   // Listening at document level guarantees dragUnit always clears once the drag finishes.
   useEffect(function() {
-    function clear() { setDragUnit(null); }
+    function clear() { setDragUnit(null); _dragFollowCleanup(); }
     document.addEventListener("dragend", clear);
     document.addEventListener("drop", clear);
     // mouseup safety net — dragend can occasionally miss in Chrome if the drag never
@@ -7534,7 +7589,7 @@ function RiftboundGame() {
               </div>); })()}
             </div>
           </div>;
-        })() : <div style={{ width: Math.round(258 * vScale), height: Math.round(361 * vScale), display: "flex", alignItems: "center", justifyContent: "center" }}>{_scArm && <span style={{ color: "#C9A227", fontFamily: "Spectral,serif", fontSize: Math.round(26 * vScale), fontWeight: 700, letterSpacing: 4, textTransform: "uppercase", textShadow: "0 0 12px rgba(201,162,39,0.6)" }}>Spell Pile</span>}</div>}
+        })() : <div style={{ width: Math.round(258 * vScale), height: Math.round(361 * vScale), display: "flex", alignItems: "center", justifyContent: "center" }}>{_scArm && <span style={{ color: "#C9A227", fontFamily: "Spectral,serif", fontSize: Math.round(26 * vScale), fontWeight: 700, letterSpacing: 4, textTransform: "uppercase", WebkitTextStroke: "1px #000", textShadow: "-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 12px rgba(201,162,39,0.6)" }}>Spell Pile</span>}</div>}
       </div>; })()}
       {/* Spell chain Resolve button — floating bottom-right in both modes */}
       {pendingSpell && (function() {
