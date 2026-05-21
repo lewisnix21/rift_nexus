@@ -723,6 +723,56 @@ function initPlayer(dk) {
 }
 
 
+// FannedHand: rendered as the player's (and enemies') hand fan. Defined at MODULE level
+// (not inside RiftboundGame) so React preserves its instance across parent re-renders —
+// otherwise the component would be a new function reference each render and React
+// would unmount + remount the whole fan on every state change, killing HTML5 drags
+// from hand cards mid-flight. All RG-scoped dependencies are passed via the ctx prop.
+function FannedHand(props) {
+  var hand = props.hand; var isEnemy = props.isEnemy; var onPlay = props.onPlay; var onZoom = props.onZoom;
+  var ctx = props.ctx;
+  var HAND_W = ctx.HAND_W, HAND_H = ctx.HAND_H;
+  var autoMode = ctx.autoMode, canMoveOwn = ctx.canMoveOwn;
+  var canPlayCard = ctx.canPlayCard, hasAnim = ctx.hasAnim;
+  var handCtxUid = ctx.handCtxUid, setHandCtxUid = ctx.setHandCtxUid;
+  var toggleHide = ctx.toggleHide;
+  var tm = ctx.tm, fc = ctx.fc, sd = ctx.sd, markSdActed = ctx.markSdActed;
+  var castSpellFromHand = ctx.castSpellFromHand;
+  var setDragUnit = ctx.setDragUnit;
+  var setHoveredHandCard = ctx.setHoveredHandCard;
+  var _hhi = useState(-1), handHovIdx = _hhi[0], setHandHovIdx = _hhi[1];
+  var total = hand.length; var mid = (total - 1) / 2;
+  var aw = Math.round(HAND_W * 1.5);
+  var ah = Math.round(HAND_H * 1.5);
+  return React.createElement("div", { onMouseLeave: function() { setHandHovIdx(-1); if (!isEnemy) setHoveredHandCard(null); }, style: { display: "flex", justifyContent: "center", alignItems: "flex-end", height: ah, flexShrink: 0, overflow: "visible", background: "transparent", padding: isEnemy ? "0 20px 0" : "2px 20px 0", transform: isEnemy ? "scaleY(-1)" : "none", pointerEvents: autoMode ? "none" : undefined } },
+    hand.map(function(c, i) {
+      var rot = (i - mid) * (total > 6 ? 1.5 : 2.0);
+      var ty = Math.abs(i - mid) * (total > 6 ? 1.2 : 1.8);
+      var playable = !isEnemy && canPlayCard(c);
+      var animCls = hasAnim(c.uid) ? " anim-draw" : "";
+      if (isEnemy) {
+        return React.createElement("div", { key: i, style: { width: HAND_W, height: HAND_H, borderRadius: 6, overflow: "hidden", border: "1.5px solid #FFD70040", flexShrink: 0, transform: "rotate(" + rot + "deg) translateY(" + ty + "px) scaleY(-1)", transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : -30, position: "relative", zIndex: i, boxShadow: "0 2px 8px #0006" } },
+          React.createElement("img", { src: CARD_BACK, style: { width: "100%", height: "100%", objectFit: "fill" } })
+        );
+      }
+      var _isHov = i === handHovIdx;
+      var _normTransform = "rotate(" + rot + "deg) translateY(calc(" + ty + "px + var(--hand-lift, 0px)))";
+      var _imgW = aw, _imgH = ah;
+      var _imgBorder = (autoMode && playable) ? "3px solid #3b82f6" : "2px solid " + (c.hidden ? "#FFD70040" : (DOM[c.domain] || DOM.Colorless).c + "20");
+      var _imgBoxShadow = (autoMode && playable) ? "0 0 22px rgba(59,130,246,1), 0 0 44px rgba(59,130,246,0.65), 0 4px 16px #000a" : "0 4px 16px #000a";
+      var _imgStyle = { position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)", width: _imgW + "px", height: _imgH + "px", objectFit: "fill", display: "block", border: _imgBorder, borderRadius: 6, boxShadow: _imgBoxShadow, boxSizing: "border-box", pointerEvents: "auto", transition: "width 200ms ease-out, height 200ms ease-out, border 0.15s ease, box-shadow 0.2s ease" };
+      var _handDraggable = canMoveOwn && playable && !tm && !fc;
+      var _normalStyle = { width: aw, height: ah, borderRadius: 6, overflow: "visible", flexShrink: 0, cursor: _handDraggable ? "grab" : "pointer", transform: _normTransform, transformOrigin: "bottom center", marginLeft: i === 0 ? 0 : (total > 7 ? -45 : total > 5 ? -24 : 0), transition: "transform 200ms ease-out", position: "relative", zIndex: _isHov ? 999 : i, opacity: 1, pointerEvents: "auto" };
+      var _handPlayNow = _handDraggable ? function() { if (c.type === "Spell") { castSpellFromHand(c, null); } else { onPlay(c); } if (sd) markSdActed(); } : null;
+      var _handClick = _handPlayNow ? function(e) { if (e && e.stopPropagation) e.stopPropagation(); _handPlayNow(); } : undefined;
+      return React.createElement("div", { key: c.uid, className: "hand-card-hover" + animCls, draggable: _handDraggable, onDragStart: _handDraggable ? function(e) { e.dataTransfer.setData("text/plain", "hand:" + c.uid); e.dataTransfer.effectAllowed = "move"; _solidDragImage(e); setDragUnit(c); } : undefined, onDragEnd: _handDraggable ? function() { setDragUnit(null); } : undefined, onClick: _handClick, onContextMenu: function(e) { e.preventDefault(); setHandCtxUid(handCtxUid === c.uid ? null : c.uid); }, onMouseEnter: function(e) { setHandHovIdx(i); if (autoMode) setHoveredHandCard(c); if (_setHoverCard) _setHoverCard(c, e, false, true); }, onMouseLeave: function() { setHandCtxUid(null); if (_clearHoverCard) _clearHoverCard(); }, style: _normalStyle },
+        c.hidden ? React.createElement("img", { src: CARD_BACK, style: _imgStyle }) : (c.img ? React.createElement("img", { src: imgSrc(c.img), style: _imgStyle }) : React.createElement("div", { style: Object.assign({}, _imgStyle, { background: "linear-gradient(180deg," + (DOM[c.domain] || DOM.Colorless).c + "15,#0a0a18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#666", padding: 4, textAlign: "center" }) }, c.name)),
+        handCtxUid === c.uid ? React.createElement("button", { onClick: function(e) { e.stopPropagation(); toggleHide(c.uid); setHandCtxUid(null); }, style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 10, padding: "4px 12px", borderRadius: 4, border: "1.5px solid #ffffff40", background: "rgba(20,20,50,0.92)", color: "#ddd", fontSize: 12, cursor: "pointer", fontFamily: "Spectral,serif", fontWeight: 700, boxShadow: "0 4px 12px #000a", whiteSpace: "nowrap" } }, c.hidden ? "Reveal" : "Hide") : null
+      );
+    })
+  );
+}
+
 function RiftboundGame() {
   var _authUser = useState(fbAuth.currentUser || null), authUser = _authUser[0], setAuthUser = _authUser[1];
   var _authScreen = useState(null), authScreen = _authScreen[0], setAuthScreen = _authScreen[1];
@@ -6500,7 +6550,7 @@ function RiftboundGame() {
     );
   }
 
-  function FannedHand(props) {
+  function FannedHand_REMOVED(props) {
     var hand = props.hand; var isEnemy = props.isEnemy; var onPlay = props.onPlay; var onZoom = props.onZoom;
     var _hhi = useState(-1), handHovIdx = _hhi[0], setHandHovIdx = _hhi[1];
     var _hht = useState({x: 0, y: 0}), handHovTilt = _hht[0], setHandHovTilt = _hht[1];
@@ -7451,7 +7501,7 @@ function RiftboundGame() {
                 onDragOver={canMoveOwn ? function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } : undefined}
                 onDragLeave={canMoveOwn ? function(e) { var rt = e.relatedTarget; var stayInZone = e.currentTarget.contains(rt) || (rt && rt.closest && rt.closest("[data-hand-zone='1'],[data-hand-overlay='1']")); if (!stayInZone) setDragOverHand(false); } : undefined}
                 onDrop={canMoveOwn ? function(e) { e.preventDefault(); setDragOverHand(false); var data = e.dataTransfer.getData("text/plain"); if (!data) return; var parts = data.split(":"); var uid2 = parts.length > 1 ? parts[1] : parts[0]; returnToHand(uid2); } : undefined}>
-                <FannedHand hand={handSort === "type" ? myCur.hand.slice().sort(function(a, b) { var order = { Champion: 0, Unit: 1, Gear: 2, Spell: 3 }; return (order[a.type] || 9) - (order[b.type] || 9); }) : handSort === "energy" ? myCur.hand.slice().sort(function(a, b) { return (a.energy || 0) - (b.energy || 0); }) : myCur.hand} isEnemy={false} onPlay={function(card) { openPlay(card); }} onZoom={setZoom} />
+                <FannedHand hand={handSort === "type" ? myCur.hand.slice().sort(function(a, b) { var order = { Champion: 0, Unit: 1, Gear: 2, Spell: 3 }; return (order[a.type] || 9) - (order[b.type] || 9); }) : handSort === "energy" ? myCur.hand.slice().sort(function(a, b) { return (a.energy || 0) - (b.energy || 0); }) : myCur.hand} isEnemy={false} onPlay={function(card) { openPlay(card); }} onZoom={setZoom} ctx={{ HAND_W: HAND_W, HAND_H: HAND_H, autoMode: autoMode, canMoveOwn: canMoveOwn, canPlayCard: canPlayCard, hasAnim: hasAnim, handCtxUid: handCtxUid, setHandCtxUid: setHandCtxUid, toggleHide: toggleHide, tm: tm, fc: fc, sd: sd, markSdActed: markSdActed, castSpellFromHand: castSpellFromHand, setDragUnit: setDragUnit, setHoveredHandCard: setHoveredHandCard }} />
               </div>
             </div>
           </div>{/* end ROW 5 */}
