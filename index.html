@@ -563,7 +563,7 @@ function Card({ card, onClick, selected, small, faceDown, inHand, zoomed, onBin,
   }, [_curTempMight]);
   if (!card || (!card.domain && !faceDown)) return null;
   var d = DOM[card.domain] || DOM.Colorless;
-  var _tinyMul = tiny ? 0.7 : 1;
+  var _tinyMul = tiny ? 0.88 : 1;
   var w = tiny ? Math.round(125 * _gvScale * _tinyMul) : small ? Math.round(125 * _gvScale) : zoomed ? 374 : 187;
   var h = tiny ? Math.round(175 * _gvScale * _tinyMul) : small ? Math.round(175 * _gvScale) : zoomed ? 524 : 262;
   var ex = card.exhausted && !zoomed;
