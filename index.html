@@ -827,6 +827,8 @@ function RiftboundGame() {
   var _anim = useState([]), anims = _anim[0], setAnims = _anim[1];
   var _sbf = useState(null), selectedBf = _sbf[0], setSelectedBf = _sbf[1];
   var _du = useState(null), dragUnit = _du[0], setDragUnit = _du[1];
+  // Map of rune uid -> true while a freshly channeled rune is queued for its staggered draw anim.
+  var _hr = useState({}), hiddenRunes = _hr[0], setHiddenRunes = _hr[1];
   // Turn-change banner shown on every player's screen when act changes (the active player's
   // own setAwakenPhase already triggers it for them; this covers the other clients).
   var _tb = useState(null), turnBanner = _tb[0], setTurnBanner = _tb[1];
@@ -4957,14 +4959,27 @@ function RiftboundGame() {
       p.lastScoredBfs = [];
       var winThreshold = _isDoublesGame ? 11 : 8;
       if (p.score >= winThreshold && !continuePlaying) { setWin(turnIdx); setScreen("go"); aL(pName(turnIdx) + " wins!"); var npW = ps.slice(); npW[turnIdx] = p; if (_isDoublesGame && _myTeammateIdx >= 0) { npW[_myTeammateIdx] = Object.assign({}, npW[_myTeammateIdx], { score: p.score }); } setPs(npW); setBfs(nb); setAwakenPhase(null); return; }
-      // Channel: gain runes (max 12) — on turn 1 the non-first player gets +1 to compensate for going second
+      // Channel: gain runes (max 12) — on turn 1 the non-first player gets +1 to compensate
+      // for going second. State (and Firebase sync) gets all runes immediately so peers stay
+      // in lockstep, but each rune is initially marked 'hidden' (display:none) and revealed
+      // one at a time with a small delay, so the cardDrawIn animation plays cleanly on each
+      // rune in sequence instead of all firing at once.
       var nr = turn === 1 && turnIdx !== firstPlayerIdx ? 3 : 2;
       var runeSpace = 12 - p.runes.length;
       var actualDraw = Math.min(nr, p.runeDeck.length, runeSpace);
       var ch = actualDraw > 0 ? p.runeDeck.splice(0, actualDraw) : [];
       p.runes = p.runes.concat(ch);
-      ch.forEach(function(r) { addAnim(r.uid, "draw"); });
       if (actualDraw < nr) { aL("  Channel " + ch.length + " runes (max reached)"); } else { aL("  Channel " + ch.length + " runes"); }
+      // Initially hide the freshly drawn runes; reveal them one at a time with the draw anim.
+      if (ch.length) {
+        setHiddenRunes(function(prev) { var nx = Object.assign({}, prev); ch.forEach(function(r) { nx[r.uid] = true; }); return nx; });
+        ch.forEach(function(r, _i) {
+          setTimeout(function() {
+            setHiddenRunes(function(prev) { var nx = Object.assign({}, prev); delete nx[r.uid]; return nx; });
+            addAnim(r.uid, "draw");
+          }, _i * 320);
+        });
+      }
       // Draw: draw a card. In 3+ player games, the first player skips their turn-1 draw.
       var skipDraw = turn === 1 && turnIdx === firstPlayerIdx && pc >= 3;
       if (!skipDraw && p.mainDeck.length > 0) { var drawn = p.mainDeck.shift(); p.hand = p.hand.concat([drawn]); addAnim(drawn.uid, "draw"); aL("  Draw 1 card"); }
@@ -7358,7 +7373,8 @@ function RiftboundGame() {
                   var __isTap = __runeAsgn && __runeAsgn.tapUids.indexOf(r.uid) >= 0;
                   var __payBorder = __isRecycle ? "2.5px solid #ef4444" : __isTap ? "2.5px solid #3b82f6" : null;
                   var __payShadow = __isRecycle ? "0 0 16px rgba(239,68,68,0.85), 0 0 30px rgba(239,68,68,0.45)" : __isTap ? "0 0 16px rgba(59,130,246,0.85), 0 0 30px rgba(59,130,246,0.45)" : "none";
-                  return <div key={r.uid} data-uid={r.uid} draggable={false} className={(r.exhausted ? "card-tapped" : "card-hover") + animCls} onClick={function() { toggleTap(r.uid); }} style={{ width: RUNE_W, height: RUNE_H, borderRadius: 5, border: __payBorder || ("2px solid " + (r.exhausted ? "#DC262644" : DOM[r.domain].c + "66")), boxShadow: __payShadow, filter: r.exhausted ? "brightness(0.58)" : "none", transform: [r.exhausted ? "rotate(10deg)" : "", (__isTap || __isRecycle) ? "translateY(-8px)" : ""].filter(Boolean).join(" ") || "none", position: "absolute", left: leftCalc, top: 0, zIndex: ri, overflow: "visible", cursor: "pointer", transition: "border 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease" }}>
+                  var _runeHidden = !!hiddenRunes[r.uid];
+                  return <div key={r.uid} data-uid={r.uid} draggable={false} className={(r.exhausted ? "card-tapped" : "card-hover") + animCls} onClick={function() { toggleTap(r.uid); }} style={{ width: RUNE_W, height: RUNE_H, borderRadius: 5, border: __payBorder || ("2px solid " + (r.exhausted ? "#DC262644" : DOM[r.domain].c + "66")), boxShadow: __payShadow, filter: r.exhausted ? "brightness(0.58)" : "none", transform: [r.exhausted ? "rotate(10deg)" : "", (__isTap || __isRecycle) ? "translateY(-8px)" : ""].filter(Boolean).join(" ") || "none", position: "absolute", left: leftCalc, top: 0, zIndex: ri, overflow: "visible", cursor: "pointer", visibility: _runeHidden ? "hidden" : "visible", transition: "border 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease" }}>
                     <div style={{ width: "100%", height: "100%", borderRadius: 3, overflow: "hidden" }}>{rUrl ? <img draggable={false} src={rUrl} style={{ width: "100%", height: "100%", objectFit: "fill" }} /> : <div style={{ width: "100%", height: "100%", background: DOM[r.domain].c + "33", display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: RUNE_W * 0.3 }}>{DOM[r.domain].i}</span></div>}</div>
                     {canMoveOwn && !fc && !tm && <button onClick={function(e) { e.stopPropagation(); recycleRune(r.uid); }} style={{ position: "absolute", top: 2, right: 2, width: 22, height: 22, borderRadius: 5, border: "1.5px solid #FFD70066", background: "#1a1a3a", color: "#FFD700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 1000 }} title="Recycle rune"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFD700" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5"/><path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12"/><path d="m14 16-3 3 3 3"/><path d="M8.293 13.596 7.196 9.5 3.1 10.598"/><path d="m9.344 5.811 1.093-1.892A1.83 1.83 0 0 1 11.985 3a1.784 1.784 0 0 1 1.546.888l3.943 6.843"/><path d="m13.378 9.633 4.096 1.098 1.097-4.096"/></svg></button>}
                   </div>;
