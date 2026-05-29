@@ -1,0 +1,22 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      ".firebase",
+      ".claude",
+      ".git",
+      "*.md",
+      "db_old.js",
+      "riftbound_game.html",
+      "riftbound_v9.jsx",
+      "riftbound_source.tar.gz"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
